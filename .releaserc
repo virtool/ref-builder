@@ -1,0 +1,14 @@
+{
+  "branches": [
+    "main"
+  ],
+  "plugins": [
+    ["@semantic-release/commit-analyzer", {
+      "preset": "conventionalcommits"
+    }],
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/github"
+  ],
+  "repositoryUrl": "https://github.com/virtool/ref-builder",
+  "tagFormat": "${version}"
+}
