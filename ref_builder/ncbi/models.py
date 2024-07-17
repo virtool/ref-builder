@@ -86,6 +86,8 @@ class NCBISource(BaseModel):
 
 
 class NCBIGenbank(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     accession: Annotated[str, Field(validation_alias="GBSeq_primary-accession")]
     accession_version: Annotated[str, Field(validation_alias="GBSeq_accession-version")]
     strandedness: Annotated[
