@@ -1,0 +1,93 @@
+name: Add OTU
+on: 
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+
+      taxon-id:
+        required: true
+        type: number
+      
+      accessions:
+        default: ""
+        type: string
+
+      debug:
+        default: true
+        type: boolean
+
+  workflow_call:
+    inputs:
+      version:
+        type: string
+
+      taxon-id:
+        required: true
+        type: string
+      
+      accessions:
+        default: ""
+        type: string
+
+      debug:
+        default: true
+        type: boolean
+
+jobs:
+  add-otu:
+    runs-on: ubuntu-latest
+    name: Add a new OTU and create a new branch
+    permissions:
+      contents: write
+
+    steps:
+      - run: echo FLAGS='--debug' >> GITHUB_ENV
+        if: ${{ inputs.debug }}
+      
+      - name: Check out repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+                
+      - name: Install virtool-cli
+        run: pip install virtool-cli $PIP_FLAGS
+        env:
+          PIP_FLAGS: --pre
+          VERSION: ${{ inputs.version }}
+      
+      - name: Set date for branch naming
+        id: get-branch-name
+        run: |
+          BRANCH_DATE=$(date +"%Y-%m-%d")
+          BRANCH_NAME=$PREFIX$BRANCH_DATE$SUFFIX
+          echo "branch_name=$BRANCH_NAME" >> ${GITHUB_OUTPUT}
+        env: 
+          PREFIX: "addition--"
+          SUFFIX : --${{ inputs.taxon-id }}
+
+      - name: Add OTU
+        id: add-otu
+        run: |
+          OTU_PATH=$(virtool ref add otu -taxid $TAXID -src src $FLAGS)
+          echo "otu_path=$OTU_PATH" >> ${GITHUB_OUTPUT}
+        env:
+          TAXID: ${{ inputs.taxon-id }}
+          FLAGS: ${{ env.flags }}
+
+      - name: Add accessions
+        run: |
+          virtool ref add accessions -acc "$ACCESSIONS" -otu $OTU_PATH $FLAGS
+        env:
+          OTU_PATH: ${{ steps.add-otu.outputs.otu_path }}
+          ACCESSIONS: ${{ inputs.accessions }}
+      
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          branch: ${{ steps.get-branch-name.outputs.branch_name }}
+          create_branch: true
+          commit_message: AUTO OTU addition to repo (${{inputs.taxon-id}})

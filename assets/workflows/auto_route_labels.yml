@@ -1,0 +1,96 @@
+name: "AUTO: Route labels"
+on:
+  issues:
+    types: [opened]
+  
+jobs:
+  get-issue-event:
+    runs-on: ubuntu-latest
+    outputs:
+      label: 
+    
+    steps:
+      - run: echo $EVENT
+        env:
+          EVENT: ${{ toJson(github.event) }}
+
+      - run: |
+          echo $ISSUE_NO
+          echo $ISSUE_LABEL
+        env:
+          ISSUE_NO: ${{ github.event.issue.id }}
+          ISSUE_LABEL: ${{ toJson(github.event.issue.labels) }}
+
+  parse-otu-form:
+    if: contains(github.event.issue.labels.*.name, 'addition-otu')
+    runs-on: ubuntu-latest
+    outputs:
+      taxon-id: ${{ steps.issue-parser.outputs.issueparser_taxid }}
+      accessions: ${{ steps.issue-parser.outputs.issueparser_accessions }}
+      
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: stefanbuck/github-issue-parser@v3
+        id: issue-parser
+        with:
+          template-path: .github/ISSUE_TEMPLATE/add_species.yaml
+
+      - run: cat ${HOME}/issue-parser-result.json
+          
+      - run: |
+          echo $TAXID
+          echo $ACCESSIONS
+        env:
+          TAXID: ${{ steps.issue-parser.outputs.issueparser_taxid }}
+          ACCESSIONS: ${{ steps.issue-parser.outputs.issueparser_accessions }}
+  
+  trigger-otu-addition:
+    needs: parse-otu-form
+    uses: ./.github/workflows/call_add_otu.yml
+    with:
+      taxon-id: ${{ needs.parse-otu-form.outputs.taxon-id }}
+      accessions: ${{ needs.parse-otu-form.outputs.accessions }}
+      debug: true
+    permissions:
+      contents: write
+
+  parse-accession-form:
+    if: contains(github.event.issue.labels.*.name, 'addition-accession')
+    runs-on: ubuntu-latest
+    outputs:
+      otu-path: ${{ steps.set-otu-path.outputs.otu-path }}
+      accessions: ${{ steps.issue-parser.outputs.issueparser_accessions }}
+      
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: stefanbuck/github-issue-parser@v3
+        id: issue-parser
+        with:
+          template-path: .github/ISSUE_TEMPLATE/add_accession.yaml
+
+      - run: cat ${HOME}/issue-parser-result.json
+          
+      - run: echo "otu-path=$OTU_PATH" >> ${GITHUB_OUTPUT}
+        id: set-otu-path
+        env:
+          OTU_PATH: src/${{ steps.issue-parser.outputs.issueparser_otu_dir }}
+          
+      - run: echo $ACCESSIONS
+        env:
+          ACCESSIONS: ${{ steps.issue-parser.outputs.issueparser_accessions }}
+  
+  trigger-accession-addition:
+    needs: parse-accession-form
+    uses: ./.github/workflows/call_add_accessions.yml
+    with:
+      otu-path: ${{ needs.parse-accession-form.outputs.otu-path }}
+      accessions: ${{ needs.parse-accession-form.outputs.accessions }}
+      debug: true
+    permissions:
+      contents: write

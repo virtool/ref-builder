@@ -1,0 +1,80 @@
+name: Auto-Update
+on: 
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+      suffix:
+        required: false
+        default: ''
+        type: string
+      debug:
+        default: true
+        type: boolean
+
+jobs:
+  update-ref:
+    name: Run Update action on branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - run: echo FLAGS='--debug' >> GITHUB_ENV
+        if: ${{ inputs.debug }}
+
+      - name: Set date for branch naming
+        id: get-branch-name
+        run: |
+          BRANCH_DATE=$(date +"%Y-%m-%d")
+          BRANCH_NAME=$PREFIX$BRANCH_DATE$SUFFIX
+          echo "branch_name=$BRANCH_NAME" >> ${GITHUB_OUTPUT}
+        env: 
+          PREFIX: "auto--candidate--"
+          SUFFIX : ${{ inputs.suffix }}
+
+      - uses: octokit/request-action@v2.x
+        id: get-branch-existence
+        continue-on-error: true
+        with:
+          route: GET /repos/{slug}/branches/{branch}
+          slug: ${{ github.repository }}
+          branch: ${{ steps.get-branch-name.outputs.branch_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Fail out if the branch already exists
+        if: ${{ steps.get-branch-existence.outcome == 'success' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.setFailed('Branch named ${{ steps.get-branch-name.outputs.branch_name }} already exists')
+          
+      - name: Check out reference repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install virtool-cli
+        run: pip install virtool-cli $PIP_FLAGS
+        env:
+          PIP_FLAGS: --pre
+          VERSION: ${{ inputs.version }}
+      
+      - name: Run update
+        run: |
+          virtool ref update reference -src src $FLAGS
+          virtool ref check reference -src src $FLAGS
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          branch: ${{ steps.get-branch-name.outputs.branch_name }}
+          create_branch: true
+          file_pattern: '*.json'
+          commit_message: Auto-update from NCBI Nucleotide
