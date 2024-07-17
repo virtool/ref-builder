@@ -55,12 +55,12 @@ class OTUSnapshotIsolate(BaseModel):
 
     legacy_id: str | None = None
     """A string based ID carried over from a legacy Virtool reference repository."""
-
-    @field_validator("name", mode="before")
-    @classmethod
-    def convert_isolate_name(cls, raw: dict) -> IsolateName:
-        """Takes a dictionary and converts to IsolateName."""
-        return IsolateName(type=IsolateNameType(raw["type"]), value=raw["value"])
+    #
+    # @field_validator("name", mode="before")
+    # @classmethod
+    # def convert_isolate_name(cls, raw: dict) -> IsolateName:
+    #     """Takes a dictionary and converts to IsolateName."""
+    #     return IsolateName(type=IsolateNameType(raw["type"]), value=raw["value"])
 
 
 class OTUSnapshotOTU(BaseModel):
