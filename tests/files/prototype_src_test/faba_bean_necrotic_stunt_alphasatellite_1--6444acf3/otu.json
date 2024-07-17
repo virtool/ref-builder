@@ -1,0 +1,13 @@
+{
+    "_id": "6444acf3",
+    "abbreviation": "FBNSA-1",
+    "name": "Faba bean necrotic stunt alphasatellite 1",
+    "schema": [
+        {
+            "molecule": "ssDNA",
+            "name": "Satellite",
+            "required": true
+        }
+    ],
+    "taxid": 1441799
+}

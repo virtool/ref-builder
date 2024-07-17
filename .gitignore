@@ -1,1 +1,9 @@
+__pycache__
+.cache
+.cli
+.DS_Store
 .idea
+.pytest_cache
+.vscode
+Thumbs.db
+venv

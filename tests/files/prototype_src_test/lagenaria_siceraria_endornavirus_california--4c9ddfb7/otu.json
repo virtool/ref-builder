@@ -1,0 +1,13 @@
+{
+    "_id": "4c9ddfb7",
+    "abbreviation": "",
+    "name": "Lagenaria siceraria endornavirus-California",
+    "schema": [
+        {
+            "molecule": "dsRNA",
+            "name": "Genome",
+            "required": true
+        }
+    ],
+    "taxid": 1468454
+}

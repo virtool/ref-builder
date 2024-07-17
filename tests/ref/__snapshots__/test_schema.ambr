@@ -1,0 +1,60 @@
+# serializer version: 1
+# name: test_create_schema_from_records[accessions0]
+  dict({
+    'molecule': dict({
+      'strandedness': 'double',
+      'topology': 'circular',
+      'type': 'DNA',
+    }),
+    'multipartite': False,
+    'segments': list([
+      dict({
+        'length': 7424,
+        'name': 'Pagoda yellow mosaic associated virus',
+        'required': True,
+      }),
+    ]),
+  })
+# ---
+# name: test_create_schema_from_records[accessions1]
+  dict({
+    'molecule': dict({
+      'strandedness': 'single',
+      'topology': 'circular',
+      'type': 'DNA',
+    }),
+    'multipartite': True,
+    'segments': list([
+      dict({
+        'length': 1090,
+        'name': 'DNA N',
+        'required': True,
+      }),
+      dict({
+        'length': 1057,
+        'name': 'DNA U3',
+        'required': True,
+      }),
+      dict({
+        'length': 1087,
+        'name': 'DNA S',
+        'required': True,
+      }),
+      dict({
+        'length': 1074,
+        'name': 'DNA M',
+        'required': True,
+      }),
+      dict({
+        'length': 1015,
+        'name': 'DNA C',
+        'required': True,
+      }),
+      dict({
+        'length': 1099,
+        'name': 'DNA R',
+        'required': True,
+      }),
+    ]),
+  })
+# ---

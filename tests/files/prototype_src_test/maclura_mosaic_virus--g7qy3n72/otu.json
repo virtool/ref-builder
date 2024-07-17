@@ -1,0 +1,13 @@
+{
+    "_id": "g7qy3n72",
+    "abbreviation": "",
+    "name": "Maclura mosaic virus",
+    "schema": [
+        {
+            "molecule": "ssRNA+",
+            "name": "Genome",
+            "required": true
+        }
+    ],
+    "taxid": 48201
+}

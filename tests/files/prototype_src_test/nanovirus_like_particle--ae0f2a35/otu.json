@@ -1,0 +1,13 @@
+{
+    "_id": "ae0f2a35",
+    "abbreviation": "",
+    "name": "Nanovirus-like particle",
+    "schema": [
+        {
+            "molecule": "ssDNA",
+            "name": "Alphasatellite",
+            "required": true
+        }
+    ],
+    "taxid": 96892
+}

@@ -1,0 +1,13 @@
+{
+    "_id": "e7wkndjc",
+    "abbreviation": "",
+    "name": "Impatiens flower break potyvirus",
+    "schema": [
+        {
+            "molecule": "ssRNA+",
+            "name": "Genome",
+            "required": true
+        }
+    ],
+    "taxid": 2170135
+}

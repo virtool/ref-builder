@@ -1,0 +1,13 @@
+{
+    "_id": "d86d0412",
+    "abbreviation": "",
+    "name": "Tall oatgrass mosaic virus",
+    "schema": [
+        {
+            "molecule": "ssRNA+",
+            "name": "Genome",
+            "required": true
+        }
+    ],
+    "taxid": 1414644
+}

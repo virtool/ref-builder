@@ -1,0 +1,13 @@
+{
+    "_id": "407d8a21",
+    "abbreviation": "",
+    "name": "Kalanchoe latent virus",
+    "schema": [
+        {
+            "molecule": "ssRNA+",
+            "name": "Genome",
+            "required": true
+        }
+    ],
+    "taxid": 132477
+}

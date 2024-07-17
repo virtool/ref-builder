@@ -1,0 +1,13 @@
+{
+    "_id": "6bc81904",
+    "abbreviation": "",
+    "name": "Saccharum streak virus",
+    "schema": [
+        {
+            "molecule": "ssDNA",
+            "name": "Genome",
+            "required": true
+        }
+    ],
+    "taxid": 683179
+}

@@ -1,0 +1,13 @@
+{
+    "_id": "ab6bd88a",
+    "abbreviation": "DLVd",
+    "name": "Dahlia latent viroid",
+    "schema": [
+        {
+            "molecule": "ssRNA+",
+            "name": "Viroid",
+            "required": true
+        }
+    ],
+    "taxid": 1278205
+}

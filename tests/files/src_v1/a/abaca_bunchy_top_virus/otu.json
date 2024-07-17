@@ -1,0 +1,38 @@
+{
+  "_id": "c93ec9a9",
+  "name": "Abaca bunchy top virus",
+  "abbreviation": "ABTV",
+  "schema": [
+    {
+      "name": "DNA R",
+      "molecule": "ssDNA",
+      "required": true
+    },
+    {
+      "name": "DNA U3",
+      "molecule": "ssDNA",
+      "required": true
+    },
+    {
+      "name": "DNA N",
+      "molecule": "ssDNA",
+      "required": true
+    },
+    {
+      "name": "DNA S",
+      "molecule": "ssDNA",
+      "required": true
+    },
+    {
+      "name": "DNA M",
+      "molecule": "ssDNA",
+      "required": true
+    },
+    {
+      "name": "DNA C",
+      "molecule": "ssDNA",
+      "required": true
+    }
+  ],
+  "taxid": 438782
+}
