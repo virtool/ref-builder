@@ -22,6 +22,7 @@ base_logger = get_logger()
 
 class GBSeq(StrEnum):
     ACCESSION = "GBSeq_primary-accession"
+    ACCESSION_VERSION = "GBSeq_accession-version"
     DEFINITION = "GBSeq_definition"
     SEQUENCE = "GBSeq_sequence"
     LENGTH = "GBSeq_length"
@@ -60,34 +61,32 @@ class NCBIClient:
         if not accessions:
             return []
 
-        records = []
+        if self.ignore_cache:
+            records = []
+        else:
+            records = [
+                record
+                for accession in accessions
+                if (record := self.cache.load_genbank_record(accession))
+            ]
 
-        logger = base_logger.bind(accessions=accessions)
-
-        if not self.ignore_cache:
-            for accession in accessions:
-                record = self.cache.load_genbank_record(accession)
-                if record is not None:
-                    records.append(record)
-                else:
-                    logger.debug("Missing accession", missing_accession=accession)
-
-        fetch_list = list(
-            set(accessions) - {record.get(GBSeq.ACCESSION) for record in records},
+        accessions_to_fetch = list(
+            set(accessions)
+            - {record.get(GBSeq.ACCESSION_VERSION) for record in records},
         )
 
-        if fetch_list:
-            logger.debug("Fetching accessions...", fetch_list=fetch_list)
-            new_records = NCBIClient.fetch_unvalidated_genbank_records(fetch_list)
+        if accessions_to_fetch:
+            new_records = NCBIClient.fetch_unvalidated_genbank_records(
+                accessions_to_fetch,
+            )
 
             for record in new_records:
-                try:
-                    self.cache.cache_genbank_record(record, record[GBSeq.ACCESSION])
-                except FileNotFoundError:
-                    logger.error("Failed to cache record")
+                self.cache.cache_genbank_record(
+                    record,
+                    record[GBSeq.ACCESSION_VERSION],
+                )
 
-            if new_records:
-                records.extend(new_records)
+            records += new_records
 
         if records:
             return NCBIClient.validate_genbank_records(records)

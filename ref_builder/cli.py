@@ -169,7 +169,7 @@ def create_sequence(
 
 
 @entry.group()
-def legacy():
+def legacy() -> None:
     """Validate and convert legacy references."""
 
 
@@ -180,7 +180,7 @@ def legacy():
     required=True,
     type=click.Path(exists=True, file_okay=False, path_type=Path),
 )
-def precache(path: Path):
+def precache(path: Path) -> None:
     """Pre-cache all accessions in a legacy reference repository."""
     ncbi = NCBIClient(path / ".migration_cache", False)
 

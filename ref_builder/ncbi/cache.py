@@ -54,10 +54,8 @@ class NCBICache:
         :param accession: The NCBI accession of the record
         :return: Deserialized Genbank data if file is found in cache, else None
         """
-        record_path = self._get_genbank_path(accession)
-
         try:
-            with open(record_path) as f:
+            with self._get_genbank_path(accession).open() as f:
                 return json.load(f)
 
         except FileNotFoundError:
@@ -90,7 +88,7 @@ class NCBICache:
             return None
 
     def _get_genbank_path(self, accession: str) -> Path:
-        """Returns a standardized path for a set of cached NCBI Nucleotide records
+        """Return a standardized path for a cached Genbank record.
 
         :param accession: The NCBI accession of a Genbank record
         :return: A properly-formatted path to a cached record
@@ -98,7 +96,7 @@ class NCBICache:
         return self._genbank_path / f"{accession}.json"
 
     def _get_taxonomy_path(self, taxid: int) -> Path:
-        """Returns a standardized path for a cached NCBI Taxonomy record
+        """Return a standardized path for a cached taxonomy record.
 
         :param taxid: A NCBI Taxonomy id
         :return: A properly-formatted path to a cached record

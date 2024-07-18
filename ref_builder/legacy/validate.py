@@ -12,6 +12,12 @@ from rich.padding import Padding
 from rich.table import Table
 from structlog import get_logger
 
+from ref_builder.legacy.checks import (
+    check_isolate_names_against_ncbi,
+    check_unique_ids,
+    check_unique_otu_abbreviations_and_names,
+    find_duplicate_accessions,
+)
 from ref_builder.legacy.handlers import (
     handle_enum,
     handle_int_type,
@@ -23,11 +29,6 @@ from ref_builder.legacy.handlers import (
     handle_value_error,
 )
 from ref_builder.legacy.models import LegacyOTU
-from ref_builder.legacy.repo import (
-    check_unique_accessions,
-    check_unique_ids,
-    check_unique_otu_abbreviations_and_names,
-)
 from ref_builder.legacy.utils import (
     ErrorHandledResult,
     HandleErrorContext,
@@ -42,8 +43,13 @@ logger = get_logger("legacy")
 
 @dataclass
 class OTUValidationResult:
+    """The aggregated results of validating a legacy OTU."""
+
     handler_results: list[ErrorHandledResult]
+    """The results of handling each error."""
+
     repaired_otu: dict
+    """The input OTU with any errors fixed."""
 
 
 def handle_validation_error(
@@ -160,7 +166,21 @@ def validate_legacy_repo(fix: bool, limit: int, no_ok: bool, path: Path) -> None
 
     with_errors_count = 0
 
-    check_unique_accessions(path)
+    check_isolate_names_result = check_isolate_names_against_ncbi(path)
+
+    if check_isolate_names_result:
+        for isolate_id, result in check_isolate_names_result.items():
+            logger.error(
+                "isolate name mismatch",
+                isolate_id=isolate_id,
+                current_name=result.current_name,
+                found_names=result.found_names,
+            )
+
+        return
+
+    find_duplicate_accessions_result = find_duplicate_accessions(path)
+
     check_unique_ids(path)
     check_unique_otu_abbreviations_and_names(path)
 

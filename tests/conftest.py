@@ -70,7 +70,7 @@ def legacy_repo_path(
     """The path to a scratch legacy reference."""
     path = tmp_path / "legacy_repo"
 
-    shutil.copytree(test_files_path / "src_v1", path / "src", dirs_exist_ok=True)
+    shutil.copytree(test_files_path / "legacy_repo", path)
 
     return path
 

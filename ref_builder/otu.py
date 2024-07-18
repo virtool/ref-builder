@@ -1,6 +1,5 @@
 import sys
 from collections import defaultdict
-from pprint import pprint
 
 import structlog
 
@@ -46,7 +45,6 @@ def create_otu_with_schema(
         return None
 
     binned_records = group_genbank_records_by_isolate(records)
-    pprint(binned_records)
     if len(binned_records) > 1:
         otu_logger.fatal(
             "More than one isolate found. Cannot create schema automatically.",
@@ -275,7 +273,7 @@ def group_genbank_records_by_isolate(
     isolates = defaultdict(dict)
 
     for record in records:
-        if (isolate_name := _get_isolate_name(record)) is not None:
+        if (isolate_name := get_isolate_name(record)) is not None:
             isolates[isolate_name][record.accession] = record
 
     return isolates
@@ -328,8 +326,8 @@ def _file_and_create_sequences(
     return sorted(new_accessions)
 
 
-def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
-    """Get the isolate name from a Genbank record"""
+def get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
+    """Get the isolate name from a Genbank record."""
     record_logger = logger.bind(
         accession=record.accession,
         definition=record.definition,
@@ -347,11 +345,6 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
                 )
 
     elif record.refseq:
-        record_logger.debug(
-            "RefSeq record does not contain sufficient source data. "
-            + "Edit before inclusion.",
-        )
-
         return IsolateName(
             type=IsolateNameType(IsolateNameType.REFSEQ),
             value=record.accession,
