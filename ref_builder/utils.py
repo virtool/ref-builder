@@ -1,11 +1,26 @@
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
+from typing import NamedTuple
 
 import orjson
 
 ZERO_PADDING_MAX = 99999999
 """The maximum number that can be padded with zeroes in event IDs and filenames."""
+
+
+class Accession(NamedTuple):
+    """A versioned Genbank accession."""
+
+    accession: str
+    """The Genbank accession (eg. MZ126507)."""
+
+    version: int
+    """The version of the Genbank record (eg. 1)."""
+
+    def __str__(self) -> str:
+        """Return the accession and version as a string (eg. MZ126507.1)."""
+        return f"{self.accession}.{self.version}"
 
 
 class DataType(StrEnum):
