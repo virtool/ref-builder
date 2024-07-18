@@ -157,18 +157,13 @@ class Repo:
     def snapshot(self):
         """Create a snapshot using all the OTUs in the event store."""
         self._snapshotter.snapshot(
-            self.get_all_otus(ignore_cache=True),
+            self.iter_otus(ignore_cache=True),
             at_event=self.last_id,
             indent=True,
         )
 
-    def iter_otus(self) -> Generator[RepoOTU, None, None]:
+    def iter_otus(self, ignore_cache: bool = False) -> Generator[RepoOTU, None, None]:
         """Iterate over the OTUs in the snapshot."""
-        for otu_id in self._event_index.load():
-            yield self.get_otu(otu_id)
-
-    def get_all_otus(self, ignore_cache: bool = False) -> list[RepoOTU]:
-        """Retrieve all OTUs from the event store and return as a list."""
         if ignore_cache:
             event_index = defaultdict(list)
 
@@ -180,13 +175,8 @@ class Repo:
         else:
             event_index = self._event_index.load()
 
-        otus = []
-
         for otu_id in event_index:
-            if otu := self.get_otu(otu_id):
-                otus.append(otu)
-
-        return otus
+            yield self.get_otu(otu_id)
 
     def create_otu(
         self,
