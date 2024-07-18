@@ -25,13 +25,20 @@ class EventIndexError(Exception):
 
 
 class EventIndex:
-    """Maintains an index of event records for each OTU UUID in the repo"""
+    """Maintains an index of event records for each OTU UUID in the repo."""
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path) -> None:
+        """Initialize an event index.
+
+        If no directory exists at the given path, it will be created.
+
+        :param path: the path to the event index directory
+
+        """
         self.path = path
         self.path.mkdir(exist_ok=True)
 
-    def set(self, otu_id: UUID, event_ids: list[int], last_id: int):
+    def set(self, otu_id: UUID, event_ids: list[int], last_id: int) -> None:
         """Cache the event list for a given OTU.
 
         :param otu_id: an OTU ID

@@ -61,7 +61,7 @@ class TestCreateOTU:
 
         # Ensure only one OTU is present in the repository, and it matches the return
         # value of the creation function.
-        assert precached_repo.get_all_otus() == [otu]
+        assert list(precached_repo.iter_otus()) == [otu]
 
     def test_empty_fail(self, scratch_repo: Repo):
         with pytest.raises(ValueError):
@@ -78,7 +78,7 @@ class TestCreateOTU:
         precached_repo: Repo,
         snapshot: SnapshotAssertion,
     ):
-        assert not precached_repo.get_all_otus()
+        assert list(precached_repo.iter_otus()) == []
 
         otu = create_otu_with_schema(
             repo=precached_repo,
@@ -86,10 +86,8 @@ class TestCreateOTU:
             accessions=accessions,
         )
 
-        assert precached_repo.get_all_otus()
-
+        assert list(precached_repo.iter_otus())
         assert otu.schema is not None
-
         assert otu.dict() == snapshot(exclude=props("id"))
 
 
@@ -111,7 +109,7 @@ class TestCreateOTUCommands:
             accessions=accessions,
         )
 
-        otus = Repo(precached_repo.path).get_all_otus()
+        otus = list(Repo(precached_repo.path).iter_otus())
 
         assert len(otus) == 1
         otu = otus[0]
@@ -131,7 +129,7 @@ class TestCreateOTUCommands:
             autofill=True,
         )
 
-        otus = Repo(precached_repo.path).get_all_otus()
+        otus = list(Repo(precached_repo.path).iter_otus())
 
         assert len(otus) == 1
         otu = otus[0]
@@ -152,7 +150,7 @@ class TestCreateOTUCommands:
             autofill=True,
         )
 
-        otus = Repo(precached_repo.path).get_all_otus()
+        otus = list(Repo(precached_repo.path).iter_otus())
 
         assert len(otus) == 1
         otu = otus[0]
@@ -170,7 +168,7 @@ class TestAddSequences:
         accessions = ["DQ178614", "DQ178613", "DQ178610", "DQ178611"]
         run_add_sequences_command(345184, accessions, precached_repo.path)
 
-        for otu in precached_repo.get_all_otus():
+        for otu in precached_repo.iter_otus():
             assert otu.accessions == set(accessions)
 
             assert otu.dict() == snapshot(exclude=props("id", "isolates"))

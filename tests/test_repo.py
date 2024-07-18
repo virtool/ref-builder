@@ -429,7 +429,7 @@ class TestRetrieveOTU:
         assert initialized_repo.get_otu(uuid.uuid4()) is None
 
     def test_get_accessions(self, initialized_repo: Repo):
-        otu = list(initialized_repo.get_all_otus(ignore_cache=True))[0]
+        otu = next(initialized_repo.iter_otus(ignore_cache=True))
 
         assert otu.accessions == {"TMVABC"}
 
@@ -449,7 +449,7 @@ class TestRetrieveOTU:
             "ACGTGGAGAGACC",
         )
 
-        otu = list(initialized_repo.get_all_otus(ignore_cache=True))[0]
+        otu = next(initialized_repo.iter_otus(ignore_cache=True))
 
         assert otu.accessions == {"TMVABC", "TMVABCB"}
 
@@ -462,6 +462,7 @@ class TestRetrieveOTU:
             "B",
             IsolateNameType.ISOLATE,
         )
+
         initialized_repo.create_sequence(
             otu.id,
             isolate_b.id,
@@ -482,7 +483,8 @@ class TestRetrieveOTU:
 
 class TestGetIsolate:
     def test_get_isolate(self, initialized_repo: Repo):
-        otu = list(initialized_repo.get_all_otus(ignore_cache=True))[0]
+        """Test that getting an isolate returns the expected ``RepoIsolate`` object."""
+        otu = next(initialized_repo.iter_otus(ignore_cache=True))
 
         isolate_ids = {isolate.id for isolate in otu.isolates}
 
@@ -490,7 +492,8 @@ class TestGetIsolate:
             assert otu.get_isolate(isolate_id) in otu.isolates
 
     def test_get_isolate_id_by_name(self, initialized_repo: Repo):
-        otu = initialized_repo.get_all_otus()[0]
+        """Test that getting an isolate ID by name returns the expected ID."""
+        otu = next(initialized_repo.iter_otus())
 
         isolate_ids = {isolate.id for isolate in otu.isolates}
 

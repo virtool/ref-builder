@@ -11,7 +11,7 @@ def snapshotter(scratch_repo: Repo) -> Snapshotter:
 
 class TestSnapshotIndex:
     def test_otu_ids(self, scratch_repo: Repo, snapshotter: Snapshotter):
-        true_otu_ids = [otu.id for otu in scratch_repo.get_all_otus(ignore_cache=True)]
+        true_otu_ids = [otu.id for otu in scratch_repo.iter_otus(ignore_cache=True)]
 
         assert snapshotter.otu_ids
 
@@ -22,7 +22,7 @@ class TestSnapshotIndex:
 
     def test_load_by_id(self, snapshotter: Snapshotter, scratch_repo: Repo):
         """Test that we can load an OTU by its ID."""
-        otu_ids = [otu.id for otu in scratch_repo.get_all_otus(ignore_cache=True)]
+        otu_ids = [otu.id for otu in scratch_repo.iter_otus(ignore_cache=True)]
 
         for otu_id in otu_ids:
             assert snapshotter.load_by_id(otu_id).id == otu_id
@@ -33,7 +33,7 @@ class TestSnapshotIndex:
         snapshotter: Snapshotter,
     ):
         """Test that we can load an OTU by its taxid."""
-        taxids = [otu.taxid for otu in scratch_repo.get_all_otus(ignore_cache=True)]
+        taxids = [otu.taxid for otu in scratch_repo.iter_otus(ignore_cache=True)]
 
         for taxid in taxids:
             assert snapshotter.load_by_taxid(taxid).taxid == taxid
@@ -44,20 +44,18 @@ class TestSnapshotIndex:
         snapshotter: Snapshotter,
     ):
         """Test that we can load an OTU by its name."""
-        true_otu_names = [
-            otu.name for otu in scratch_repo.get_all_otus(ignore_cache=True)
-        ]
+        true_otu_names = [otu.name for otu in scratch_repo.iter_otus(ignore_cache=True)]
 
         for name in true_otu_names:
             assert snapshotter.load_by_name(name).name == name
 
     def test_accessions(self, scratch_repo: Repo, snapshotter: Snapshotter):
         true_accessions = set()
-        for otu in scratch_repo.get_all_otus(ignore_cache=True):
+
+        for otu in scratch_repo.iter_otus(ignore_cache=True):
             true_accessions.update(otu.accessions)
 
         assert true_accessions
-
         assert true_accessions == snapshotter.accessions
 
 
