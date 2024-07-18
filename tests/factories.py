@@ -1,10 +1,13 @@
+from typing import Any, Dict
+
+from faker import Faker
 from pydantic import BaseModel, Field
-from polyfactory import Use
+from polyfactory import Use, PostGenerated
 from polyfactory.factories import DataclassFactory
 from polyfactory.factories.pydantic_factory import ModelFactory
 from typing import Annotated
 
-from ref_builder.ncbi.models import NCBIGenbank, NCBISource
+from ref_builder.ncbi.models import NCBISource
 from ref_builder.schema import Segment, OTUSchema
 from ref_builder.snapshotter.models import OTUSnapshotOTU, OTUSnapshotIsolate, OTUSnapshotSequence
 from ref_builder.utils import IsolateName, IsolateNameType
@@ -12,29 +15,35 @@ from ref_builder.models import Strandedness, MolType, Topology
 
 
 SEQUENCE_CHARACTERS = 'ATCGRYKMSWBDHVN'
+SEQUENCE_MIN = 100
+SEQUENCE_MAX = 1500
+
+fake = Faker(locale="en_US")
 
 
 def generate_sequence() -> str:
-    return ''.join(DataclassFactory.__random__.choices(
+    return ''.join(fake.random.choices(
         population=SEQUENCE_CHARACTERS,
         weights=[50]*4 + [1]*(len(SEQUENCE_CHARACTERS)-4),
-        k=DataclassFactory.__random__.randint(100, 1500),
+        k=fake.random.randint(SEQUENCE_MIN, SEQUENCE_MAX),
     ))
 
 
-def generate_bool(p: float = 0.05) -> bool:
-    dice = DataclassFactory.__random__.random()
-    return True if dice < p else False
+def generate_versioned_accession(name: str, values: Dict[str, str]) -> str:
+    return values["accession"] + ".1"
+
 
 
 class SegmentFactory(ModelFactory[Segment]):
     @classmethod
     def length(cls):
-        return cls.__random__.randint(100, 1500)
+        return cls.__random__.randint(SEQUENCE_MIN, SEQUENCE_MAX)
 
 
 class OTUSchemaFactory(ModelFactory[OTUSchema]):
-    segments = Use(SegmentFactory.batch, size=ModelFactory.__random__.randint(1, 6))
+    @classmethod
+    def segments(cls) -> list[Segment]:
+        return SegmentFactory.batch(size=cls.__random__.randint(1, 6))
 
 
 class OTUFactory(ModelFactory[OTUSnapshotOTU]):
@@ -60,10 +69,56 @@ class SequenceFactory(ModelFactory[OTUSnapshotSequence]):
 
 
 class NCBISourceFactory(ModelFactory[NCBISource]):
-    proviral = Use(generate_bool, 0.05)
-    macronuclear = Use(generate_bool, 0.05)
-    focus = Use(generate_bool, 0.05)
-    transgenic = Use(generate_bool,0.05)
+    __faker__ = Faker(locale="la")
+
+    @classmethod
+    def segment(cls) -> str:
+        return cls.__faker__.text(10).replace(".", "")
+
+    @classmethod
+    def organism(cls):
+        return cls.__faker__.text(20).replace(".", "")
+
+    @classmethod
+    def host(cls):
+        return cls.__faker__.text(20).replace(".", "")
+
+    @classmethod
+    def isolate(cls) -> str:
+        if cls.__faker__.boolean(80):
+            return cls.__faker__.text(20).replace(".", "")
+
+        return ""
+
+    @classmethod
+    def clone(cls) -> str:
+        if cls.__faker__.boolean(10):
+            return cls.__faker__.text(20).replace(".", "")
+
+        return ""
+
+    @classmethod
+    def strain(cls):
+        if cls.__faker__.boolean(40):
+            return cls.__faker__.text(20).replace(".", "")
+
+        return ""
+
+    @classmethod
+    def proviral(cls) -> bool:
+        return cls.__faker__.boolean(5)
+
+    @classmethod
+    def macronuclear(cls) -> bool:
+        return cls.__faker__.boolean(5)
+
+    @classmethod
+    def focus(cls) -> bool:
+        return cls.__faker__.boolean(5)
+
+    @classmethod
+    def transgenic(cls) -> bool:
+        return cls.__faker__.pybool(5)
 
 
 class NCBIRecord(BaseModel):
@@ -83,19 +138,42 @@ class NCBIRecord(BaseModel):
 
 
 class NCBIRecordFactory(ModelFactory[NCBIRecord]):
+    __faker__ = Faker(locale="la")
+
     sequence = Use(generate_sequence)
     source = NCBISourceFactory
+    accession_version = PostGenerated(generate_versioned_accession)
 
+    @classmethod
+    def accession(cls) -> str:
+        gen_length = 7 if cls.__faker__.boolean(50) else 10
+
+        return cls.__faker__.password(
+            length=gen_length, special_chars=False, digits=True, upper_case=True, lower_case=False
+        )
+
+    @classmethod
+    def definition(cls):
+        return cls.__faker__.text(50)
+
+    @classmethod
+    def host(cls):
+        return cls.__faker__.text(20)
+
+    @classmethod
+    def comment(cls):
+        if cls.__faker__.boolean(10):
+            return cls.__faker__.text(100)
+
+        return ""
 
 
 if __name__ == '__main__':
     # otu_instance = OTUFactory.build()
-    #
     # print(otu_instance)
 
-    # source_instance = NCBISourceFactory.build()
-    #
-    # print(source_instance)
+    source_instance = NCBISourceFactory.build()
+    print(source_instance)
 
     record_instance = NCBIRecordFactory.build()
     print(record_instance)
