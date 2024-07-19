@@ -99,11 +99,11 @@ def print_otu_list(otus: Iterable[RepoOTU]) -> None:
 
     table.add_column("NAME")
     table.add_column("ACRONYM")
-    table.add_column("ID")
     table.add_column("TAXID")
+    table.add_column("ID")
 
     for otu in otus:
-        table.add_row(otu.name, otu.acronym, str(otu.id), str(otu.taxid))
+        table.add_row(otu.name, otu.acronym, str(otu.taxid), str(otu.id))
 
     console.print(table)
 
