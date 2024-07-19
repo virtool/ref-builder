@@ -37,6 +37,12 @@ def construct_versioned_accession(
 
 
 class SegmentFactory(ModelFactory[Segment]):
+    __faker__ = Faker(locale="la")
+
+    @classmethod
+    def name(cls) -> str:
+        return cls.__faker__.text(10).replace(".", "")
+
     @classmethod
     def length(cls):
         return cls.__random__.randint(SEQUENCE_MIN, SEQUENCE_MAX)
@@ -49,7 +55,15 @@ class OTUSchemaFactory(ModelFactory[OTUSchema]):
 
 
 class OTUFactory(ModelFactory[OTUSnapshotOTU]):
+    __faker__ = Faker(locale="la")
+
+    acronym = Use(__faker__.lexify, text="????")
+    legacy_id = Use(__faker__.lexify, text="????????")
     schema = OTUSchemaFactory
+
+    @classmethod
+    def name(cls) -> str:
+        return cls.__faker__.text(20).replace(".", "")
 
     @classmethod
     def taxid(cls):
@@ -57,9 +71,17 @@ class OTUFactory(ModelFactory[OTUSnapshotOTU]):
 
 
 class IsolateNameFactory(DataclassFactory[IsolateName]):
+    __faker__ = Faker(locale="la")
+
+    legacy_id = Use(__faker__.lexify, text="????????")
+
     @classmethod
     def type(cls):
         return cls.__random__.choice(list(IsolateNameType))
+
+    @classmethod
+    def value(cls) -> str:
+        return cls.__faker__.text(15).replace(".", "")
 
 
 class IsolateFactory(ModelFactory[OTUSnapshotIsolate]):
@@ -67,7 +89,33 @@ class IsolateFactory(ModelFactory[OTUSnapshotIsolate]):
 
 
 class SequenceFactory(ModelFactory[OTUSnapshotSequence]):
+    __faker__ = Faker(locale="la")
+
+    legacy_id = Use(__faker__.lexify, text="????????")
     sequence = Use(generate_sequence)
+    accession_version = PostGenerated(
+        construct_versioned_accession, version=__faker__.random_element(elements=(1, 2))
+    )
+
+    @classmethod
+    def accession(cls) -> str:
+        gen_length = 7 if cls.__faker__.boolean(50) else 9
+
+        return cls.__faker__.password(
+            length=gen_length,
+            special_chars=False,
+            digits=True,
+            upper_case=True,
+            lower_case=False
+        )
+
+    @classmethod
+    def definition(cls):
+        return cls.__faker__.text(50).replace(".", "")
+
+    @classmethod
+    def segment(cls) -> str:
+        return cls.__faker__.text(10).replace(".", "")
 
 
 class NCBISourceFactory(ModelFactory[NCBISource]):
@@ -184,16 +232,16 @@ if __name__ == '__main__':
     # otu_instance = OTUFactory.build()
     # print(otu_instance)
 
-    source_instance = NCBISourceFactory.build()
-    print(source_instance)
+    # source_instance = NCBISourceFactory.build()
+    # print(source_instance)
+    #
+    # record_instance = NCBIRecordFactory.build()
+    # print(record_instance)
 
-    record_instance = NCBIRecordFactory.build()
-    print(record_instance)
+    isolate_instance = IsolateFactory.build()
+    print(isolate_instance)
 
-    # isolate_instance = IsolateFactory.coverage()
-    # print(isolate_instance)
-
-    # sequence_instance = SequenceFactory.build()
-    # print(sequence_instance)
+    sequence_instance = SequenceFactory.build()
+    print(sequence_instance)
 
 
