@@ -78,7 +78,10 @@ class TestClientFetchGenbank:
         [["AB017503", "AB017504", "MH200607", "MK431779", "NC_003355"]],
     )
     def test_fetch_partially_cached_genbank_records(
-        self, accessions: list[str], empty_client, test_files_path
+        self,
+        accessions: list[str],
+        empty_client,
+        test_files_path,
     ):
         ncbi_cache_files = test_files_path / "cache_test"
         for accession in ("AB017504", "MH200607"):
@@ -101,7 +104,7 @@ class TestClientFetchGenbank:
             assert accession in cache_contents
 
     @pytest.mark.ncbi()
-    async def test_fetch_accessions_fail(self, scratch_ncbi_client):
+    def test_fetch_accessions_fail(self, scratch_ncbi_client: NCBIClient):
         records = scratch_ncbi_client.fetch_genbank_records(["friday", "paella", "111"])
 
         assert not records
@@ -131,7 +134,7 @@ class TestClientFetchRawGenbank:
             ["friday", "MT240513", "MT240490"],
         ],
     )
-    async def test_fetch_raw_via_accessions_partial(self, accessions: list[str]):
+    def test_fetch_raw_via_accessions_partial(self, accessions: list[str]):
         records = NCBIClient.fetch_unvalidated_genbank_records(accessions)
 
         assert len(records) == len(accessions) - 1
@@ -168,7 +171,6 @@ def test_fetch_records_by_taxid(taxid: int, empty_client, snapshot: SnapshotAsse
 
 class TestClientFetchTaxonomy:
     @pytest.mark.ncbi()
-    @pytest.mark.flaky(reruns=3, reruns_delay=3, only_rerun=SERVER_ERRORS)
     @pytest.mark.parametrize("taxid", [438782, 1198450, 1016856])
     def test_fetch_taxonomy_from_ncbi(
         self,
@@ -185,7 +187,6 @@ class TestClientFetchTaxonomy:
         } == snapshot
 
     @pytest.mark.ncbi()
-    @pytest.mark.flaky(reruns=3, reruns_delay=3, only_rerun=SERVER_ERRORS)
     @pytest.mark.parametrize("taxid", [1000000000000, 99999999])
     def test_fetch_taxonomy_from_ncbi_fail(self, taxid: int, empty_client):
         taxonomy = empty_client.fetch_taxonomy_record(taxid)
@@ -216,7 +217,7 @@ class TestClientFetchTaxonomy:
         ("Rhynchosia golden mosaic virus", 117198),
     ],
 )
-async def test_fetch_taxonomy_by_name(name: str, taxid: int):
+def test_fetch_taxonomy_by_name(name: str, taxid: int):
     assert NCBIClient.fetch_taxonomy_id_by_name(name) == taxid
 
 
@@ -235,7 +236,7 @@ async def test_fetch_taxonomy_by_name(name: str, taxid: int):
         ),
     ],
 )
-async def test_fetch_spelling(misspelled: str, expected: str):
+def test_fetch_spelling(misspelled: str, expected: str):
     taxon_name = NCBIClient.fetch_spelling(name=misspelled)
 
     assert taxon_name == expected
