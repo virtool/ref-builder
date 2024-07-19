@@ -29,8 +29,10 @@ def generate_sequence() -> str:
     ))
 
 
-def generate_versioned_accession(name: str, values: Dict[str, str]) -> str:
-    return values["accession"] + ".1"
+def construct_versioned_accession(
+    name: str, values: Dict[str, str | int], version: int
+) -> str:
+    return f"{values["accession"]}.{version}"
 
 
 
@@ -142,23 +144,33 @@ class NCBIRecordFactory(ModelFactory[NCBIRecord]):
 
     sequence = Use(generate_sequence)
     source = NCBISourceFactory
-    accession_version = PostGenerated(generate_versioned_accession)
+    accession_version = PostGenerated(
+        construct_versioned_accession, version=__faker__.random_element(elements=(1, 2))
+    )
 
     @classmethod
     def accession(cls) -> str:
-        gen_length = 7 if cls.__faker__.boolean(50) else 10
+        gen_length = 7 if cls.__faker__.boolean(50) else 9
 
         return cls.__faker__.password(
-            length=gen_length, special_chars=False, digits=True, upper_case=True, lower_case=False
+            length=gen_length,
+            special_chars=False,
+            digits=True,
+            upper_case=True,
+            lower_case=False
         )
 
     @classmethod
     def definition(cls):
-        return cls.__faker__.text(50)
+        return cls.__faker__.text(50).replace(".", "")
+
+    @classmethod
+    def organism(cls):
+        return cls.__faker__.text(20).replace(".", "")
 
     @classmethod
     def host(cls):
-        return cls.__faker__.text(20)
+        return cls.__faker__.text(20).replace(".", "")
 
     @classmethod
     def comment(cls):
