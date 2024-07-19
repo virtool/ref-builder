@@ -16,7 +16,7 @@ def print_otu(otu: RepoOTU) -> None:
     :param otu: The OTU to print.
 
     """
-    console.print(f"[bold][underline]OTU {otu.name}[/bold][/underline]")
+    console.print(f"[bold][underline]{otu.name}[/bold][/underline]")
     console.line()
 
     table = Table(
