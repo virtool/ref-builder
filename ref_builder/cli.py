@@ -1,10 +1,14 @@
+"""Command-line interface for reference builder."""
+
 import glob
 import sys
 from pathlib import Path
+from uuid import UUID
 
 import click
 
 from ref_builder.build import build_json
+from ref_builder.console import print_otu, print_otu_list
 from ref_builder.legacy.utils import iter_legacy_otus
 from ref_builder.legacy.validate import validate_legacy_repo
 from ref_builder.logging import configure_logger
@@ -56,11 +60,11 @@ def init(data_type: DataType, name: str, organism: str, path: Path) -> None:
 
 
 @entry.group()
-def otu():
-    """Manage OTUs"""
+def otu() -> None:
+    """Manage OTUs."""
 
 
-@otu.command()
+@otu.command(name="create")
 @click.argument("TAXID", type=int)
 @click.argument(
     "accessions_",
@@ -72,14 +76,15 @@ def otu():
 @ignore_cache_option
 @debug_option
 @path_option
-def create(
+def otu_create(
     debug: bool,
     ignore_cache: bool,
     path: Path,
     taxid: int,
     accessions_: list[str],
     autofill: bool,
-):
+) -> None:
+    """Create a new OTU for the given Taxonomy ID and accessions."""
     configure_logger(debug)
 
     repo = Repo(path)
@@ -108,28 +113,57 @@ def create(
         update_otu(repo, new_otu, ignore_cache=ignore_cache)
 
 
-@otu.command()
+@otu.command(name="update")
 @click.argument("TAXID", type=int)
 @debug_option
 @ignore_cache_option
 @path_option
-def update(debug: bool, ignore_cache: bool, path: Path, taxid: int):
+def otu_update(debug: bool, ignore_cache: bool, path: Path, taxid: int) -> None:
+    """Update an existing OTU with the latest data from NCBI."""
     configure_logger(debug)
 
     repo = Repo(path)
 
-    otu = repo.get_otu_by_taxid(taxid)
-    if otu is None:
+    otu_ = repo.get_otu_by_taxid(taxid)
+
+    if otu_ is None:
         click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
         click.echo(f'Run "virtool otu create {taxid} --autofill" instead.')
         sys.exit(1)
 
-    update_otu(repo, otu, ignore_cache=ignore_cache)
+    update_otu(repo, otu_, ignore_cache=ignore_cache)
+
+
+@otu.command(name="get")
+@click.argument("IDENTIFIER", type=str)
+@path_option
+def otu_get(identifier: str, path: Path) -> int:
+    """Get an OTU by its Taxonomy ID."""
+    try:
+        identifier = int(identifier)
+        otu_ = Repo(path).get_otu_by_taxid(identifier)
+    except ValueError:
+        otu_ = Repo(path).get_otu(UUID(identifier))
+
+    if otu_ is None:
+        click.echo("No OTU found.", err=True)
+        return 1
+
+    print_otu(otu_)
+
+    return 0
+
+
+@otu.command(name="list")
+@path_option
+def otu_list(path: Path) -> None:
+    """List all OTUs in the repository."""
+    print_otu_list(Repo(path).iter_otus())
 
 
 @entry.group()
-def sequences():
-    """Manage sequences"""
+def sequences() -> None:
+    """Manage sequences."""
 
 
 @sequences.command(name="create")
@@ -169,7 +203,7 @@ def create_sequence(
 
 
 @entry.group()
-def legacy():
+def legacy() -> None:
     """Validate and convert legacy references."""
 
 
@@ -180,7 +214,7 @@ def legacy():
     required=True,
     type=click.Path(exists=True, file_okay=False, path_type=Path),
 )
-def precache(path: Path):
+def precache(path: Path) -> None:
     """Pre-cache all accessions in a legacy reference repository."""
     ncbi = NCBIClient(path / ".migration_cache", False)
 
@@ -241,7 +275,7 @@ def reformat(path: Path) -> None:
     type=click.Path(exists=True, file_okay=False, path_type=Path),
     help="the path to a legacy reference directory",
 )
-def validate(debug: bool, fix: bool, limit: int, no_ok: bool, path: Path):
+def validate(debug: bool, fix: bool, limit: int, no_ok: bool, path: Path) -> None:
     """Validate a legacy reference repository."""
     configure_logger(debug)
 
@@ -276,6 +310,6 @@ def validate(debug: bool, fix: bool, limit: int, no_ok: bool, path: Path):
     type=click.Path(exists=True, file_okay=False, path_type=Path),
     help="the path to the reference repository",
 )
-def build(output_path: Path, path: Path, indent: bool, version: str):
+def build(output_path: Path, path: Path, indent: bool, version: str) -> None:
     """Build a Virtool reference.json file from a reference repository."""
     build_json(indent, output_path, path, version)

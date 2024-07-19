@@ -75,8 +75,6 @@ class Repo:
         self.path = path
         """The path to the repo directory."""
 
-        logger.info("Loading repository")
-
         self.cache_path = self.path / ".cache"
         """The path to the cache subdirectory."""
 
@@ -99,8 +97,6 @@ class Repo:
         if not self._snapshotter.otu_ids:
             logger.debug("No snapshot data found. Building new snapshot...")
             self.snapshot()
-
-        logger.info("Finished loading repository", event_count=self.last_id)
 
     @classmethod
     def new(cls, data_type: DataType, name: str, path: Path, organism: str):

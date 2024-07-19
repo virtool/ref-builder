@@ -248,8 +248,6 @@ class Snapshotter:
 
             _index[otu_id] = OTUKeys(**index_dict[key])
 
-        logger.debug("Loaded Snapshot index", loaded_index=index_dict)
-
         return _index
 
     def _update_index(self):

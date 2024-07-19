@@ -2,7 +2,8 @@
 
 from pathlib import Path
 
-from ref_builder.legacy.utils import console, iter_legacy_otus
+from ref_builder.console import console
+from ref_builder.legacy.utils import iter_legacy_otus
 
 
 def check_unique_accessions(path: Path) -> None:

@@ -54,6 +54,9 @@ class IsolateName:
     value: str
     """The name of this subcategory."""
 
+    def __str__(self) -> str:
+        return f"{self.type.value.capitalize()} {self.value}"
+
 
 def format_json(path: Path) -> None:
     """Format the JSON file at `path` in place.
