@@ -135,7 +135,7 @@ def otu_update(debug: bool, ignore_cache: bool, path: Path, taxid: int) -> None:
 
 
 @otu.command(name="get")
-@click.argument("IDENTIFIER", type=int)
+@click.argument("IDENTIFIER", type=str)
 @path_option
 def otu_get(identifier: str, path: Path) -> int:
     """Get an OTU by its Taxonomy ID."""
