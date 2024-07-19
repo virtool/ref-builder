@@ -142,7 +142,7 @@ def otu_get(identifier: str, path: Path) -> int:
     try:
         identifier = int(identifier)
         otu_ = Repo(path).get_otu_by_taxid(identifier)
-    except TypeError:
+    except ValueError:
         otu_ = Repo(path).get_otu(UUID(identifier))
 
     if otu_ is None:
