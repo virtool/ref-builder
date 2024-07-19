@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import Generator, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
@@ -127,7 +127,7 @@ class Snapshotter:
 
     def snapshot(
         self,
-        otus: list[RepoOTU],
+        otus: Iterable[RepoOTU],
         at_event: int | None = None,
         indent: bool = False,
     ):
@@ -135,6 +135,7 @@ class Snapshotter:
         options = orjson.OPT_INDENT_2 if indent else None
 
         _index = {}
+
         for otu in otus:
             self.cache_otu(otu, at_event=at_event, options=options)
             metadata = OTUKeys(
