@@ -1,10 +1,12 @@
 import glob
 import sys
 from pathlib import Path
+from uuid import UUID
 
 import click
 
 from ref_builder.build import build_json
+from ref_builder.console import print_otu, print_otu_list
 from ref_builder.legacy.utils import iter_legacy_otus
 from ref_builder.legacy.validate import validate_legacy_repo
 from ref_builder.logging import configure_logger
@@ -127,9 +129,36 @@ def update(debug: bool, ignore_cache: bool, path: Path, taxid: int):
     update_otu(repo, otu, ignore_cache=ignore_cache)
 
 
+@otu.command(name="get")
+@click.argument("IDENTIFIER", type=int)
+@path_option
+def otu_get(identifier: str, path: Path) -> int:
+    """Get an OTU by its Taxonomy ID."""
+    try:
+        identifier = int(identifier)
+        otu_ = Repo(path).get_otu_by_taxid(identifier)
+    except TypeError:
+        otu_ = Repo(path).get_otu(UUID(identifier))
+
+    if otu_ is None:
+        click.echo("No OTU found.", err=True)
+        return 1
+
+    print_otu(otu_)
+
+    return 0
+
+
+@otu.command(name="list")
+@path_option
+def otu_list(path: Path) -> None:
+    """List all OTUs in the repository."""
+    print_otu_list(Repo(path).iter_otus())
+
+
 @entry.group()
-def sequences():
-    """Manage sequences"""
+def sequences() -> None:
+    """Manage sequences."""
 
 
 @sequences.command(name="create")

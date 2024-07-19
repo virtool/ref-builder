@@ -6,14 +6,11 @@ from random import choice
 from string import ascii_letters, ascii_lowercase, digits
 
 import orjson
-import rich.console
 from pydantic_core import ErrorDetails
 
 from ref_builder.legacy.models import LegacyIsolateSource, LegacySourceType
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
-
-console = rich.console.Console()
 
 
 class HandleErrorContext:

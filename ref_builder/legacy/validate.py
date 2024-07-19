@@ -12,6 +12,7 @@ from rich.padding import Padding
 from rich.table import Table
 from structlog import get_logger
 
+from ref_builder.console import console
 from ref_builder.legacy.handlers import (
     handle_enum,
     handle_int_type,
@@ -32,7 +33,6 @@ from ref_builder.legacy.utils import (
     ErrorHandledResult,
     HandleErrorContext,
     build_legacy_otu,
-    console,
     replace_otu,
 )
 from ref_builder.ncbi.client import NCBIClient
