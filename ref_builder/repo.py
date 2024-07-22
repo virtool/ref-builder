@@ -43,7 +43,7 @@ from ref_builder.events import (
     OTUQuery,
     RepoQuery,
     SequenceQuery,
-    SetReprIsolate,
+    SetReprIsolate, SetReprIsolateData,
 )
 from ref_builder.index import EventIndex, EventIndexError
 from ref_builder.models import Molecule
@@ -389,6 +389,9 @@ class Repo:
                     molecule=event.data.molecule,
                     segments=event.data.segments,
                 )
+
+            elif isinstance(event, SetReprIsolate):
+                otu.repr_isolate = event.data.isolate_id
 
             elif isinstance(event, CreateIsolate):
                 otu.add_isolate(
