@@ -167,3 +167,14 @@ class CreateSchema(Event):
 
     data: CreateSchemaData
     query: OTUQuery
+
+
+class SetReprIsolateData(EventData):
+    isolate_id: UUID4
+
+
+class SetReprIsolate(Event):
+    """A representative isolate setting event."""
+
+    data: SetReprIsolateData
+    query: OTUQuery

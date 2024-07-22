@@ -43,6 +43,7 @@ from ref_builder.events import (
     OTUQuery,
     RepoQuery,
     SequenceQuery,
+    SetReprIsolate,
 )
 from ref_builder.index import EventIndex, EventIndexError
 from ref_builder.models import Molecule
@@ -586,6 +587,8 @@ class EventStore:
                     return CreateSequence(**loaded)
                 case "CreateSchema":
                     return CreateSchema(**loaded)
+                case "SetReprIsolate":
+                    return SetReprIsolate(**loaded)
                 case "ExcludeAccession":
                     return ExcludeAccession(**loaded)
 
