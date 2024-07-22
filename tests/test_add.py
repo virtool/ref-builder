@@ -88,7 +88,9 @@ class TestCreateOTU:
 
         assert list(precached_repo.iter_otus())
         assert otu.schema is not None
-        assert otu.dict() == snapshot(exclude=props("id"))
+        assert otu.repr_isolate is not None
+
+        assert otu.dict() == snapshot(exclude=props("id", "repr_isolate"))
 
 
 class TestCreateOTUCommands:
@@ -114,7 +116,7 @@ class TestCreateOTUCommands:
         assert len(otus) == 1
         otu = otus[0]
 
-        assert otu.dict() == snapshot(exclude=props("id", "isolates"))
+        assert otu.dict() == snapshot(exclude=props("id", "isolates", "repr_isolate"))
 
     @pytest.mark.ncbi()
     def test_autofill(
@@ -134,7 +136,7 @@ class TestCreateOTUCommands:
         assert len(otus) == 1
         otu = otus[0]
 
-        assert otu.dict() == snapshot(exclude=props("id", "isolates"))
+        assert otu.dict() == snapshot(exclude=props("id", "isolates", "repr_isolate"))
         assert otu.accessions
 
     @pytest.mark.ncbi()
@@ -171,7 +173,7 @@ class TestAddSequences:
         for otu in precached_repo.iter_otus():
             assert otu.accessions == set(accessions)
 
-            assert otu.dict() == snapshot(exclude=props("id", "isolates"))
+            assert otu.dict() == snapshot(exclude=props("id", "isolates", "repr_isolate"))
 
             for isolate in otu.isolates:
                 assert isolate.dict() == snapshot(exclude=props("id", "sequences"))
@@ -195,7 +197,7 @@ class TestUpdateOTU:
         otu = precached_repo.get_otu(otu.id)
 
         assert [otu.dict() for otu in precached_repo.iter_otus()] == snapshot(
-            exclude=props("id", "isolates"),
+            exclude=props("id", "isolates", "repr_isolate"),
         )
 
         assert otu.accessions == {

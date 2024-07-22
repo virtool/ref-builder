@@ -6,6 +6,7 @@
     ]),
     'legacy_id': None,
     'name': 'Cabbage leaf curl Jamaica virus',
+    'repr_isolate': None,
     'schema': None,
     'taxid': 345184,
   })
