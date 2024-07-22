@@ -35,6 +35,11 @@ def create_otu_with_schema(
 
     client = NCBIClient.from_repo(repo.path, ignore_cache)
 
+    if repo.get_otu_by_taxid(taxid):
+        raise ValueError(
+            f"Taxonomy ID {taxid} has already been added to this reference.",
+        )
+
     taxonomy = client.fetch_taxonomy_record(taxid)
     if taxonomy is None:
         otu_logger.fatal(f"Could not retrieve {taxid} from NCBI Taxonomy")
