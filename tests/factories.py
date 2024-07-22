@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Dict
 
 from faker import Faker
 from pydantic import BaseModel, Field
@@ -18,22 +18,35 @@ SEQUENCE_CHARACTERS = 'ATCGRYKMSWBDHVN'
 SEQUENCE_MIN = 100
 SEQUENCE_MAX = 1500
 
-fake = Faker(locale="en_US")
 
-
-def generate_sequence() -> str:
-    return ''.join(fake.random.choices(
+def generate_sequence(generator) -> str:
+    return ''.join(generator.choices(
         population=SEQUENCE_CHARACTERS,
         weights=[50]*4 + [1]*(len(SEQUENCE_CHARACTERS)-4),
-        k=fake.random.randint(SEQUENCE_MIN, SEQUENCE_MAX),
+        k=generator.randint(SEQUENCE_MIN, SEQUENCE_MAX),
     ))
+
+
+def generate_legacy_id(generator) -> str | None:
+    if generator.boolean(50):
+        return generator.password(
+            length=8,
+            special_chars=False,
+            digits=True,
+            upper_case=True,
+            lower_case=False,
+        )
+
+    return None
 
 
 def construct_versioned_accession(
     name: str, values: Dict[str, str | int], version: int
 ) -> str:
-    return f"{values["accession"]}.{version}"
+    if name == "accession_version":
+        return f"{values["accession"]}.{version}"
 
+    raise ValueError("Field name is not accession_version")
 
 
 class SegmentFactory(ModelFactory[Segment]):
@@ -57,9 +70,18 @@ class OTUSchemaFactory(ModelFactory[OTUSchema]):
 class OTUFactory(ModelFactory[OTUSnapshotOTU]):
     __faker__ = Faker(locale="la")
 
-    acronym = Use(__faker__.lexify, text="????")
-    legacy_id = Use(__faker__.lexify, text="????????")
     schema = OTUSchemaFactory
+
+    @classmethod
+    def acronym(cls) -> str:
+        if cls.__faker__.boolean(70):
+            return cls.__faker__.lexify(text="????")
+
+        return ""
+
+    @classmethod
+    def legacy_id(cls) -> str | None:
+        return generate_legacy_id(cls.__faker__)
 
     @classmethod
     def name(cls) -> str:
@@ -73,8 +95,6 @@ class OTUFactory(ModelFactory[OTUSnapshotOTU]):
 class IsolateNameFactory(DataclassFactory[IsolateName]):
     __faker__ = Faker(locale="la")
 
-    legacy_id = Use(__faker__.lexify, text="????????")
-
     @classmethod
     def type(cls):
         return cls.__random__.choice(list(IsolateNameType))
@@ -87,12 +107,15 @@ class IsolateNameFactory(DataclassFactory[IsolateName]):
 class IsolateFactory(ModelFactory[OTUSnapshotIsolate]):
     name = IsolateNameFactory
 
+    @classmethod
+    def legacy_id(cls) -> str | None:
+        return generate_legacy_id(cls.__faker__)
+
 
 class SequenceFactory(ModelFactory[OTUSnapshotSequence]):
     __faker__ = Faker(locale="la")
 
-    legacy_id = Use(__faker__.lexify, text="????????")
-    sequence = Use(generate_sequence)
+    sequence = Use(generate_sequence, generator=__faker__.random)
     accession_version = PostGenerated(
         construct_versioned_accession, version=__faker__.random_element(elements=(1, 2))
     )
@@ -116,6 +139,10 @@ class SequenceFactory(ModelFactory[OTUSnapshotSequence]):
     @classmethod
     def segment(cls) -> str:
         return cls.__faker__.text(10).replace(".", "")
+
+    @classmethod
+    def legacy_id(cls) -> str | None:
+        return generate_legacy_id(cls.__faker__)
 
 
 class NCBISourceFactory(ModelFactory[NCBISource]):
@@ -190,7 +217,7 @@ class NCBIRecord(BaseModel):
 class NCBIRecordFactory(ModelFactory[NCBIRecord]):
     __faker__ = Faker(locale="la")
 
-    sequence = Use(generate_sequence)
+    sequence = Use(generate_sequence, generator=__faker__.random)
     source = NCBISourceFactory
     accession_version = PostGenerated(
         construct_versioned_accession, version=__faker__.random_element(elements=(1, 2))
@@ -229,19 +256,17 @@ class NCBIRecordFactory(ModelFactory[NCBIRecord]):
 
 
 if __name__ == '__main__':
-    # otu_instance = OTUFactory.build()
-    # print(otu_instance)
+    otu_instance = OTUFactory.build()
+    print(otu_instance)
 
-    # source_instance = NCBISourceFactory.build()
-    # print(source_instance)
-    #
-    # record_instance = NCBIRecordFactory.build()
-    # print(record_instance)
+    source_instance = NCBISourceFactory.build()
+    print(source_instance)
+
+    record_instance = NCBIRecordFactory.build()
+    print(record_instance)
 
     isolate_instance = IsolateFactory.build()
     print(isolate_instance)
 
     sequence_instance = SequenceFactory.build()
     print(sequence_instance)
-
-
