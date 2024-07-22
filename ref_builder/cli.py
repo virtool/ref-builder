@@ -16,7 +16,6 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.options import debug_option, ignore_cache_option, path_option
 from ref_builder.otu import (
     add_sequences,
-    create_otu,
     create_otu_with_schema,
     update_otu,
 )
@@ -89,25 +88,20 @@ def otu_create(
 
     repo = Repo(path)
 
-    if accessions_:
-        try:
-            new_otu = create_otu_with_schema(
-                repo,
-                taxid,
-                accessions_,
-                ignore_cache=False,
-            )
-        except ValueError as e:
-            click.echo(e, err=True)
-            sys.exit(1)
+    if not accessions_:
+        click.echo("No accessions given.", err=True)
+        sys.exit(1)
 
-    else:
-        click.echo("No accessions given. Creating without schema...", err=True)
-        try:
-            new_otu = create_otu(repo, taxid, ignore_cache=False)
-        except ValueError as e:
-            click.echo(e, err=True)
-            sys.exit(1)
+    try:
+        new_otu = create_otu_with_schema(
+            repo,
+            taxid,
+            accessions_,
+            ignore_cache=ignore_cache,
+        )
+    except ValueError as e:
+        click.echo(e, err=True)
+        sys.exit(1)
 
     if autofill:
         update_otu(repo, new_otu, ignore_cache=ignore_cache)
