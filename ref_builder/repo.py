@@ -215,11 +215,7 @@ class Repo:
 
         otu_logger.debug("OTU written", event_id=event.id, otu_id=str(otu_id))
 
-        otu = self.get_otu(otu_id)
-
-        self._snapshotter.cache_otu(otu, at_event=self.last_id)
-
-        return otu
+        return self.get_otu(otu_id)
 
     def create_isolate(
         self,
@@ -234,6 +230,7 @@ class Repo:
         otu = self.get_otu(otu_id)
 
         name = IsolateName(type=source_type, value=source_name)
+
         if otu.get_isolate_id_by_name(name) is not None:
             logger.warning(
                 "An isolate by this name already exists",
@@ -256,18 +253,9 @@ class Repo:
             name=str(name),
         )
 
-        isolate = RepoIsolate(
-            uuid=isolate_id,
-            legacy_id=legacy_id,
-            name=name,
-            sequences=[],
-        )
+        otu = self.get_otu(otu_id)
 
-        otu.add_isolate(isolate)
-
-        self._snapshotter.cache_otu(otu, at_event=self.last_id)
-
-        return isolate
+        return otu.get_isolate(isolate_id)
 
     def create_sequence(
         self,
@@ -318,27 +306,19 @@ class Repo:
             accession=accession,
         )
 
-        sequence = RepoSequence(
-            id=sequence_id,
-            accession=accession,
-            definition=definition,
-            legacy_id=legacy_id,
-            segment=segment,
-            sequence=sequence,
+        return (
+            self.get_otu(otu_id)
+            .get_isolate(isolate_id)
+            .get_sequence_by_accession(accession)
         )
-
-        otu.add_sequence(sequence, isolate_id)
-
-        self._snapshotter.cache_otu(otu, at_event=self.last_id)
-
-        return sequence
 
     def create_schema(
         self,
         otu_id: uuid.UUID,
         molecule: Molecule,
         segments: list[Segment],
-    ):
+    ) -> OTUSchema:
+        """Create a new schema for an OTU."""
         otu = self.get_otu(otu_id)
 
         schema_data = {"molecule": molecule, "segments": segments}
@@ -349,13 +329,9 @@ class Repo:
             OTUQuery(otu_id=otu.id),
         )
 
-        otu.schema = OTUSchema(**schema_data)
+        return self.get_otu(otu_id).schema
 
-        self._snapshotter.cache_otu(otu, at_event=self.last_id)
-
-        return otu.schema
-
-    def exclude_accession(self, otu_id: uuid.UUID, accession: str):
+    def exclude_accession(self, otu_id: uuid.UUID, accession: str) -> None:
         """Exclude an accession for an OTU.
 
         This accession will not be allowed in the repository in the future.
@@ -371,17 +347,23 @@ class Repo:
         )
 
     def get_otu(self, otu_id: uuid.UUID) -> RepoOTU | None:
-        """Return an OTU corresponding with a given OTU Id if it exists, else None."""
+        """Return an OTU corresponding with a given OTU ID if it exists, else None."""
         if event_ids := self._get_otu_event_ids(otu_id):
             return self._rehydrate_otu(event_ids)
 
         return None
 
     def get_otu_by_taxid(self, taxid: int) -> RepoOTU | None:
-        """Return an OTU corresponding with a given OTU Id if it exists, else None"""
+        """Return the OTU with the given ``taxid``.
+
+        If no OTU is found, return None.
+
+        :param taxid: the taxonomy ID of the OTU
+        :return: the matching OTU or ``None``
+
+        """
         if (otu_id := self._snapshotter.index_by_taxid.get(taxid)) is not None:
-            otu = self.get_otu(otu_id)
-            return otu
+            return self.get_otu(otu_id)
 
         return None
 
@@ -447,10 +429,12 @@ class Repo:
         for isolate in otu.isolates:
             isolate.sequences.sort(key=lambda s: s.accession)
 
+        self._snapshotter.cache_otu(otu, at_event=self.last_id)
+
         return otu
 
     def _get_otu_event_ids(self, otu_id: uuid.UUID) -> list[int]:
-        """Gets a list of all event IDs associated with ``otu_id``."""
+        """Get a list of all event IDs associated with ``otu_id``."""
         event_ids = []
 
         # Start at zero if no events are indexed.
@@ -488,9 +472,16 @@ class Repo:
 
 
 class EventStore:
-    """Interface for the event store"""
+    """Interface for the event store."""
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path) -> None:
+        """Create a new instance of the event store.
+
+        If no store exists at ``path``, a new store will be created.
+
+        :param path: the path to the event store directory
+
+        """
         path.mkdir(exist_ok=True)
 
         self.path = path
@@ -524,7 +515,18 @@ class EventStore:
         self,
         start: int = 1,
     ) -> Generator[Event, None, None]:
-        """"""
+        """Yield all events in the event store.
+
+        Events are yielded by ascending event ID, which corresponds to the order in
+        which they were written.
+
+        Optionally, the starting event ID can be specified using the ``start``
+        parameter.
+
+        :param start: the event ID to start from
+        :return: a generator of events
+
+        """
         if start < 1:
             raise IndexError("Start event ID cannot be less than 1")
 
@@ -539,6 +541,12 @@ class EventStore:
                 yield EventStore._read_event_at_path(path)
 
     def read_event(self, event_id: int) -> Event:
+        """Read the event with the given ``event_id``.
+
+        :param event_id: the ID of the event to read
+        :return: the event
+
+        """
         return EventStore._read_event_at_path(
             self.path / f"{pad_zeroes(event_id)}.json",
         )
