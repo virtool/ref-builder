@@ -94,7 +94,6 @@ class CreateOTUData(EventData):
     legacy_id: str | None
     name: str
     taxid: int
-    rep_isolate: UUID4 | None
     otu_schema: OTUSchema | None = Field(None, alias="schema")
 
 

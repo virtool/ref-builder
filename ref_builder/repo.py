@@ -199,7 +199,6 @@ class Repo:
                 legacy_id=legacy_id,
                 name=name,
                 schema=schema,
-                rep_isolate=None,
                 taxid=taxid,
             ),
             OTUQuery(otu_id=otu_id),
