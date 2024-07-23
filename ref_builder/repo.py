@@ -59,15 +59,6 @@ from ref_builder.utils import DataType, IsolateName, IsolateNameType, pad_zeroes
 logger = get_logger("repo")
 
 
-OTU_EVENT_TYPES = (
-    CreateOTU,
-    CreateIsolate,
-    CreateSchema,
-    CreateSequence,
-    ExcludeAccession,
-)
-
-
 class Repo:
     """An event-sourced repository."""
 
@@ -452,7 +443,7 @@ class Repo:
 
         for event in self._event_store.iter_events(start=at_event + 1):
             if (
-                type(event) in OTU_EVENT_TYPES
+                issubclass(type(event.query), OTUQuery)
                 and event.query.model_dump().get("otu_id") == otu_id
             ):
                 if event.id in event_ids:
