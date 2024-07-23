@@ -2,6 +2,7 @@ import shutil
 from pathlib import Path
 from uuid import UUID
 
+import orjson
 from pydantic import ValidationError
 
 from ref_builder.resources import (
@@ -183,6 +184,11 @@ class OTUSnapshot:
         """The path to the OTU's table of contents."""
         return self.path / "toc.json"
 
+    @property
+    def _excluded_path(self):
+        """The path to a list of accessions that should not be fetched in the future."""
+        return self.path / "excluded.json"
+
     def clean(self):
         """Delete and remake OTUSnapshot directory structure."""
         shutil.rmtree(self.path)
@@ -202,6 +208,9 @@ class OTUSnapshot:
         with open(self._otu_path, "w") as f:
             f.write(validated_otu.model_dump_json(indent=indent))
 
+        with open(self._excluded_path, "wb") as f:
+            f.write(orjson.dumps(list(otu.excluded_accessions)))
+
         for isolate in otu.isolates:
             self._data.cache_isolate(isolate)
 
@@ -216,6 +225,9 @@ class OTUSnapshot:
         """Load an OTU from the snapshot."""
         with open(self._otu_path, "rb") as f:
             otu_structure = OTUSnapshotOTU.model_validate_json(f.read())
+
+        with open(self._excluded_path, "rb") as f:
+            excluded_accessions = orjson.loads(f.read())
 
         toc = self._toc.load()
 
@@ -243,6 +255,7 @@ class OTUSnapshot:
             isolates.append(isolate)
 
         otu_dict = otu_structure.model_dump(by_alias=True)
+        otu_dict["excluded_accessions"] = excluded_accessions
         otu_dict["uuid"] = otu_dict.pop("id")
 
         return RepoOTU(**otu_dict, isolates=isolates)
