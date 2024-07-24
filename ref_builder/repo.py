@@ -322,6 +322,18 @@ class Repo:
 
         return self.get_otu(otu_id).schema
 
+    def set_repr_isolate(self, otu_id: uuid.UUID, isolate_id: uuid.UUID) -> uuid.UUID:
+        """Set the representative isolate for an OTU"""
+        otu = self.get_otu(otu_id)
+
+        self._event_store.write_event(
+            SetReprIsolate,
+            SetReprIsolateData(isolate_id=isolate_id),
+            OTUQuery(otu_id=otu.id)
+        )
+
+        return self.get_otu(otu_id).repr_isolate
+
     def exclude_accession(self, otu_id: uuid.UUID, accession: str) -> None:
         """Exclude an accession for an OTU.
 
