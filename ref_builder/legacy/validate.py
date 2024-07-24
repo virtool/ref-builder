@@ -36,6 +36,7 @@ from ref_builder.legacy.utils import (
     replace_otu,
 )
 from ref_builder.ncbi.client import NCBIClient
+from ref_builder.paths import user_cache_directory_path
 
 logger = get_logger("legacy")
 
@@ -154,7 +155,7 @@ def log_otu_validation_result(
 
 def validate_legacy_repo(fix: bool, limit: int, no_ok: bool, path: Path) -> None:
     """Validate a legacy reference repository."""
-    ncbi_client = NCBIClient(path / ".migration_cache", False)
+    ncbi = NCBIClient(user_cache_directory_path, False)
 
     src_path = path / "src"
 
@@ -173,7 +174,7 @@ def validate_legacy_repo(fix: bool, limit: int, no_ok: bool, path: Path) -> None
 
             result = validate_legacy_otu(
                 fix,
-                ncbi_client,
+                ncbi,
                 otu,
             )
 

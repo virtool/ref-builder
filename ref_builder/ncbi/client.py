@@ -30,6 +30,8 @@ class GBSeq(StrEnum):
 
 
 class NCBIClient:
+    """A client for fetching, caching, and validating data from NCBI databases."""
+
     def __init__(self, cache_path: Path, ignore_cache: bool) -> None:
         """Initialize the NCBI client with a cache path and an ignore_cache flag.
 
@@ -38,16 +40,6 @@ class NCBIClient:
         """
         self.cache = NCBICache(cache_path)
         self.ignore_cache = ignore_cache
-
-    @classmethod
-    def from_repo(cls, path: Path, ignore_cache: bool) -> "NCBIClient":
-        """Initialize the NCBI cache in the default subpath under a given repository.
-
-        :param path: the path to a reference repository
-        :param ignore_cache: whether cached data should be ignored
-        :return: an instance of NCBIClient
-        """
-        return NCBIClient(path / ".cache/ncbi", ignore_cache=ignore_cache)
 
     def fetch_genbank_records(self, accessions: list[str]) -> list[NCBIGenbank]:
         """Fetch or load NCBI Nucleotide records corresponding to a list of accessions.

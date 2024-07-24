@@ -1,4 +1,5 @@
 import shutil
+from pathlib import Path
 
 import pytest
 from structlog import get_logger
@@ -13,13 +14,11 @@ SERVER_ERRORS = ["HTTPError", "IncompleteRead"]
 
 
 @pytest.fixture()
-def empty_client(tmp_path):
-    dummy_cache_path = tmp_path / "dummy_cache"
-    dummy_cache_path.mkdir()
+def empty_client(tmp_path: Path) -> NCBIClient:
+    path = tmp_path / "dummy_cache"
+    path.mkdir()
 
-    yield NCBIClient(dummy_cache_path, ignore_cache=True)
-
-    shutil.rmtree(dummy_cache_path)
+    return NCBIClient(path, ignore_cache=True)
 
 
 class TestClientFetchGenbank:
@@ -34,7 +33,7 @@ class TestClientFetchGenbank:
     def test_fetch_genbank_records_from_ncbi(
         self,
         accessions: list[str],
-        empty_client,
+        empty_client: NCBIClient,
         snapshot: SnapshotAssertion,
     ):
         clean_records = empty_client.fetch_genbank_records(accessions=accessions)
@@ -60,10 +59,10 @@ class TestClientFetchGenbank:
     def test_fetch_genbank_records_from_cache(
         self,
         accessions: list[str],
-        scratch_ncbi_cache_path,
+        scratch_user_cache_path,
         snapshot: SnapshotAssertion,
     ):
-        client = NCBIClient(scratch_ncbi_cache_path, ignore_cache=False)
+        client = NCBIClient(scratch_user_cache_path, ignore_cache=False)
 
         clean_records = client.fetch_genbank_records(accessions=accessions)
 
@@ -81,9 +80,9 @@ class TestClientFetchGenbank:
         self,
         accessions: list[str],
         empty_client,
-        test_files_path,
+        files_path,
     ):
-        ncbi_cache_files = test_files_path / "cache_test"
+        ncbi_cache_files = files_path / "cache_test"
         for accession in ("AB017504", "MH200607"):
             shutil.copy(
                 ncbi_cache_files / f"genbank/{accession}.json",
