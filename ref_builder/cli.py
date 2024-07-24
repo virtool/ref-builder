@@ -11,7 +11,7 @@ from ref_builder.build import build_json
 from ref_builder.console import print_otu, print_otu_list
 from ref_builder.legacy.utils import iter_legacy_otus
 from ref_builder.legacy.validate import validate_legacy_repo
-from ref_builder.logging import configure_logger
+from ref_builder.logs import configure_logger
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.options import debug_option, ignore_cache_option, path_option
 from ref_builder.otu import (
