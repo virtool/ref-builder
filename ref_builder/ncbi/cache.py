@@ -2,16 +2,15 @@ import json
 import shutil
 from pathlib import Path
 
+from ref_builder.paths import user_cache_directory_path
+
 
 class NCBICache:
     """Manages caching functionality for NCBI data."""
 
-    def __init__(self, path: Path) -> None:
-        """Initialize the cache with a path to store cached data.
-
-        :param path: A directory that will store cached data
-        """
-        self.path = path / "ncbi"
+    def __init__(self) -> None:
+        """Initialize the cache with a path to store cached data."""
+        self.path = user_cache_directory_path / "ncbi"
 
         self._genbank_path = self.path / "genbank"
         self._taxonomy_path = self.path / "taxonomy"

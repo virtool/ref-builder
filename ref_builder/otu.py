@@ -6,7 +6,6 @@ import structlog
 from ref_builder.models import Molecule
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.paths import user_cache_directory_path
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
 from ref_builder.schema import OTUSchema, Segment
@@ -33,7 +32,7 @@ def create_otu_with_schema(
     """
     otu_logger = logger.bind(taxid=taxid)
 
-    client = NCBIClient(user_cache_directory_path, ignore_cache=ignore_cache)
+    client = NCBIClient(ignore_cache)
 
     taxonomy = client.fetch_taxonomy_record(taxid)
     if taxonomy is None:
@@ -118,7 +117,7 @@ def create_otu(
             f"Taxonomy ID {taxid} has already been added to this reference.",
         )
 
-    ncbi = NCBIClient(user_cache_directory_path, ignore_cache=ignore_cache)
+    ncbi = NCBIClient(ignore_cache)
 
     taxonomy = ncbi.fetch_taxonomy_record(taxid)
 
@@ -149,7 +148,7 @@ def update_otu(
     """Fetch a full list of Nucleotide accessions associated with the OTU
     and pass the list to the add method.
     """
-    ncbi = NCBIClient(user_cache_directory_path, ignore_cache=ignore_cache)
+    ncbi = NCBIClient(ignore_cache)
 
     linked_accessions = ncbi.link_accessions_from_taxid(otu.taxid)
 
@@ -165,7 +164,7 @@ def add_sequences(
     """Take a list of accessions, filter for eligible accessions and
     add new sequences to the OTU.
     """
-    ncbi = NCBIClient(user_cache_directory_path, ignore_cache=ignore_cache)
+    ncbi = NCBIClient(ignore_cache)
 
     otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
     fetch_list = list(set(accessions).difference(otu.blocked_accessions))
@@ -213,7 +212,7 @@ def add_schema_from_accessions(
     if otu.schema is not None:
         logger.warning("OTU already has a schema attached.", schema=otu.schema)
 
-    ncbi = NCBIClient(user_cache_directory_path, ignore_cache=ignore_cache)
+    ncbi = NCBIClient(ignore_cache)
 
     records = ncbi.fetch_genbank_records(accessions)
     if not records:

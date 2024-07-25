@@ -20,7 +20,6 @@ from ref_builder.otu import (
     create_otu_with_schema,
     update_otu,
 )
-from ref_builder.paths import user_cache_directory_path
 from ref_builder.repo import Repo
 from ref_builder.utils import DataType, format_json
 
@@ -217,7 +216,7 @@ def legacy() -> None:
 )
 def precache(path: Path) -> None:
     """Pre-cache all accessions in a legacy reference repository."""
-    ncbi = NCBIClient(user_cache_directory_path, False)
+    ncbi = NCBIClient(False)
 
     buffer = []
 

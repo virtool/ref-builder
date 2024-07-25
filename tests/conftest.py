@@ -12,6 +12,13 @@ from ref_builder.utils import DataType
 
 
 @pytest.fixture()
+def uncached_ncbi_client(scratch_ncbi_cache: NCBICache) -> NCBIClient:
+    """An NCBI client that ignores the cache."""
+    scratch_ncbi_cache.clear()
+    return NCBIClient(ignore_cache=True)
+
+
+@pytest.fixture()
 def files_path():
     return Path(__file__).parent / "files"
 
@@ -56,7 +63,7 @@ def precached_repo(
 ) -> Repo:
     """A reference repository with a preloaded NCBI cache."""
     mocker.patch(
-        "ref_builder.user_cache_directory_path",
+        "ref_builder.paths.user_cache_directory_path",
         return_value=scratch_user_cache_path,
     )
 
@@ -64,15 +71,28 @@ def precached_repo(
 
 
 @pytest.fixture()
-def scratch_ncbi_cache(scratch_user_cache_path: Path):
+def scratch_ncbi_cache(mocker: MockerFixture, scratch_user_cache_path: Path):
     """A scratch NCBI cache with preloaded data."""
-    return NCBICache(scratch_user_cache_path)
+    mocker.patch(
+        "ref_builder.ncbi.cache.user_cache_directory_path",
+        scratch_user_cache_path,
+    )
+
+    return NCBICache()
 
 
 @pytest.fixture()
-def scratch_ncbi_client(scratch_user_cache_path: Path):
+def scratch_ncbi_client(
+    mocker: MockerFixture,
+    scratch_user_cache_path: Path,
+) -> NCBIClient:
     """A scratch NCBI client with a preloaded cache."""
-    return NCBIClient(scratch_user_cache_path, ignore_cache=False)
+    mocker.patch(
+        "ref_builder.ncbi.cache.user_cache_directory_path",
+        scratch_user_cache_path,
+    )
+
+    return NCBIClient(ignore_cache=False)
 
 
 @pytest.fixture()

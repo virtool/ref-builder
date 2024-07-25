@@ -4,7 +4,7 @@ from pathlib import Path
 
 import platformdirs
 
-user_cache_directory_path = Path(platformdirs.user_cache_dir("ref_builder"))
+user_cache_directory_path = Path(platformdirs.user_cache_dir("ref-builder"))
 """The path to a ref-builder specific cache directory in the user's system cache
 path.
 
