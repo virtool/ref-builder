@@ -30,10 +30,10 @@ class TestFetchGenbank:
     def test_fetch_genbank_records_from_cache(
         self,
         snapshot: SnapshotAssertion,
-        uncached_ncbi_client: NCBIClient,
+        scratch_ncbi_client: NCBIClient,
     ):
         assert (
-            uncached_ncbi_client.fetch_genbank_records(
+            scratch_ncbi_client.fetch_genbank_records(
                 ["NC_036587", "MT240513", "AB017504"],
             )
             == snapshot
