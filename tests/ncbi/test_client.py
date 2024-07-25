@@ -113,7 +113,7 @@ class TestClientFetchRawGenbank:
 
 @pytest.mark.ncbi()
 def test_fetch_records_by_taxid(
-    uncached_ncbi_client: Path,
+    uncached_ncbi_client: NCBIClient
     snapshot: SnapshotAssertion,
 ):
     """Test that the client can fetch records by taxid and that they are cached."""
