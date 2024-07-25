@@ -14,6 +14,23 @@ from ref_builder.snapshotter.models import (
 )
 
 
+def test_otu_model_adherence(scratch_repo: Repo):
+    """Check the OTU snapshot model for missing fields relative to RepoOTU."""
+    otu = scratch_repo.get_otu_by_taxid(1169032)
+
+    otu_fields = set(otu.dict().keys())
+
+    otu_fields.remove("isolates")
+
+    otu_fields.remove("excluded_accessions")
+
+    otu_fields.remove("schema")
+    otu_fields.add("otu_schema")
+
+    for field in otu_fields:
+        assert field in OTUSnapshotOTU.model_fields
+
+
 class TestRepoToSnapshotModel:
     @pytest.mark.parametrize(
         ("taxid", "accessions"),
