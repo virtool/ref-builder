@@ -1,6 +1,5 @@
 import sys
 from collections import defaultdict
-from pprint import pprint
 
 import structlog
 
@@ -33,7 +32,7 @@ def create_otu_with_schema(
     """
     otu_logger = logger.bind(taxid=taxid)
 
-    client = NCBIClient.from_repo(repo.path, ignore_cache)
+    client = NCBIClient(ignore_cache)
 
     if repo.get_otu_by_taxid(taxid):
         raise ValueError(
@@ -51,7 +50,7 @@ def create_otu_with_schema(
         return None
 
     binned_records = group_genbank_records_by_isolate(records)
-    pprint(binned_records)
+
     if len(binned_records) > 1:
         otu_logger.fatal(
             "More than one isolate found. Cannot create schema automatically.",
@@ -123,7 +122,7 @@ def create_otu(
             f"Taxonomy ID {taxid} has already been added to this reference.",
         )
 
-    ncbi = NCBIClient.from_repo(repo.path, ignore_cache)
+    ncbi = NCBIClient(ignore_cache)
 
     taxonomy = ncbi.fetch_taxonomy_record(taxid)
 
@@ -154,7 +153,7 @@ def update_otu(
     """Fetch a full list of Nucleotide accessions associated with the OTU
     and pass the list to the add method.
     """
-    ncbi = NCBIClient.from_repo(repo.path, ignore_cache)
+    ncbi = NCBIClient(ignore_cache)
 
     linked_accessions = ncbi.link_accessions_from_taxid(otu.taxid)
 
@@ -168,9 +167,9 @@ def add_sequences(
     ignore_cache: bool = False,
 ):
     """Take a list of accessions, filter for eligible accessions and
-    add new sequences to the OTU
+    add new sequences to the OTU.
     """
-    client = NCBIClient.from_repo(repo.path, ignore_cache)
+    ncbi = NCBIClient(ignore_cache)
 
     otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
     fetch_list = list(set(accessions).difference(otu.blocked_accessions))
@@ -178,16 +177,22 @@ def add_sequences(
         otu_logger.info("OTU is up to date.")
         return
 
-    otu_logger.info(f"Fetching {len(fetch_list)} accessions...", fetch_list=fetch_list)
+    otu_logger.info(
+        "Fetching accessions",
+        count={len(fetch_list)},
+        fetch_list=fetch_list,
+    )
 
-    records = client.fetch_genbank_records(fetch_list)
+    records = ncbi.fetch_genbank_records(fetch_list)
 
     new_accessions = _file_and_create_sequences(repo, otu, records)
 
     if new_accessions:
         otu_logger.info(
-            f"Added {len(new_accessions)} sequences to {otu.taxid}",
+            "Added  sequences to OTU",
+            count=len(new_accessions),
             new_accessions=new_accessions,
+            taxid=otu.taxid,
         )
         return
 
@@ -201,7 +206,7 @@ def add_schema_from_accessions(
     ignore_cache: bool = False,
 ):
     """Take a list of accessions, create an OTU schema based on
-    the corresponding Genbank data and add the new schema to the OTU
+    the corresponding Genbank data and add the new schema to the OTU.
     """
     if (otu := repo.get_otu_by_taxid(taxid)) is None:
         logger.fatal(f"OTU not found for {taxid}. Create first.")
@@ -212,9 +217,9 @@ def add_schema_from_accessions(
     if otu.schema is not None:
         logger.warning("OTU already has a schema attached.", schema=otu.schema)
 
-    client = NCBIClient.from_repo(repo.path, ignore_cache=ignore_cache)
+    ncbi = NCBIClient(ignore_cache)
 
-    records = client.fetch_genbank_records(accessions)
+    records = ncbi.fetch_genbank_records(accessions)
     if not records:
         logger.fatal("Records could not be retrieved. Schema cannot be created.")
         return

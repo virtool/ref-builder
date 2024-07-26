@@ -216,7 +216,7 @@ def legacy() -> None:
 )
 def precache(path: Path) -> None:
     """Pre-cache all accessions in a legacy reference repository."""
-    ncbi = NCBIClient(path / ".migration_cache", False)
+    ncbi = NCBIClient(False)
 
     buffer = []
 

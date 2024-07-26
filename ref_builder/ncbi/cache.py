@@ -2,34 +2,27 @@ import json
 import shutil
 from pathlib import Path
 
-from structlog import get_logger
-
-base_logger = get_logger()
+from ref_builder.paths import user_cache_directory_path
 
 
 class NCBICache:
-    """Manages caching functionality for NCBI data"""
+    """Manages caching functionality for NCBI data."""
 
-    def __init__(self, path: Path) -> None:
-        """Initialize the cache with a path to store cached data.
-
-        :param path: A directory that will store cached data
-        """
-        self.path = path
+    def __init__(self) -> None:
+        """Initialize the cache with a path to store cached data."""
+        self.path = user_cache_directory_path / "ncbi"
 
         self._genbank_path = self.path / "genbank"
         self._taxonomy_path = self.path / "taxonomy"
 
-        self.path.mkdir(exist_ok=True)
-        self._genbank_path.mkdir(exist_ok=True)
+        self._genbank_path.mkdir(exist_ok=True, parents=True)
         self._taxonomy_path.mkdir(exist_ok=True)
 
     def clear(self) -> None:
         """Clear and reset the cache."""
         shutil.rmtree(self.path)
-        self.path.mkdir()
 
-        self._genbank_path.mkdir()
+        self._genbank_path.mkdir(parents=True)
         self._taxonomy_path.mkdir()
 
     def cache_genbank_record(self, data: dict, accession: str) -> None:
@@ -42,9 +35,6 @@ class NCBICache:
 
         with open(cached_record_path, "w") as f:
             json.dump(data, f)
-
-            if not cached_record_path.exists():
-                raise FileNotFoundError
 
     def load_genbank_record(self, accession: str) -> dict | None:
         """Retrieve a NCBI Nucleotide Genbank record from the cache.

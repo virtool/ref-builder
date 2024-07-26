@@ -1,7 +1,6 @@
 import os
 from contextlib import contextmanager
 from enum import StrEnum
-from pathlib import Path
 from urllib.error import HTTPError
 from urllib.parse import quote_plus
 
@@ -30,24 +29,15 @@ class GBSeq(StrEnum):
 
 
 class NCBIClient:
-    def __init__(self, cache_path: Path, ignore_cache: bool) -> None:
+    """A client for fetching, caching, and validating data from NCBI databases."""
+
+    def __init__(self, ignore_cache: bool) -> None:
         """Initialize the NCBI client with a cache path and an ignore_cache flag.
 
-        :param cache_path: A path to a directory to be used as a cache
         :param ignore_cache: If True, does not allow the return of cached data
         """
-        self.cache = NCBICache(cache_path)
+        self.cache = NCBICache()
         self.ignore_cache = ignore_cache
-
-    @classmethod
-    def from_repo(cls, path: Path, ignore_cache: bool) -> "NCBIClient":
-        """Initialize the NCBI cache in the default subpath under a given repository.
-
-        :param path: the path to a reference repository
-        :param ignore_cache: whether cached data should be ignored
-        :return: an instance of NCBIClient
-        """
-        return NCBIClient(path / ".cache/ncbi", ignore_cache=ignore_cache)
 
     def fetch_genbank_records(self, accessions: list[str]) -> list[NCBIGenbank]:
         """Fetch or load NCBI Nucleotide records corresponding to a list of accessions.
@@ -90,7 +80,10 @@ class NCBIClient:
                 records.extend(new_records)
 
         if records:
-            return NCBIClient.validate_genbank_records(records)
+            return sorted(
+                NCBIClient.validate_genbank_records(records),
+                key=lambda r: r.accession,
+            )
 
         return []
 

@@ -154,7 +154,7 @@ def log_otu_validation_result(
 
 def validate_legacy_repo(fix: bool, limit: int, no_ok: bool, path: Path) -> None:
     """Validate a legacy reference repository."""
-    ncbi_client = NCBIClient(path / ".migration_cache", False)
+    ncbi = NCBIClient(ignore_cache=False)
 
     src_path = path / "src"
 
@@ -173,7 +173,7 @@ def validate_legacy_repo(fix: bool, limit: int, no_ok: bool, path: Path) -> None
 
             result = validate_legacy_otu(
                 fix,
-                ncbi_client,
+                ncbi,
                 otu,
             )
 

@@ -1,6 +1,7 @@
 import pytest
 from syrupy import SnapshotAssertion
 
+from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu import group_genbank_records_by_isolate
 
 
@@ -15,13 +16,11 @@ class TestGroupRecords:
     )
     def test_group_records_by_isolate_success(
         self,
-        accessions,
-        scratch_ncbi_client,
+        accessions: list[str],
+        scratch_ncbi_client: NCBIClient,
         snapshot: SnapshotAssertion,
     ):
         records = scratch_ncbi_client.fetch_genbank_records(accessions)
-
-        assert records
 
         grouped_records = group_genbank_records_by_isolate(records)
 

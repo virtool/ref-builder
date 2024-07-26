@@ -1,0 +1,657 @@
+# serializer version: 1
+# name: TestGenbank.test_cache[AB017504]
+  dict({
+    'GBSeq_accession-version': 'AB017504.1',
+    'GBSeq_create-date': '05-JAN-2002',
+    'GBSeq_definition': 'Wasabi mottle virus genomic RNA, complete genome, isolate: Tochigi',
+    'GBSeq_division': 'VRL',
+    'GBSeq_feature-table': list([
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'AB017504.1',
+            'GBInterval_from': '1',
+            'GBInterval_to': '6297',
+          }),
+        ]),
+        'GBFeature_key': 'source',
+        'GBFeature_location': '1..6297',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'organism',
+            'GBQualifier_value': 'Wasabi mottle virus',
+          }),
+          dict({
+            'GBQualifier_name': 'mol_type',
+            'GBQualifier_value': 'genomic RNA',
+          }),
+          dict({
+            'GBQualifier_name': 'strain',
+            'GBQualifier_value': 'wasabi',
+          }),
+          dict({
+            'GBQualifier_name': 'isolate',
+            'GBQualifier_value': 'Tochigi',
+          }),
+          dict({
+            'GBQualifier_name': 'db_xref',
+            'GBQualifier_value': 'taxon:1169032',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'AB017504.1',
+            'GBInterval_from': '66',
+            'GBInterval_to': '4859',
+          }),
+        ]),
+        'GBFeature_key': 'CDS',
+        'GBFeature_location': '66..4859',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'note',
+            'GBQualifier_value': 'readthrough product',
+          }),
+          dict({
+            'GBQualifier_name': 'codon_start',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'transl_except',
+            'GBQualifier_value': '(pos:3375..3377,aa:Tyr)',
+          }),
+          dict({
+            'GBQualifier_name': 'transl_table',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'product',
+            'GBQualifier_value': 'RNA replicase readthrough protein',
+          }),
+          dict({
+            'GBQualifier_name': 'protein_id',
+            'GBQualifier_value': 'BAB82444.1',
+          }),
+          dict({
+            'GBQualifier_name': 'translation',
+            'GBQualifier_value': 'MAQFQQTIDMQTLQAAAGRNSLVNDLASRRVYDNAVEELNARSRRPKVHFSKSVSTEQTLLASNAYPEFEISFTHTQHAVHSLAGGLRSLELEYLMMQVPFGSLTYDIGGNFAAHLFKGRDYVHCCMPNLDVRDIARHEGHKEAVFGYISRLKRQRRPVPEYQRAAFNNYSENPHFVHCDQPFQQCALSTVNGDDTYAVALHSIYDIPVEEFGGALLRKNVKVCYAAFHFHENMLLDCDTVTLEEIGATFQRAGDKLNFFFHNESTLNYTHSFSNIIKYVCKTFFPASQRFVYHKEFLVTRVNTWYCKFTRVDTFTLFRGVYKNSVDSDEFYKAMDDAWEYKKTLAMLNAERTIFKDNAAINFWFPKVRDMVIVPLFDASITTGRMSRREVMVNKDFVYTVLNHIKTYQAKALTYANVLSFVESIRSRVIINGVTARSEWDTDKAILGPLAMTFFLVTKLGHVQDEIVLKKFQKFDSTAKELIWTSLCDALMGVIPSVKETLARGGFVKLAEESLEIKIPELYCTFTDRLVLEYKRAEEFKSCDLSKPLEESEKYYNALSELSVLENLDSFDLEAFKELCQKKSVDPDVAAKVVVAIMKSELTLPFKKPTEEEIAESLSNDTTRNEGLSLSNTAPFPCVSNLEGGLVPACGLCPKSGGFDKIDMDISEFHLKSVDAVKKGAMMSAVYTGNIKVQQMKNFVDYLSASLSATVSNLCKVLRDVHGVDPESQEKSGVWDVRRERWLLKPNAKCHAWGVAEDANHKLVIVLLNWDDGKPVCDQTWYRLAVSSDSLVYSDMGKLKTLTSCCVDGEPPEPKAKVVLVDGVPGCGKTKEILEKVNFSEDLVLVPGKEASKMIIRRANQAGVTRADRDNVKTVDSFLMHPPKRVFKRLFIDEGLMLHTGCVNFLTLISQCDIAYVYGDTQQIPFICRVANFPYPKHFARLVVDEKEDRRITLRCPADVTFFLNKKYDGSVLCTSSVERSVSAQVVRGKGALNPITLPLEGKILTFTQADKFELLDKGYKDVNTVHEVQGETYEKTAIVRLTATPLEIISRASPHVLVALTRHTTSCKYFTVVLDPLVSVISEMEKLSNFILDMYKVESGTQYQLQIDAVFKGVNLNVPTPKSGDWRDMQFYYDTLLPGNSTILNEFDAVTMNLRDISLNVKDCRIDFSKSVQVPKEKPVFLKPKIRTAAEMPRTAGLIENLVAMIKRNMNAPDLTGTIDIEDTASLVVEKFWDSYIIKEFSGIEGMAKTREGFSRWLSKQESSTVGQLADFNFVDLPAVDEYKHMIKSQPKQKLDLSIQDEYPALQTIVYHSKKINAIFGPMFSELTRMLLERVDTSKFLFYTRKTPTQIEEFFSDLDSSQAIEILELDVSKYDKSQNEFHCAVEYKIWEKLGIDEWLAEVWRQGHRKTTLKDYTAGIKTCLWYQRKSGDVTTFIGNTIIIAACLSSMIPMEKVIKAAFCGDDSLIYIPKGLDLPDIQAGANLTWNFEAKLFRKKYGYLCGRYVIHHDRGAIVYYDPLKLISKLGCKHIKDEVHLEELRRSLCDVASNLNNCAYFSQLDEAVAEVHKTAVGGSFAYCSIIKYLSDKRLFKDLFFV',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'AB017504.1',
+            'GBInterval_from': '66',
+            'GBInterval_to': '3377',
+          }),
+        ]),
+        'GBFeature_key': 'CDS',
+        'GBFeature_location': '66..3377',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'codon_start',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'transl_table',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'product',
+            'GBQualifier_value': 'RNA replicase protein',
+          }),
+          dict({
+            'GBQualifier_name': 'protein_id',
+            'GBQualifier_value': 'BAB82445.1',
+          }),
+          dict({
+            'GBQualifier_name': 'translation',
+            'GBQualifier_value': 'MAQFQQTIDMQTLQAAAGRNSLVNDLASRRVYDNAVEELNARSRRPKVHFSKSVSTEQTLLASNAYPEFEISFTHTQHAVHSLAGGLRSLELEYLMMQVPFGSLTYDIGGNFAAHLFKGRDYVHCCMPNLDVRDIARHEGHKEAVFGYISRLKRQRRPVPEYQRAAFNNYSENPHFVHCDQPFQQCALSTVNGDDTYAVALHSIYDIPVEEFGGALLRKNVKVCYAAFHFHENMLLDCDTVTLEEIGATFQRAGDKLNFFFHNESTLNYTHSFSNIIKYVCKTFFPASQRFVYHKEFLVTRVNTWYCKFTRVDTFTLFRGVYKNSVDSDEFYKAMDDAWEYKKTLAMLNAERTIFKDNAAINFWFPKVRDMVIVPLFDASITTGRMSRREVMVNKDFVYTVLNHIKTYQAKALTYANVLSFVESIRSRVIINGVTARSEWDTDKAILGPLAMTFFLVTKLGHVQDEIVLKKFQKFDSTAKELIWTSLCDALMGVIPSVKETLARGGFVKLAEESLEIKIPELYCTFTDRLVLEYKRAEEFKSCDLSKPLEESEKYYNALSELSVLENLDSFDLEAFKELCQKKSVDPDVAAKVVVAIMKSELTLPFKKPTEEEIAESLSNDTTRNEGLSLSNTAPFPCVSNLEGGLVPACGLCPKSGGFDKIDMDISEFHLKSVDAVKKGAMMSAVYTGNIKVQQMKNFVDYLSASLSATVSNLCKVLRDVHGVDPESQEKSGVWDVRRERWLLKPNAKCHAWGVAEDANHKLVIVLLNWDDGKPVCDQTWYRLAVSSDSLVYSDMGKLKTLTSCCVDGEPPEPKAKVVLVDGVPGCGKTKEILEKVNFSEDLVLVPGKEASKMIIRRANQAGVTRADRDNVKTVDSFLMHPPKRVFKRLFIDEGLMLHTGCVNFLTLISQCDIAYVYGDTQQIPFICRVANFPYPKHFARLVVDEKEDRRITLRCPADVTFFLNKKYDGSVLCTSSVERSVSAQVVRGKGALNPITLPLEGKILTFTQADKFELLDKGYKDVNTVHEVQGETYEKTAIVRLTATPLEIISRASPHVLVALTRHTTSCKYFTVVLDPLVSVISEMEKLSNFILDMYKVESGTQ',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'AB017504.1',
+            'GBInterval_from': '4862',
+            'GBInterval_to': '5665',
+          }),
+        ]),
+        'GBFeature_key': 'CDS',
+        'GBFeature_location': '4862..5665',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'codon_start',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'transl_table',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'product',
+            'GBQualifier_value': 'movement protein',
+          }),
+          dict({
+            'GBQualifier_name': 'protein_id',
+            'GBQualifier_value': 'BAB82446.1',
+          }),
+          dict({
+            'GBQualifier_name': 'translation',
+            'GBQualifier_value': 'MSTVSYKPKVSDFLTLSRTEEILPKALTRLKTVSVSTKDVISVKESESLCDIDLLVNVPLDKFRYVGILGVVFTGEWLIPDFVKGGVTVSVIDKRLENSKECIIGTYRAAAKDRRFQFKLVPNYFVSVTDAKRKPWQVHVRIQNLKIEAGWQPLALEVVSVAMVTNNVVVKGLRERVIAVDDPNVEGFEGVVDEFIDSVAAFKAVDNFRKKKKKIGGRDVISKYKYRPEKYAGPDSLLNKEENVIQHHELESVPVFRSGMGGAHSNA',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'AB017504.1',
+            'GBInterval_from': '5589',
+            'GBInterval_to': '6062',
+          }),
+        ]),
+        'GBFeature_key': 'CDS',
+        'GBFeature_location': '5589..6062',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'codon_start',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'transl_table',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'product',
+            'GBQualifier_value': 'coat protein',
+          }),
+          dict({
+            'GBQualifier_name': 'protein_id',
+            'GBQualifier_value': 'BAB82447.1',
+          }),
+          dict({
+            'GBQualifier_name': 'translation',
+            'GBQualifier_value': 'MSYNITNSNQYQFFAAVWAEPIAMLNQCVSALSQSYQTQAARDTVRQQFSNLLSAIVTPNQRFPETGYRVYVNSAVLKPLYEALMKSFDTRNRIIETEEESRPSASEVANATQRVDDATVAIRSQIQLLLSELSSGHGLMNRAEFEVLIPWATAPAK',
+          }),
+        ]),
+      }),
+    ]),
+    'GBSeq_length': '6297',
+    'GBSeq_locus': 'AB017504',
+    'GBSeq_moltype': 'RNA',
+    'GBSeq_organism': 'Wasabi mottle virus',
+    'GBSeq_other-seqids': list([
+      'dbj|AB017504.1|',
+      'gi|18146768',
+    ]),
+    'GBSeq_primary-accession': 'AB017504',
+    'GBSeq_references': list([
+      dict({
+        'GBReference_authors': list([
+          'Shimamoto,I.',
+          'Sonoda,S.',
+          'Vazquez,P.',
+          'Minaka,N.',
+          'Nishiguchi,M.',
+        ]),
+        'GBReference_journal': 'Arch. Virol. 143 (9), 1801-1813 (1998)',
+        'GBReference_position': '1..6297',
+        'GBReference_pubmed': '9787663',
+        'GBReference_reference': '1',
+        'GBReference_title': "Nucleotide sequence analysis of the 3' terminal region of a wasabi strain of crucifer tobamovirus genomic RNA: subgrouping of crucifer tobamoviruses",
+      }),
+      dict({
+        'GBReference_authors': list([
+          'Lee,K.',
+          'Nishiguchi,M.',
+          'Kashiwazaki,S.',
+        ]),
+        'GBReference_journal': 'Unpublished',
+        'GBReference_position': '1..6297',
+        'GBReference_reference': '2',
+        'GBReference_title': 'Complete nucleotide sequences of two isolates of crucifer tobamovirus',
+      }),
+      dict({
+        'GBReference_authors': list([
+          'Lee,K.',
+          'Nishiguchi,M.',
+          'Kashiwazaki,S.',
+        ]),
+        'GBReference_journal': 'Submitted (07-SEP-1998) Contact:Satoshi Kashiwazaki National Agriculture Research Center, Department of Plant Protection; 3-1-1 Kannondai, Tsukuba, Ibaraki 305-8666, Japan',
+        'GBReference_position': '1..6297',
+        'GBReference_reference': '3',
+        'GBReference_title': 'Direct Submission',
+      }),
+    ]),
+    'GBSeq_sequence': 'gtttaaattattgcaacaacaacaacaaattacaataataacaaacaaatacaaacaacaacaacatggcacaatttcaacaaacaattgacatgcaaacacttcaggctgcagcgggacgtaacagcctggtcaacgatttagcctctcgacgtgtttacgataacgcggtcgaggagttaaatgcgcgttcaagacgtcctaaggttcatttctccaagtcggtgtcgacggaacagacactactagcttcaaacgcttatccggagtttgagatttccttcactcatacccaacatgccgtacattcacttgccggcgggttgcggtctcttgagctggaatatctcatgatgcaagttcctttcggatctctgacgtatgacatcggcggtaactttgctgcgcacctttttaagggtcgtgactacgtgcactgctgtatgccaaatttggacgttcgcgatatagctcgccatgaaggacataaggaagccgttttcggctacatctcccgcttgaaaaggcaaaggagacctgttcctgagtatcagagagctgcgttcaacaactactcggagaatccgcatttcgttcattgtgaccaaccttttcaacagtgtgccttaagtactgtgaacggtgacgacacttatgctgttgcccttcacagtatatacgacattcctgttgaggagttcggtggtgcgctactcaggaagaacgtcaaagtttgttatgcggctttccatttccatgagaatatgctacttgattgtgacacagtcactcttgaggagattggagctacatttcaacgtgcaggcgacaagttaaactttttcttccacaatgagagcactctcaactatacccacagttttagtaatataattaagtatgtgtgtaaaacttttttccccgccagtcagcggtttgtgtatcataaggagtttttagttacaagagtcaatacgtggtattgtaagttcactagagtggacacttttactctttttcgtggtgtgtacaaaaatagtgtcgatagcgatgagttttataaggctatggatgacgcatgggaatacaagaagactttagctatgttaaatgccgagaggactatcttcaaggataacgcggctattaatttttggtttccgaaggtcagagatatggtcatcgttcctcttttcgacgcatccatcacaacaggaaggatgtctagaagagaagttatggtgaataaggattttgtttatacagtcctcaaccatattaaaacatatcaggcaaaggctttgacttacgctaacgtactgtcctttgtagagtctatcaggtcgagagtcataattaatggggtcacagctaggtctgagtgggatacggataaggcaattctaggtccgttagcaatgacctttttccttgttacaaagttaggtcatgtccaggatgaaatagtcctgaagaagttccaaaagtttgattcgaccgccaaagagctgatttggactagtctctgcgatgccctgatgggggttataccctcggtcaaagagacgttagcacgtggtggttttgtcaaactcgctgaagagagtttggagatcaagattccagaactgtattgcactttcacagacaggttagtgctggagtacaaaagagctgaagagttcaagtcttgtgatctgtctaaaccgttagaagagtcggagaaatactacaacgctttatccgagctgtctgtgctcgagaacctcgactcttttgacttggaagcctttaaagagttgtgccagaagaaaagcgttgatccagatgtcgctgcaaaggtggtggtggcgataatgaaaagtgagttgacgttaccgttcaagaaacctactgaggaagaaatcgcggagtcgcttagcaatgatacaacacggaatgagggtttgagtctgagtaacaccgcacctttcccgtgtgtgagcaatctcgagggagggttggtgccagcgtgcgggctgtgtccgaaaagtggtggtttcgacaagattgatatggatatatctgagttccatctcaagagtgtagatgcagttaaaaaaggggctatgatgtcagcggtgtacacagggaacatcaaggttcagcagatgaagaactttgtagattacctaagtgcgtcactgtcagctactgtctcaaatctctgtaaggtgcttagagatgttcatggggtagatccagagtcacaggagaaatccggagtgtgggatgtgagaagagaacgatggttactaaaacctaacgcgaaatgtcacgcgtggggagttgcggaagatgccaatcacaagttggttatcgtgttacttaactgggatgatggaaaacctgtctgcgatcagacatggtatcgattggcggtgtcaagtgattctttggtgtattccgatatggggaaacttaaaacgttgacgtcgtgctgtgtggatggcgaacctccagagcctaaggccaaggtggttcttgttgatggagttccaggatgtggaaaaacgaaggaaattctggagaaggttaacttctccgaagatttggttttagtccctggaaaggaggcgtcgaagatgattatacgacgagcgaaccaggcaggagttacgagagctgatagggataacgtgaaaacagtggattccttcttaatgcaccctccaaagagggtatttaagaggttgttcattgatgaaggattaatgctgcataccggttgtgtcaactttttgacgctaatttcgcaatgcgatatagcatacgtctacggcgacacacaacagattccctttatttgtagggttgcaaattttccgtatcccaaacattttgcaagacttgtcgttgatgaaaaggaagacagaaggataacgctcagatgccctgcagacgtcacttttttccttaacaagaaatatgacggctcagtgttgtgtactagcagtgtggaaagatcggtcagtgcgcaggttgtgagagggaaaggtgcattaaacccgataactttaccgttagagggaaaaattttaaccttcacgcaggccgacaagttcgagttactagacaaaggctacaaagatgtgaatacggtccatgaggttcaaggggaaacatatgaaaaaacagctattgttcggttaacggctactccgttggagatcatatctagggcgtcacctcatgttttggtggcgctgacgagacacacgactagttgtaaatattttacagtcgtgttggatcctttagtgagtgtgatttctgagatggagaagttgtccaatttcatccttgacatgtacaaggtggagtcgggaacccaatagcaattacagatcgatgcggtgttcaaaggggtcaacttaaatgttccgacgccaaagtcaggagattggagagacatgcagttttattacgacactcttcttcccggtaacagcactattcttaacgagtttgatgctgttaccatgaatttgagggatatatccctaaatgtcaaagattgcagaatcgacttctctaaatccgtgcaagtgcccaaagaaaaaccagttttcttaaaacccaagataagaactgcggcagaaatgccgagaactgctgggttaatagagaatttggttgcaatgatcaagagaaatatgaatgcaccggatttgactgggacgatagatatagaggacactgcatcactggtggttgaaaagttttgggactcgtacatcataaaggagttcagcggaattgaggggatggcaaagacaagggaaggtttttctagatggctttctaaacaagagtcgtctacggtcggtcagttagcggattttaactttgtggatttgcctgcagttgatgagtacaagcatatgatcaagagtcagcctaagcaaaagttagacttgagtattcaagatgaatatcctgctttgcagacgatagtctaccattcaaaaaagatcaatgcaattttcggtcctatgttttcagaacttacgagaatgcttcttgaaagagttgatacatctaagtttctgttttacactaggaaaacgccaactcagattgaggaatttttctcagacctcgattcgtcgcaagcaatagaaattttggaactcgacgtttcaaagtacgacaagtctcagaacgagttccattgtgctgtggaatacaagatatgggagaagcttggaatagacgagtggttggcagaggtgtggcgacaagggcacaggaaaacgacgttgaaagactatacggccgggatcaaaacgtgtttgtggtatcagaggaaaagcggtgatgtaactacctttattgggaacaccatcatcatcgctgcgtgcttaagttctatgattccgatggaaaaggtgattaaagcagcattctgcggtgacgacagtttgatttatattccgaaaggtttagatctgccggatattcaagctggagccaacctgacgtggaatttcgaggcgaagctctttaggaaaaagtatggttatttgtgcggtcgatatgtaatccaccatgatagaggagctattgtatattacgatccacttaagctaatatctaagttaggttgtaaacatataaaggatgaggtccatttagaagagttacgtaggtctctgtgtgatgtagctagtaacttaaataattgtgcgtatttttctcaattagatgaggccgttgccgaggttcataaaaccgcggttggcggatcgtttgcttattgtagtataattaaatacttgtcagataaaaggttgtttaaagatttgttttttgtttgataatgtcgaccgtgtcgtacaagcctaaggtgagtgactttcttactctttcgagaacggaggaaattttaccgaaagctttaacgagattgaagactgtgtctgtaagtactaaggatgtcatatcagttaaggaatctgagtctttgtgtgatatagatttgttagttaatgtgccattagataagtttagatacgtgggtattctaggagttgtttttactggcgagtggcttattccggatttcgttaagggtggtgtaacggtgagtgtgattgacaagcgtctggagaactcgaaggagtgtataattggtacgtacagagctgctgctaaggacagaaggtttcagtttaagctggtgcctaactactttgtgtctgtaacggacgctaagagaaaaccgtggcaggttcatgtgcgtattcaaaacctgaagattgaagctggatggcaaccgttggctctggaagttgtttccgtagctatggttacaaacaatgtggttgtgaagggtttaagagaaagagtcatcgctgtagatgatccgaacgttgagggtttcgaaggtgtagttgacgaattcatcgattcggttgcagcatttaaagcggttgacaatttcaggaaaaagaaaaagaagattggaggaagggatgtgattagtaagtataagtatagaccagagaagtacgccggtcctgattcgttacttaataaagaagaaaatgtcatacaacatcacgaactcgaatcagtaccagtttttcgcagcggtatgggcggagcccatagcaatgcttaaccagtgcgtatctgcgttgtcacagtcgtatcagacacaagctgcgagagatactgtcagacagcaattctcgaacttgttaagtgcgattgtgacaccgaaccagcggtttccagaaacaggataccgggtgtatgttaattcagcagttctaaaaccgttgtacgaggctcttatgaagtcttttgatactagaaataggatcattgagaccgaagaagagtcgcgtccttcggcttccgaagtagccaatgcaacacaacgtgttgacgatgcgaccgtggccatcaggagtcaaattcagcttttgctgagtgagctttccagtggacatggtcttatgaacagggcagagtttgaggttttaataccttgggctactgcgccggctaaataggcgtggtgcacacgatagtgcatagtgttttcctctccacttaaatcgaagaggtattcttacggtgtaaatccgtaagggtggcgtaaaccaaattacgtaatgttttgggttccatttaaatcgaaacccgttatttcctggatcacctgttaacgcacgcttggcgtgtattacagtgggaataactaaaagtgagaggttcgaatcctccctaaccccgggtaggggccca',
+    'GBSeq_source': 'Wasabi mottle virus',
+    'GBSeq_strandedness': 'single',
+    'GBSeq_taxonomy': 'Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Alsuviricetes; Martellivirales; Virgaviridae; Tobamovirus',
+    'GBSeq_topology': 'linear',
+    'GBSeq_update-date': '07-APR-2012',
+  })
+# ---
+# name: TestGenbank.test_cache[NC_003355]
+  dict({
+    'GBSeq_accession-version': 'NC_003355.1',
+    'GBSeq_comment': 'PROVISIONAL REFSEQ: This record has not yet been subject to final NCBI review. The reference sequence is identical to AB017503.; COMPLETENESS: full length.',
+    'GBSeq_create-date': '05-JAN-2002',
+    'GBSeq_definition': 'Wasabi mottle virus, complete genome',
+    'GBSeq_division': 'VRL',
+    'GBSeq_feature-table': list([
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'NC_003355.1',
+            'GBInterval_from': '1',
+            'GBInterval_to': '6298',
+          }),
+        ]),
+        'GBFeature_key': 'source',
+        'GBFeature_location': '1..6298',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'organism',
+            'GBQualifier_value': 'Wasabi mottle virus',
+          }),
+          dict({
+            'GBQualifier_name': 'mol_type',
+            'GBQualifier_value': 'genomic RNA',
+          }),
+          dict({
+            'GBQualifier_name': 'strain',
+            'GBQualifier_value': 'wasabi',
+          }),
+          dict({
+            'GBQualifier_name': 'isolate',
+            'GBQualifier_value': 'Shizuoka',
+          }),
+          dict({
+            'GBQualifier_name': 'db_xref',
+            'GBQualifier_value': 'taxon:1169032',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'NC_003355.1',
+            'GBInterval_from': '67',
+            'GBInterval_to': '4860',
+          }),
+        ]),
+        'GBFeature_key': 'gene',
+        'GBFeature_location': '67..4860',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'locus_tag',
+            'GBQualifier_value': 'CtVgp1',
+          }),
+          dict({
+            'GBQualifier_name': 'db_xref',
+            'GBQualifier_value': 'GeneID:929735',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'NC_003355.1',
+            'GBInterval_from': '67',
+            'GBInterval_to': '4860',
+          }),
+        ]),
+        'GBFeature_key': 'CDS',
+        'GBFeature_location': '67..4860',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'locus_tag',
+            'GBQualifier_value': 'CtVgp1',
+          }),
+          dict({
+            'GBQualifier_name': 'note',
+            'GBQualifier_value': 'readthrough product',
+          }),
+          dict({
+            'GBQualifier_name': 'codon_start',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'transl_except',
+            'GBQualifier_value': '(pos:3376..3378,aa:Tyr)',
+          }),
+          dict({
+            'GBQualifier_name': 'transl_table',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'product',
+            'GBQualifier_value': 'RNA replicase readthrough protein',
+          }),
+          dict({
+            'GBQualifier_name': 'protein_id',
+            'GBQualifier_value': 'NP_543049.1',
+          }),
+          dict({
+            'GBQualifier_name': 'db_xref',
+            'GBQualifier_value': 'GeneID:929735',
+          }),
+          dict({
+            'GBQualifier_name': 'translation',
+            'GBQualifier_value': 'MAQFQQTIDMQTLQAAAGRNSLVNDLASRRVYDNAVEELNARSRRPKVHFSKSVSTEQTLLASNAYPEFEISFTHTQHAVHSLAGGLRSLELEYLMMQVPFGSLTYDIGGNFAAHLFKGRDYVHCCMPNLDVRDIARHEGHKEAVHGYISRLKRQRRPVPEYQRAAFNNYSENPHFVHCDQPFQQCALSTVNGDDTYAIALHSVYDIPVEEFGSALLRKNVKVCYAAFHFHENMLLDCDTVTLEEIGATFQRAGDKLNFFFHNESTLNYTHSFSNIIKYVCKTFFPASQRFVYHKEFLVTRVNTWYCKFTRVDTFTLFRGVYKNSVDSDEFYKAMDDAWEYKKTLAMLNAERTIFKDNAAINFWFPKCRDMVIVPLFDASITTGRMSRREVMVNKDFVYTVLNHIKTYQAKALTYANVLSFVESIRSRVIINGVTARSEWDTDKAILGPLAMTFFPVTKLGHVQDEIVLKKFQKFDSTAKELIWTSLCDALMGVIPSVKETLARGGFVKLAEESLEIKIPELYCTFTDRLVLEYKKAEEFKSCDLSKPLEESEKYYNALSELSVLENLDSFDLEAFKELCQKKSVDPDVAAKVVVAIMKSELTLPFKKPTEEEIAESLSNDTIRNEGLSLSNTAPFPCVSNLEGGLVPACGLCPKSGGFDKIDMDISEFHLRSVDAVKKGAMMSAVYTGNIKVQQMKNFVDYLSASLSATVSNLCKVLRDVHGVDPESQEKSGVWDVRRGRWLLKPNAKCHAWGVAEDANHKLVIVLLNWDDGKPVCDQTWYRLAVSSDSLVYSDMGKLKTLTSCCVDGEPPEPRAKVVLVDGVPGCGKTKEILEKVNFSEDLVLVPGKEASKMIIRRANQAGVTRADRDNVRTVDSFLMHPPKRVFKRLFIDEGLMLHTGCVNFLTLISQCDIAYVYGDTQQIPFICRVANFPYPKHFARLVVDEKEDRRITLRCPADVTFFLNKKYDGSVLCTSSVERSVSAQVVRGKGALNPITLPLEGKILTFTQADKFELLDKGYKDVNTVHEVQGETYEKTAIVRLTATPLEIISRASPHVLVALTRHTTSCKYFSVVLDPLVSVISEMEKLSNFILDMYKVESGTQYQLQIDAVFKGVNLNVPTPKSGDWRDMQFYYDTLLPGNSTILNEFDAVTMNLRDISLNVKDCRIDFSKSVQVPKEKPVFLKPKIRTAAEMPRTAGLIENLVAMIKRNMNAPDLTGTIDIEDTASLVVEKFWDSYIVKEFSGIEGMAKTREGFSRWLSKQESSTVGQLADFNFVDLPAVDEYKHMIKSQPKQKLDLSIQDEYPALQTIVYHSKKINAIFGPMFSELTRMLLERVDTSKFLFYTRKTPTQIEEFFSDLDSSQAMEILELDISKYDKSQNEFHCAVEYKIWEKLGIDEWLAEVWRQGHRKTTLKDYTAGIKTCLWYQRKSGDVTTFIGNTIIIAACLSSMIPMEKVIKAAFCGDDSLIYIPKGLDLPDIQAGANLTWNFEAKLFRKKYGYFCGRYVIHHDRGAIVYYDPLKLISKLGCKHIKDEVHLEELRRSLCDVASNLNNCAYFSQLDEAVAEVHKTAVGGSFAYCSIIKYLSDKRLFKDLFFV',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'NC_003355.1',
+            'GBInterval_from': '67',
+            'GBInterval_to': '3378',
+          }),
+        ]),
+        'GBFeature_key': 'gene',
+        'GBFeature_location': '67..3378',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'locus_tag',
+            'GBQualifier_value': 'CtVgp2',
+          }),
+          dict({
+            'GBQualifier_name': 'db_xref',
+            'GBQualifier_value': 'GeneID:929734',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'NC_003355.1',
+            'GBInterval_from': '67',
+            'GBInterval_to': '3378',
+          }),
+        ]),
+        'GBFeature_key': 'CDS',
+        'GBFeature_location': '67..3378',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'locus_tag',
+            'GBQualifier_value': 'CtVgp2',
+          }),
+          dict({
+            'GBQualifier_name': 'codon_start',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'transl_table',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'product',
+            'GBQualifier_value': 'RNA replicase protein',
+          }),
+          dict({
+            'GBQualifier_name': 'protein_id',
+            'GBQualifier_value': 'NP_543050.1',
+          }),
+          dict({
+            'GBQualifier_name': 'db_xref',
+            'GBQualifier_value': 'GeneID:929734',
+          }),
+          dict({
+            'GBQualifier_name': 'translation',
+            'GBQualifier_value': 'MAQFQQTIDMQTLQAAAGRNSLVNDLASRRVYDNAVEELNARSRRPKVHFSKSVSTEQTLLASNAYPEFEISFTHTQHAVHSLAGGLRSLELEYLMMQVPFGSLTYDIGGNFAAHLFKGRDYVHCCMPNLDVRDIARHEGHKEAVHGYISRLKRQRRPVPEYQRAAFNNYSENPHFVHCDQPFQQCALSTVNGDDTYAIALHSVYDIPVEEFGSALLRKNVKVCYAAFHFHENMLLDCDTVTLEEIGATFQRAGDKLNFFFHNESTLNYTHSFSNIIKYVCKTFFPASQRFVYHKEFLVTRVNTWYCKFTRVDTFTLFRGVYKNSVDSDEFYKAMDDAWEYKKTLAMLNAERTIFKDNAAINFWFPKCRDMVIVPLFDASITTGRMSRREVMVNKDFVYTVLNHIKTYQAKALTYANVLSFVESIRSRVIINGVTARSEWDTDKAILGPLAMTFFPVTKLGHVQDEIVLKKFQKFDSTAKELIWTSLCDALMGVIPSVKETLARGGFVKLAEESLEIKIPELYCTFTDRLVLEYKKAEEFKSCDLSKPLEESEKYYNALSELSVLENLDSFDLEAFKELCQKKSVDPDVAAKVVVAIMKSELTLPFKKPTEEEIAESLSNDTIRNEGLSLSNTAPFPCVSNLEGGLVPACGLCPKSGGFDKIDMDISEFHLRSVDAVKKGAMMSAVYTGNIKVQQMKNFVDYLSASLSATVSNLCKVLRDVHGVDPESQEKSGVWDVRRGRWLLKPNAKCHAWGVAEDANHKLVIVLLNWDDGKPVCDQTWYRLAVSSDSLVYSDMGKLKTLTSCCVDGEPPEPRAKVVLVDGVPGCGKTKEILEKVNFSEDLVLVPGKEASKMIIRRANQAGVTRADRDNVRTVDSFLMHPPKRVFKRLFIDEGLMLHTGCVNFLTLISQCDIAYVYGDTQQIPFICRVANFPYPKHFARLVVDEKEDRRITLRCPADVTFFLNKKYDGSVLCTSSVERSVSAQVVRGKGALNPITLPLEGKILTFTQADKFELLDKGYKDVNTVHEVQGETYEKTAIVRLTATPLEIISRASPHVLVALTRHTTSCKYFSVVLDPLVSVISEMEKLSNFILDMYKVESGTQ',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'NC_003355.1',
+            'GBInterval_from': '4863',
+            'GBInterval_to': '5666',
+          }),
+        ]),
+        'GBFeature_key': 'gene',
+        'GBFeature_location': '4863..5666',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'locus_tag',
+            'GBQualifier_value': 'CtVgp3',
+          }),
+          dict({
+            'GBQualifier_name': 'db_xref',
+            'GBQualifier_value': 'GeneID:929733',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'NC_003355.1',
+            'GBInterval_from': '4863',
+            'GBInterval_to': '5666',
+          }),
+        ]),
+        'GBFeature_key': 'CDS',
+        'GBFeature_location': '4863..5666',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'locus_tag',
+            'GBQualifier_value': 'CtVgp3',
+          }),
+          dict({
+            'GBQualifier_name': 'codon_start',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'transl_table',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'product',
+            'GBQualifier_value': 'movement protein',
+          }),
+          dict({
+            'GBQualifier_name': 'protein_id',
+            'GBQualifier_value': 'NP_543051.1',
+          }),
+          dict({
+            'GBQualifier_name': 'db_xref',
+            'GBQualifier_value': 'GeneID:929733',
+          }),
+          dict({
+            'GBQualifier_name': 'translation',
+            'GBQualifier_value': 'MSTVSYKPKVSDFLSLSRTEEILPKALTRLKTVSVSTKDVISVKESESLCDIDLLVNVPLDKFRYVGILGVVFTGEWLIPDFVKGGVTVSVIDKRLENSKECIIGTYRAAAKDRRFQFKLVPNYFVSVTDAKRKPWQVHVRIQNLKIEAGWQPLALEVVSVAMVTNNVVVKGLRERVIAVDDPNVEGFEGVVDEFIDSVAAFKAVDNFRKKKRKIGGRDVISKYKYRPEKYAGPDSLLNKEENVIQHHELESVPVFCSGMGRAHSDA',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'NC_003355.1',
+            'GBInterval_from': '5590',
+            'GBInterval_to': '6063',
+          }),
+        ]),
+        'GBFeature_key': 'gene',
+        'GBFeature_location': '5590..6063',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'locus_tag',
+            'GBQualifier_value': 'CtVgp4',
+          }),
+          dict({
+            'GBQualifier_name': 'db_xref',
+            'GBQualifier_value': 'GeneID:929732',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'NC_003355.1',
+            'GBInterval_from': '5590',
+            'GBInterval_to': '6063',
+          }),
+        ]),
+        'GBFeature_key': 'CDS',
+        'GBFeature_location': '5590..6063',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'locus_tag',
+            'GBQualifier_value': 'CtVgp4',
+          }),
+          dict({
+            'GBQualifier_name': 'codon_start',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'transl_table',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'product',
+            'GBQualifier_value': 'coat protein',
+          }),
+          dict({
+            'GBQualifier_name': 'protein_id',
+            'GBQualifier_value': 'NP_543052.1',
+          }),
+          dict({
+            'GBQualifier_name': 'db_xref',
+            'GBQualifier_value': 'GeneID:929732',
+          }),
+          dict({
+            'GBQualifier_name': 'translation',
+            'GBQualifier_value': 'MSYNITNSNQYQFFAAVWAEPIAMLNQCISALSQSYQTQAARDTVRQQFSNLLSAIVTPNQRFPETGYRVYVNSAVLKPLYEALMKSFDTRNRIIETEEESRPSASEVANATQRVDDATVAIRSQIQLLLSELSSGHGLMNRAEFEVLIPWATAPAK',
+          }),
+        ]),
+      }),
+    ]),
+    'GBSeq_keywords': list([
+      'RefSeq',
+    ]),
+    'GBSeq_length': '6298',
+    'GBSeq_locus': 'NC_003355',
+    'GBSeq_moltype': 'RNA',
+    'GBSeq_organism': 'Wasabi mottle virus',
+    'GBSeq_other-seqids': list([
+      'ref|NC_003355.1|',
+      'gnl|NCBI_GENOMES|15913',
+      'gi|18254496',
+    ]),
+    'GBSeq_primary-accession': 'NC_003355',
+    'GBSeq_project': 'PRJNA485481',
+    'GBSeq_references': list([
+      dict({
+        'GBReference_authors': list([
+          'Lee,K.',
+          'Nishiguchi,M.',
+          'Kashiwazaki,S.',
+        ]),
+        'GBReference_journal': 'Unpublished',
+        'GBReference_position': '1..6298',
+        'GBReference_reference': '1',
+        'GBReference_title': 'Complete nucleotide sequences of two isolates of crucifer tobamovirus',
+      }),
+      dict({
+        'GBReference_consortium': 'NCBI Genome Project',
+        'GBReference_journal': 'Submitted (22-JAN-2002) National Center for Biotechnology Information, NIH, Bethesda, MD 20894, USA',
+        'GBReference_position': '1..6298',
+        'GBReference_reference': '2',
+        'GBReference_title': 'Direct Submission',
+      }),
+      dict({
+        'GBReference_authors': list([
+          'Lee,K.',
+          'Nishiguchi,M.',
+          'Kashiwazaki,S.',
+        ]),
+        'GBReference_journal': 'Submitted (07-SEP-1998) Contact:Satoshi Kashiwazaki National Agriculture Research Center, Department of Plant Protection; 3-1-1 Kannondai, Tsukuba, Ibaraki 305-8666, Japan',
+        'GBReference_position': '1..6298',
+        'GBReference_reference': '3',
+        'GBReference_title': 'Direct Submission',
+      }),
+    ]),
+    'GBSeq_sequence': 'gatttaaattattgcaacaacaacaacaattacaataataacaaacaaaatacaaacaacaacaacatggcacagtttcaacaaacaattgacatgcagacacttcaggctgcagcgggacgtaacagcctggttaacgatttagcctctcgacgtgtttacgataacgcggtcgaggagttaaatgcgcgttcaagacgtcctaaggttcatttctccaagtcggtgtcgacggaacagacactactagcttcaaacgcttatccggagtttgagatttccttcactcatacccaacatgccgtacattcacttgccggcgggttgcggtctcttgagctggaatatctcatgatgcaagttcctttcggatctctgacgtatgatatcggcggtaactttgctgcgcacctttttaagggtcgtgactacgtgcactgctgtatgccaaatttggacgttcgcgatatagctcgccatgaaggacataaggaagccgttcacggctacatctcccgcttgaaaaggcaaaggagacctgttcctgagtatcagagagctgcgttcaacaactactcggagaatccgcatttcgttcattgtgaccaaccttttcaacagtgtgccttaagtactgtgaacggtgatgacacttatgctattgcccttcacagtgtatacgacattcctgttgaggagttcggtagtgcgctactcaggaagaacgtcaaagtttgttatgcggctttccatttccatgagaatatgctactcgattgtgacacagtcactcttgaggagattggagctacatttcaacgtgcaggcgacaagttaaactttttcttccacaatgagagcactctcaactatacccacagttttagtaatataattaagtatgtgtgtaaaacctttttccccgccagtcagcggtttgtgtatcataaggagtttttagttacaagagtcaatacgtggtattgtaagttcactagagtggacacttttactctttttcgtggtgtgtacaaaaacagtgtcgatagcgatgagttttataaggctatggatgacgcatgggaatacaagaagactttagctatgttaaatgccgagaggactatcttcaaggataacgcggctattaatttttggtttccgaagtgcagagatatggtcatcgttcctcttttcgacgcatccatcacaacaggaaggatgtctagaagagaagttatggtgaataaggattttgtttatacagtcctcaaccatattaaaacatatcaggcaaaggctttgacttacgctaacgtactgtcctttgtagagtctatcaggtcgagagtcataattaatggggtcacagctaggtctgagtgggatacggataaggcaattctaggtccgttagcgatgacttttttccctgttacaaagttaggtcatgtccaggatgaaatagtcctgaagaagttccaaaagtttgattcgaccgccaaagagctgatttggactagtctctgcgatgccctgatgggggttataccctcggtcaaagagacgttggcacgtggtggttttgtcaaactcgctgaagagagtttggagatcaagattccagaactgtattgcactttcacagacaggttagtgctggagtacaaaaaagctgaagagttcaagtcttgtgatctgtctaaaccgttagaagagtcagagaaatactacaacgctttatccgagctgtctgtgctcgagaacctcgactcttttgacttggaagcctttaaagagttgtgccagaagaaaagcgttgatccggatgtcgctgcaaaggtggtggtggcgataatgaagagtgagttgacgttaccgttcaagaaacctactgaggaagaaatcgcagagtcgcttagcaatgatacaatacggaatgagggtttgagtctgagtaataccgcacctttcccgtgtgtgagcaatctcgagggagggttggtgccagcgtgcgggctgtgtccgaaaagtggtggtttcgacaagattgatatggatatatctgagttccatctcaggagtgtagatgcagttaaaaagggggctatgatgtcagcggtgtacacagggaacatcaaggttcagcagatgaagaactttgtagattatctaagtgcgtcactgtcagctactgtctcaaatctctgtaaggtgcttagagatgttcatggggtagatccagagtcacaggagaaatccggagtgtgggatgtgagaagaggacgatggttactaaaacctaacgcgaaatgtcacgcgtggggagttgcggaagatgccaatcataagttggttatcgtgttacttaactgggatgatggaaaacctgtctgcgatcagacatggtatcgattggcggtgtctagtgattctttggtgtattccgatatggggaaacttaaaacgttgacgtcgtgctgtgtggatggcgaacctccagagcctagggccaaggtggttcttgttgatggagttccaggatgtggaaaaacgaaggaaattctggagaaggttaacttctctgaagatttggttttagtccctggaaaggaggcgtcgaagatgatcatacgacgagcgaaccaggcaggagttacgagagctgatagggataacgtgagaacagtggattctttcttaatgcaccctccaaagagggtatttaagaggttgttcattgatgaaggattaatgctgcataccggttgtgttaactttttgacgctgatttcgcaatgcgatatagcatacgtctacggcgacacacaacagattcccttcatttgtagggttgcaaattttccgtatcccaaacattttgcaagacttgtcgttgatgaaaaggaagacagaaggataacgctcagatgccctgcagacgtcacttttttccttaacaagaaatatgacggctcagtgttgtgtactagcagtgtggaaagatcggtcagtgcgcaggttgtgagagggaaaggtgcattaaacccgataactttaccgttagaggggaaaattttaaccttcacacaggccgacaagttcgagttactagacaagggctacaaggatgtgaatacggtccatgaggttcaaggggaaacatatgaaaaaacagctattgttcggttaacggcaactccgttggagatcatatctagggcgtcacctcatgttttggtagcgctgacgagacacacgactagttgtaaatatttttcagtcgtgttggatcctttagtgagtgtgatttcagagatggagaagttgtccaatttcatccttgacatgtacaaggtggagtcgggaacccaatagcaattacagatcgatgcggtgttcaaaggggtcaacttaaatgttccaacgccaaagtcaggagattggagagacatgcagttttattacgacactcttcttcctggtaacagcactattcttaacgaatttgatgctgttaccatgaatttgagggatatatccttaaatgtcaaagattgcagaatcgacttctctaaatccgtgcaagtgcccaaagaaaaaccagttttcttaaaacccaagataagaactgcggcagaaatgccgagaactgcggggttaatagagaatttggttgcaatgatcaagagaaatatgaatgcaccggatttgactgggacgatagatatagaggacactgcatcactggtggttgaaaagttttgggattcgtatatcgtaaaggagttcagcggaattgaggggatggcaaagacaagggaaggtttttcaagatggctttctaaacaagagtcgtctacggtcggtcagttagcggatttcaactttgtggatttgcctgcagttgatgagtacaagcatatgatcaagagtcagcctaagcaaaagttagacttgagtattcaagatgaatatcctgctttgcagacgatagtctaccattcaaagaagatcaatgcaatttttggtcctatgttttcagaacttacgagaatgcttcttgaaagagttgatacatctaagtttctgttttacactaggaaaacgccaactcagattgaggaatttttctcagacctcgattcgtcgcaagcaatggaaattttggaactcgacatttcaaagtacgacaagtctcagaacgagttccattgtgctgtggaatacaagatatgggagaagcttggaatagacgagtggttggcagaggtgtggcgacaagggcacaggaaaacgacgctgaaagactatacggccgggatcaaaacgtgtttgtggtatcagaggaaaagcggtgatgtaactacctttattgggaacaccatcatcatcgctgcgtgcttaagttctatgattccgatggaaaaggtgattaaagcagcattctgcggtgacgacagtttgatttacattccgaaaggtttagatctgccggatattcaagctggagccaacctaacgtggaatttcgaggcgaagctcttcaggaaaaagtatggttatttctgcggtcgatatgtaatccaccatgatagaggagctattgtatattacgatccacttaagctaatatctaagttaggttgtaaacatataaaggatgaggtccacttagaagagttacgtaggtctctgtgtgatgtagctagtaacttaaataattgtgcgtatttttctcaattagatgaggccgttgccgaggttcataaaaccgcggttggcggatcgtttgcttattgtagtataattaaatacttatcagataaaaggttgtttaaagatttgttttttgtttgataatgtcgaccgtgtcgtacaagcctaaggtgagtgacttcctttctctttcgagaacagaggaaattttaccgaaagctttaacgagattgaagactgtgtctgtaagtactaaggatgtcatatcagttaaggagtctgagtctttgtgtgatatagatttgttagttaatgtgccattagataagtttagatacgtgggtattttaggagttgtttttactggcgagtggcttattccggatttcgttaagggtggtgtgacggtgagtgtgattgacaagcgtctggaaaactcgaaggagtgtataattggtacgtacagagctgctgctaaggacagaaggttccagtttaagctggtgcctaactactttgtgtctgtaacggacgctaagagaaaaccgtggcaggttcatgtgcgtattcaaaatctgaagattgaagctggatggcaaccgttggctctggaagttgtttccgtagctatggttaccaacaatgtggttgtgaagggtttaagagaaagagtcatcgctgtagatgatccgaacgttgagggtttcgaaggtgtagttgacgaattcatcgattcggttgcagcatttaaagcggttgacaatttcaggaaaaagaaaaggaagattggaggaagggatgtgattagtaagtataagtatagaccagagaagtacgccggtcctgattcgttacttaataaagaagaaaatgtcatacaacatcacgaactcgaatcagtaccagttttttgcagcggtatgggcagagcccatagcgatgcttaaccagtgcatatcagcgttgtcacagtcgtatcagacacaagctgcgagagatactgtcagacagcaattctcgaacttgttaagtgcgattgtgacaccgaaccagcggtttccagaaacaggataccgggtgtatgttaattcagcagttctaaaaccgttgtacgaggctcttatgaagtcttttgatactagaaataggatcattgagaccgaagaagagtcgcgtccttcggcttccgaagtagccaatgcaacacaacgtgttgacgatgcgaccgtggccatcaggagtcaaattcagcttttgctgagtgagctttccagtggacatggtcttatgaacagggcagagtttgaggttttaataccttgggctactgcgccggctaaataggcgtggtgcacacgatagtgcatagtgttttcctctccacttaaatcgaagaggtattcttacggtgtaaatccgtaagggtggcgtaaaccaaattacgtaatgttttgggttccatttaaatcgaaacccgttatttcctggatcacctgttaacgcacgcttggcgtgtattacagtgggaataactaaaagtgagaggttcgaatcctccctaaccccgggtaggggccca',
+    'GBSeq_source': 'Wasabi mottle virus',
+    'GBSeq_strandedness': 'single',
+    'GBSeq_taxonomy': 'Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Alsuviricetes; Martellivirales; Virgaviridae; Tobamovirus',
+    'GBSeq_topology': 'linear',
+    'GBSeq_update-date': '13-AUG-2018',
+    'GBSeq_xrefs': list([
+      dict({
+        'GBXref_dbname': 'BioProject',
+        'GBXref_id': 'PRJNA485481',
+      }),
+    ]),
+  })
+# ---
+# name: TestTaxonomy.test_load_and_cache
+  dict({
+    'CreateDate': '2012/06/13 13:18:46',
+    'Division': 'Viruses',
+    'GeneticCode': dict({
+      'GCId': '1',
+      'GCName': 'Standard',
+    }),
+    'Lineage': 'Viruses; Monodnaviria; Shotokuvirae; Cressdnaviricota; Repensiviricetes; Geplafuvirales; Geminiviridae; Begomovirus',
+    'LineageEx': list([
+      dict({
+        'Rank': 'superkingdom',
+        'ScientificName': 'Viruses',
+        'TaxId': '10239',
+      }),
+      dict({
+        'Rank': 'clade',
+        'ScientificName': 'Monodnaviria',
+        'TaxId': '2731342',
+      }),
+      dict({
+        'Rank': 'kingdom',
+        'ScientificName': 'Shotokuvirae',
+        'TaxId': '2732092',
+      }),
+      dict({
+        'Rank': 'phylum',
+        'ScientificName': 'Cressdnaviricota',
+        'TaxId': '2732416',
+      }),
+      dict({
+        'Rank': 'class',
+        'ScientificName': 'Repensiviricetes',
+        'TaxId': '2732424',
+      }),
+      dict({
+        'Rank': 'order',
+        'ScientificName': 'Geplafuvirales',
+        'TaxId': '2732539',
+      }),
+      dict({
+        'Rank': 'family',
+        'ScientificName': 'Geminiviridae',
+        'TaxId': '10811',
+      }),
+      dict({
+        'Rank': 'genus',
+        'ScientificName': 'Begomovirus',
+        'TaxId': '10814',
+      }),
+    ]),
+    'MitoGeneticCode': dict({
+      'MGCId': '0',
+      'MGCName': 'Unspecified',
+    }),
+    'ParentTaxId': '10814',
+    'PubDate': '2012/06/19 18:00:57',
+    'Rank': 'species',
+    'ScientificName': 'Jacquemontia mosaic Yucatan virus',
+    'TaxId': '1198450',
+    'UpdateDate': '2012/06/19 18:37:18',
+  })
+# ---
