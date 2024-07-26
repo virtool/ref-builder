@@ -18,6 +18,7 @@ def create_otu(
     repo: Repo,
     taxid: int,
     accessions: list[str],
+    acronym: str = "",
     ignore_cache: bool = False,
 ) -> RepoOTU | None:
     """Create a new OTU by taxonomy ID and autogenerate a schema.
@@ -27,6 +28,7 @@ def create_otu(
     :param repo: the repository to add the OTU to.
     :param taxid: the taxonomy ID to use.
     :param accessions: a list of accessions to use for the schema.
+    :param acronym: an alternative name to use during searches.
     :param ignore_cache: whether to ignore the cache.
 
     """
@@ -65,7 +67,7 @@ def create_otu(
 
     try:
         otu = repo.create_otu(
-            acronym="",
+            acronym=acronym,
             legacy_id=None,
             name=taxonomy.name,
             schema=schema,

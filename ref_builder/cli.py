@@ -72,6 +72,7 @@ def otu() -> None:
     type=str,
 )
 @click.option("--autofill/--no-fill", default=False)
+@click.option("--acronym", type=str, default="")
 @ignore_cache_option
 @debug_option
 @path_option
@@ -82,6 +83,7 @@ def otu_create(
     taxid: int,
     accessions_: list[str],
     autofill: bool,
+    acronym: str,
 ) -> None:
     """Create a new OTU for the given Taxonomy ID and accessions."""
     configure_logger(debug)
@@ -97,6 +99,7 @@ def otu_create(
             repo,
             taxid,
             accessions_,
+            acronym=acronym,
             ignore_cache=ignore_cache,
         )
     except ValueError as e:
