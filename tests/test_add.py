@@ -13,6 +13,7 @@ def run_create_otu_command(
     path: Path,
     taxid: int,
     accessions: list,
+    acronym: str = "",
     autofill: bool = False,
 ):
     autofill_option = ["--autofill"] if autofill else []
@@ -22,6 +23,7 @@ def run_create_otu_command(
         + [str(taxid)]
         + accessions
         + ["--path", str(path)]
+        + ["--acronym", acronym]
         + autofill_option,
         check=False,
     )
@@ -134,6 +136,23 @@ class TestCreateOTUCommands:
 
         assert otu.schema == snapshot
         assert {"DQ178610", "DQ178611"}.intersection(otu.accessions)
+
+    def test_add_acronym_ok(self, precached_repo: Repo):
+        """Test if the --acronym option works as planned."""
+        run_create_otu_command(
+            taxid=345184,
+            accessions=["DQ178610", "DQ178611"],
+            path=precached_repo.path,
+            acronym="CabLCJV",
+            autofill=True,
+        )
+
+        otus = list(Repo(precached_repo.path).iter_otus())
+
+        assert len(otus) == 1
+        otu = otus[0]
+
+        assert otu.acronym == "CabLCJV"
 
 
 class TestAddSequences:
