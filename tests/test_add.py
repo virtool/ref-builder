@@ -5,7 +5,7 @@ import pytest
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
-from ref_builder.otu import create_otu, create_otu_with_schema, update_otu
+from ref_builder.otu import create_otu, update_otu
 from ref_builder.repo import Repo
 
 VIRTOOL_REF = ["ref-builder"]
@@ -80,7 +80,7 @@ class TestCreateOTU:
     ):
         assert list(precached_repo.iter_otus()) == []
 
-        otu = create_otu_with_schema(
+        otu = create_otu(
             repo=precached_repo,
             taxid=taxid,
             accessions=accessions,
@@ -92,6 +92,9 @@ class TestCreateOTU:
 
         assert otu.dict() == snapshot(exclude=props("id", "repr_isolate"))
 
+    def test_empty_fail(self, scratch_repo: Repo):
+        with pytest.raises(ValueError):
+            create_otu(scratch_repo, 345184, ["DQ178610", "DQ178611"])
 
 class TestCreateOTUCommands:
     @pytest.mark.parametrize(
@@ -191,7 +194,9 @@ class TestUpdateOTU:
         precached_repo: Repo,
         snapshot: SnapshotAssertion,
     ):
-        otu = create_otu(precached_repo, 345184)
+        otu = create_otu(
+            precached_repo, 345184, ["DQ178610", "DQ178611"]
+        )
         update_otu(precached_repo, otu)
 
         otu = precached_repo.get_otu(otu.id)

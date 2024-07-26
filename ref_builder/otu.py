@@ -14,7 +14,7 @@ from ref_builder.utils import IsolateName, IsolateNameType
 logger = structlog.get_logger("otu")
 
 
-def create_otu_with_schema(
+def create_otu(
     repo: Repo,
     taxid: int,
     accessions: list[str],
@@ -102,49 +102,6 @@ def create_otu_with_schema(
         otu.add_sequence(sequence, isolate_id=isolate.id)
 
     return otu
-
-
-def create_otu(
-    repo: Repo,
-    taxid: int,
-    ignore_cache: bool = False,
-) -> RepoOTU:
-    """Create a new OTU by taxonomy ID.
-
-    :param repo: the repository to add the OTU to.
-    :param taxid: the taxonomy ID to use.
-    :param ignore_cache: whether to ignore the cache.
-    :returns: the created OTU.
-
-    """
-    otu_logger = logger.bind(taxid=taxid)
-
-    if repo.get_otu_by_taxid(taxid):
-        raise ValueError(
-            f"Taxonomy ID {taxid} has already been added to this reference.",
-        )
-
-    ncbi = NCBIClient(ignore_cache)
-
-    taxonomy = ncbi.fetch_taxonomy_record(taxid)
-
-    if taxonomy is None:
-        otu_logger.fatal(f"Taxonomy ID {taxid} not found")
-        sys.exit(1)
-
-    try:
-        otu = repo.create_otu(
-            acronym="",
-            legacy_id=None,
-            name=taxonomy.name,
-            schema=None,
-            taxid=taxid,
-        )
-
-        return otu
-    except ValueError as e:
-        otu_logger.warning(e)
-        sys.exit(1)
 
 
 def update_otu(

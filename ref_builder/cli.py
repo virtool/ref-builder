@@ -16,7 +16,7 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.options import debug_option, ignore_cache_option, path_option
 from ref_builder.otu import (
     add_sequences,
-    create_otu_with_schema,
+    create_otu,
     update_otu,
 )
 from ref_builder.repo import Repo
@@ -93,7 +93,7 @@ def otu_create(
         sys.exit(1)
 
     try:
-        new_otu = create_otu_with_schema(
+        new_otu = create_otu(
             repo,
             taxid,
             accessions_,
