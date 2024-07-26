@@ -6,8 +6,26 @@
     ]),
     'legacy_id': None,
     'name': 'Cabbage leaf curl Jamaica virus',
-    'repr_isolate': None,
-    'schema': None,
+    'schema': dict({
+      'molecule': dict({
+        'strandedness': 'double',
+        'topology': 'circular',
+        'type': 'DNA',
+      }),
+      'multipartite': True,
+      'segments': list([
+        dict({
+          'length': 2575,
+          'name': 'DNA-A',
+          'required': True,
+        }),
+        dict({
+          'length': 2494,
+          'name': 'DNA-B',
+          'required': True,
+        }),
+      ]),
+    }),
     'taxid': 345184,
   })
 # ---
@@ -109,40 +127,10 @@
     'taxid': 345184,
   })
 # ---
-# name: TestCreateOTUCommands.test_autofill
-  dict({
-    'acronym': '',
-    'excluded_accessions': list([
-    ]),
-    'legacy_id': None,
-    'name': 'Cabbage leaf curl Jamaica virus',
-    'schema': dict({
-      'molecule': dict({
-        'strandedness': 'double',
-        'topology': 'circular',
-        'type': 'DNA',
-      }),
-      'multipartite': True,
-      'segments': list([
-        dict({
-          'length': 2575,
-          'name': 'DNA-A',
-          'required': True,
-        }),
-        dict({
-          'length': 2494,
-          'name': 'DNA-B',
-          'required': True,
-        }),
-      ]),
-    }),
-    'taxid': 345184,
-  })
-# ---
-# name: TestCreateOTUCommands.test_autofill_with_schema
+# name: TestCreateOTUCommands.test_autofill_ok
   OTUSchema(molecule=Molecule(strandedness='double', topology='circular', type='DNA'), segments=[Segment(name='DNA-A', required=True, length=2575), Segment(name='DNA-B', required=True, length=2494)], multipartite=True)
 # ---
-# name: TestCreateOTUCommands.test_autoschema[1278205-accessions0]
+# name: TestCreateOTUCommands.test_ok[1278205-accessions0]
   dict({
     'acronym': '',
     'excluded_accessions': list([
@@ -167,7 +155,7 @@
     'taxid': 1278205,
   })
 # ---
-# name: TestCreateOTUCommands.test_autoschema[345184-accessions1]
+# name: TestCreateOTUCommands.test_ok[345184-accessions1]
   dict({
     'acronym': '',
     'excluded_accessions': list([
@@ -197,7 +185,7 @@
     'taxid': 345184,
   })
 # ---
-# name: TestUpdateOTU.test_success_no_exclusions
+# name: TestUpdateOTU.test_without_exclusions_ok
   list([
     dict({
       'acronym': '',
@@ -205,7 +193,26 @@
       ]),
       'legacy_id': None,
       'name': 'Cabbage leaf curl Jamaica virus',
-      'schema': None,
+      'schema': dict({
+        'molecule': dict({
+          'strandedness': 'double',
+          'topology': 'circular',
+          'type': 'DNA',
+        }),
+        'multipartite': True,
+        'segments': list([
+          dict({
+            'length': 2575,
+            'name': 'DNA-A',
+            'required': True,
+          }),
+          dict({
+            'length': 2494,
+            'name': 'DNA-B',
+            'required': True,
+          }),
+        ]),
+      }),
       'taxid': 345184,
     }),
   ])
