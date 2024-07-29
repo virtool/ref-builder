@@ -87,6 +87,8 @@ def create_otu_with_schema(
 
     otu.add_isolate(isolate)
 
+    otu.repr_isolate = repo.set_repr_isolate(otu_id=otu.id, isolate_id=isolate.id)
+
     for record in records:
         sequence = repo.create_sequence(
             otu_id=otu.id,

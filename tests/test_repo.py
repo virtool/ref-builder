@@ -128,7 +128,6 @@ class TestCreateOTU:
                 "acronym": "TMV",
                 "legacy_id": "abcd1234",
                 "name": "Tobacco mosaic virus",
-                "rep_isolate": None,
                 "schema": {
                     "molecule": {
                         "strandedness": "single",

@@ -94,7 +94,6 @@ class CreateOTUData(EventData):
     legacy_id: str | None
     name: str
     taxid: int
-    rep_isolate: UUID4 | None
     otu_schema: OTUSchema | None = Field(None, alias="schema")
 
 
@@ -166,4 +165,15 @@ class CreateSchema(Event):
     """An OTU schema creation event."""
 
     data: CreateSchemaData
+    query: OTUQuery
+
+
+class SetReprIsolateData(EventData):
+    isolate_id: UUID4
+
+
+class SetReprIsolate(Event):
+    """A representative isolate setting event."""
+
+    data: SetReprIsolateData
     query: OTUQuery

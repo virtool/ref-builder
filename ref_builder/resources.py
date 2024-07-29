@@ -283,7 +283,10 @@ class RepoOTU:
         """Return a shorthand representation of the OTU's contents."""
         return (
             f"EventSourcedRepoOTU(id='{self.id}', taxid='{self.taxid}', "
-            f"name={self.name}, accessions={list(self.accessions)})"
+            f"name={self.name}, "
+            f"schema={self.schema}, "
+            f"repr_isolate={self.repr_isolate}, "
+            f"accessions={list(self.accessions)})"
         )
 
     def add_isolate(self, isolate: RepoIsolate) -> None:
@@ -340,6 +343,7 @@ class RepoOTU:
             "id": self.id,
             "acronym": self.acronym,
             "excluded_accessions": list(self.excluded_accessions),
+            "repr_isolate": self.repr_isolate,
             "legacy_id": self.legacy_id,
             "name": self.name,
             "schema": self.schema.model_dump() if self.schema is not None else None,
