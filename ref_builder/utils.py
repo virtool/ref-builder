@@ -27,6 +27,9 @@ class IsolateNameType(StrEnum):
     ISOLATE = "isolate"
     STRAIN = "strain"
     CLONE = "clone"
+    VARIANT = "variant"
+    GENOTYPE = "genotype"
+    SEROTYPE = "serotype"
     REFSEQ = "refseq"
 
 
