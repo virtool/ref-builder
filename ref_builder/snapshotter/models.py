@@ -1,10 +1,11 @@
 from typing import Annotated
 
 from pydantic import (
-    UUID4,
+    AliasChoices,
     BaseModel,
     Field,
     TypeAdapter,
+    UUID4,
     field_validator,
 )
 
@@ -78,12 +79,20 @@ class OTUSnapshotOTU(BaseModel):
     acronym: str = ""
     """The OTU acronym (eg. TMV for Tobacco mosaic virus)."""
 
+    otu_schema: Annotated[
+        OTUSchema,
+        Field(
+            validation_alias=AliasChoices("otu_schema", "schema"),
+            serialization_alias="schema"
+        )
+    ]
+    """The OTU schema."""
+
     legacy_id: str | None
     """A string based ID carried over from a legacy Virtool reference repository."""
 
-    otu_schema: Annotated[OTUSchema | None, Field(alias="schema")] = None
-
     repr_isolate: UUID4 | None = None
+    """The representative isolate."""
 
 
 class OTUSnapshotToCIsolate(BaseModel):

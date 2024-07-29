@@ -204,7 +204,12 @@ class OTUSnapshot:
         """Cache an OTU at a given event."""
         self._metadata.at_event = at_event
 
-        validated_otu = OTUSnapshotOTU(**otu.dict(exclude_contents=True))
+        try:
+            validated_otu = OTUSnapshotOTU.model_validate(otu.dict(exclude_contents=True))
+        except ValidationError:
+            msg = f"{otu.dict(exclude_contents=True)} is not a valid OTU."
+            raise ValueError(msg)
+
         with open(self._otu_path, "w") as f:
             f.write(validated_otu.model_dump_json(indent=indent))
 
