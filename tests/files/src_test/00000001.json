@@ -1,1 +1,1 @@
-{"id":1,"data":{"id":"d50e89dc-69bb-4c31-9343-b736cf3dfcbd","data_type":"genome","name":"es-ref-mini","organism":"viruses"},"query":{"repository_id":"d50e89dc-69bb-4c31-9343-b736cf3dfcbd"},"timestamp":"2024-04-11T21:13:10.921430","type":"CreateRepo"}
+{"id":1,"data":{"id":"5424c849-f0d1-4fdb-a33d-90a92fd05a05","data_type":"genome","name":"src_test","organism":"viruses"},"query":{"repository_id":"5424c849-f0d1-4fdb-a33d-90a92fd05a05"},"timestamp":"2024-07-29T20:45:33.487811","type":"CreateRepo"}
