@@ -1,9 +1,11 @@
-import subprocess
 from pathlib import Path
 from typing import List
 
 import orjson
 from pydantic import BaseModel, TypeAdapter
+
+from ref_builder.repo import Repo, DataType
+from ref_builder.otu import create_otu_with_schema, add_sequences
 
 
 class OTUContents(BaseModel):
@@ -12,41 +14,33 @@ class OTUContents(BaseModel):
     contents: list[str]
 
 
-ref_contents_adapter = TypeAdapter(List[OTUContents])
+otu_contents_list_adapter = TypeAdapter(List[OTUContents])
+"""Aids the serialization of a scratch repo's table of contents."""
 
 
 def generate_src_test_files(temp_path: Path, toc_path: Path) -> dict:
     print("Generating new test files...")
 
-    subprocess.run(
-        ["ref-builder", "init"]
-        + ["--path", str(temp_path)]
-        + ["--data-type", "genome",]
-        + ["--name", "src_test",]
-        + ["--organism", "viruses"],
-        check=False,
+    temp_scratch_repo = Repo.new(
+        data_type=DataType.GENOME, name="src_test", path=temp_path, organism="viruses"
     )
 
-    print("Repo initialized")
+    print(f"Temp repo initialized")
 
     with open(toc_path, "rb") as f:
-        toc = ref_contents_adapter.validate_json(f.read())
+        toc = otu_contents_list_adapter.validate_json(f.read())
 
     for otu_contents in toc:
-        subprocess.run(
-            ["ref-builder", "otu"]
-            + ["create", str(otu_contents.taxid)]
-            + otu_contents.otu_schema +
-            ["--path", str(temp_path)],
-            check=False,
+        otu = create_otu_with_schema(
+            repo=temp_scratch_repo,
+            taxid=otu_contents.taxid,
+            accessions=otu_contents.otu_schema
         )
 
-        subprocess.run(
-            ["ref-builder", "sequences", "create"]
-            + ["--taxid", str(otu_contents.taxid)]
-            + otu_contents.contents
-            + ["--path", str(temp_path)],
-            check=False,
+        add_sequences(
+            repo=temp_scratch_repo,
+            otu=otu,
+            accessions=otu_contents.contents
         )
 
     data = {}
