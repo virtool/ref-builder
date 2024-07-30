@@ -40,7 +40,6 @@ def test_ok(
 
     with open(output_path, "rb") as f:
         built_json = orjson.loads(f.read())
-        assert built_json
 
     assert built_json == snapshot(exclude=props("created_at", "otus"))
 
