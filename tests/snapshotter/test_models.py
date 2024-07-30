@@ -102,6 +102,8 @@ class TestRepoToSnapshotModel:
 
         assert converted_model.id == otu.id
 
-        assert converted_model.model_dump(by_alias=True) == snapshot(exclude=props("id"))
+        assert converted_model.model_dump(by_alias=True) == snapshot(
+            exclude=props("id", "repr_isolate")
+        )
 
 
