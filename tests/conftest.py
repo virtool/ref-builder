@@ -106,7 +106,7 @@ def scratch_path(scratch_repo: Repo) -> Path:
 
 
 @pytest.fixture()
-def scratch_repo(files_path: Path, tmp_path: Path, scratch_event_store_data: dict[str, dict]) -> Repo:
+def scratch_repo(tmp_path: Path, scratch_event_store_data: dict[str, dict]) -> Repo:
     """A prepared scratch repository."""
     path = tmp_path / "scratch_repo"
 
