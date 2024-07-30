@@ -85,6 +85,7 @@ class TestOTU:
             schema=otu.schema,
             excluded_accessions=otu.excluded_accessions,
             isolates=otu.isolates,
+            repr_isolate=otu.repr_isolate
         )
 
         assert otu == otu_copy
