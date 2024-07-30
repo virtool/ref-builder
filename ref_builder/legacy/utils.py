@@ -1,9 +1,6 @@
-import re
 from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
-from random import choice
-from string import ascii_letters, ascii_lowercase, digits
 
 import orjson
 from pydantic_core import ErrorDetails
@@ -214,100 +211,6 @@ def replace_otu(path: Path, otu: dict) -> None:
                 )
 
 
-def iter_legacy_otus(src_path: Path) -> Generator[dict, None, None]:
-    """Iterate over all OTUs in a legacy repository.
-
-    :param src_path: The path to the legacy repository.
-    :return: a generator that yields OTU data dictionaries.
-    """
-    for alpha_dir_path in sorted(src_path.iterdir()):
-        if alpha_dir_path.name == "meta.json":
-            continue
-
-        for otu_dir_path in sorted(alpha_dir_path.iterdir()):
-            yield build_legacy_otu(otu_dir_path)
-
-
-def generate_random_alphanumeric(
-    length: int = 8,
-    mixed_case: bool = False,
-    excluded: list | set | None = None,
-) -> str:
-    """Generates a random string composed of letters and numbers.
-
-    :param length: the length of the string.
-    :param mixed_case: included alpha characters will be mixed case instead of lowercase
-    :param excluded: strings that may not be returned.
-    :return: a random alphanumeric string.
-    """
-    excluded_set = set() if excluded is None else set(excluded)
-
-    characters = digits + (ascii_letters if mixed_case else ascii_lowercase)
-
-    candidate = "".join([choice(characters) for _ in range(length)])
-
-    if candidate not in excluded_set:
-        return candidate
-
-    return generate_random_alphanumeric(length=length, excluded=excluded_set)
-
-
-def generate_otu_dirname(name: str, otu_id: str = "") -> str:
-    """Takes in a human-readable string, replaces whitespace and symbols
-    and adds the Virtool hash id as a suffix
-
-    :param name: Human-readable, searchable name of the OTU
-    :param otu_id: ID hash of OTU
-    :return: A directory name in the form of 'converted_otu_name--taxid'
-    """
-    no_plus = name.replace("+", "plus ")
-    no_symbols = re.split(r"[():/-]+", no_plus)
-    joined = " ".join(no_symbols)
-    no_whitespace = re.sub(r"[\s]+", "_", joined)
-
-    dirname = no_whitespace.lower()
-    dirname += "--" + otu_id
-
-    return dirname
-
-
-def generate_unique_ids(
-    n: int = 1,
-    length: int = 8,
-    mixed_case: bool = False,
-    excluded: list | set | None = None,
-) -> set:
-    """Generates an n-length list of unique alphanumeric IDs.
-
-    :param n: The number of strings to be generated
-    :param mixed_case: included alpha characters will be mixed case instead of lowercase
-    :param length: The length of each string
-    :param excluded: List of alphanumeric strings that should be excluded from generation
-    """
-    if excluded is None:
-        excluded_set = set()
-    else:
-        excluded_set = set(excluded)
-
-    new_uniques = set()
-    while len(new_uniques) < n:
-        new_uniques.add(generate_random_alphanumeric(length, mixed_case, excluded_set))
-
-    return new_uniques
-
-
-def is_v1(src_path: Path) -> bool:
-    """Returns True if the given reference directory is formatted under version 1 guidelines.
-    Determines if virtool ref migrate should be run before using this version of virtool-cli
-
-    :param src_path: Path to a src database directory
-    :return: Boolean value depending on whether alphabetized bins are found.
-    """
-    alpha_bins = list(src_path.glob("[a-z]"))
-
-    return bool(alpha_bins)
-
-
 def extract_isolate_source(
     genbank_records: list[NCBIGenbank],
 ) -> LegacyIsolateSource:
@@ -342,3 +245,17 @@ def extract_isolate_source(
         name=accessions[0].upper(),
         type=LegacySourceType.GENBANK,
     )
+
+
+def iter_legacy_otus(src_path: Path) -> Generator[dict, None, None]:
+    """Iterate over all OTUs in a legacy repository.
+
+    :param src_path: The path to the legacy repository.
+    :return: a generator that yields OTU data dictionaries.
+    """
+    for alpha_dir_path in sorted(src_path.iterdir()):
+        if alpha_dir_path.name == "meta.json":
+            continue
+
+        for otu_dir_path in sorted(alpha_dir_path.iterdir()):
+            yield build_legacy_otu(otu_dir_path)
