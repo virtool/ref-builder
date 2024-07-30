@@ -11,7 +11,7 @@ from ref_builder.legacy.utils import build_legacy_otu
 from ref_builder.ncbi.cache import NCBICache
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.repo import Repo
-from ref_builder.otu import create_otu_with_schema, add_sequences
+from ref_builder.otu import create_otu, add_sequences
 from ref_builder.utils import DataType
 
 
@@ -156,7 +156,7 @@ def scratch_event_store_data(pytestconfig, tmp_path, scratch_repo_contents_path)
             toc = otu_contents_list_adapter.validate_json(f.read())
 
         for otu_contents in toc:
-            otu = create_otu_with_schema(
+            otu = create_otu(
                 repo=temp_scratch_repo,
                 taxid=otu_contents.taxid,
                 accessions=otu_contents.otu_schema
