@@ -1,9 +1,8 @@
-import json
 from pathlib import Path
 
 import arrow
-import pytest
 import orjson
+import pytest
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
@@ -12,9 +11,10 @@ from ref_builder.build import build_json
 
 @pytest.fixture
 def comparison_reference(pytestconfig, tmp_path, scratch_repo) -> dict:
+    """A prebuilt reference file. Cached in .pytest_cache."""
     comparison_reference = pytestconfig.cache.get("comparison_reference", None)
 
-    if comparison_reference:
+    if comparison_reference is not None:
         return comparison_reference
 
     output_path = tmp_path / "comparison_reference.json"
@@ -40,10 +40,7 @@ def test_ok(
 
     with open(output_path, "rb") as f:
         built_json = orjson.loads(f.read())
-
-    assert comparison_reference
-
-    assert built_json
+        assert built_json
 
     assert built_json == snapshot(exclude=props("created_at", "otus"))
 
@@ -60,7 +57,8 @@ def test_indent(scratch_path: Path, tmp_path: Path):
     build_json(False, output_path, scratch_path, "2.1.0")
     build_json(True, output_indented_path, scratch_path, "2.1.0")
 
-    assert {**json.load(output_path.open("rb")), "created_at": ""} == {
-        **json.load(output_indented_path.open("rb")),
-        "created_at": "",
-    }
+    assert (
+        {**orjson.loads(output_path.open("rb").read()), "created_at": ""}
+        == {**orjson.loads(output_indented_path.open("rb").read()), "created_at": ""}
+    )
+
