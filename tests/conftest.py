@@ -1,6 +1,7 @@
 import shutil
 from pathlib import Path
 
+import orjson
 import pytest
 from pytest_mock import MockerFixture
 
@@ -9,6 +10,7 @@ from ref_builder.ncbi.cache import NCBICache
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.repo import Repo
 from ref_builder.utils import DataType
+from tests.src_test_gen import generate_src_test_files
 
 
 @pytest.fixture()
@@ -102,12 +104,17 @@ def scratch_path(scratch_repo: Repo) -> Path:
 
 
 @pytest.fixture()
-def scratch_repo(files_path: Path, tmp_path: Path) -> Repo:
+def scratch_repo(files_path: Path, tmp_path: Path, scratch_event_store_data: dict[str, dict]) -> Repo:
     """A prepared scratch repository."""
     path = tmp_path / "scratch_repo"
 
-    shutil.copytree(files_path / "src_test", path / "src")
     shutil.copytree(files_path / "cache_test", path / ".cache")
+    src_path = path / "src"
+    src_path.mkdir()
+
+    for filename in scratch_event_store_data:
+        with open(src_path / filename, "wb") as f:
+            f.write(orjson.dumps(scratch_event_store_data[filename]))
 
     return Repo(path)
 
@@ -125,3 +132,21 @@ def scratch_user_cache_path(files_path: Path, tmp_path: Path) -> Path:
     shutil.copytree(files_path / "cache_test", path / "ncbi")
 
     return path
+
+
+@pytest.fixture()
+def scratch_repo_contents_path(files_path):
+    return files_path / "src_test_contents.json"
+
+
+@pytest.fixture
+def scratch_event_store_data(pytestconfig, tmp_path, scratch_repo_contents_path):
+    scratch_src = pytestconfig.cache.get("scratch/src", {})
+    if not scratch_src:
+        scratch_src = generate_src_test_files(tmp_path, scratch_repo_contents_path)
+        if scratch_src:
+            pytestconfig.cache.set("scratch/src", scratch_src)
+        else:
+            raise (ValueError("scratch_src did not generate properly"))
+
+    return scratch_src
