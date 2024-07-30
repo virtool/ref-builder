@@ -189,12 +189,6 @@ class OTUSnapshot:
         """The path to a list of accessions that should not be fetched in the future."""
         return self.path / "excluded.json"
 
-    def clean(self):
-        """Delete and remake OTUSnapshot directory structure."""
-        shutil.rmtree(self.path)
-        self.path.mkdir()
-        self._data.clean()
-
     def cache(
         self,
         otu: "RepoOTU",

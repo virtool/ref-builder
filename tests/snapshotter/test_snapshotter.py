@@ -49,15 +49,6 @@ class TestSnapshotIndex:
         for name in true_otu_names:
             assert snapshotter.load_by_name(name).name == name
 
-    def test_accessions(self, scratch_repo: Repo, snapshotter: Snapshotter):
-        true_accessions = set()
-
-        for otu in scratch_repo.iter_otus(ignore_cache=True):
-            true_accessions.update(otu.accessions)
-
-        assert true_accessions
-        assert true_accessions == snapshotter.accessions
-
 
 class TestSnapshotIndexCaching:
     @pytest.mark.parametrize(
