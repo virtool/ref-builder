@@ -53,10 +53,7 @@ def configure_logger(debug: bool = False) -> None:
         processors=processors,
         logger_factory=structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,
-    )
-
-    logger_level = logging.DEBUG if debug else logging.INFO
-
-    structlog.configure(
-        wrapper_class=structlog.make_filtering_bound_logger(logger_level),
+        wrapper_class=structlog.make_filtering_bound_logger(
+            logging.DEBUG if debug else logging.INFO,
+        ),
     )
