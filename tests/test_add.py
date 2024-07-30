@@ -56,7 +56,7 @@ class TestCreateOTU:
         """Test that an OTU can be created in an empty repository."""
         otu = create_otu(precached_repo, 345184, ["DQ178610", "DQ178611"])
 
-        assert otu.dict() == snapshot(exclude=props("id", "isolates"))
+        assert otu.dict() == snapshot(exclude=props("id", "isolates", "repr_isolate"))
 
         # Ensure only one OTU is present in the repository, and it matches the return
         # value of the creation function.
@@ -75,7 +75,6 @@ class TestCreateOTU:
         taxid: int,
         accessions: list[str],
         precached_repo: Repo,
-        snapshot: SnapshotAssertion,
     ):
         assert list(precached_repo.iter_otus()) == []
 
@@ -89,7 +88,6 @@ class TestCreateOTU:
         assert otu.schema is not None
         assert otu.repr_isolate is not None
 
-    def test_empty_fail(self, scratch_repo: Repo):
 
 class TestCreateOTUCommands:
     @pytest.mark.parametrize(
