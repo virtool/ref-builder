@@ -22,7 +22,7 @@
     'acronym': '',
     'legacy_id': None,
     'name': 'Faba bean necrotic stunt alphasatellite 1',
-    'repr_isolate': UUID('5c07ad0a-727a-4b8c-aefd-f01a99320127'),
+    'repr_isolate': UUID('96e93bb9-a928-465a-95f3-5bf868945d26'),
     'schema': dict({
       'molecule': dict({
         'strandedness': 'single',
@@ -46,7 +46,7 @@
     'acronym': '',
     'legacy_id': None,
     'name': 'Vallota mosaic virus',
-    'repr_isolate': UUID('724a2b15-d6a3-44f3-bad9-5c212a4d817e'),
+    'repr_isolate': UUID('9bbfd103-243b-4dc1-ac32-f75b1c6f06e5'),
     'schema': dict({
       'molecule': dict({
         'strandedness': 'single',
