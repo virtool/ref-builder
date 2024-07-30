@@ -52,7 +52,7 @@ def build_json(indent: bool, output_path: Path, path: Path, version: str) -> Non
                 "abbreviation": otu.acronym,
                 "isolates": isolates,
                 "name": otu.name,
-                "schema": otu.schema,
+                "schema": otu.schema.model_dump(),
                 "taxid": otu.taxid,
             },
         )

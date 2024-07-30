@@ -1,5 +1,6 @@
 import pytest
 from syrupy import SnapshotAssertion
+from syrupy.filters import props
 
 from ref_builder.repo import Repo
 from ref_builder.resources import (
@@ -68,7 +69,7 @@ class TestRepoToSnapshotModel:
 
             converted_model = OTUSnapshotSequence(**original_sequence.dict())
 
-            assert converted_model.model_dump() == snapshot
+            assert converted_model.model_dump() == snapshot(exclude=props("id"))
 
     @pytest.mark.parametrize("taxid", [1441799, 430059])
     def test_isolate_conversion(
@@ -84,7 +85,7 @@ class TestRepoToSnapshotModel:
 
             converted_model = OTUSnapshotIsolate(**isolate.dict())
 
-            assert converted_model.model_dump() == snapshot
+            assert converted_model.model_dump() == snapshot(exclude=props("id"))
 
     @pytest.mark.parametrize("taxid", [1441799, 430059])
     def test_otu_conversion(
@@ -99,4 +100,10 @@ class TestRepoToSnapshotModel:
 
         converted_model = OTUSnapshotOTU(**otu.dict())
 
-        assert converted_model.model_dump(by_alias=True) == snapshot
+        assert converted_model.id == otu.id
+
+        assert converted_model.model_dump(by_alias=True) == snapshot(
+            exclude=props("id", "repr_isolate")
+        )
+
+
