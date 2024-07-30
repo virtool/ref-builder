@@ -121,6 +121,12 @@ def scratch_repo(files_path: Path, tmp_path: Path, scratch_event_store_data: dic
 
 
 @pytest.fixture()
+def scratch_repo_contents_path(files_path):
+    """The path to the scratch repository's table of contents file."""
+    return files_path / "src_test_contents.json"
+
+
+@pytest.fixture()
 def scratch_user_cache_path(files_path: Path, tmp_path: Path) -> Path:
     """A path to a user cache that contains preloaded data.
 
@@ -135,19 +141,12 @@ def scratch_user_cache_path(files_path: Path, tmp_path: Path) -> Path:
     return path
 
 
-@pytest.fixture()
-def scratch_repo_contents_path(files_path):
-    return files_path / "src_test_contents.json"
-
-
 @pytest.fixture
-def scratch_event_store_data(pytestconfig, tmp_path, scratch_repo_contents_path):
-    scratch_src = pytestconfig.cache.get("scratch_src", {})
-    if not scratch_src:
+def scratch_event_store_data(pytestconfig, tmp_path, scratch_repo_contents_path) -> dict:
+    """Scratch repo events. Cached in .pytest_cache."""
+    scratch_src = pytestconfig.cache.get("scratch_src", None)
+    if scratch_src is None:
         scratch_src = generate_src_test_files(tmp_path, scratch_repo_contents_path)
-        if scratch_src:
-            pytestconfig.cache.set("scratch_src", scratch_src)
-        else:
-            raise (ValueError("scratch_src did not generate properly"))
+        pytestconfig.cache.set("scratch_src", scratch_src)
 
     return scratch_src
