@@ -28,6 +28,12 @@ jobs:
           exit 1
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Restore pytest cache
+        id: cache-pytest-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: .pytest_cache
+          key: saved-pytest
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -42,6 +48,13 @@ jobs:
         run: poetry install
       - name: Test
         run: poetry run pytest
+      - name: Save pytest cache
+        id: cache-pytest-save
+        uses: actions/cache/save@v4
+        with:
+          path: .pytest_cache
+          key: ${{ steps.cache-pytest-restore.outputs.cache-primary-key}}
+
   release:
     if: github.event_name == 'push'
     needs:
