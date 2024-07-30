@@ -5,7 +5,6 @@ import pytest
 
 from ref_builder.legacy.utils import (
     build_legacy_otu,
-    generate_unique_ids,
     iter_legacy_otus,
     replace_otu,
 )
@@ -77,17 +76,3 @@ class TestReplaceOTU:
             )
 
         assert str(e.value) == f"No such OTU parent directory: {otu_path.parent}"
-
-
-def test_generate_unique_ids():
-    """Test that the generate_unique_ids() function generates unique IDs."""
-    initial_hashes = generate_unique_ids(n=40, length=8, mixed_case=False, excluded=[])
-
-    additional_hashes = generate_unique_ids(
-        n=20,
-        length=8,
-        mixed_case=False,
-        excluded=initial_hashes,
-    )
-
-    assert initial_hashes.isdisjoint(additional_hashes)
