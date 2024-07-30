@@ -108,13 +108,14 @@ def scratch_repo(files_path: Path, tmp_path: Path, scratch_event_store_data: dic
     """A prepared scratch repository."""
     path = tmp_path / "scratch_repo"
 
-    shutil.copytree(files_path / "cache_test", path / ".cache")
     src_path = path / "src"
-    src_path.mkdir()
+    src_path.mkdir(parents=True)
 
     for filename in scratch_event_store_data:
         with open(src_path / filename, "wb") as f:
             f.write(orjson.dumps(scratch_event_store_data[filename]))
+
+    (path / ".cache").mkdir(parents=True)
 
     return Repo(path)
 
@@ -141,11 +142,11 @@ def scratch_repo_contents_path(files_path):
 
 @pytest.fixture
 def scratch_event_store_data(pytestconfig, tmp_path, scratch_repo_contents_path):
-    scratch_src = pytestconfig.cache.get("scratch/src", {})
+    scratch_src = pytestconfig.cache.get("scratch_src", {})
     if not scratch_src:
         scratch_src = generate_src_test_files(tmp_path, scratch_repo_contents_path)
         if scratch_src:
-            pytestconfig.cache.set("scratch/src", scratch_src)
+            pytestconfig.cache.set("scratch_src", scratch_src)
         else:
             raise (ValueError("scratch_src did not generate properly"))
 
