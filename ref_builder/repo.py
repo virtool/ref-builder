@@ -18,6 +18,7 @@ import uuid
 from collections import defaultdict
 from collections.abc import Generator
 from pathlib import Path
+from uuid import UUID
 
 import arrow
 from orjson import orjson
@@ -183,7 +184,8 @@ class Repo:
         taxid: int,
     ):
         """Create an OTU."""
-        if otu := self.get_otu_by_taxid(taxid):
+        if (otu_id := self.get_otu_by_taxid(taxid)) is not None:
+            otu = self.get_otu(otu_id)
             raise ValueError(
                 f"OTU already exists as {otu}",
             )
@@ -353,7 +355,7 @@ class Repo:
 
         return None
 
-    def get_otu_by_taxid(self, taxid: int) -> RepoOTU | None:
+    def get_otu_by_taxid(self, taxid: int) -> UUID | None:
         """Return the OTU with the given ``taxid``.
 
         If no OTU is found, return None.
@@ -362,10 +364,21 @@ class Repo:
         :return: the matching OTU or ``None``
 
         """
-        if (otu_id := self._snapshotter.index_by_taxid.get(taxid)) is not None:
+        if (otu_id := self.get_otu_id_by_taxid(taxid)) is not None:
             return self.get_otu(otu_id)
 
         return None
+
+    def get_otu_id_by_taxid(self, taxid: int) -> uuid.UUID | None:
+        """Return the UUID of the OTU with the given ``taxid``.
+
+        If no OTU is found, return None.
+
+        :param taxid: the taxonomy ID of the OTU
+        :return: the UUID of the OTU or ``None``
+
+        """
+        return self._snapshotter.index_by_taxid.get(taxid)
 
     def _rehydrate_otu(self, event_ids: list[int]) -> RepoOTU:
         """Rebuild OTU data from a list of event IDs."""
