@@ -27,7 +27,7 @@ class TestSequence:
 
             assert type(sequence) is RepoSequence
 
-            sequence_copy = RepoSequence(**sequence.dict())
+            sequence_copy = RepoSequence.from_dict(sequence.dict())
 
             assert sequence == sequence_copy
 
