@@ -13,7 +13,7 @@ from ref_builder.resources import (
     RepoSequence,
 )
 from ref_builder.schema import OTUSchema, Segment
-from ref_builder.utils import DataType, IsolateName, IsolateNameType
+from ref_builder.utils import Accession, DataType, IsolateName, IsolateNameType
 
 
 @pytest.fixture()
@@ -37,7 +37,7 @@ def initialized_repo(empty_repo: Repo):
     empty_repo.create_sequence(
         otu.id,
         isolate_a.id,
-        "TMVABC",
+        "TMVABC.1",
         "TMV",
         None,
         "RNA",
@@ -271,16 +271,18 @@ def test_create_sequence(empty_repo: Repo):
     sequence = empty_repo.create_sequence(
         otu.id,
         isolate.id,
-        "TMVABC",
+        "TMVABC.1",
         "TMV",
         None,
         "RNA",
         "ACGT",
     )
 
+    assert sequence is not None
+
     assert sequence == RepoSequence(
         id=sequence.id,
-        accession="TMVABC",
+        accession=Accession(key="TMVABC", version=1),
         definition="TMV",
         legacy_id=None,
         segment="RNA",
@@ -295,7 +297,7 @@ def test_create_sequence(empty_repo: Repo):
     assert event == {
         "data": {
             "id": str(sequence.id),
-            "accession": "TMVABC",
+            "accession": ["TMVABC", 1],
             "definition": "TMV",
             "legacy_id": None,
             "segment": "RNA",
@@ -342,7 +344,7 @@ class TestRetrieveOTU:
         empty_repo.create_sequence(
             otu.id,
             isolate_a.id,
-            "TMVABC",
+            "TMVABC.1",
             "TMV",
             None,
             "RNA",
@@ -358,7 +360,7 @@ class TestRetrieveOTU:
         empty_repo.create_sequence(
             otu.id,
             isolate_b.id,
-            "TMVABCB",
+            "TMVABCB.1",
             "TMV",
             None,
             "RNA",
@@ -375,7 +377,7 @@ class TestRetrieveOTU:
                 sequences=[
                     RepoSequence(
                         id=otu.isolates[0].sequences[0].id,
-                        accession="TMVABC",
+                        accession=Accession(key="TMVABC", version=1),
                         definition="TMV",
                         legacy_id=None,
                         segment="RNA",
@@ -390,7 +392,7 @@ class TestRetrieveOTU:
                 sequences=[
                     RepoSequence(
                         id=otu.isolates[1].sequences[0].id,
-                        accession="TMVABCB",
+                        accession=Accession(key="TMVABCB", version=1),
                         definition="TMV",
                         legacy_id=None,
                         segment="RNA",
@@ -441,7 +443,7 @@ class TestRetrieveOTU:
         initialized_repo.create_sequence(
             otu.id,
             isolate_b.id,
-            "TMVABCB",
+            "TMVABCB.1",
             "TMV",
             None,
             "RNA",
@@ -465,7 +467,7 @@ class TestRetrieveOTU:
         initialized_repo.create_sequence(
             otu.id,
             isolate_b.id,
-            "TMVABCB",
+            "TMVABCB.1",
             "TMV",
             None,
             "RNA",
@@ -510,7 +512,7 @@ def test_exclude_accession(empty_repo: Repo):
     """
     otu = init_otu(empty_repo)
 
-    empty_repo.exclude_accession(otu.id, "TMVABC")
+    empty_repo.exclude_accession(otu.id, "TMVABC.1")
 
     with open(empty_repo.path.joinpath("src", "00000003.json")) as f:
         event = orjson.loads(f.read())
@@ -519,7 +521,7 @@ def test_exclude_accession(empty_repo: Repo):
 
         assert event == {
             "data": {
-                "accession": "TMVABC",
+                "accession": "TMVABC.1",
             },
             "id": 3,
             "query": {
@@ -529,12 +531,12 @@ def test_exclude_accession(empty_repo: Repo):
         }
 
     assert empty_repo.get_otu(otu.id).excluded_accessions == {
-        "TMVABC",
+        "TMVABC.1",
     }
 
     empty_repo.exclude_accession(otu.id, "ABTV")
 
     assert empty_repo.get_otu(otu.id).excluded_accessions == {
-        "TMVABC",
+        "TMVABC.1",
         "ABTV",
     }
