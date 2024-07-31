@@ -6,11 +6,12 @@ from pydantic import (
     Field,
     TypeAdapter,
     UUID4,
+    field_serializer,
     field_validator,
 )
 
 from ref_builder.schema import OTUSchema
-from ref_builder.utils import IsolateName, IsolateNameType
+from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
 
 class OTUSnapshotMeta(BaseModel):
@@ -26,7 +27,7 @@ class OTUSnapshotSequence(BaseModel):
     id: UUID4
     """The sequence id."""
 
-    accession: str
+    accession: Accession
     """The sequence accession."""
 
     definition: str
@@ -43,6 +44,20 @@ class OTUSnapshotSequence(BaseModel):
 
     segment: str
     """The sequence segment."""
+
+    @field_validator("accession", mode="before")
+    @classmethod
+    def convert_accession(cls, v: Accession | str) -> Accession:
+        if type(v) is Accession:
+            return v
+
+        if type(v) is str:
+            return Accession.create_from_string(v)
+
+    @field_serializer("accession")
+    def serialize_accession(self, _info) -> str:
+        return str(self.accession)
+
 
 
 class OTUSnapshotIsolate(BaseModel):
