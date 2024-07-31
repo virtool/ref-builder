@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from ref_builder.schema import OTUSchema
-from ref_builder.utils import DataType, IsolateName
+from ref_builder.utils import Accession, DataType, IsolateName
 
 
 class RepoMeta(BaseModel):
@@ -35,7 +35,7 @@ class RepoSequence:
     id: UUID
     """The sequence id."""
 
-    accession: str
+    accession: Accession
     """The sequence accession."""
 
     definition: str
@@ -57,7 +57,7 @@ class RepoSequence:
         """Return a dictionary representation of the sequence."""
         return {
             "id": self.id,
-            "accession": self.accession,
+            "accession": str(self.accession),
             "definition": self.definition,
             "legacy_id": self.legacy_id,
             "sequence": self.sequence,
@@ -85,7 +85,7 @@ class RepoIsolate:
         self._sequences_by_accession = (
             {}
             if sequences is None
-            else {sequence.accession: sequence for sequence in sequences}
+            else {sequence.accession.key: sequence for sequence in sequences}
         )
         """A dictionary of sequences indexed by accession"""
 
@@ -132,7 +132,7 @@ class RepoIsolate:
 
     def add_sequence(self, sequence: RepoSequence) -> None:
         """Add a sequence to the isolate."""
-        self._sequences_by_accession[sequence.accession] = sequence
+        self._sequences_by_accession[sequence.accession.key] = sequence
 
     def get_sequence_by_accession(
         self,
