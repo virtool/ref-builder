@@ -9,7 +9,7 @@ from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
 from ref_builder.schema import OTUSchema, Segment
-from ref_builder.utils import IsolateName, IsolateNameType
+from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
 logger = structlog.get_logger("otu")
 
@@ -95,7 +95,7 @@ def create_otu(
         sequence = repo.create_sequence(
             otu_id=otu.id,
             isolate_id=isolate.id,
-            accession=record.accession,
+            accession=record.accession_version,
             definition=record.definition,
             legacy_id=None,
             segment=record.source.segment,
