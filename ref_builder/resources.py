@@ -53,6 +53,17 @@ class RepoSequence:
     segment: str
     """The sequence segment."""
 
+    @classmethod
+    def from_dict(cls, standard_dict: dict):
+        return RepoSequence(
+            id=standard_dict["id"],
+            accession=Accession.create_from_string(standard_dict["accession"]),
+            definition=standard_dict["definition"],
+            sequence=standard_dict["sequence"],
+            segment=standard_dict.get("segment", ""),
+            legacy_id=standard_dict.get("legacy_id"),
+        )
+
     def dict(self) -> dict[str, Any]:
         """Return a dictionary representation of the sequence."""
         return {
