@@ -65,7 +65,7 @@
 # ---
 # name: TestRepoToSnapshotModel.test_sequence_conversion[1169032-accessions1]
   dict({
-    'accession': 'MH200607',
+    'accession': 'MH200607.1',
     'definition': 'Wasabi mottle virus isolate pLX-WMoV 6.3, complete genome',
     'legacy_id': None,
     'segment': '',
@@ -74,7 +74,7 @@
 # ---
 # name: TestRepoToSnapshotModel.test_sequence_conversion[1169032-accessions1].1
   dict({
-    'accession': 'NC_003355',
+    'accession': 'NC_003355.1',
     'definition': 'Wasabi mottle virus, complete genome',
     'legacy_id': None,
     'segment': '',
@@ -83,7 +83,7 @@
 # ---
 # name: TestRepoToSnapshotModel.test_sequence_conversion[1169032-accessions1].2
   dict({
-    'accession': 'KJ207375',
+    'accession': 'KJ207375.1',
     'definition': 'Wasabi mottle virus isolate Alishan, complete genome',
     'legacy_id': None,
     'segment': '',
@@ -92,7 +92,7 @@
 # ---
 # name: TestRepoToSnapshotModel.test_sequence_conversion[1169032-accessions1].3
   dict({
-    'accession': 'MK431779',
+    'accession': 'MK431779.1',
     'definition': 'Wasabi mottle virus isolate SFU2, complete genome',
     'legacy_id': None,
     'segment': '',
@@ -101,7 +101,7 @@
 # ---
 # name: TestRepoToSnapshotModel.test_sequence_conversion[1169032-accessions1].4
   dict({
-    'accession': 'AB017504',
+    'accession': 'AB017504.1',
     'definition': 'Wasabi mottle virus genomic RNA, complete genome, isolate: Tochigi',
     'legacy_id': None,
     'segment': '',
@@ -110,7 +110,7 @@
 # ---
 # name: TestRepoToSnapshotModel.test_sequence_conversion[3158377-accessions0]
   dict({
-    'accession': 'NC_010314',
+    'accession': 'NC_010314.1',
     'definition': 'Abaca bunchy top virus DNA-N, complete genome',
     'legacy_id': None,
     'segment': 'DNA N',
@@ -119,7 +119,7 @@
 # ---
 # name: TestRepoToSnapshotModel.test_sequence_conversion[3158377-accessions0].1
   dict({
-    'accession': 'NC_010315',
+    'accession': 'NC_010315.1',
     'definition': 'Abaca bunchy top virus segment 2, complete sequence',
     'legacy_id': None,
     'segment': 'DNA U3',
@@ -128,7 +128,7 @@
 # ---
 # name: TestRepoToSnapshotModel.test_sequence_conversion[3158377-accessions0].2
   dict({
-    'accession': 'NC_010316',
+    'accession': 'NC_010316.1',
     'definition': 'Abaca bunchy top virus DNA-S, complete genome',
     'legacy_id': None,
     'segment': 'DNA S',
@@ -137,7 +137,7 @@
 # ---
 # name: TestRepoToSnapshotModel.test_sequence_conversion[3158377-accessions0].3
   dict({
-    'accession': 'NC_010317',
+    'accession': 'NC_010317.1',
     'definition': 'Abaca bunchy top virus DNA-M, complete genome',
     'legacy_id': None,
     'segment': 'DNA M',
@@ -146,7 +146,7 @@
 # ---
 # name: TestRepoToSnapshotModel.test_sequence_conversion[3158377-accessions0].4
   dict({
-    'accession': 'NC_010318',
+    'accession': 'NC_010318.1',
     'definition': 'Abaca bunchy top virus DNA-C, complete sequence',
     'legacy_id': None,
     'segment': 'DNA C',
@@ -155,7 +155,7 @@
 # ---
 # name: TestRepoToSnapshotModel.test_sequence_conversion[3158377-accessions0].5
   dict({
-    'accession': 'NC_010319',
+    'accession': 'NC_010319.1',
     'definition': 'Abaca bunchy top virus DNA-R, complete genome',
     'legacy_id': None,
     'segment': 'DNA R',
