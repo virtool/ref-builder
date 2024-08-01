@@ -46,6 +46,10 @@ def create_otu(
         otu_logger.fatal(f"Could not retrieve {taxid} from NCBI Taxonomy")
         return None
 
+    if not acronym:
+        if taxonomy.other_names.acronym:
+            acronym = taxonomy.other_names.acronym[0]
+
     records = client.fetch_genbank_records(accessions)
     if len(records) != len(accessions):
         otu_logger.fatal("Could not retrieve all requested accessions.")
