@@ -44,6 +44,7 @@ from ref_builder.events import (
     OTUQuery,
     RepoQuery,
     SequenceQuery,
+    SetReprIsolate, SetReprIsolateData,
 )
 from ref_builder.index import EventIndex, EventIndexError
 from ref_builder.models import Molecule
@@ -55,18 +56,9 @@ from ref_builder.resources import (
 )
 from ref_builder.schema import OTUSchema, Segment
 from ref_builder.snapshotter.snapshotter import Snapshotter
-from ref_builder.utils import DataType, IsolateName, IsolateNameType, pad_zeroes
+from ref_builder.utils import Accession, DataType, IsolateName, IsolateNameType, pad_zeroes
 
 logger = get_logger("repo")
-
-
-OTU_EVENT_TYPES = (
-    CreateOTU,
-    CreateIsolate,
-    CreateSchema,
-    CreateSequence,
-    ExcludeAccession,
-)
 
 
 class Repo:
@@ -209,7 +201,6 @@ class Repo:
                 legacy_id=legacy_id,
                 name=name,
                 schema=schema,
-                rep_isolate=None,
                 taxid=taxid,
             ),
             OTUQuery(otu_id=otu_id),
@@ -274,13 +265,21 @@ class Repo:
         """
         otu = self.get_otu(otu_id)
 
-        if accession in otu.accessions:
-            logger.warning(
-                "This accession already exists in the OTU.",
-                accession=accession,
-                otu_id=str(otu_id),
-            )
-            return None
+        versioned_accession = Accession.create_from_string(accession)
+
+        if versioned_accession.key in otu.accessions:
+            extant_sequence = otu.get_sequence_by_accession(versioned_accession.key)
+
+            if extant_sequence is not None:
+                if extant_sequence.accession == versioned_accession:
+                    logger.warning(
+                        "This accession already exists in the OTU.",
+                        accession=str(extant_sequence.accession),
+                        otu_id=str(otu_id),
+                    )
+                    return None
+
+                logger.warning(f"New version of {versioned_accession.key} found.")
 
         sequence_id = uuid.uuid4()
 
@@ -288,7 +287,7 @@ class Repo:
             CreateSequence,
             CreateSequenceData(
                 id=sequence_id,
-                accession=accession,
+                accession=versioned_accession,
                 definition=definition,
                 legacy_id=legacy_id,
                 segment=segment,
@@ -305,13 +304,13 @@ class Repo:
             "Sequence written",
             event_id=event.id,
             sequence_id=str(sequence_id),
-            accession=accession,
+            accession=str(versioned_accession),
         )
 
         return (
             self.get_otu(otu_id)
             .get_isolate(isolate_id)
-            .get_sequence_by_accession(accession)
+            .get_sequence_by_accession(versioned_accession.key)
         )
 
     def create_schema(
@@ -332,6 +331,18 @@ class Repo:
         )
 
         return self.get_otu(otu_id).schema
+
+    def set_repr_isolate(self, otu_id: uuid.UUID, isolate_id: uuid.UUID) -> uuid.UUID:
+        """Set the representative isolate for an OTU"""
+        otu = self.get_otu(otu_id)
+
+        self._event_store.write_event(
+            SetReprIsolate,
+            SetReprIsolateData(isolate_id=isolate_id),
+            OTUQuery(otu_id=otu.id)
+        )
+
+        return self.get_otu(otu_id).repr_isolate
 
     def exclude_accession(self, otu_id: uuid.UUID, accession: str) -> None:
         """Exclude an accession for an OTU.
@@ -411,6 +422,9 @@ class Repo:
                     segments=event.data.segments,
                 )
 
+            elif isinstance(event, SetReprIsolate):
+                otu.repr_isolate = event.data.isolate_id
+
             elif isinstance(event, CreateIsolate):
                 otu.add_isolate(
                     RepoIsolate(
@@ -465,7 +479,7 @@ class Repo:
 
         for event in self._event_store.iter_events(start=at_event + 1):
             if (
-                type(event) in OTU_EVENT_TYPES
+                issubclass(type(event.query), OTUQuery)
                 and event.query.model_dump().get("otu_id") == otu_id
             ):
                 if event.id in event_ids:
@@ -608,6 +622,8 @@ class EventStore:
                     return CreateSequence(**loaded)
                 case "CreateSchema":
                     return CreateSchema(**loaded)
+                case "SetReprIsolate":
+                    return SetReprIsolate(**loaded)
                 case "ExcludeAccession":
                     return ExcludeAccession(**loaded)
 

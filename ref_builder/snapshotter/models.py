@@ -1,15 +1,17 @@
 from typing import Annotated
 
 from pydantic import (
-    UUID4,
+    AliasChoices,
     BaseModel,
     Field,
     TypeAdapter,
+    UUID4,
+    field_serializer,
     field_validator,
 )
 
 from ref_builder.schema import OTUSchema
-from ref_builder.utils import IsolateName, IsolateNameType
+from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
 
 class OTUSnapshotMeta(BaseModel):
@@ -25,7 +27,7 @@ class OTUSnapshotSequence(BaseModel):
     id: UUID4
     """The sequence id."""
 
-    accession: str
+    accession: Accession
     """The sequence accession."""
 
     definition: str
@@ -42,6 +44,20 @@ class OTUSnapshotSequence(BaseModel):
 
     segment: str
     """The sequence segment."""
+
+    @field_validator("accession", mode="before")
+    @classmethod
+    def convert_accession(cls, v: Accession | str) -> Accession:
+        if type(v) is Accession:
+            return v
+
+        if type(v) is str:
+            return Accession.create_from_string(v)
+
+    @field_serializer("accession")
+    def serialize_accession(self, _info) -> str:
+        return str(self.accession)
+
 
 
 class OTUSnapshotIsolate(BaseModel):
@@ -78,12 +94,20 @@ class OTUSnapshotOTU(BaseModel):
     acronym: str = ""
     """The OTU acronym (eg. TMV for Tobacco mosaic virus)."""
 
+    otu_schema: Annotated[
+        OTUSchema,
+        Field(
+            validation_alias=AliasChoices("otu_schema", "schema"),
+            serialization_alias="schema"
+        )
+    ]
+    """The OTU schema."""
+
     legacy_id: str | None
     """A string based ID carried over from a legacy Virtool reference repository."""
 
-    otu_schema: Annotated[OTUSchema | None, Field(alias="schema")] = None
-
     repr_isolate: UUID4 | None = None
+    """The representative isolate."""
 
 
 class OTUSnapshotToCIsolate(BaseModel):

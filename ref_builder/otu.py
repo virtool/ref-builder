@@ -9,15 +9,16 @@ from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
 from ref_builder.schema import OTUSchema, Segment
-from ref_builder.utils import IsolateName, IsolateNameType
+from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
 logger = structlog.get_logger("otu")
 
 
-def create_otu_with_schema(
+def create_otu(
     repo: Repo,
     taxid: int,
     accessions: list[str],
+    acronym: str,
     ignore_cache: bool = False,
 ) -> RepoOTU | None:
     """Create a new OTU by taxonomy ID and autogenerate a schema.
@@ -27,6 +28,7 @@ def create_otu_with_schema(
     :param repo: the repository to add the OTU to.
     :param taxid: the taxonomy ID to use.
     :param accessions: a list of accessions to use for the schema.
+    :param acronym: an alternative name to use during searches.
     :param ignore_cache: whether to ignore the cache.
 
     """
@@ -43,6 +45,10 @@ def create_otu_with_schema(
     if taxonomy is None:
         otu_logger.fatal(f"Could not retrieve {taxid} from NCBI Taxonomy")
         return None
+
+    if not acronym:
+        if taxonomy.other_names.acronym:
+            acronym = taxonomy.other_names.acronym[0]
 
     records = client.fetch_genbank_records(accessions)
     if len(records) != len(accessions):
@@ -65,7 +71,7 @@ def create_otu_with_schema(
 
     try:
         otu = repo.create_otu(
-            acronym="",
+            acronym=acronym,
             legacy_id=None,
             name=taxonomy.name,
             schema=schema,
@@ -87,11 +93,13 @@ def create_otu_with_schema(
 
     otu.add_isolate(isolate)
 
+    otu.repr_isolate = repo.set_repr_isolate(otu_id=otu.id, isolate_id=isolate.id)
+
     for record in records:
         sequence = repo.create_sequence(
             otu_id=otu.id,
             isolate_id=isolate.id,
-            accession=record.accession,
+            accession=record.accession_version,
             definition=record.definition,
             legacy_id=None,
             segment=record.source.segment,
@@ -100,49 +108,6 @@ def create_otu_with_schema(
         otu.add_sequence(sequence, isolate_id=isolate.id)
 
     return otu
-
-
-def create_otu(
-    repo: Repo,
-    taxid: int,
-    ignore_cache: bool = False,
-) -> RepoOTU:
-    """Create a new OTU by taxonomy ID.
-
-    :param repo: the repository to add the OTU to.
-    :param taxid: the taxonomy ID to use.
-    :param ignore_cache: whether to ignore the cache.
-    :returns: the created OTU.
-
-    """
-    otu_logger = logger.bind(taxid=taxid)
-
-    if repo.get_otu_by_taxid(taxid):
-        raise ValueError(
-            f"Taxonomy ID {taxid} has already been added to this reference.",
-        )
-
-    ncbi = NCBIClient(ignore_cache)
-
-    taxonomy = ncbi.fetch_taxonomy_record(taxid)
-
-    if taxonomy is None:
-        otu_logger.fatal(f"Taxonomy ID {taxid} not found")
-        sys.exit(1)
-
-    try:
-        otu = repo.create_otu(
-            acronym="",
-            legacy_id=None,
-            name=taxonomy.name,
-            schema=None,
-            taxid=taxid,
-        )
-
-        return otu
-    except ValueError as e:
-        otu_logger.warning(e)
-        sys.exit(1)
 
 
 def update_otu(
@@ -280,13 +245,14 @@ def _get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
 
 def group_genbank_records_by_isolate(
     records: list[NCBIGenbank],
-) -> dict[IsolateName, dict[str, NCBIGenbank]]:
+) -> dict[IsolateName, dict[Accession, NCBIGenbank]]:
     """Indexes Genbank records by isolate name"""
     isolates = defaultdict(dict)
 
     for record in records:
         if (isolate_name := _get_isolate_name(record)) is not None:
-            isolates[isolate_name][record.accession] = record
+            versioned_accession = Accession.create_from_string(record.accession_version)
+            isolates[isolate_name][versioned_accession] = record
 
     return isolates
 
@@ -295,7 +261,7 @@ def _file_and_create_sequences(
     repo: Repo,
     otu: RepoOTU,
     records: list[NCBIGenbank],
-) -> list[str]:
+) -> list[Accession]:
     otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
     record_bins = group_genbank_records_by_isolate(records)
@@ -320,13 +286,21 @@ def _file_and_create_sequences(
 
         for accession in record_bin:
             record = record_bin[accession]
-            if accession in otu.accessions:
-                otu_logger.warning(f"{accession} already exists in OTU")
+            if accession.key in otu.accessions:
+                extant_sequence = otu.get_sequence_by_accession(accession.key)
+                if extant_sequence.accession.version == accession.version:
+                    otu_logger.warning(f"{accession} already exists in OTU")
+                    continue
+
+                otu_logger.warning(
+                    f"New version of {accession.key} found. Replacing {extant_sequence.accession} with {accession}...")
+                otu_logger.warning("SEQUENCE REPLACEMENT NOT YET IMPLEMENTED")
+
             else:
                 sequence = repo.create_sequence(
                     otu_id=otu.id,
                     isolate_id=isolate_id,
-                    accession=record.accession,
+                    accession=record.accession_version,
                     definition=record.definition,
                     legacy_id=None,
                     segment=record.source.segment,

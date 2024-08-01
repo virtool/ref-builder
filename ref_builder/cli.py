@@ -18,7 +18,6 @@ from ref_builder.options import debug_option, ignore_cache_option, path_option
 from ref_builder.otu import (
     add_sequences,
     create_otu,
-    create_otu_with_schema,
     update_otu,
 )
 from ref_builder.repo import Repo
@@ -72,7 +71,9 @@ def otu() -> None:
     metavar="ACCESSIONS",
     nargs=-1,
     type=str,
+    required=True,
 )
+@click.option("--acronym", type=str, default="")
 @click.option("--autofill/--no-fill", default=False)
 @ignore_cache_option
 @debug_option
@@ -84,31 +85,24 @@ def otu_create(
     taxid: int,
     accessions_: list[str],
     autofill: bool,
+    acronym: str,
 ) -> None:
     """Create a new OTU for the given Taxonomy ID and accessions."""
     configure_logger(debug)
 
     repo = Repo(path)
 
-    if accessions_:
-        try:
-            new_otu = create_otu_with_schema(
-                repo,
-                taxid,
-                accessions_,
-                ignore_cache=False,
-            )
-        except ValueError as e:
-            click.echo(e, err=True)
-            sys.exit(1)
-
-    else:
-        click.echo("No accessions given. Creating without schema...", err=True)
-        try:
-            new_otu = create_otu(repo, taxid, ignore_cache=False)
-        except ValueError as e:
-            click.echo(e, err=True)
-            sys.exit(1)
+    try:
+        new_otu = create_otu(
+            repo,
+            taxid,
+            accessions_,
+            acronym=acronym,
+            ignore_cache=ignore_cache,
+        )
+    except ValueError as e:
+        click.echo(e, err=True)
+        sys.exit(1)
 
     if autofill:
         update_otu(repo, new_otu, ignore_cache=ignore_cache)

@@ -4,7 +4,7 @@ from pydantic import UUID4, BaseModel, Field, computed_field
 
 from ref_builder.models import Molecule
 from ref_builder.schema import OTUSchema, Segment
-from ref_builder.utils import IsolateName
+from ref_builder.utils import Accession, IsolateName
 
 
 class EventQuery(BaseModel):
@@ -94,7 +94,6 @@ class CreateOTUData(EventData):
     legacy_id: str | None
     name: str
     taxid: int
-    rep_isolate: UUID4 | None
     otu_schema: OTUSchema | None = Field(None, alias="schema")
 
 
@@ -124,7 +123,7 @@ class CreateSequenceData(EventData):
     """The data for the creation of a new sequence."""
 
     id: UUID4
-    accession: str
+    accession: Accession
     definition: str
     legacy_id: str | None
     segment: str
@@ -166,4 +165,15 @@ class CreateSchema(Event):
     """An OTU schema creation event."""
 
     data: CreateSchemaData
+    query: OTUQuery
+
+
+class SetReprIsolateData(EventData):
+    isolate_id: UUID4
+
+
+class SetReprIsolate(Event):
+    """A representative isolate setting event."""
+
+    data: SetReprIsolateData
     query: OTUQuery

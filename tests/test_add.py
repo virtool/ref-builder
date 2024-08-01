@@ -5,27 +5,26 @@ import pytest
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
-from ref_builder.otu import create_otu, create_otu_with_schema, update_otu
+from ref_builder.otu import create_otu, update_otu
 from ref_builder.repo import Repo
-
-VIRTOOL_REF = ["ref-builder"]
 
 
 def run_create_otu_command(
     path: Path,
     taxid: int,
-    accessions: list | None = None,
+    accessions: list,
+    acronym: str = "",
     autofill: bool = False,
 ):
-    if accessions is None:
-        accessions = []
-
-    options = ["--path", str(path)]
-    if autofill:
-        options.append("--autofill")
+    autofill_option = ["--autofill"] if autofill else []
 
     subprocess.run(
-        ["ref-builder", "otu", "create"] + [str(taxid)] + accessions + options,
+        ["ref-builder", "otu", "create"]
+        + [str(taxid)]
+        + accessions
+        + ["--path", str(path)]
+        + ["--acronym", acronym]
+        + autofill_option,
         check=False,
     )
 
@@ -55,9 +54,14 @@ class TestCreateOTU:
         snapshot: SnapshotAssertion,
     ):
         """Test that an OTU can be created in an empty repository."""
-        otu = create_otu(precached_repo, 345184)
+        otu = create_otu(
+            precached_repo,
+            345184,
+            ["DQ178610", "DQ178611"],
+            acronym="",
+        )
 
-        assert otu.dict() == snapshot(exclude=props("id", "isolates"))
+        assert otu.dict() == snapshot(exclude=props("id", "isolates", "repr_isolate"))
 
         # Ensure only one OTU is present in the repository, and it matches the return
         # value of the creation function.
@@ -65,30 +69,55 @@ class TestCreateOTU:
 
     def test_empty_fail(self, scratch_repo: Repo):
         with pytest.raises(ValueError):
-            create_otu(scratch_repo, 345184)
+            create_otu(
+                scratch_repo,
+                345184,
+                ["DQ178610", "DQ178611"],
+                acronym="",
+            )
 
     @pytest.mark.parametrize(
         ("taxid", "accessions"),
         [(1278205, ["NC_020160"]), (345184, ["DQ178610", "DQ178611"])],
     )
-    def test_otu_autoschema(
+    def test_otu_create(
         self,
         taxid: int,
         accessions: list[str],
         precached_repo: Repo,
-        snapshot: SnapshotAssertion,
     ):
         assert list(precached_repo.iter_otus()) == []
 
-        otu = create_otu_with_schema(
+        otu = create_otu(
             repo=precached_repo,
             taxid=taxid,
             accessions=accessions,
+            acronym="",
         )
 
         assert list(precached_repo.iter_otus())
         assert otu.schema is not None
-        assert otu.dict() == snapshot(exclude=props("id"))
+        assert otu.repr_isolate is not None
+
+    def test_otu_create_with_acronym_auto(self, precached_repo: Repo):
+        otu = create_otu(
+            repo=precached_repo,
+            taxid=132477,
+            accessions=["NC_013006"],
+            acronym="",
+        )
+
+        assert otu.acronym == "KLV"
+
+    def test_otu_create_with_acronym_manual(self, precached_repo: Repo):
+        otu = create_otu(
+            repo=precached_repo,
+            taxid=1441799,
+            accessions=["NC_023881"],
+            acronym="FBNSV"
+        )
+
+        assert otu.acronym == "FBNSV"
 
 
 class TestCreateOTUCommands:
@@ -96,7 +125,7 @@ class TestCreateOTUCommands:
         "taxid, accessions",
         [(1278205, ["NC_020160"]), (345184, ["DQ178610", "DQ178611"])],
     )
-    def test_autoschema(
+    def test_ok(
         self,
         taxid: int,
         accessions: list[str],
@@ -114,31 +143,10 @@ class TestCreateOTUCommands:
         assert len(otus) == 1
         otu = otus[0]
 
-        assert otu.dict() == snapshot(exclude=props("id", "isolates"))
+        assert otu.dict() == snapshot(exclude=props("id", "isolates", "repr_isolate"))
 
     @pytest.mark.ncbi()
-    def test_autofill(
-        self,
-        precached_repo: Repo,
-        snapshot: SnapshotAssertion,
-    ):
-        run_create_otu_command(
-            taxid=345184,
-            path=precached_repo.path,
-            accessions=["DQ178610", "DQ178611"],
-            autofill=True,
-        )
-
-        otus = list(Repo(precached_repo.path).iter_otus())
-
-        assert len(otus) == 1
-        otu = otus[0]
-
-        assert otu.dict() == snapshot(exclude=props("id", "isolates"))
-        assert otu.accessions
-
-    @pytest.mark.ncbi()
-    def test_autofill_with_schema(
+    def test_autofill_ok(
         self,
         precached_repo: Repo,
         snapshot: SnapshotAssertion,
@@ -158,9 +166,26 @@ class TestCreateOTUCommands:
         assert otu.schema == snapshot
         assert {"DQ178610", "DQ178611"}.intersection(otu.accessions)
 
+    def test_add_acronym_ok(self, precached_repo: Repo):
+        """Test if the --acronym option works as planned."""
+        run_create_otu_command(
+            taxid=345184,
+            accessions=["DQ178610", "DQ178611"],
+            path=precached_repo.path,
+            acronym="CabLCJV",
+            autofill=True,
+        )
+
+        otus = list(Repo(precached_repo.path).iter_otus())
+
+        assert len(otus) == 1
+        otu = otus[0]
+
+        assert otu.acronym == "CabLCJV"
+
 
 class TestAddSequences:
-    def test_success(
+    def test_ok(
         self,
         precached_repo: Repo,
         snapshot: SnapshotAssertion,
@@ -171,7 +196,7 @@ class TestAddSequences:
         for otu in precached_repo.iter_otus():
             assert otu.accessions == set(accessions)
 
-            assert otu.dict() == snapshot(exclude=props("id", "isolates"))
+            assert otu.dict() == snapshot(exclude=props("id", "isolates", "repr_isolate"))
 
             for isolate in otu.isolates:
                 assert isolate.dict() == snapshot(exclude=props("id", "sequences"))
@@ -184,18 +209,23 @@ class TestAddSequences:
 
 @pytest.mark.ncbi()
 class TestUpdateOTU:
-    def test_success_no_exclusions(
+    def test_without_exclusions_ok(
         self,
         precached_repo: Repo,
         snapshot: SnapshotAssertion,
     ):
-        otu = create_otu(precached_repo, 345184)
+        otu = create_otu(
+            precached_repo,
+            345184,
+            ["DQ178610", "DQ178611"],
+            acronym="",
+        )
         update_otu(precached_repo, otu)
 
         otu = precached_repo.get_otu(otu.id)
 
         assert [otu.dict() for otu in precached_repo.iter_otus()] == snapshot(
-            exclude=props("id", "isolates"),
+            exclude=props("id", "isolates", "repr_isolate"),
         )
 
         assert otu.accessions == {

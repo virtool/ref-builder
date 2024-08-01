@@ -33,7 +33,7 @@ def print_otu(otu: RepoOTU) -> None:
     table.add_row("[bold]TAXID[/bold]", _render_taxonomy_id_link(otu.taxid))
 
     max_accession_length = max(
-        len(sequence.accession)
+        len(str(sequence.accession))
         for isolate in otu.isolates
         for sequence in isolate.sequences
     )
@@ -79,7 +79,7 @@ def print_otu(otu: RepoOTU) -> None:
 
         for sequence in sorted(isolate.sequences, key=lambda s: s.accession):
             isolate_table.add_row(
-                sequence.accession,
+                str(sequence.accession),
                 sequence.segment,
                 sequence.definition,
             )
