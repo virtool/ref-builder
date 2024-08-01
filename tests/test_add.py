@@ -70,7 +70,7 @@ class TestCreateOTU:
         ("taxid", "accessions"),
         [(1278205, ["NC_020160"]), (345184, ["DQ178610", "DQ178611"])],
     )
-    def test_otu_autoschema(
+    def test_otu_create(
         self,
         taxid: int,
         accessions: list[str],
@@ -87,6 +87,25 @@ class TestCreateOTU:
         assert list(precached_repo.iter_otus())
         assert otu.schema is not None
         assert otu.repr_isolate is not None
+
+    def test_otu_create_with_acronym_auto(self, precached_repo: Repo):
+        otu = create_otu(
+            repo=precached_repo,
+            taxid=132477,
+            accessions=["NC_013006"],
+        )
+
+        assert otu.acronym == "KLV"
+
+    def test_otu_create_with_acronym_manual(self, precached_repo: Repo):
+        otu = create_otu(
+            repo=precached_repo,
+            taxid=1441799,
+            accessions=["NC_023881"],
+            acronym="FBNSV"
+        )
+
+        assert otu.acronym == "FBNSV"
 
 
 class TestCreateOTUCommands:
