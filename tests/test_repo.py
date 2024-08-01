@@ -19,10 +19,10 @@ from ref_builder.utils import Accession, DataType, IsolateName, IsolateNameType
 @pytest.fixture()
 def initialized_repo(empty_repo: Repo):
     otu = empty_repo.create_otu(
-        acronym="TMV",
-        legacy_id=None,
-        name="Tobacco mosaic virus",
-        schema=OTUSchema(
+        "TMV",
+        None,
+        "Tobacco mosaic virus",
+        OTUSchema(
             molecule=Molecule(
                 strandedness=Strandedness.SINGLE,
                 type=MolType.RNA,
@@ -30,7 +30,7 @@ def initialized_repo(empty_repo: Repo):
             ),
             segments=[Segment(name="A", length=150, required=True)],
         ),
-        taxid=12242,
+        12242,
     )
 
     isolate_a = empty_repo.create_isolate(otu.id, None, "A", IsolateNameType.ISOLATE)

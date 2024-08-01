@@ -1,6 +1,5 @@
 import shutil
 from pathlib import Path
-from typing import List
 
 import orjson
 import pytest
@@ -10,8 +9,8 @@ from pytest_mock import MockerFixture
 from ref_builder.legacy.utils import build_legacy_otu
 from ref_builder.ncbi.cache import NCBICache
 from ref_builder.ncbi.client import NCBIClient
+from ref_builder.otu import add_sequences, create_otu
 from ref_builder.repo import Repo
-from ref_builder.otu import create_otu, add_sequences
 from ref_builder.utils import DataType
 
 
@@ -143,13 +142,18 @@ def scratch_user_cache_path(files_path: Path, tmp_path: Path) -> Path:
     return path
 
 
-@pytest.fixture
-def scratch_event_store_data(pytestconfig, tmp_path, scratch_repo_contents_path) -> dict:
+@pytest.fixture()
+def scratch_event_store_data(
+    pytestconfig, tmp_path, scratch_repo_contents_path
+) -> dict:
     """Scratch repo events. Cached in .pytest_cache."""
     scratch_src = pytestconfig.cache.get("scratch_src", None)
     if scratch_src is None:
         temp_scratch_repo = Repo.new(
-            data_type=DataType.GENOME, name="src_test", path=tmp_path, organism="viruses"
+            data_type=DataType.GENOME,
+            name="src_test",
+            path=tmp_path,
+            organism="viruses",
         )
 
         with open(scratch_repo_contents_path, "rb") as f:
@@ -157,20 +161,21 @@ def scratch_event_store_data(pytestconfig, tmp_path, scratch_repo_contents_path)
 
         for otu_contents in toc:
             otu = create_otu(
-                repo=temp_scratch_repo,
-                taxid=otu_contents.taxid,
-                accessions=otu_contents.otu_schema
+                temp_scratch_repo,
+                otu_contents.taxid,
+                otu_contents.otu_schema,
+                "",
             )
 
             add_sequences(
                 repo=temp_scratch_repo,
                 otu=otu,
-                accessions=otu_contents.contents
+                accessions=otu_contents.contents,
             )
 
         scratch_src = {}
         for event_file_path in (tmp_path / "src").glob("*.json"):
-            with open(event_file_path, "r") as f:
+            with open(event_file_path) as f:
                 scratch_src[event_file_path.name] = orjson.loads(f.read())
 
         pytestconfig.cache.set("scratch_src", scratch_src)
@@ -189,5 +194,5 @@ class OTUContents(BaseModel):
     """A list of accessions to be added to the OTU."""
 
 
-otu_contents_list_adapter = TypeAdapter(List[OTUContents])
+otu_contents_list_adapter = TypeAdapter(list[OTUContents])
 """Aids the serialization of a scratch repo's table of contents."""

@@ -9,6 +9,7 @@ import click
 
 from ref_builder.build import build_json
 from ref_builder.console import print_otu, print_otu_list
+from ref_builder.legacy.convert import convert_legacy_repo
 from ref_builder.legacy.utils import iter_legacy_otus
 from ref_builder.legacy.validate import validate_legacy_repo
 from ref_builder.logs import configure_logger
@@ -199,6 +200,30 @@ def create_sequence(
 @entry.group()
 def legacy() -> None:
     """Validate and convert legacy references."""
+
+
+@legacy.command()
+@click.option(
+    "--name",
+    help="the name to set for the new repository",
+    required=True,
+    type=str,
+)
+@click.option(
+    "--path",
+    help="the path for the legacy reference repository",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--target-path",
+    help="the path for the new converted repository",
+    required=True,
+    type=click.Path(exists=False, file_okay=False, path_type=Path),
+)
+def convert(name: str, path: Path, target_path: Path) -> None:
+    """Convert a legacy reference repository to a new event-sourced repository."""
+    convert_legacy_repo(name, path, target_path)
 
 
 @legacy.command()

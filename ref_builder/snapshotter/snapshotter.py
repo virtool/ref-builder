@@ -121,10 +121,6 @@ class Snapshotter:
 
         return set(self._index.keys())
 
-    @property
-    def accessions(self) -> set[str]:
-        return set(self._get_accession_index().keys())
-
     def snapshot(
         self,
         otus: Iterable[RepoOTU],

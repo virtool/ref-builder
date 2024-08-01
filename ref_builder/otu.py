@@ -36,7 +36,7 @@ def create_otu(
 
     client = NCBIClient(ignore_cache)
 
-    if repo.get_otu_by_taxid(taxid):
+    if repo.get_otu_id_by_taxid(taxid):
         raise ValueError(
             f"Taxonomy ID {taxid} has already been added to this reference.",
         )
