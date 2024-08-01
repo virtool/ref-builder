@@ -123,7 +123,7 @@ def build_legacy_otu(path: Path) -> dict:
     :return: a dict-based representation of the OTU
 
     """
-    with (path / "otu.json").open("r") as f:
+    with open(path / "otu.json", "rb") as f:
         otu_data = orjson.loads(f.read())
 
     otu_data["isolates"] = []
@@ -254,8 +254,9 @@ def iter_legacy_otus(src_path: Path) -> Generator[dict, None, None]:
     :return: a generator that yields OTU data dictionaries.
     """
     for alpha_dir_path in sorted(src_path.iterdir()):
-        if alpha_dir_path.name == "meta.json":
+        if alpha_dir_path.is_file():
             continue
 
         for otu_dir_path in sorted(alpha_dir_path.iterdir()):
-            yield build_legacy_otu(otu_dir_path)
+            if otu_dir_path.is_dir():
+                yield build_legacy_otu(otu_dir_path)
