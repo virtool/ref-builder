@@ -217,7 +217,7 @@ def legacy() -> None:
 )
 @click.option(
     "--path",
-    help="the name to the legacy reference repository",
+    help="the path for the legacy reference repository",
     required=True,
     type=click.Path(exists=True, file_okay=False, path_type=Path),
 )
