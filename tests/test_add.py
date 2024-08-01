@@ -54,7 +54,12 @@ class TestCreateOTU:
         snapshot: SnapshotAssertion,
     ):
         """Test that an OTU can be created in an empty repository."""
-        otu = create_otu(precached_repo, 345184, ["DQ178610", "DQ178611"])
+        otu = create_otu(
+            precached_repo,
+            345184,
+            ["DQ178610", "DQ178611"],
+            acronym="",
+        )
 
         assert otu.dict() == snapshot(exclude=props("id", "isolates", "repr_isolate"))
 
@@ -64,7 +69,12 @@ class TestCreateOTU:
 
     def test_empty_fail(self, scratch_repo: Repo):
         with pytest.raises(ValueError):
-            create_otu(scratch_repo, 345184, ["DQ178610", "DQ178611"])
+            create_otu(
+                scratch_repo,
+                345184,
+                ["DQ178610", "DQ178611"],
+                acronym="",
+            )
 
     @pytest.mark.parametrize(
         ("taxid", "accessions"),
@@ -82,6 +92,7 @@ class TestCreateOTU:
             repo=precached_repo,
             taxid=taxid,
             accessions=accessions,
+            acronym="",
         )
 
         assert list(precached_repo.iter_otus())
@@ -93,6 +104,7 @@ class TestCreateOTU:
             repo=precached_repo,
             taxid=132477,
             accessions=["NC_013006"],
+            acronym="",
         )
 
         assert otu.acronym == "KLV"
@@ -203,7 +215,10 @@ class TestUpdateOTU:
         snapshot: SnapshotAssertion,
     ):
         otu = create_otu(
-            precached_repo, 345184, ["DQ178610", "DQ178611"]
+            precached_repo,
+            345184,
+            ["DQ178610", "DQ178611"],
+            acronym="",
         )
         update_otu(precached_repo, otu)
 
