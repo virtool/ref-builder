@@ -55,7 +55,7 @@ from ref_builder.resources import (
 )
 from ref_builder.schema import OTUSchema, Segment
 from ref_builder.snapshotter.snapshotter import Snapshotter
-from ref_builder.utils import DataType, IsolateName, IsolateNameType, pad_zeroes
+from ref_builder.utils import Accession, DataType, IsolateName, IsolateNameType, pad_zeroes
 
 logger = get_logger("repo")
 
@@ -263,13 +263,21 @@ class Repo:
         """
         otu = self.get_otu(otu_id)
 
-        if accession in otu.accessions:
-            logger.warning(
-                "This accession already exists in the OTU.",
-                accession=accession,
-                otu_id=str(otu_id),
-            )
-            return None
+        versioned_accession = Accession.create_from_string(accession)
+
+        if versioned_accession.key in otu.accessions:
+            extant_sequence = otu.get_sequence_by_accession(versioned_accession.key)
+
+            if extant_sequence is not None:
+                if extant_sequence.accession == versioned_accession:
+                    logger.warning(
+                        "This accession already exists in the OTU.",
+                        accession=str(extant_sequence.accession),
+                        otu_id=str(otu_id),
+                    )
+                    return None
+
+                logger.warning(f"New version of {versioned_accession.key} found.")
 
         sequence_id = uuid.uuid4()
 
@@ -277,7 +285,7 @@ class Repo:
             CreateSequence,
             CreateSequenceData(
                 id=sequence_id,
-                accession=accession,
+                accession=versioned_accession,
                 definition=definition,
                 legacy_id=legacy_id,
                 segment=segment,
@@ -294,13 +302,13 @@ class Repo:
             "Sequence written",
             event_id=event.id,
             sequence_id=str(sequence_id),
-            accession=accession,
+            accession=str(versioned_accession),
         )
 
         return (
             self.get_otu(otu_id)
             .get_isolate(isolate_id)
-            .get_sequence_by_accession(accession)
+            .get_sequence_by_accession(versioned_accession.key)
         )
 
     def create_schema(

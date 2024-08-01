@@ -2,12 +2,10 @@ from uuid import uuid4
 
 import pytest
 
-from ref_builder.resources import (
-    RepoIsolate,
-    RepoOTU,
-    RepoSequence,
-)
+from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
+from ref_builder.schema import OTUSchema, Segment
 from ref_builder.utils import IsolateName, IsolateNameType
+from ref_builder.models import Molecule, MolType, Topology, Strandedness
 
 
 class TestSequence:
@@ -29,7 +27,7 @@ class TestSequence:
 
             assert type(sequence) is RepoSequence
 
-            sequence_copy = RepoSequence(**sequence.dict())
+            sequence_copy = RepoSequence.from_dict(sequence.dict())
 
             assert sequence == sequence_copy
 
@@ -62,11 +60,21 @@ class TestIsolate:
 
 class TestOTU:
     def test_no_isolates(self):
-        """Test that an isolate intializes correctly with no isolates."""
+        """Test that an isolate initializes correctly with no isolates."""
         otu = RepoOTU(
             uuid=uuid4(),
             taxid=12242,
             name="Tobacco mosaic virus",
+            schema=OTUSchema(
+                molecule=Molecule(
+                    strandedness=Strandedness.SINGLE,
+                    type=MolType.RNA,
+                    topology=Topology.LINEAR,
+                ),
+                segments=[
+                    Segment(name="genomic RNA", length=6395, required=True)
+                ]
+            ),
         )
 
         assert otu.isolates == []

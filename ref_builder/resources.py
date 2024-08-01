@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from ref_builder.schema import OTUSchema
-from ref_builder.utils import DataType, IsolateName
+from ref_builder.utils import Accession, DataType, IsolateName
 
 
 class RepoMeta(BaseModel):
@@ -35,7 +35,7 @@ class RepoSequence:
     id: UUID
     """The sequence id."""
 
-    accession: str
+    accession: Accession
     """The sequence accession."""
 
     definition: str
@@ -53,11 +53,22 @@ class RepoSequence:
     segment: str
     """The sequence segment."""
 
+    @classmethod
+    def from_dict(cls, standard_dict: dict):
+        return RepoSequence(
+            id=standard_dict["id"],
+            accession=Accession.create_from_string(standard_dict["accession"]),
+            definition=standard_dict["definition"],
+            sequence=standard_dict["sequence"],
+            segment=standard_dict.get("segment", ""),
+            legacy_id=standard_dict.get("legacy_id"),
+        )
+
     def dict(self) -> dict[str, Any]:
         """Return a dictionary representation of the sequence."""
         return {
             "id": self.id,
-            "accession": self.accession,
+            "accession": str(self.accession),
             "definition": self.definition,
             "legacy_id": self.legacy_id,
             "sequence": self.sequence,
@@ -85,7 +96,7 @@ class RepoIsolate:
         self._sequences_by_accession = (
             {}
             if sequences is None
-            else {sequence.accession: sequence for sequence in sequences}
+            else {sequence.accession.key: sequence for sequence in sequences}
         )
         """A dictionary of sequences indexed by accession"""
 
@@ -132,7 +143,7 @@ class RepoIsolate:
 
     def add_sequence(self, sequence: RepoSequence) -> None:
         """Add a sequence to the isolate."""
-        self._sequences_by_accession[sequence.accession] = sequence
+        self._sequences_by_accession[sequence.accession.key] = sequence
 
     def get_sequence_by_accession(
         self,
@@ -188,9 +199,9 @@ class RepoOTU:
         uuid: UUID,
         taxid: int,
         name: str,
+        schema: OTUSchema,
         acronym: str = "",
         legacy_id: str | None = None,
-        schema: OTUSchema | None = None,
         excluded_accessions: list[str] | None = None,
         isolates: list[RepoIsolate] | None = None,
         repr_isolate: UUID | None = None,

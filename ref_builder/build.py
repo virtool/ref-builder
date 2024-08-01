@@ -25,7 +25,7 @@ def build_json(indent: bool, output_path: Path, path: Path, version: str) -> Non
             sequences = [
                 {
                     "_id": sequence.legacy_id or sequence.id,
-                    "accession": sequence.accession,
+                    "accession": str(sequence.accession),
                     "definition": sequence.definition,
                     "host": "",
                     "segment": sequence.segment,

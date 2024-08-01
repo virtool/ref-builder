@@ -4,6 +4,7 @@ from uuid import UUID
 
 import orjson
 from pydantic import ValidationError
+from structlog import get_logger
 
 from ref_builder.resources import (
     RepoIsolate,
@@ -18,6 +19,8 @@ from ref_builder.snapshotter.models import (
     OTUSnapshotToCIsolate,
     toc_adapter,
 )
+
+logger = get_logger("snapshotter.otu")
 
 
 class OTUSnapshotToC:
@@ -69,7 +72,7 @@ class OTUSnapshotToC:
 
         for key in toc:
             if toc[key].id == isolate_id:
-                toc[key].accessions[sequence.accession] = sequence.id
+                toc[key].accessions[sequence.accession.key] = sequence.id
                 break
 
         self.write(toc, indent=indent)
@@ -204,7 +207,12 @@ class OTUSnapshot:
         """Cache an OTU at a given event."""
         self._metadata.at_event = at_event
 
-        validated_otu = OTUSnapshotOTU(**otu.dict(exclude_contents=True))
+        try:
+            validated_otu = OTUSnapshotOTU.model_validate(otu.dict(exclude_contents=True))
+        except ValidationError:
+            msg = f"{otu.dict(exclude_contents=True)} is not a valid OTU."
+            raise ValueError(msg)
+
         with open(self._otu_path, "w") as f:
             f.write(validated_otu.model_dump_json(indent=indent))
 
@@ -243,7 +251,14 @@ class OTUSnapshot:
                 sequence_id = toc[key].accessions[accession]
                 sequence_structure = self._data.load_sequence(sequence_id)
 
-                sequence = RepoSequence(**sequence_structure.model_dump())
+                sequence = RepoSequence(
+                    id=sequence_structure.id,
+                    accession=sequence_structure.accession,
+                    definition=sequence_structure.definition,
+                    sequence=sequence_structure.sequence,
+                    legacy_id=sequence_structure.legacy_id,
+                    segment=sequence_structure.segment,
+                )
 
                 sequences.append(sequence)
 
