@@ -70,6 +70,7 @@ def otu() -> None:
     metavar="ACCESSIONS",
     nargs=-1,
     type=str,
+    required=True,
 )
 @click.option("--acronym", type=str, default="")
 @click.option("--autofill/--no-fill", default=False)
@@ -89,10 +90,6 @@ def otu_create(
     configure_logger(debug)
 
     repo = Repo(path)
-
-    if not accessions_:
-        click.echo("No accessions given.", err=True)
-        sys.exit(1)
 
     try:
         new_otu = create_otu(
