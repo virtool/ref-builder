@@ -129,7 +129,7 @@ def build_legacy_otu(path: Path) -> dict:
     otu_data["isolates"] = []
 
     for isolate_dir_path in sorted(path.iterdir()):
-        if isolate_dir_path.name == "otu.json":
+        if isolate_dir_path.is_file():
             continue
 
         with open(isolate_dir_path / "isolate.json") as f:
@@ -138,7 +138,7 @@ def build_legacy_otu(path: Path) -> dict:
         isolate_data["sequences"] = []
 
         for sequence_path in sorted(isolate_dir_path.iterdir()):
-            if sequence_path.name == "isolate.json":
+            if sequence_path.suffix != ".json" or sequence_path.name == "isolate.json":
                 continue
 
             with open(sequence_path) as f:
