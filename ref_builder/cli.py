@@ -71,8 +71,8 @@ def otu() -> None:
     nargs=-1,
     type=str,
 )
-@click.option("--autofill/--no-fill", default=False)
 @click.option("--acronym", type=str, default="")
+@click.option("--autofill/--no-fill", default=False)
 @ignore_cache_option
 @debug_option
 @path_option
