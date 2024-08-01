@@ -58,7 +58,7 @@ class TestCreateOTU:
             precached_repo,
             345184,
             ["DQ178610", "DQ178611"],
-            acronym="",
+            "",
         )
 
         assert otu.dict() == snapshot(exclude=props("id", "isolates", "repr_isolate"))
@@ -73,7 +73,7 @@ class TestCreateOTU:
                 scratch_repo,
                 345184,
                 ["DQ178610", "DQ178611"],
-                acronym="",
+                "",
             )
 
     @pytest.mark.parametrize(
@@ -89,10 +89,10 @@ class TestCreateOTU:
         assert list(precached_repo.iter_otus()) == []
 
         otu = create_otu(
-            repo=precached_repo,
-            taxid=taxid,
-            accessions=accessions,
-            acronym="",
+            precached_repo,
+            taxid,
+            accessions,
+            "",
         )
 
         assert list(precached_repo.iter_otus())
@@ -101,20 +101,20 @@ class TestCreateOTU:
 
     def test_otu_create_with_acronym_auto(self, precached_repo: Repo):
         otu = create_otu(
-            repo=precached_repo,
-            taxid=132477,
-            accessions=["NC_013006"],
-            acronym="",
+            precached_repo,
+            132477,
+            ["NC_013006"],
+            "",
         )
 
         assert otu.acronym == "KLV"
 
     def test_otu_create_with_acronym_manual(self, precached_repo: Repo):
         otu = create_otu(
-            repo=precached_repo,
-            taxid=1441799,
-            accessions=["NC_023881"],
-            acronym="FBNSV"
+            precached_repo,
+            1441799,
+            ["NC_023881"],
+            "FBNSV",
         )
 
         assert otu.acronym == "FBNSV"
@@ -196,7 +196,9 @@ class TestAddSequences:
         for otu in precached_repo.iter_otus():
             assert otu.accessions == set(accessions)
 
-            assert otu.dict() == snapshot(exclude=props("id", "isolates", "repr_isolate"))
+            assert otu.dict() == snapshot(
+                exclude=props("id", "isolates", "repr_isolate"),
+            )
 
             for isolate in otu.isolates:
                 assert isolate.dict() == snapshot(exclude=props("id", "sequences"))
@@ -218,7 +220,7 @@ class TestUpdateOTU:
             precached_repo,
             345184,
             ["DQ178610", "DQ178611"],
-            acronym="",
+            "",
         )
         update_otu(precached_repo, otu)
 
