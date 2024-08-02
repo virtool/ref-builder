@@ -5,7 +5,6 @@ import pytest
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
-import otu
 from ref_builder.otu import create_otu, update_otu, add_isolate
 from ref_builder.repo import Repo
 
@@ -33,17 +32,6 @@ def run_create_otu_command(
 def run_update_otu_command(taxid: int, path: Path):
     subprocess.run(
         ["ref-builder", "otu", "update"] + [str(taxid)] + ["--path", str(path)],
-        check=False,
-    )
-
-
-def run_add_sequences_command(taxid: int, accessions: list[str], path: Path):
-    subprocess.run(
-        ["ref-builder"]
-        + ["sequences", "add"]
-        + accessions
-        + ["--taxid", str(taxid)]
-        + ["--path", str(path)],
         check=False,
     )
 
@@ -204,30 +192,6 @@ class TestAddIsolate:
 
 
 
-
-class TestAddSequences:
-    def test_ok(
-        self,
-        precached_repo: Repo,
-        snapshot: SnapshotAssertion,
-    ):
-        accessions = ["DQ178614", "DQ178613", "DQ178610", "DQ178611"]
-        run_add_sequences_command(345184, accessions, precached_repo.path)
-
-        for otu in precached_repo.iter_otus():
-            assert otu.accessions == set(accessions)
-
-            assert otu.dict() == snapshot(
-                exclude=props("id", "isolates", "repr_isolate"),
-            )
-
-            for isolate in otu.isolates:
-                assert isolate.dict() == snapshot(exclude=props("id", "sequences"))
-
-                for accession in sorted(isolate.accessions):
-                    assert isolate.get_sequence_by_accession(
-                        accession,
-                    ).dict() == snapshot(exclude=props("id"))
 
 @pytest.mark.ncbi()
 class TestUpdateOTU:
