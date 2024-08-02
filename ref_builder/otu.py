@@ -129,9 +129,9 @@ def update_otu(
 def add_isolate(
     repo: Repo,
     otu: RepoOTU,
-    accessions: list,
-    ignore_cache: bool = False,
-):
+    accessions: list[str],
+    ignore_cache: bool = False
+) -> None:
     """Take a list of accessions that make up a new isolate and add them to the OTU."""
     ncbi = NCBIClient(ignore_cache)
 
@@ -149,6 +149,17 @@ def add_isolate(
     )
 
     records = ncbi.fetch_genbank_records(fetch_list)
+
+    return create_isolate(repo, otu, records)
+
+
+def create_isolate(
+    repo: Repo,
+    otu: RepoOTU,
+    records: list[NCBIGenbank],
+):
+    """Take a list of records that make up a new isolate and add them to the OTU."""
+    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
     record_bins = group_genbank_records_by_isolate(records)
     if len(record_bins) != 1:
