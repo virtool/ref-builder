@@ -184,13 +184,11 @@ class TestAddIsolate:
 
         isolate = add_isolate(precached_repo, otu, isolate_2_accessions)
 
-        assert isolate.accessions == set(isolate_2_accessions)
-
         otu = precached_repo.get_otu_by_taxid(345184)
 
         assert otu.accessions == set(isolate_1_accessions).union(set(isolate_2_accessions))
 
-
+        assert otu.get_isolate(isolate.id).accessions == set(isolate_2_accessions)
 
 
 @pytest.mark.ncbi()
