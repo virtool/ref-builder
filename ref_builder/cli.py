@@ -16,7 +16,7 @@ from ref_builder.logs import configure_logger
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.options import debug_option, ignore_cache_option, path_option
 from ref_builder.otu import (
-    add_sequences,
+    add_isolate,
     create_otu,
     update_otu,
 )
@@ -156,45 +156,50 @@ def otu_list(path: Path) -> None:
     print_otu_list(Repo(path).iter_otus())
 
 
-@entry.group()
-def sequences() -> None:
-    """Manage sequences."""
+@otu.group()
+def isolate() -> None:
+    """Manage isolates."""
 
 
-@sequences.command(name="create")
+@isolate.command(name="create")
+@click.argument("TAXID", type=int)
 @click.argument(
     "accessions_",
     metavar="ACCESSIONS",
     nargs=-1,
     type=str,
+    required=True,
 )
-@click.option("--taxid", type=int, required=True)
 @ignore_cache_option
-@path_option
 @debug_option
-def create_sequence(
-    accessions_: list[str],
+@path_option
+def isolate_create(
     debug: bool,
     ignore_cache: bool,
     path: Path,
     taxid: int,
+    accessions_: list[str],
 ) -> None:
-    """Fetch and write the data for the given NCBI accessions to an OTU.
-
-    virtool add accessions --taxid 2697049 MN996528.1 --path [repo_path]
-
-    """
+    """Create a new OTU for the given Taxonomy ID and accessions."""
     configure_logger(debug)
 
     repo = Repo(path)
 
-    existing_otu = repo.get_otu_by_taxid(taxid)
-    if existing_otu is None:
-        click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
-        click.echo(f'Run "virtool otu create {taxid} --path {path} --autofill" instead')
+    otu_ = repo.get_otu_by_taxid(taxid)
+    if otu_ is None:
+        click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
-    add_sequences(repo, existing_otu, accessions=accessions_, ignore_cache=ignore_cache)
+    try:
+        add_isolate(
+            repo,
+            otu_,
+            accessions_,
+            ignore_cache=ignore_cache,
+        )
+    except ValueError as e:
+        click.echo(e, err=True)
+        sys.exit(1)
 
 
 @entry.group()
