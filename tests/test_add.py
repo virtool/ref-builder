@@ -5,7 +5,8 @@ import pytest
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
-from ref_builder.otu import create_otu, update_otu
+import otu
+from ref_builder.otu import create_otu, update_otu, add_isolate
 from ref_builder.repo import Repo
 
 
@@ -184,6 +185,26 @@ class TestCreateOTUCommands:
         assert otu.acronym == "CabLCJV"
 
 
+class TestAddIsolate:
+    def test_ok(self, precached_repo: Repo):
+        isolate_1_accessions = ["DQ178610", "DQ178611"]
+        isolate_2_accessions = ["DQ178613", "DQ178614"]
+
+        otu = create_otu(precached_repo, 345184, isolate_1_accessions, acronym="")
+
+        assert otu.accessions == set(isolate_1_accessions)
+
+        isolate = add_isolate(precached_repo, otu, isolate_2_accessions)
+
+        assert isolate.accessions == set(isolate_2_accessions)
+
+        otu = precached_repo.get_otu_by_taxid(345184)
+
+        assert otu.accessions == set(isolate_1_accessions).union(set(isolate_2_accessions))
+
+
+
+
 class TestAddSequences:
     def test_ok(
         self,
@@ -207,7 +228,6 @@ class TestAddSequences:
                     assert isolate.get_sequence_by_accession(
                         accession,
                     ).dict() == snapshot(exclude=props("id"))
-
 
 @pytest.mark.ncbi()
 class TestUpdateOTU:
