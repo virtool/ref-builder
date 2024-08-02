@@ -178,6 +178,11 @@ def add_isolate(
             sequence=record.sequence,
         )
 
+    otu_logger.info(
+        f"{isolate.name} created",
+        accessions=sorted([str(accession) for accession in isolate_records.keys()]),
+    )
+
     return isolate
 
 
