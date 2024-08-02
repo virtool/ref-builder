@@ -1,5 +1,6 @@
 import sys
 from collections import defaultdict
+from uuid import UUID, uuid4
 
 import structlog
 
@@ -7,7 +8,7 @@ from ref_builder.models import Molecule
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.repo import Repo
-from ref_builder.resources import RepoOTU
+from ref_builder.resources import RepoOTU, RepoSequence
 from ref_builder.schema import OTUSchema, Segment
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
@@ -123,6 +124,72 @@ def update_otu(
     linked_accessions = ncbi.link_accessions_from_taxid(otu.taxid)
 
     add_sequences(repo, otu, linked_accessions)
+
+
+def add_isolate(
+    repo: Repo,
+    otu: RepoOTU,
+    accessions: list,
+    ignore_cache: bool = False,
+):
+    """Take a list of accessions that make up a new isolate and add them to the OTU."""
+    ncbi = NCBIClient(ignore_cache)
+
+    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
+
+    fetch_list = list(set(accessions).difference(otu.blocked_accessions))
+    if not fetch_list:
+        otu_logger.info("OTU already includes these accessions.")
+        return
+
+    otu_logger.info(
+        "Fetching accessions",
+        count={len(fetch_list)},
+        fetch_list=fetch_list,
+    )
+
+    records = ncbi.fetch_genbank_records(fetch_list)
+
+    record_bins = group_genbank_records_by_isolate(records)
+    if len(record_bins) != 1:
+        otu_logger.warning("More than one isolate name found in requested accession.")
+        # Override later
+        return
+
+    isolate_name, isolate_records = list(record_bins.items())[0]
+
+    if otu.get_isolate_id_by_name(isolate_name) is not None:
+        otu_logger.error(f"OTU already contains {isolate_name}.")
+        return
+
+    isolate = repo.create_isolate(
+        otu.id, legacy_id=None, source_name=isolate_name.value, source_type=isolate_name.type
+    )
+
+    for accession in isolate_records:
+        record = isolate_records[accession]
+        repo.create_sequence(
+            otu.id,
+            isolate.id,
+            accession=record.accession_version,
+            definition=record.definition,
+            legacy_id=None,
+            segment=record.source.segment,
+            sequence=record.sequence,
+        )
+
+    return isolate
+
+
+def build_sequence(record: NCBIGenbank):
+    return RepoSequence(
+        id=uuid4(),
+        accession=Accession.create_from_string(record.accession_version),
+        definition=record.definition,
+        legacy_id=None,
+        segment=record.source.segment,
+        sequence=record.sequence,
+    )
 
 
 def add_sequences(
@@ -344,7 +411,6 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
     record_logger.debug("Record does not contain sufficient source data for inclusion.")
 
     return None
-
 
 def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
     if len(records) == 1:
