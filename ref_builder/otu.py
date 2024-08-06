@@ -217,9 +217,7 @@ def create_isolate(
 ):
     """Take a list of records that make up a new isolate and add them to the OTU."""
     isolate_logger = structlog.get_logger("otu.isolate").bind(
-        accessions=sorted([str(record.accession) for record in records]),
         isolate_name=str(isolate_name),
-        otu_id=str(otu.id),
         otu_name=otu.name,
         taxid=otu.taxid,
     )
@@ -246,6 +244,7 @@ def create_isolate(
     isolate_logger.info(
         f"{isolate.name} created",
         isolate_id=str(isolate.id),
+        sequences=sorted([str(record.accession) for record in records]),
     )
 
     return isolate
