@@ -123,7 +123,20 @@ def update_otu(
 
     linked_accessions = ncbi.link_accessions_from_taxid(otu.taxid)
 
-    add_sequences(repo, otu, linked_accessions)
+    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
+
+    fetch_list = list(set(linked_accessions).difference(otu.blocked_accessions))
+    if not fetch_list:
+        otu_logger.info("OTU is up to date.")
+        return
+
+    otu_logger.info(
+        "Fetching accessions",
+        count={len(fetch_list)},
+        fetch_list=fetch_list,
+    )
+
+    # add_sequences(repo, otu, linked_accessions)
 
 
 def add_isolate(
@@ -150,17 +163,6 @@ def add_isolate(
 
     records = ncbi.fetch_genbank_records(fetch_list)
 
-    return create_isolate(repo, otu, records)
-
-
-def create_isolate(
-    repo: Repo,
-    otu: RepoOTU,
-    records: list[NCBIGenbank],
-):
-    """Take a list of records that make up a new isolate and add them to the OTU."""
-    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
-
     record_bins = group_genbank_records_by_isolate(records)
     if len(record_bins) != 1:
         otu_logger.warning("More than one isolate name found in requested accession.")
@@ -169,16 +171,42 @@ def create_isolate(
 
     isolate_name, isolate_records = list(record_bins.items())[0]
 
+    if len(isolate_records) != len(otu.schema.segments):
+        otu_logger.error(
+            f"The schema requires {len(otu.schema.segments)} segments: "
+            + f"{[segment.name for segment in otu.schema.segments]}"
+        )
+        return
+
+    return create_isolate(
+        repo, otu, isolate_name, list(isolate_records.values())
+    )
+
+
+def create_isolate(
+    repo: Repo,
+    otu: RepoOTU,
+    isolate_name: IsolateName,
+    records: list[NCBIGenbank],
+):
+    """Take a list of records that make up a new isolate and add them to the OTU."""
+    isolate_logger = structlog.get_logger("otu.isolate").bind(
+        accessions=sorted([str(record.accession) for record in records]),
+        isolate_name=str(isolate_name),
+        otu_id=str(otu.id),
+        otu_name=otu.name,
+        taxid=otu.taxid,
+    )
+
     if otu.get_isolate_id_by_name(isolate_name) is not None:
-        otu_logger.error(f"OTU already contains {isolate_name}.")
+        isolate_logger.error(f"OTU already contains {isolate_name}.")
         return
 
     isolate = repo.create_isolate(
         otu.id, legacy_id=None, source_name=isolate_name.value, source_type=isolate_name.type
     )
 
-    for accession in isolate_records:
-        record = isolate_records[accession]
+    for record in records:
         repo.create_sequence(
             otu.id,
             isolate.id,
@@ -189,9 +217,8 @@ def create_isolate(
             sequence=record.sequence,
         )
 
-    otu_logger.info(
+    isolate_logger.info(
         f"{isolate.name} created",
-        accessions=sorted([str(accession) for accession in isolate_records.keys()]),
     )
 
     return isolate
