@@ -121,22 +121,48 @@ def update_otu(
     """
     ncbi = NCBIClient(ignore_cache)
 
-    linked_accessions = ncbi.link_accessions_from_taxid(otu.taxid)
-
     otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
+
+    linked_accessions = ncbi.link_accessions_from_taxid(otu.taxid)
 
     fetch_list = list(set(linked_accessions).difference(otu.blocked_accessions))
     if not fetch_list:
         otu_logger.info("OTU is up to date.")
         return
 
-    otu_logger.info(
+    otu_logger.debug(
         "Fetching accessions",
         count={len(fetch_list)},
         fetch_list=fetch_list,
     )
 
-    # add_sequences(repo, otu, linked_accessions)
+    records = ncbi.fetch_genbank_records(fetch_list)
+
+    record_bins = group_genbank_records_by_isolate(records)
+
+    otu_logger.debug(
+        f"Found {len(record_bins)} potential new isolates",
+        potential_isolates=[str(isolate_name) for isolate_name in record_bins.keys()],
+    )
+
+    new_isolates = []
+
+    for isolate_name in record_bins:
+        isolate_records = record_bins[isolate_name]
+        if len(isolate_records) != len(otu.schema.segments):
+            otu_logger.debug(
+                f"The schema requires {len(otu.schema.segments)} segments: "
+                + f"{[segment.name for segment in otu.schema.segments]}"
+            )
+            otu_logger.debug(f"Skipping {isolate_name}")
+            continue
+
+        isolate = create_isolate(repo, otu, isolate_name, list(isolate_records.values()))
+        if isolate is not None:
+            new_isolates.append(isolate_name)
+
+    if not new_isolates:
+        otu_logger.info("No new isolates added.")
 
 
 def add_isolate(
@@ -219,6 +245,7 @@ def create_isolate(
 
     isolate_logger.info(
         f"{isolate.name} created",
+        isolate_id=str(isolate.id),
     )
 
     return isolate
