@@ -10,6 +10,7 @@ from structlog import get_logger
 
 from ref_builder.ncbi.cache import NCBICache
 from ref_builder.ncbi.models import NCBIDatabase, NCBIGenbank, NCBIRank, NCBITaxonomy
+from ref_builder.utils import Accession
 
 if email := os.environ.get("NCBI_EMAIL"):
     Entrez.email = email
@@ -20,7 +21,8 @@ base_logger = get_logger()
 
 
 class GBSeq(StrEnum):
-    ACCESSION = "GBSeq_primary-accession"
+    ACCESSION_UNVERSIONED = "GBSeq_primary-accession"
+    ACCESSION_VERSIONED = "GBSeq_accession-version"
     DEFINITION = "GBSeq_definition"
     SEQUENCE = "GBSeq_sequence"
     LENGTH = "GBSeq_length"
@@ -63,7 +65,7 @@ class NCBIClient:
                     logger.debug("Missing accession", missing_accession=accession)
 
         fetch_list = list(
-            set(accessions) - {record.get(GBSeq.ACCESSION) for record in records},
+            set(accessions) - {record.get(GBSeq.ACCESSION_UNVERSIONED) for record in records},
         )
 
         if fetch_list:
@@ -72,7 +74,10 @@ class NCBIClient:
 
             for record in new_records:
                 try:
-                    self.cache.cache_genbank_record(record, record[GBSeq.ACCESSION])
+                    versioned_accession = Accession.create_from_string(record[GBSeq.ACCESSION_VERSIONED])
+                    self.cache.cache_genbank_record(
+                        record, versioned_accession.key, versioned_accession.version
+                    )
                 except FileNotFoundError:
                     logger.error("Failed to cache record")
 
@@ -153,8 +158,11 @@ class NCBIClient:
             return []
 
         for record in records:
+            versioned_accession = Accession.create_from_string(record[GBSeq.ACCESSION_VERSIONED])
             try:
-                self.cache.cache_genbank_record(record, record[GBSeq.ACCESSION])
+                self.cache.cache_genbank_record(
+                    record, versioned_accession.key, versioned_accession.version
+                )
             except FileNotFoundError:
                 logger.error("Failed to cache record")
 
@@ -213,7 +221,7 @@ class NCBIClient:
         clean_records = []
 
         for record in records:
-            accession = record.get(GBSeq.ACCESSION, "?")
+            accession = record.get(GBSeq.ACCESSION_UNVERSIONED, "?")
 
             try:
                 clean_records.append(NCBIClient.validate_genbank_record(record))
