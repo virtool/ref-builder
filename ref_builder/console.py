@@ -10,6 +10,10 @@ def _render_taxonomy_id_link(taxid: int) -> str:
     return f"[link=https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={taxid}]{taxid}[/link]"
 
 
+def _render_nucleotide_link(accession: str) -> str:
+    return f"[link=https://www.ncbi.nlm.nih.gov/nuccore/{accession}]{accession}[/link]"
+
+
 def print_otu(otu: RepoOTU) -> None:
     """Print the details for an OTU to the console.
 
@@ -79,7 +83,7 @@ def print_otu(otu: RepoOTU) -> None:
 
         for sequence in sorted(isolate.sequences, key=lambda s: s.accession):
             isolate_table.add_row(
-                str(sequence.accession),
+                _render_nucleotide_link(str(sequence.accession)),
                 sequence.segment,
                 sequence.definition,
             )
@@ -103,7 +107,12 @@ def print_otu_list(otus: Iterable[RepoOTU]) -> None:
     table.add_column("ID")
 
     for otu in otus:
-        table.add_row(otu.name, otu.acronym, str(otu.taxid), str(otu.id))
+        table.add_row(
+            otu.name,
+            otu.acronym,
+            str(otu.taxid),
+            str(otu.id)
+        )
 
     console.print(table)
 
