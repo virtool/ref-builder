@@ -42,7 +42,7 @@ class TestGenbank:
 
         assert scratch_ncbi_cache.load_genbank_record(accession) is None
 
-        scratch_ncbi_cache.cache_genbank_record(record, accession)
+        scratch_ncbi_cache.cache_genbank_record(record, accession, 1)
 
         assert scratch_ncbi_cache.load_genbank_record(accession) == record == snapshot
 
