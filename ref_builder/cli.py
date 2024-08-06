@@ -108,27 +108,6 @@ def otu_create(
         update_otu(repo, new_otu, ignore_cache=ignore_cache)
 
 
-@otu.command(name="update")
-@click.argument("TAXID", type=int)
-@debug_option
-@ignore_cache_option
-@path_option
-def otu_update(debug: bool, ignore_cache: bool, path: Path, taxid: int) -> None:
-    """Update an existing OTU with the latest data from NCBI."""
-    configure_logger(debug)
-
-    repo = Repo(path)
-
-    otu_ = repo.get_otu_by_taxid(taxid)
-
-    if otu_ is None:
-        click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
-        click.echo(f'Run "virtool otu create {taxid} --autofill" instead.')
-        sys.exit(1)
-
-    update_otu(repo, otu_, ignore_cache=ignore_cache)
-
-
 @otu.command(name="get")
 @click.argument("IDENTIFIER", type=str)
 @path_option
@@ -156,13 +135,52 @@ def otu_list(path: Path) -> None:
     print_otu_list(Repo(path).iter_otus())
 
 
-@otu.group()
-def isolate() -> None:
-    """Manage isolates."""
-
-
-@isolate.command(name="create")
+@otu.group(invoke_without_command=True)
 @click.argument("TAXID", type=int)
+@path_option
+@click.pass_context
+def update(ctx, path: Path, taxid: int):
+    """Update the specified OTU with new data."""
+    ctx.ensure_object(dict)
+
+    ctx.obj['TAXID'] = taxid
+
+    repo = Repo(path)
+
+    ctx.obj['REPO'] = repo
+
+    otu_id = repo.get_otu_id_by_taxid(taxid)
+    if otu_id is None:
+        click.echo(f"OTU {taxid} not found.", err=True)
+        sys.exit(1)
+
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
+
+
+@update.command(name="automatic")
+@debug_option
+@ignore_cache_option
+@click.pass_context
+def otu_autoupdate(ctx, debug: bool, ignore_cache: bool) -> None:
+    """Automatically update an OTU with the latest data from NCBI."""
+    configure_logger(debug)
+
+    taxid = ctx.obj['TAXID']
+
+    repo = ctx.obj['REPO']
+
+    otu_ = repo.get_otu_by_taxid(taxid)
+
+    if otu_ is None:
+        click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
+        click.echo(f'Run "virtool otu create {taxid} --autofill" instead.')
+        sys.exit(1)
+
+    update_otu(repo, otu_, ignore_cache=ignore_cache)
+
+
+@update.command(name="isolate")
 @click.argument(
     "accessions_",
     metavar="ACCESSIONS",
@@ -172,18 +190,19 @@ def isolate() -> None:
 )
 @ignore_cache_option
 @debug_option
-@path_option
+@click.pass_context
 def isolate_create(
+    ctx,
     debug: bool,
     ignore_cache: bool,
-    path: Path,
-    taxid: int,
     accessions_: list[str],
 ) -> None:
-    """Create a new OTU for the given Taxonomy ID and accessions."""
+    """Create a new isolate using the given accessions."""
     configure_logger(debug)
 
-    repo = Repo(path)
+    repo = ctx.obj['REPO']
+
+    taxid = ctx.obj['TAXID']
 
     otu_ = repo.get_otu_by_taxid(taxid)
     if otu_ is None:
