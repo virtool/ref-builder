@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: TestGenbank.test_cache[AB017504]
+# name: TestGenbank.test_cache[AB017504.1]
   dict({
     'GBSeq_accession-version': 'AB017504.1',
     'GBSeq_create-date': '05-JAN-2002',
@@ -235,7 +235,10 @@
     'GBSeq_update-date': '07-APR-2012',
   })
 # ---
-# name: TestGenbank.test_cache[NC_003355]
+# name: TestGenbank.test_cache[FJ028650.2]
+  None
+# ---
+# name: TestGenbank.test_cache[NC_003355.1]
   dict({
     'GBSeq_accession-version': 'NC_003355.1',
     'GBSeq_comment': 'PROVISIONAL REFSEQ: This record has not yet been subject to final NCBI review. The reference sequence is identical to AB017503.; COMPLETENESS: full length.',
