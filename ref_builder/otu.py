@@ -111,7 +111,7 @@ def create_otu(
     return otu
 
 
-def update_otu(
+def auto_update_otu(
     repo: Repo,
     otu: RepoOTU,
     ignore_cache: bool = False,

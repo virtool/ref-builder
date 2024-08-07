@@ -18,7 +18,7 @@ from ref_builder.options import debug_option, ignore_cache_option, path_option
 from ref_builder.otu import (
     add_isolate,
     create_otu,
-    update_otu,
+    auto_update_otu,
 )
 from ref_builder.repo import Repo
 from ref_builder.utils import DataType, format_json
@@ -105,7 +105,7 @@ def otu_create(
         sys.exit(1)
 
     if autofill:
-        update_otu(repo, new_otu, ignore_cache=ignore_cache)
+        auto_update_otu(repo, new_otu, ignore_cache=ignore_cache)
 
 
 @otu.command(name="get")
@@ -177,7 +177,7 @@ def otu_autoupdate(ctx, debug: bool, ignore_cache: bool) -> None:
         click.echo(f'Run "virtool otu create {taxid} --autofill" instead.')
         sys.exit(1)
 
-    update_otu(repo, otu_, ignore_cache=ignore_cache)
+    auto_update_otu(repo, otu_, ignore_cache=ignore_cache)
 
 
 @update.command(name="isolate")

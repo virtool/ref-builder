@@ -5,7 +5,7 @@ import pytest
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
-from ref_builder.otu import create_otu, update_otu, add_isolate
+from ref_builder.otu import create_otu, auto_update_otu, add_isolate
 from ref_builder.repo import Repo
 
 
@@ -207,7 +207,7 @@ class TestUpdateOTU:
 
         assert otu.accessions == {"MF062136", "MF062137", "MF062138"}
 
-        update_otu(precached_repo, otu)
+        auto_update_otu(precached_repo, otu)
 
         otu = precached_repo.get_otu(otu.id)
 
