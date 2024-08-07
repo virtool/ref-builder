@@ -94,28 +94,33 @@
       'excluded_accessions': list([
       ]),
       'legacy_id': None,
-      'name': 'Cabbage leaf curl Jamaica virus',
+      'name': 'Apple rubbery wood virus 1',
       'schema': dict({
         'molecule': dict({
-          'strandedness': 'double',
-          'topology': 'circular',
-          'type': 'DNA',
+          'strandedness': 'single',
+          'topology': 'linear',
+          'type': 'RNA',
         }),
         'multipartite': True,
         'segments': list([
           dict({
-            'length': 2575,
-            'name': 'DNA-A',
+            'length': 7219,
+            'name': 'L',
             'required': True,
           }),
           dict({
-            'length': 2494,
-            'name': 'DNA-B',
+            'length': 1613,
+            'name': 'M',
+            'required': True,
+          }),
+          dict({
+            'length': 1291,
+            'name': 'S',
             'required': True,
           }),
         ]),
       }),
-      'taxid': 345184,
+      'taxid': 2164102,
     }),
   ])
 # ---

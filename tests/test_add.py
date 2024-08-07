@@ -200,10 +200,13 @@ class TestUpdateOTU:
     ):
         otu = create_otu(
             precached_repo,
-            345184,
-            ["DQ178610", "DQ178611"],
+            2164102,
+            ["MF062136", "MF062137", "MF062138"],
             "",
         )
+
+        assert otu.accessions == {"MF062136", "MF062137", "MF062138"}
+
         update_otu(precached_repo, otu)
 
         otu = precached_repo.get_otu(otu.id)
@@ -213,13 +216,16 @@ class TestUpdateOTU:
         )
 
         assert otu.accessions == {
-            "DQ178608",
-            "DQ178609",
-            "DQ178610",
-            "DQ178611",
-            "DQ178612",
-            "DQ178613",
-            "DQ178614",
-            "NC_038792",
-            "NC_038793",
+            "MF062136",
+            "MF062137",
+            "MF062138",
+            "MF062130",
+            "MF062131",
+            "MF062132",
+            "OQ420743",
+            "OQ420744",
+            "OQ420745",
+            "MK936225",
+            "MK936226",
+            "MK936227",
         }
