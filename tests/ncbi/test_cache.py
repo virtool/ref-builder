@@ -49,6 +49,21 @@ class TestGenbank:
 
         assert scratch_ncbi_cache.load_genbank_record(accession.key) == record == snapshot
 
+    def test_cache_multi_version_retrieve(self, scratch_ncbi_cache: NCBICache):
+        """Test that the cache can load two different versions of the same accession,
+        but loads the latest version by default."""
+        v_1 = scratch_ncbi_cache.load_genbank_record("FJ028650", 1)
+
+        assert v_1 is not None
+
+        v_2 = scratch_ncbi_cache.load_genbank_record("FJ028650", 2)
+
+        assert v_2 is not None
+
+        assert scratch_ncbi_cache.load_genbank_record("FJ028650") != v_1
+
+        assert scratch_ncbi_cache.load_genbank_record("FJ028650") == v_2
+
     def test_load_not_found(self, scratch_ncbi_cache: NCBICache):
         """Test that None is returned if a record is not found."""
         assert scratch_ncbi_cache.load_genbank_record("not_found") is None
