@@ -171,7 +171,11 @@ def add_isolate(
     accessions: list[str],
     ignore_cache: bool = False
 ) -> None:
-    """Take a list of accessions that make up a new isolate and add them to the OTU."""
+    """Take a list of accessions that make up a new isolate and a new isolate to the OTU.
+
+    Download the GenBank records, categorize into an isolate bin and pass the isolate name
+    and records to the add method.
+    """
     ncbi = NCBIClient(ignore_cache)
 
     otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
@@ -215,7 +219,8 @@ def create_isolate(
     isolate_name: IsolateName,
     records: list[NCBIGenbank],
 ):
-    """Take a list of records that make up a new isolate and add them to the OTU."""
+    """Take a list of GenBank records that make up a new isolate
+    and add them to the OTU."""
     isolate_logger = structlog.get_logger("otu.isolate").bind(
         isolate_name=str(isolate_name),
         otu_name=otu.name,
