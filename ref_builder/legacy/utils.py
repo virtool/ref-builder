@@ -213,7 +213,7 @@ def replace_otu(path: Path, otu: dict) -> None:
 
 def extract_isolate_source(
     genbank_records: list[NCBIGenbank],
-) -> LegacyIsolateSource:
+) -> LegacyIsolateSource | None:
     """Extract a legacy isolate source from a set of Genbank records associated with the
     isolate.
     """
@@ -236,15 +236,18 @@ def extract_isolate_source(
                 type=LegacySourceType.CLONE,
             )
 
-    accessions = sorted(
-        (record.accession for record in genbank_records if record.accession),
-        key=lambda x: int(x.replace("NC_", "").replace(".1", "")),
-    )
+    if "NC_" in genbank_records[0].accession:
+        accessions = sorted(
+            (record.accession for record in genbank_records if record.accession),
+            key=lambda x: int(x.replace("NC_", "").replace(".1", "")),
+        )
 
-    return LegacyIsolateSource(
-        name=accessions[0].upper(),
-        type=LegacySourceType.GENBANK,
-    )
+        return LegacyIsolateSource(
+            name=accessions[0].upper(),
+            type=LegacySourceType.REFSEQ,
+        )
+
+    return None
 
 
 def iter_legacy_otus(src_path: Path) -> Generator[dict, None, None]:
