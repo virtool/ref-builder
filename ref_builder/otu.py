@@ -246,13 +246,14 @@ def _get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
 def group_genbank_records_by_isolate(
     records: list[NCBIGenbank],
 ) -> dict[IsolateName, dict[Accession, NCBIGenbank]]:
-    """Indexes Genbank records by isolate name"""
+    """Index Genbank records by isolate name."""
     isolates = defaultdict(dict)
 
     for record in records:
-        if (isolate_name := _get_isolate_name(record)) is not None:
-            versioned_accession = Accession.create_from_string(record.accession_version)
-            isolates[isolate_name][versioned_accession] = record
+        if (isolate_name := get_isolate_name(record)) is not None:
+            isolates[isolate_name][
+                Accession.create_from_string(record.accession_version)
+            ] = record
 
     return isolates
 
@@ -293,7 +294,7 @@ def _file_and_create_sequences(
                     continue
 
                 otu_logger.warning(
-                    f"New version of {accession.key} found. Replacing {extant_sequence.accession} with {accession}..."
+                    f"New version of {accession.key} found. Replacing {extant_sequence.accession} with {accession}...",
                 )
                 otu_logger.warning("SEQUENCE REPLACEMENT NOT YET IMPLEMENTED")
 

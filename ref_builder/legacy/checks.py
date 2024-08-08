@@ -4,8 +4,9 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
+from ref_builder.console import console
 from ref_builder.legacy.models import LegacySourceType
-from ref_builder.legacy.utils import console, iter_legacy_otus
+from ref_builder.legacy.utils import iter_legacy_otus
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu import get_isolate_name
 
@@ -45,7 +46,7 @@ def check_isolate_names_against_ncbi(path: Path) -> dict[str, IsolateNameCheckRe
     :param path: the path to the legacy reference.
     :returns: a dictionary mapping isolate IDs to the results of the check.
     """
-    ncbi_client = NCBIClient(path / ".migration_cache", False)
+    ncbi_client = NCBIClient(False)
 
     result = {}
 
