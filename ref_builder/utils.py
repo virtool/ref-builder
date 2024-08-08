@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import NamedTuple
 from pathlib import Path
+from typing import NamedTuple
 
 import orjson
 
@@ -10,8 +10,13 @@ ZERO_PADDING_MAX = 99999999
 
 
 class Accession(NamedTuple):
+    """A versioned Genbank accession."""
+
     key: str
+    """The Genbank accession (eg. MZ126507)."""
+
     version: int
+    """The version of the Genbank record (eg. 1)."""
 
     @classmethod
     def create_from_string(cls, raw_accession: str) -> "Accession":
@@ -19,7 +24,9 @@ class Accession(NamedTuple):
 
         if len(accession_parts) == 2:
             try:
-                return Accession(key=accession_parts[0], version=int(accession_parts[1]))
+                return Accession(
+                    key=accession_parts[0], version=int(accession_parts[1])
+                )
             except ValueError:
                 msg = f"Raw accession {raw_accession} does not include a valid version."
                 raise ValueError(msg)
@@ -28,8 +35,8 @@ class Accession(NamedTuple):
         raise ValueError(msg)
 
     def __str__(self) -> str:
+        """Return the accession and version as a string (eg. MZ126507.1)."""
         return f"{self.key}.{self.version}"
-
 
 
 class DataType(StrEnum):

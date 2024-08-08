@@ -38,6 +38,19 @@ def empty_repo(tmp_path: Path) -> Repo:
 
 
 @pytest.fixture()
+def legacy_repo_path(
+    test_files_path: Path,
+    tmp_path: Path,
+) -> Path:
+    """The path to a scratch legacy reference."""
+    path = tmp_path / "legacy_repo"
+
+    shutil.copytree(test_files_path / "legacy_repo", path)
+
+    return path
+
+
+@pytest.fixture()
 def legacy_otu(legacy_repo_path: Path) -> dict:
     """A legacy OTU."""
     return build_legacy_otu(
@@ -144,7 +157,9 @@ def scratch_user_cache_path(files_path: Path, tmp_path: Path) -> Path:
 
 @pytest.fixture()
 def scratch_event_store_data(
-    pytestconfig, tmp_path, scratch_repo_contents_path
+    pytestconfig,
+    tmp_path,
+    scratch_repo_contents_path,
 ) -> dict:
     """Scratch repo events. Cached in .pytest_cache."""
     scratch_src = pytestconfig.cache.get("scratch_src", None)

@@ -6,9 +6,10 @@ import pytest
 from pytest_mock import MockerFixture
 from rich.console import Console
 
-from ref_builder.legacy.repo import (
-    check_unique_accessions,
+from ref_builder.legacy.checks import (
+    check_isolate_names_against_ncbi,
     check_unique_otu_abbreviations_and_names,
+    find_duplicate_accessions,
 )
 
 
@@ -24,16 +25,28 @@ def _console(mocker: MockerFixture) -> Console:
     return console
 
 
-def test_check_unique_accessions(
-    _console: Console,
+def test_check_isolate_names_against_ncbi(legacy_repo_path: Path):
+    """Test that check_isolate_names_against_ncbi() reports isolates with names that
+    don't match what is found in NCBI for their member accessions.
+    """
+    assert check_isolate_names_against_ncbi(legacy_repo_path) == {}
+    assert 0
+
+
+def test_find_duplicate_accessions(
     legacy_otu: dict,
     legacy_repo_path: Path,
 ):
-    """Test that check_unique_accessions() finds non-unique accessions."""
-    src_path = legacy_repo_path / "src"
-
+    """Test that find_duplicate_accessions() finds non-unique accessions and returns
+    the sequences they are in.
+    """
     sequence_path = (
-        src_path / "b" / "bamboo_mosaic_virus" / "lm3xmhrf" / "3d2e72sk.json"
+        legacy_repo_path
+        / "src"
+        / "b"
+        / "bamboo_mosaic_virus"
+        / "lm3xmhrf"
+        / "3d2e72sk.json"
     )
 
     with open(sequence_path) as f:
@@ -50,11 +63,12 @@ def test_check_unique_accessions(
             f,
         )
 
-    check_unique_accessions(legacy_repo_path)
-
-    assert (
-        f"Found non-unique accession: {duplicate_accession}" in _console.file.getvalue()
-    )
+    assert find_duplicate_accessions(legacy_repo_path) == {
+        "NC_010317.1": [
+            "3d2e72sk",
+            "5w3oz9pl",
+        ],
+    }
 
 
 class TestCheckUniqueOTUNamesAndAbbreviations:

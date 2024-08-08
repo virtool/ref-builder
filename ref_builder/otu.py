@@ -293,7 +293,8 @@ def _file_and_create_sequences(
                     continue
 
                 otu_logger.warning(
-                    f"New version of {accession.key} found. Replacing {extant_sequence.accession} with {accession}...")
+                    f"New version of {accession.key} found. Replacing {extant_sequence.accession} with {accession}..."
+                )
                 otu_logger.warning("SEQUENCE REPLACEMENT NOT YET IMPLEMENTED")
 
             else:
@@ -312,8 +313,8 @@ def _file_and_create_sequences(
     return sorted(new_accessions)
 
 
-def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
-    """Get the isolate name from a Genbank record"""
+def get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
+    """Get the isolate name from a Genbank record."""
     record_logger = logger.bind(
         accession=record.accession,
         definition=record.definition,
@@ -331,11 +332,6 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
                 )
 
     elif record.refseq:
-        record_logger.debug(
-            "RefSeq record does not contain sufficient source data. "
-            + "Edit before inclusion.",
-        )
-
         return IsolateName(
             type=IsolateNameType(IsolateNameType.REFSEQ),
             value=record.accession,
