@@ -39,9 +39,9 @@ def handle_enum(ctx: HandleErrorContext) -> ErrorHandledResult:
             [s["accession"] for s in isolate["sequences"]],
         )
 
-        try:
-            source = extract_isolate_source(genbank_records)
-        except ValueError:
+        source = extract_isolate_source(genbank_records)
+
+        if source is None:
             return ErrorHandledResult(
                 f"{message}. no isolate source could be found on genbank.",
                 False,
@@ -262,6 +262,13 @@ def handle_string_too_short(ctx: HandleErrorContext) -> ErrorHandledResult:
             )
 
         source = extract_isolate_source(genbank_records)
+
+        if source is None:
+            return ErrorHandledResult(
+                f"[bold]source_name[/bold] must be a string with a minimum length of "
+                f"{min_length}. it currently has a length of [u]{len(input_)}[/u]. we "
+                "could not find a source name on genbank.",
+            )
 
         ctx.update_isolate(
             isolate_index,
