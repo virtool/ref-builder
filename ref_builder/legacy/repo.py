@@ -42,6 +42,14 @@ def check_unique_ids(path: Path) -> None:
         console.log("Found non-unique OTU ids")
 
     if len(isolate_ids) != len(set(isolate_ids)):
+        seen = set()
+
+        for isolate_id in isolate_ids:
+            if isolate_id in seen:
+                console.log(f"Found non-unique isolate id: {isolate_id}")
+            else:
+                seen.add(isolate_id)
+
         console.log("Found non-unique isolate ids")
 
     if len(sequence_ids) != len(set(sequence_ids)):
