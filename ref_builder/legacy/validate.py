@@ -165,10 +165,12 @@ def validate_legacy_repo(fix: bool, limit: int, no_ok: bool, path: Path) -> None
     check_unique_otu_abbreviations_and_names(path)
 
     for alpha_dir_path in sorted(src_path.iterdir()):
-        if alpha_dir_path.name == "meta.json":
+        if alpha_dir_path.is_file():
             continue
 
         for otu_dir_path in sorted(alpha_dir_path.iterdir()):
+            if otu_dir_path.is_file():
+                continue
             otu = build_legacy_otu(otu_dir_path)
 
             result = validate_legacy_otu(
@@ -196,3 +198,5 @@ def validate_legacy_repo(fix: bool, limit: int, no_ok: bool, path: Path) -> None
 
             if with_errors_count >= limit:
                 return
+
+    logger.debug("Legacy repo passed validation.")
