@@ -1,5 +1,6 @@
 import sys
 from collections import defaultdict
+from uuid import UUID, uuid4
 
 import structlog
 
@@ -7,7 +8,7 @@ from ref_builder.models import Molecule
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.repo import Repo
-from ref_builder.resources import RepoOTU
+from ref_builder.resources import RepoOTU, RepoSequence
 from ref_builder.schema import OTUSchema, Segment
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
@@ -110,7 +111,7 @@ def create_otu(
     return otu
 
 
-def update_otu(
+def auto_update_otu(
     repo: Repo,
     otu: RepoOTU,
     ignore_cache: bool = False,
@@ -120,9 +121,149 @@ def update_otu(
     """
     ncbi = NCBIClient(ignore_cache)
 
+    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
+
     linked_accessions = ncbi.link_accessions_from_taxid(otu.taxid)
 
-    add_sequences(repo, otu, linked_accessions)
+    fetch_list = list(set(linked_accessions).difference(otu.blocked_accessions))
+    if not fetch_list:
+        otu_logger.info("OTU is up to date.")
+        return
+
+    otu_logger.debug(
+        "Fetching accessions",
+        count={len(fetch_list)},
+        fetch_list=fetch_list,
+    )
+
+    records = ncbi.fetch_genbank_records(fetch_list)
+
+    record_bins = group_genbank_records_by_isolate(records)
+
+    otu_logger.debug(
+        f"Found {len(record_bins)} potential new isolates",
+        potential_isolates=[str(isolate_name) for isolate_name in record_bins.keys()],
+    )
+
+    new_isolates = []
+
+    for isolate_name in record_bins:
+        isolate_records = record_bins[isolate_name]
+        if len(isolate_records) != len(otu.schema.segments):
+            otu_logger.debug(
+                f"The schema requires {len(otu.schema.segments)} segments: "
+                + f"{[segment.name for segment in otu.schema.segments]}"
+            )
+            otu_logger.debug(f"Skipping {isolate_name}")
+            continue
+
+        isolate = create_isolate(repo, otu, isolate_name, list(isolate_records.values()))
+        if isolate is not None:
+            new_isolates.append(isolate_name)
+
+    if not new_isolates:
+        otu_logger.info("No new isolates added.")
+
+
+def add_isolate(
+    repo: Repo,
+    otu: RepoOTU,
+    accessions: list[str],
+    ignore_cache: bool = False
+) -> None:
+    """Take a list of accessions that make up a new isolate and a new isolate to the OTU.
+
+    Download the GenBank records, categorize into an isolate bin and pass the isolate name
+    and records to the add method.
+    """
+    ncbi = NCBIClient(ignore_cache)
+
+    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
+
+    fetch_list = list(set(accessions).difference(otu.blocked_accessions))
+    if not fetch_list:
+        otu_logger.info("OTU already includes these accessions.")
+        return
+
+    otu_logger.info(
+        "Fetching accessions",
+        count={len(fetch_list)},
+        fetch_list=fetch_list,
+    )
+
+    records = ncbi.fetch_genbank_records(fetch_list)
+
+    record_bins = group_genbank_records_by_isolate(records)
+    if len(record_bins) != 1:
+        otu_logger.warning("More than one isolate name found in requested accession.")
+        # Override later
+        return
+
+    isolate_name, isolate_records = list(record_bins.items())[0]
+
+    if len(isolate_records) != len(otu.schema.segments):
+        otu_logger.error(
+            f"The schema requires {len(otu.schema.segments)} segments: "
+            + f"{[segment.name for segment in otu.schema.segments]}"
+        )
+        return
+
+    return create_isolate(
+        repo, otu, isolate_name, list(isolate_records.values())
+    )
+
+
+def create_isolate(
+    repo: Repo,
+    otu: RepoOTU,
+    isolate_name: IsolateName,
+    records: list[NCBIGenbank],
+):
+    """Take a list of GenBank records that make up a new isolate
+    and add them to the OTU."""
+    isolate_logger = structlog.get_logger("otu.isolate").bind(
+        isolate_name=str(isolate_name),
+        otu_name=otu.name,
+        taxid=otu.taxid,
+    )
+
+    if otu.get_isolate_id_by_name(isolate_name) is not None:
+        isolate_logger.error(f"OTU already contains {isolate_name}.")
+        return
+
+    isolate = repo.create_isolate(
+        otu.id, legacy_id=None, source_name=isolate_name.value, source_type=isolate_name.type
+    )
+
+    for record in records:
+        repo.create_sequence(
+            otu.id,
+            isolate.id,
+            accession=record.accession_version,
+            definition=record.definition,
+            legacy_id=None,
+            segment=record.source.segment,
+            sequence=record.sequence,
+        )
+
+    isolate_logger.info(
+        f"{isolate.name} created",
+        isolate_id=str(isolate.id),
+        sequences=sorted([str(record.accession) for record in records]),
+    )
+
+    return isolate
+
+
+def build_sequence(record: NCBIGenbank):
+    return RepoSequence(
+        id=uuid4(),
+        accession=Accession.create_from_string(record.accession_version),
+        definition=record.definition,
+        legacy_id=None,
+        segment=record.source.segment,
+        sequence=record.sequence,
+    )
 
 
 def add_sequences(
@@ -163,6 +304,10 @@ def add_sequences(
 
     otu_logger.info("No new sequences added to OTU")
 
+
+def exclude_accessions_from_otu(repo, otu, accessions):
+    for accession in accessions:
+        repo.exclude_accession(otu.id, accession)
 
 def add_schema_from_accessions(
     repo: Repo,
@@ -344,7 +489,6 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
     record_logger.debug("Record does not contain sufficient source data for inclusion.")
 
     return None
-
 
 def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
     if len(records) == 1:

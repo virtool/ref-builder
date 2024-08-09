@@ -16,9 +16,9 @@ from ref_builder.logs import configure_logger
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.options import debug_option, ignore_cache_option, path_option
 from ref_builder.otu import (
-    add_sequences,
+    add_isolate,
     create_otu,
-    update_otu,
+    auto_update_otu,
 )
 from ref_builder.repo import Repo
 from ref_builder.utils import DataType, format_json
@@ -105,28 +105,7 @@ def otu_create(
         sys.exit(1)
 
     if autofill:
-        update_otu(repo, new_otu, ignore_cache=ignore_cache)
-
-
-@otu.command(name="update")
-@click.argument("TAXID", type=int)
-@debug_option
-@ignore_cache_option
-@path_option
-def otu_update(debug: bool, ignore_cache: bool, path: Path, taxid: int) -> None:
-    """Update an existing OTU with the latest data from NCBI."""
-    configure_logger(debug)
-
-    repo = Repo(path)
-
-    otu_ = repo.get_otu_by_taxid(taxid)
-
-    if otu_ is None:
-        click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
-        click.echo(f'Run "virtool otu create {taxid} --autofill" instead.')
-        sys.exit(1)
-
-    update_otu(repo, otu_, ignore_cache=ignore_cache)
+        auto_update_otu(repo, new_otu, ignore_cache=ignore_cache)
 
 
 @otu.command(name="get")
@@ -156,45 +135,90 @@ def otu_list(path: Path) -> None:
     print_otu_list(Repo(path).iter_otus())
 
 
-@entry.group()
-def sequences() -> None:
-    """Manage sequences."""
+@otu.group(invoke_without_command=True)
+@click.argument("TAXID", type=int)
+@path_option
+@click.pass_context
+def update(ctx, path: Path, taxid: int):
+    """Update the specified OTU with new data."""
+    ctx.ensure_object(dict)
+
+    ctx.obj['TAXID'] = taxid
+
+    repo = Repo(path)
+
+    ctx.obj['REPO'] = repo
+
+    otu_id = repo.get_otu_id_by_taxid(taxid)
+    if otu_id is None:
+        click.echo(f"OTU {taxid} not found.", err=True)
+        sys.exit(1)
+
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
 
 
-@sequences.command(name="create")
+@update.command(name="automatic")
+@debug_option
+@ignore_cache_option
+@click.pass_context
+def otu_autoupdate(ctx, debug: bool, ignore_cache: bool) -> None:
+    """Automatically update an OTU with the latest data from NCBI."""
+    configure_logger(debug)
+
+    taxid = ctx.obj['TAXID']
+
+    repo = ctx.obj['REPO']
+
+    otu_ = repo.get_otu_by_taxid(taxid)
+
+    if otu_ is None:
+        click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
+        click.echo(f'Run "virtool otu create {taxid} --autofill" instead.')
+        sys.exit(1)
+
+    auto_update_otu(repo, otu_, ignore_cache=ignore_cache)
+
+
+@update.command(name="isolate")
 @click.argument(
     "accessions_",
     metavar="ACCESSIONS",
     nargs=-1,
     type=str,
+    required=True,
 )
-@click.option("--taxid", type=int, required=True)
 @ignore_cache_option
-@path_option
 @debug_option
-def create_sequence(
-    accessions_: list[str],
+@click.pass_context
+def isolate_create(
+    ctx,
     debug: bool,
     ignore_cache: bool,
-    path: Path,
-    taxid: int,
+    accessions_: list[str],
 ) -> None:
-    """Fetch and write the data for the given NCBI accessions to an OTU.
-
-    virtool add accessions --taxid 2697049 MN996528.1 --path [repo_path]
-
-    """
+    """Create a new isolate using the given accessions."""
     configure_logger(debug)
 
-    repo = Repo(path)
+    repo = ctx.obj['REPO']
 
-    existing_otu = repo.get_otu_by_taxid(taxid)
-    if existing_otu is None:
-        click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
-        click.echo(f'Run "virtool otu create {taxid} --path {path} --autofill" instead')
+    taxid = ctx.obj['TAXID']
+
+    otu_ = repo.get_otu_by_taxid(taxid)
+    if otu_ is None:
+        click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
-    add_sequences(repo, existing_otu, accessions=accessions_, ignore_cache=ignore_cache)
+    try:
+        add_isolate(
+            repo,
+            otu_,
+            accessions_,
+            ignore_cache=ignore_cache,
+        )
+    except ValueError as e:
+        click.echo(e, err=True)
+        sys.exit(1)
 
 
 @entry.group()
