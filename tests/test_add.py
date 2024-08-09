@@ -5,7 +5,7 @@ import pytest
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
-from ref_builder.otu import create_otu, update_otu
+from ref_builder.otu import create_otu, auto_update_otu, add_isolate
 from ref_builder.repo import Repo
 
 
@@ -32,17 +32,6 @@ def run_create_otu_command(
 def run_update_otu_command(taxid: int, path: Path):
     subprocess.run(
         ["ref-builder", "otu", "update"] + [str(taxid)] + ["--path", str(path)],
-        check=False,
-    )
-
-
-def run_add_sequences_command(taxid: int, accessions: list[str], path: Path):
-    subprocess.run(
-        ["ref-builder"]
-        + ["sequences", "add"]
-        + accessions
-        + ["--taxid", str(taxid)]
-        + ["--path", str(path)],
         check=False,
     )
 
@@ -184,29 +173,22 @@ class TestCreateOTUCommands:
         assert otu.acronym == "CabLCJV"
 
 
-class TestAddSequences:
-    def test_ok(
-        self,
-        precached_repo: Repo,
-        snapshot: SnapshotAssertion,
-    ):
-        accessions = ["DQ178614", "DQ178613", "DQ178610", "DQ178611"]
-        run_add_sequences_command(345184, accessions, precached_repo.path)
+class TestAddIsolate:
+    def test_ok(self, precached_repo: Repo):
+        isolate_1_accessions = ["DQ178610", "DQ178611"]
+        isolate_2_accessions = ["DQ178613", "DQ178614"]
 
-        for otu in precached_repo.iter_otus():
-            assert otu.accessions == set(accessions)
+        otu = create_otu(precached_repo, 345184, isolate_1_accessions, acronym="")
 
-            assert otu.dict() == snapshot(
-                exclude=props("id", "isolates", "repr_isolate"),
-            )
+        assert otu.accessions == set(isolate_1_accessions)
 
-            for isolate in otu.isolates:
-                assert isolate.dict() == snapshot(exclude=props("id", "sequences"))
+        isolate = add_isolate(precached_repo, otu, isolate_2_accessions)
 
-                for accession in sorted(isolate.accessions):
-                    assert isolate.get_sequence_by_accession(
-                        accession,
-                    ).dict() == snapshot(exclude=props("id"))
+        otu = precached_repo.get_otu_by_taxid(345184)
+
+        assert otu.accessions == set(isolate_1_accessions).union(set(isolate_2_accessions))
+
+        assert otu.get_isolate(isolate.id).accessions == set(isolate_2_accessions)
 
 
 @pytest.mark.ncbi()
@@ -218,11 +200,14 @@ class TestUpdateOTU:
     ):
         otu = create_otu(
             precached_repo,
-            345184,
-            ["DQ178610", "DQ178611"],
+            2164102,
+            ["MF062136", "MF062137", "MF062138"],
             "",
         )
-        update_otu(precached_repo, otu)
+
+        assert otu.accessions == {"MF062136", "MF062137", "MF062138"}
+
+        auto_update_otu(precached_repo, otu)
 
         otu = precached_repo.get_otu(otu.id)
 
@@ -231,13 +216,16 @@ class TestUpdateOTU:
         )
 
         assert otu.accessions == {
-            "DQ178608",
-            "DQ178609",
-            "DQ178610",
-            "DQ178611",
-            "DQ178612",
-            "DQ178613",
-            "DQ178614",
-            "NC_038792",
-            "NC_038793",
+            "MF062136",
+            "MF062137",
+            "MF062138",
+            "MF062130",
+            "MF062131",
+            "MF062132",
+            "OQ420743",
+            "OQ420744",
+            "OQ420745",
+            "MK936225",
+            "MK936226",
+            "MK936227",
         }

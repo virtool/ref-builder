@@ -366,7 +366,7 @@ class Repo:
 
         return None
 
-    def get_otu_by_taxid(self, taxid: int) -> UUID | None:
+    def get_otu_by_taxid(self, taxid: int) -> RepoOTU | None:
         """Return the OTU with the given ``taxid``.
 
         If no OTU is found, return None.
