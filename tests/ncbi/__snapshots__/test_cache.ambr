@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: TestGenbank.test_cache[AB017504]
+# name: TestGenbank.test_cache[AB017504.1]
   dict({
     'GBSeq_accession-version': 'AB017504.1',
     'GBSeq_create-date': '05-JAN-2002',
@@ -235,7 +235,205 @@
     'GBSeq_update-date': '07-APR-2012',
   })
 # ---
-# name: TestGenbank.test_cache[NC_003355]
+# name: TestGenbank.test_cache[FJ028650.2]
+  dict({
+    'GBSeq_accession-version': 'FJ028650.2',
+    'GBSeq_comment': 'On Mar 22, 2010 this sequence version replaced FJ028650.1.',
+    'GBSeq_create-date': '29-OCT-2009',
+    'GBSeq_definition': 'Broad bean stain virus segment RNA2, complete sequence',
+    'GBSeq_division': 'VRL',
+    'GBSeq_feature-table': list([
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'FJ028650.2',
+            'GBInterval_from': '1',
+            'GBInterval_to': '3478',
+          }),
+        ]),
+        'GBFeature_key': 'source',
+        'GBFeature_location': '1..3478',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'organism',
+            'GBQualifier_value': 'Broad bean stain virus',
+          }),
+          dict({
+            'GBQualifier_name': 'mol_type',
+            'GBQualifier_value': 'genomic RNA',
+          }),
+          dict({
+            'GBQualifier_name': 'db_xref',
+            'GBQualifier_value': 'taxon:593572',
+          }),
+          dict({
+            'GBQualifier_name': 'segment',
+            'GBQualifier_value': 'RNA2',
+          }),
+          dict({
+            'GBQualifier_name': 'note',
+            'GBQualifier_value': 'LOEWE cat no. 07013PC',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'FJ028650.2',
+            'GBInterval_from': '269',
+            'GBInterval_to': '3241',
+          }),
+        ]),
+        'GBFeature_key': 'CDS',
+        'GBFeature_location': '269..3241',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'codon_start',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'transl_table',
+            'GBQualifier_value': '1',
+          }),
+          dict({
+            'GBQualifier_name': 'product',
+            'GBQualifier_value': 'polyprotein',
+          }),
+          dict({
+            'GBQualifier_name': 'protein_id',
+            'GBQualifier_value': 'ACM79011.2',
+          }),
+          dict({
+            'GBQualifier_name': 'translation',
+            'GBQualifier_value': 'MFKGWIRNYKGGKYLCINAFTLKNRFQPDLYYFDFWAVDFHLCFIRLLCVFVAFLFAFVDFVIPYCIMAQEIIKQGIPANVLTEKAAQFKKAKSNEQLRDELPSALALYHNHSLFDKLKRFGSKSTDISKLHAGKEIEYRHLDAGFLKASNHNVVDVPLLPSTLIPVATDYNFTMSNGKRATALHVGAIEVIVQVFTSPDSDLMAGMMLVDTMHSRPENAIRSVYIVPLRSGPQMRALCFPNTLVPLNQNINKRFKMVFSLPNVDFPGGEDIAHVSVNVAGCTTGLQKSYIPSPLLTEEFNRENAHVIEYLGTHTYAMQMSNLPTQDSIANLQFDFRMGGKLELGHTSPSSAAFKRTKSLRYTIGGKASSDEEAPVAKSRSMHPAVDPRDDLVYANPQMDVDLFKLSLDDTSSVKGSLLDTRFAQVRVVIPKAMAGGNELLNNNLYDILVVGNNFRAAAALAHTHIIEGQIKCVCTINLPENTGCCLALCVNSSNRGQFSTDIYTIGSQDRMLWNPACSKNSTFTFNPNPCSTGWSLEFLRRTKFHISVVCVSGWSAQPQTDLVMTMDFFVANVPCVPRIYNLGSPGQTLWLNRWMGKLSFGQGVSNDIKSMPLAIGGGAGAKDSILMNMTNAYLSLWRYFHGDLVFEVNKMSSPYIKSTVTFFIGFGGVSFEPELEDFPNKLVQFSEVQEKIELKFTRAEFLTAWSTQVDPAAQLANDGCPYLYAMVHDSTASTIVGDFNLGVTLTRIENFAGIGCNPGIQGARLLGSAIATPQNAVIRSSPGIYSNCFSLRAPLKPDGLKSFTCDLMGGGVVTDGDTGWQVTVRNTPVSNLLRTAAWKRGTVHVQVVLAGASVKRSDWDSTVQIFLRQSMATSSYDAKIWDICQPGAAMLEFSFDVVGPNSGFEMWDSNWASQTSWFLEFLISNPAQNTLFEVNLRLDENFSVAGTTLMPPFVLDRVSVARPLLGKQTKTIARSARVVRETKEASESP',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'FJ028650.2',
+            'GBInterval_from': '269',
+            'GBInterval_to': '1462',
+          }),
+        ]),
+        'GBFeature_key': 'mat_peptide',
+        'GBFeature_location': '269..1462',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'product',
+            'GBQualifier_value': 'P2AB polyprotein',
+          }),
+          dict({
+            'GBQualifier_name': 'peptide',
+            'GBQualifier_value': 'MFKGWIRNYKGGKYLCINAFTLKNRFQPDLYYFDFWAVDFHLCFIRLLCVFVAFLFAFVDFVIPYCIMAQEIIKQGIPANVLTEKAAQFKKAKSNEQLRDELPSALALYHNHSLFDKLKRFGSKSTDISKLHAGKEIEYRHLDAGFLKASNHNVVDVPLLPSTLIPVATDYNFTMSNGKRATALHVGAIEVIVQVFTSPDSDLMAGMMLVDTMHSRPENAIRSVYIVPLRSGPQMRALCFPNTLVPLNQNINKRFKMVFSLPNVDFPGGEDIAHVSVNVAGCTTGLQKSYIPSPLLTEEFNRENAHVIEYLGTHTYAMQMSNLPTQDSIANLQFDFRMGGKLELGHTSPSSAAFKRTKSLRYTIGGKASSDEEAPVAKSRSMHPAVDPRDDLVYANPQ',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'FJ028650.2',
+            'GBInterval_from': '1463',
+            'GBInterval_to': '2554',
+          }),
+        ]),
+        'GBFeature_key': 'mat_peptide',
+        'GBFeature_location': '1463..2554',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'product',
+            'GBQualifier_value': 'large coat protein',
+          }),
+          dict({
+            'GBQualifier_name': 'peptide',
+            'GBQualifier_value': 'MDVDLFKLSLDDTSSVKGSLLDTRFAQVRVVIPKAMAGGNELLNNNLYDILVVGNNFRAAAALAHTHIIEGQIKCVCTINLPENTGCCLALCVNSSNRGQFSTDIYTIGSQDRMLWNPACSKNSTFTFNPNPCSTGWSLEFLRRTKFHISVVCVSGWSAQPQTDLVMTMDFFVANVPCVPRIYNLGSPGQTLWLNRWMGKLSFGQGVSNDIKSMPLAIGGGAGAKDSILMNMTNAYLSLWRYFHGDLVFEVNKMSSPYIKSTVTFFIGFGGVSFEPELEDFPNKLVQFSEVQEKIELKFTRAEFLTAWSTQVDPAAQLANDGCPYLYAMVHDSTASTIVGDFNLGVTLTRIENFAGIGCNPGIQ',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'FJ028650.2',
+            'GBInterval_from': '2555',
+            'GBInterval_to': '3238',
+          }),
+        ]),
+        'GBFeature_key': 'mat_peptide',
+        'GBFeature_location': '2555..3238',
+        'GBFeature_quals': list([
+          dict({
+            'GBQualifier_name': 'product',
+            'GBQualifier_value': 'small coat protein',
+          }),
+          dict({
+            'GBQualifier_name': 'peptide',
+            'GBQualifier_value': 'GARLLGSAIATPQNAVIRSSPGIYSNCFSLRAPLKPDGLKSFTCDLMGGGVVTDGDTGWQVTVRNTPVSNLLRTAAWKRGTVHVQVVLAGASVKRSDWDSTVQIFLRQSMATSSYDAKIWDICQPGAAMLEFSFDVVGPNSGFEMWDSNWASQTSWFLEFLISNPAQNTLFEVNLRLDENFSVAGTTLMPPFVLDRVSVARPLLGKQTKTIARSARVVRETKEASESP',
+          }),
+        ]),
+      }),
+      dict({
+        'GBFeature_intervals': list([
+          dict({
+            'GBInterval_accession': 'FJ028650.2',
+            'GBInterval_from': '3242',
+            'GBInterval_to': '3478',
+          }),
+        ]),
+        'GBFeature_key': "3'UTR",
+        'GBFeature_location': '3242..3478',
+      }),
+    ]),
+    'GBSeq_length': '3478',
+    'GBSeq_locus': 'FJ028650',
+    'GBSeq_moltype': 'RNA',
+    'GBSeq_organism': 'Broad bean stain virus',
+    'GBSeq_other-seqids': list([
+      'gb|FJ028650.2|',
+      'gi|291293197',
+    ]),
+    'GBSeq_primary-accession': 'FJ028650',
+    'GBSeq_references': list([
+      dict({
+        'GBReference_authors': list([
+          'Chen,H.',
+          'Chen,Q.',
+          'Zhao,W.',
+          'Liao,F.',
+          'Chen,H.',
+          'Zhu,S.',
+        ]),
+        'GBReference_journal': "Submitted (15-AUG-2008) Biosafety Lab, Xiamen Entry-Exit Inspection and Quarantine Bureau of People's Republic of China, No. 118, Dongdu Road, Xiamen, Fujian 361012, China",
+        'GBReference_position': '1..3478',
+        'GBReference_reference': '1',
+        'GBReference_title': 'Direct Submission',
+      }),
+      dict({
+        'GBReference_authors': list([
+          'Chen,H.',
+          'Huang,Q.',
+          'Zhao,W.',
+          'Liu,B.',
+          'Huang,F.',
+          'Zhu,S.',
+          'Chen,H.',
+        ]),
+        'GBReference_journal': "Submitted (19-MAR-2010) Biosafety Lab, Xiamen Entry-Exit Inspection and Quarantine Bureau of People's Republic of China, No. 118, Dongdu Road, Xiamen, Fujian 361012, China",
+        'GBReference_position': '1..3478',
+        'GBReference_reference': '2',
+        'GBReference_remark': 'Sequence update by submitter',
+        'GBReference_title': 'Direct Submission',
+      }),
+    ]),
+    'GBSeq_sequence': 'cggcctggccctattaaaattttgatagaattttgataaaagcaaacgtggagaaatccaaaccagttactttcaagtgaacgtgtgtgaatgctatttttcgaattcatctcctgtcaacacttgtctccttttcactcaaggttttataaactttgtagaagtcactgcggtgtgagtccgcccacttatttaagtgcgacttccgagccattaattacctattttacctgtttccatgcttgaacattgccgtattaattaaattatgttcaaaggttggatccggaattataaaggggggaaatatttgtgtatcaacgcatttacattgaagaatagatttcagcctgatttatattatttcgatttctgggccgttgattttcatttgtgcttcattcgtttgctctgtgtttttgtagcttttctgttcgcttttgtagactttgtgataccctattgcatcatggcacaagaaattattaaacaaggcataccagcaaatgtcctcactgagaaggcagcacagttcaagaaagctaagagcaacgagcagctgcgtgatgaattgccaagtgctttggcgctctatcataaccactccttgtttgacaaacttaagcgttttgggagtaagtctacagacatctcaaagttgcatgcagggaaagaaattgaatataggcacctggatgctggtttcttgaaagctagtaatcacaatgttgttgatgttcctttgctcccttcaactcttattccagtggcgactgactataatttcacaatgagtaatgggaagcgagccactgcccttcacgtaggtgctattgaggtaatagtgcaagtctttacttctccagatagtgatctaatggctgggatgatgttagtagacacgatgcattctcgtccagaaaatgccattaggtctgtttacatagttcctttgcgcagtggacctcagatgcgtgctctatgtttcccaaatacacttgttcctctgaaccaaaatatcaataagagatttaagatggtcttttcactgccaaatgttgattttcctggaggggaagatattgctcatgtttctgtgaatgtagctggttgcacaactggactgcagaaatcctatatcccttcccccttgctgacagaagagtttaaccgagagaatgctcatgttattgagtacttgggcacacacacatatgctatgcaaatgagtaacctgcccactcaggactccattgccaatttgcagtttgattttcgcatgggtggcaagttggaacttgggcatacaagtccaagtagtgcagcattcaagcgcactaagagtttgcgatacactattgggggaaaagcttcaagtgatgaggaagcaccggtagctaaatcgagaagcatgcatcctgcagtcgaccccagggatgatttggtctacgccaatccacagatggacgtagatctcttcaagctgagtttggatgacacaagtagtgttaagggttctttgttggatactaggtttgcccaagtgagagttgtgatacctaaggcaatggcgggtggaaatgaattactgaacaataatttgtacgacattttagttgtgggtaataattttcgagctgctgctgcgttagcacacacccacatcattgaaggacaaattaagtgtgtttgcaccataaatttgcctgaaaatactggttgctgcttggctttgtgcgtgaatagtagtaacaggggacagttcagtactgatatttataccattggttctcaagatagaatgttatggaatccagcatgttcaaagaatagcacattcacttttaatcccaacccttgtagcacgggttggagtctggagttcttgcgccgcaccaaatttcatataagtgtggtttgtgtctcaggctggtctgcacagccacaaactgatctcgttatgacaatggatttctttgtggctaatgtgccatgtgtcccccgcatctacaatttagggtcaccaggtcaaaccttgtggctcaataggtggatggggaagctgtcctttgggcagggtgttagcaatgatattaaatccatgcccttagccatagggggaggtgcaggtgctaaggattccattttgatgaatatgacaaatgcttatttgtccttgtggcgttactttcatggggacctggtttttgaagttaacaaaatgagctctccctacattaaatcaacagtgactttcttcataggatttggtggggttagctttgaacctgaactagaggattttcccaacaaacttgttcagtttagcgaagtgcaagagaaaattgagttgaaattcacaagggctgagttcttaacagcttggtccacacaggttgatcctgcagcccagcttgccaatgatggttgcccttatctatatgcaatggtgcatgactcaaccgctagtacaatagttggtgattttaatcttggtgtcaccttaactagaatcgaaaattttgcgggtattgggtgtaatccaggaatacaaggagctagacttcttggcagtgccattgcaacgccccagaatgcagtaatacgttcttcccctggcatatatagcaactgttttagtttgcgggctcccctaaagcctgacggtctaaaatcttttacatgtgatctgatgggaggaggcgtagtaacggatggtgacactgggtggcaagtcacagttcgcaatacgcctgtgtctaatttgttgcgcacagcggcttggaagcgaggtactgtacatgtgcaagtggtcctggcaggtgctagtgtcaaaagaagtgactgggactcaacagtgcaaatatttctccgtcaatctatggctactagtagctatgatgccaaaatatgggacatctgtcaaccaggtgctgctatgctagaattttcattcgatgtggtgggtcccaacagtggttttgaaatgtgggattccaactgggcttcccagacaagctggtttttggaattcttaatttctaatcctgcacagaatactttgtttgaagtcaacttgcgccttgatgaaaatttcagtgtggcaggcactactttaatgcctccatttgtcttggacagagtttcagttgctaggcctttattgggtaagcaaactaaaacgatagctagaagtgcgagagtagttcgtgaaaccaaagaggcgtcagaatcaccatgatctcttcatttctatgttctttcttttgttcccattgtcttgttgtcttttcctgtgtggctcctgtttagcaggtcgaaccttcagcaagttcacaaaaatagagtcgttcttttgtgtctttctttaatttccttcttcctcttctttccagttttatttgtgcttgcaatgtaataactagatttatttaatgataatattgctctcttgtgggtgtttaaatctagtgtttat',
+    'GBSeq_source': 'Broad bean stain virus (BBSV)',
+    'GBSeq_strandedness': 'single',
+    'GBSeq_taxonomy': 'Viruses; Riboviria; Orthornavirae; Pisuviricota; Pisoniviricetes; Picornavirales; Secoviridae; Comovirinae; Comovirus; Comovirus viciae',
+    'GBSeq_topology': 'linear',
+    'GBSeq_update-date': '22-MAR-2010',
+  })
+# ---
+# name: TestGenbank.test_cache[NC_003355.1]
   dict({
     'GBSeq_accession-version': 'NC_003355.1',
     'GBSeq_comment': 'PROVISIONAL REFSEQ: This record has not yet been subject to final NCBI review. The reference sequence is identical to AB017503.; COMPLETENESS: full length.',

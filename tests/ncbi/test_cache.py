@@ -2,6 +2,7 @@ import pytest
 from syrupy import SnapshotAssertion
 
 from ref_builder.ncbi.cache import NCBICache
+from ref_builder.utils import Accession
 
 
 def test_clear(scratch_ncbi_cache: NCBICache):
@@ -13,7 +14,7 @@ def test_clear(scratch_ncbi_cache: NCBICache):
     genbank_path = scratch_ncbi_cache.path / "genbank"
     taxonomy_path = scratch_ncbi_cache.path / "taxonomy"
 
-    assert len(list(genbank_path.glob("*.json"))) == 74
+    assert len(list(genbank_path.glob("*.json"))) == 76
     assert len(list(taxonomy_path.glob("*.json"))) == 26
 
     scratch_ncbi_cache.clear()
@@ -26,25 +27,42 @@ class TestGenbank:
     """Test the caching and loading of Genbank records."""
 
     @pytest.mark.parametrize(
-        "accession",
-        ["AB017504", "NC_003355"],
+        "raw_accession",
+        ["AB017504.1", "NC_003355.1", "FJ028650.2"],
     )
     def test_cache(
         self,
-        accession: str,
+        raw_accession: str,
         scratch_ncbi_cache: NCBICache,
         snapshot: SnapshotAssertion,
     ):
         """Test that a record is cached, cleared, and loaded correctly."""
-        record = scratch_ncbi_cache.load_genbank_record(accession)
+        accession = Accession.create_from_string(raw_accession)
+
+        record = scratch_ncbi_cache.load_genbank_record(accession.key)
 
         scratch_ncbi_cache.clear()
 
-        assert scratch_ncbi_cache.load_genbank_record(accession) is None
+        assert scratch_ncbi_cache.load_genbank_record(accession.key) is None
 
-        scratch_ncbi_cache.cache_genbank_record(record, accession)
+        scratch_ncbi_cache.cache_genbank_record(record, accession.key, accession.version)
 
-        assert scratch_ncbi_cache.load_genbank_record(accession) == record == snapshot
+        assert scratch_ncbi_cache.load_genbank_record(accession.key) == record == snapshot
+
+    def test_cache_multi_version_retrieve(self, scratch_ncbi_cache: NCBICache):
+        """Test that the cache can load two different versions of the same accession,
+        but loads the latest version by default."""
+        v_1 = scratch_ncbi_cache.load_genbank_record("FJ028650", 1)
+
+        assert v_1 is not None
+
+        v_2 = scratch_ncbi_cache.load_genbank_record("FJ028650", 2)
+
+        assert v_2 is not None
+
+        assert scratch_ncbi_cache.load_genbank_record("FJ028650") != v_1
+
+        assert scratch_ncbi_cache.load_genbank_record("FJ028650") == v_2
 
     def test_load_not_found(self, scratch_ncbi_cache: NCBICache):
         """Test that None is returned if a record is not found."""
