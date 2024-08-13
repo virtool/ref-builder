@@ -201,8 +201,15 @@ def exclude_accessions_from_otu(
     accessions: list[str],
 ):
     """Take a list of accessions and add them to an OTU's excluded accessions list."""
+    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
+
+    excluded_accessions = {}
     for accession in accessions:
-        repo.exclude_accession(otu.id, accession)
+        if accession in otu.excluded_accessions:
+            otu_logger.warning(f"{accession} is already excluded.")
+        excluded_accessions = repo.exclude_accession(otu.id, accession)
+
+    otu_logger.info(f"Excluded accessions: {excluded_accessions}")
 
 
 def add_schema_from_accessions(
