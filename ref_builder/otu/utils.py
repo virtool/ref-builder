@@ -17,13 +17,23 @@ def create_schema_from_records(
     records: list[NCBIGenbank],
     segments: list[Segment] | None = None,
 ) -> OTUSchema | None:
+    """Automatically create a new schema from a list of given records if possible.
+
+    Returns the new schema if successful, else None."""
     molecule = _get_molecule_from_records(records)
 
     binned_records = group_genbank_records_by_isolate(records)
+
     if len(binned_records) > 1:
+        for key in binned_records:
+            if key.type == IsolateNameType.REFSEQ:
+                logger.warning("Tentatively creating new schema from RefSeq accessions.")
+                segments = _get_segments_from_records(records)
+                return OTUSchema(molecule=molecule, segments=segments)
+
         logger.fatal(
             "More than one isolate found. Cannot create schema automatically.",
-            bins=binned_records,
+            bins=[str(key) for key in binned_records],
         )
         return None
 
