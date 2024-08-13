@@ -159,7 +159,7 @@ def auto_update_otu(
         otu_logger.info("No new isolates added.")
 
 
-def add_sequences(
+def update_otu_with_accessions(
     repo: Repo,
     otu: RepoOTU,
     accessions: list,
