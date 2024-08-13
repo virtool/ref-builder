@@ -198,7 +198,12 @@ def add_sequences(
     otu_logger.info("No new sequences added to OTU")
 
 
-def exclude_accessions_from_otu(repo, otu, accessions):
+def exclude_accessions_from_otu(
+    repo: Repo,
+    otu: RepoOTU,
+    accessions: list[str],
+):
+    """Take a list of accessions and add them to an OTU's excluded accessions list."""
     for accession in accessions:
         repo.exclude_accession(otu.id, accession)
 
