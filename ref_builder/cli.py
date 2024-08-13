@@ -16,7 +16,7 @@ from ref_builder.logs import configure_logger
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.options import debug_option, ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu
-from ref_builder.otu.update import add_isolate, auto_update_otu
+from ref_builder.otu.update import add_isolate, auto_update_otu, exclude_accessions_from_otu
 from ref_builder.repo import Repo
 from ref_builder.utils import DataType, format_json
 
@@ -216,6 +216,36 @@ def isolate_create(
     except ValueError as e:
         click.echo(e, err=True)
         sys.exit(1)
+
+
+@update.command(name="exclude")
+@click.argument(
+    "accessions_",
+    metavar="ACCESSIONS",
+    nargs=-1,
+    type=str,
+    required=True,
+)
+@debug_option
+@click.pass_context
+def accession_exclude(
+    ctx,
+    debug: bool,
+    accessions_: list[str],
+) -> None:
+    """Exclude the given accessions from this OTU."""
+    configure_logger(debug)
+
+    repo = ctx.obj['REPO']
+
+    taxid = ctx.obj['TAXID']
+
+    otu_ = repo.get_otu_by_taxid(taxid)
+    if otu_ is None:
+        click.echo(f"OTU {taxid} not found.", err=True)
+        sys.exit(1)
+
+    exclude_accessions_from_otu(repo, otu_, accessions_)
 
 
 @entry.group()
