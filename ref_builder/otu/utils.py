@@ -7,6 +7,7 @@ from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.schema import Segment, OTUSchema
 from ref_builder.utils import IsolateName, Accession, IsolateNameType
 
+
 logger = structlog.get_logger("otu.utils")
 
 

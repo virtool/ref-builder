@@ -6,10 +6,9 @@ from ref_builder.otu.utils import (
     create_schema_from_records,
     group_genbank_records_by_isolate,
 )
-from ref_builder.utils import IsolateName
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
-from ref_builder.utils import Accession
+from ref_builder.utils import IsolateName, Accession
 
 
 logger = get_logger("otu.update")
