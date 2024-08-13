@@ -4,8 +4,9 @@ import structlog
 
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.utils import (
-    group_genbank_records_by_isolate,
     create_schema_from_records,
+    group_genbank_records_by_isolate,
+    parse_refseq_comment,
 )
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
@@ -96,7 +97,7 @@ def create_otu(
     otu.repr_isolate = repo.set_repr_isolate(otu_id=otu.id, isolate_id=isolate.id)
 
     for record in records:
-        sequence = repo.create_sequence(
+        repo.create_sequence(
             otu_id=otu.id,
             isolate_id=isolate.id,
             accession=record.accession_version,
@@ -105,6 +106,12 @@ def create_otu(
             segment=record.source.segment,
             sequence=record.sequence,
         )
-        otu.add_sequence(sequence, isolate_id=isolate.id)
 
-    return otu
+        if record.refseq:
+            refseq_status, old_accession = parse_refseq_comment(record.comment)
+            repo.exclude_accession(
+                otu.id,
+                old_accession,
+            )
+
+    return repo.get_otu(otu.id)
