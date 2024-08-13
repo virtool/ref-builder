@@ -97,3 +97,13 @@ class TestOTU:
         )
 
         assert otu == otu_copy
+
+    @pytest.mark.parametrize("taxid, accession", [(345184, "DQ178610")])
+    def test_get_sequence_id_hierarchy(self, taxid, accession, scratch_repo):
+        otu = scratch_repo.get_otu_by_taxid(taxid)
+
+        isolate_id, sequence_id = otu.get_sequence_id_hierarchy_from_accession(accession)
+
+        assert otu.get_isolate(isolate_id) is not None
+
+        assert sequence_id in otu.sequence_ids
