@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from structlog import get_logger
 
 from ref_builder.ncbi.client import NCBIClient
@@ -8,6 +10,7 @@ from ref_builder.otu.utils import (
     parse_refseq_comment,
 )
 from ref_builder.repo import Repo
+from ref_builder.schema import OTUSchema
 from ref_builder.resources import RepoOTU, RepoIsolate
 from ref_builder.utils import IsolateName, Accession
 
@@ -121,6 +124,38 @@ def create_isolate_from_records(
     )
 
     return isolate
+
+
+def set_schema_from_isolate(
+    repo: Repo,
+    otu: RepoOTU,
+    isolate_id: UUID,
+    ignore_cache: bool = False
+) -> OTUSchema | None:
+    """Takes the ID of an existing isolate and creates a new schema
+    from the constituent accessions.
+
+    Returns the new schema if successful, else None.
+    """
+    otu_logger = logger.bind(taxi=otu.taxid, otu_id=otu.id, name=otu.name)
+
+    new_representative_isolate = otu.get_isolate(isolate_id)
+    if new_representative_isolate is None:
+        otu_logger.error("Isolate not found. Please make a new isolate.")
+        return None
+
+    ncbi = NCBIClient(ignore_cache=ignore_cache)
+
+    records = ncbi.fetch_genbank_records(list(new_representative_isolate.accessions))
+
+    new_schema = create_schema_from_records(records)
+
+    repo.create_schema(otu.id, new_schema.molecule, new_schema.segments)
+
+    if otu.repr_isolate != isolate_id:
+        repo.set_repr_isolate(otu.id, new_representative_isolate.id)
+
+    return new_schema
 
 
 def auto_update_otu(
