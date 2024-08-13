@@ -1,4 +1,6 @@
+import re
 from collections import defaultdict
+from typing import Tuple
 
 import structlog
 
@@ -45,6 +47,19 @@ def group_genbank_records_by_isolate(
             isolates[isolate_name][versioned_accession] = record
 
     return isolates
+
+
+def parse_refseq_comment(comment: str) -> Tuple[str, str]:
+    """Parse a standard RefSeq comment."""
+    if not comment:
+        raise ValueError("Empty comment")
+
+    refseq_pattern = re.compile(r"^(\w+ REFSEQ): [\w ]+. [\w ]+ ([\w]+).")
+
+    match = refseq_pattern.search(comment)
+
+    return match.group(1), match.group(2)
+
 
 
 def _get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
