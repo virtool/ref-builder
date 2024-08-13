@@ -76,7 +76,7 @@ def convert_legacy_repo(name: str, path: Path, target_path: Path) -> None:
             ].startswith("NC_"):
                 source_type = "refseq"
 
-            repo_isolate = repo.create_isolate(
+            repo_isolate = repo.create_isolate_from_records(
                 repo_otu.id,
                 isolate["id"],
                 isolate["source_name"],

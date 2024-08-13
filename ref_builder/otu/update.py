@@ -58,12 +58,12 @@ def add_isolate(
         )
         return
 
-    return create_isolate(
+    return create_isolate_from_records(
         repo, otu, isolate_name, list(isolate_records.values())
     )
 
 
-def create_isolate(
+def create_isolate_from_records(
     repo: Repo,
     otu: RepoOTU,
     isolate_name: IsolateName,
@@ -151,7 +151,7 @@ def auto_update_otu(
             otu_logger.debug(f"Skipping {isolate_name}")
             continue
 
-        isolate = create_isolate(repo, otu, isolate_name, list(isolate_records.values()))
+        isolate = create_isolate_from_records(repo, otu, isolate_name, list(isolate_records.values()))
         if isolate is not None:
             new_isolates.append(isolate_name)
 
