@@ -1,7 +1,7 @@
 import pytest
 from syrupy import SnapshotAssertion
 
-from ref_builder.otu import create_schema_from_records
+from ref_builder.otu.update import create_schema_from_records
 from ref_builder.schema import OTUSchema
 
 

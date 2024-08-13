@@ -9,7 +9,8 @@ from pytest_mock import MockerFixture
 from ref_builder.legacy.utils import build_legacy_otu
 from ref_builder.ncbi.cache import NCBICache
 from ref_builder.ncbi.client import NCBIClient
-from ref_builder.otu import add_sequences, create_otu
+from ref_builder.otu.create import create_otu
+from ref_builder.otu.update import update_otu_with_accessions
 from ref_builder.repo import Repo
 from ref_builder.utils import DataType
 
@@ -167,7 +168,7 @@ def scratch_event_store_data(
                 "",
             )
 
-            add_sequences(
+            update_otu_with_accessions(
                 repo=temp_scratch_repo,
                 otu=otu,
                 accessions=otu_contents.contents,

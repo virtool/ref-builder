@@ -2,7 +2,7 @@ import pytest
 from syrupy import SnapshotAssertion
 
 from ref_builder.ncbi.client import NCBIClient
-from ref_builder.otu import group_genbank_records_by_isolate
+from ref_builder.otu.utils import group_genbank_records_by_isolate
 
 
 class TestGroupRecords:
