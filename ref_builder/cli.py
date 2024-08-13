@@ -15,11 +15,8 @@ from ref_builder.legacy.validate import validate_legacy_repo
 from ref_builder.logs import configure_logger
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.options import debug_option, ignore_cache_option, path_option
-from ref_builder.otu import (
-    add_isolate,
-    create_otu,
-    auto_update_otu,
-)
+from ref_builder.otu.create import create_otu
+from ref_builder.otu.update import add_isolate, auto_update_otu
 from ref_builder.repo import Repo
 from ref_builder.utils import DataType, format_json
 
