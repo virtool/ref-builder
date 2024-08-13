@@ -123,13 +123,29 @@ def auto_update_otu(
         otu_logger.info("OTU is up to date.")
         return
 
-    otu_logger.debug(
+    update_otu_with_accessions(repo, otu, fetch_list)
+
+
+def update_otu_with_accessions(
+    repo: Repo,
+    otu: RepoOTU,
+    accessions: list,
+    ignore_cache: bool = False,
+):
+    """Take a list of accessions, filter for eligible accessions and
+    add new sequences to the OTU.
+    """
+    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
+
+    ncbi = NCBIClient(ignore_cache)
+
+    otu_logger.info(
         "Fetching accessions",
-        count={len(fetch_list)},
-        fetch_list=fetch_list,
+        count={len(accessions)},
+        fetch_list=accessions,
     )
 
-    records = ncbi.fetch_genbank_records(fetch_list)
+    records = ncbi.fetch_genbank_records(accessions)
 
     record_bins = group_genbank_records_by_isolate(records)
 
@@ -150,51 +166,14 @@ def auto_update_otu(
             otu_logger.debug(f"Skipping {isolate_name}")
             continue
 
-        isolate = create_isolate_from_records(repo, otu, isolate_name, list(isolate_records.values()))
+        isolate = create_isolate_from_records(
+            repo, otu, isolate_name, list(isolate_records.values())
+        )
         if isolate is not None:
             new_isolates.append(isolate_name)
 
     if not new_isolates:
         otu_logger.info("No new isolates added.")
-
-
-def update_otu_with_accessions(
-    repo: Repo,
-    otu: RepoOTU,
-    accessions: list,
-    ignore_cache: bool = False,
-):
-    """Take a list of accessions, filter for eligible accessions and
-    add new sequences to the OTU.
-    """
-    ncbi = NCBIClient(ignore_cache)
-
-    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
-    fetch_list = list(set(accessions).difference(otu.blocked_accessions))
-    if not fetch_list:
-        otu_logger.info("OTU is up to date.")
-        return
-
-    otu_logger.info(
-        "Fetching accessions",
-        count={len(fetch_list)},
-        fetch_list=fetch_list,
-    )
-
-    records = ncbi.fetch_genbank_records(fetch_list)
-
-    new_accessions = _file_and_create_sequences(repo, otu, records)
-
-    if new_accessions:
-        otu_logger.info(
-            "Added  sequences to OTU",
-            count=len(new_accessions),
-            new_accessions=new_accessions,
-            taxid=otu.taxid,
-        )
-        return
-
-    otu_logger.info("No new sequences added to OTU")
 
 
 def exclude_accessions_from_otu(
