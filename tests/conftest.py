@@ -9,7 +9,8 @@ from pytest_mock import MockerFixture
 from ref_builder.legacy.utils import build_legacy_otu
 from ref_builder.ncbi.cache import NCBICache
 from ref_builder.ncbi.client import NCBIClient
-from ref_builder.otu import add_sequences, create_otu
+from ref_builder.otu.create import create_otu
+from ref_builder.otu.update import add_sequences
 from ref_builder.repo import Repo
 from ref_builder.utils import DataType
 

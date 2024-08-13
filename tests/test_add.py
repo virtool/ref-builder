@@ -5,7 +5,8 @@ import pytest
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
-from ref_builder.otu import create_otu, auto_update_otu, add_isolate
+from ref_builder.otu.create import create_otu
+from ref_builder.otu.update import auto_update_otu, add_isolate
 from ref_builder.repo import Repo
 
 
