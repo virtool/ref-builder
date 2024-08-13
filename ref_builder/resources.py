@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Tuple
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -331,6 +331,21 @@ class RepoOTU:
         for isolate in self.isolates:
             if (sequence := isolate.get_sequence_by_accession(accession)) is not None:
                 return sequence
+
+        raise ValueError(f"Accession {accession} found in index, but not in data")
+
+    def get_sequence_id_hierarchy_from_accession(
+        self,
+        accession: str,
+    ) -> Tuple[UUID, UUID] | Tuple[None, None]:
+        """Return the isolate ID and sequence ID of a given accession.
+        """
+        if accession not in self.accessions:
+            return None, None
+
+        for isolate in self.isolates:
+            if (sequence := isolate.get_sequence_by_accession(accession)) is not None:
+                return isolate.id, sequence.id
 
         raise ValueError(f"Accession {accession} found in index, but not in data")
 
