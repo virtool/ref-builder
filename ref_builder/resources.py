@@ -326,6 +326,9 @@ class RepoOTU:
         """Add a sequence to a given isolate."""
         self._isolates_by_id[isolate_id].add_sequence(sequence)
 
+    def remove_sequence(self, sequence_id: UUID, isolate_id: UUID) -> None:
+        self._isolates_by_id[isolate_id].remove_sequence(sequence_id)
+
     def get_isolate(self, isolate_id: UUID) -> RepoIsolate | None:
         """Get isolate associated with a given ID.
 
