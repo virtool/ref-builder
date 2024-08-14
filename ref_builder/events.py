@@ -119,6 +119,15 @@ class CreateIsolate(Event):
     query: IsolateQuery
 
 
+class RedactIsolateData(EventData):
+    rationale: str
+
+
+class RedactIsolate(Event):
+    data: RedactIsolateData
+    query: IsolateQuery
+
+
 class CreateSequenceData(EventData):
     """The data for the creation of a new sequence."""
 
