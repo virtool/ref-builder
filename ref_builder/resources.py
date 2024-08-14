@@ -339,6 +339,10 @@ class RepoOTU:
         """
         return self._isolates_by_id.get(isolate_id)
 
+    def remove_isolate(self, isolate_id: UUID) -> None:
+        """Remove an isolate from the OTU."""
+        self._isolates_by_id.pop(isolate_id)
+
     def get_sequence_by_accession(
         self,
         accession: str,
