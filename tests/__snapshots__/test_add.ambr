@@ -36,6 +36,7 @@
   dict({
     'acronym': '',
     'excluded_accessions': list([
+      'JX263426',
     ]),
     'legacy_id': None,
     'name': 'Dahlia latent viroid',
