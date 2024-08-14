@@ -540,3 +540,54 @@ def test_exclude_accession(empty_repo: Repo):
         "TMVABC.1",
         "ABTV",
     }
+
+
+class TestDirectRedact:
+    def test_redact_isolate(self, initialized_repo: Repo):
+        """Test that an isolate can be redacted from an OTU."""
+        otu_before = next(initialized_repo.iter_otus())
+
+        otu_id = otu_before.id
+
+        isolate_before = list(otu_before.isolates)[0]
+
+        initialized_repo.redact_isolate(
+            otu_id, isolate_before.id, rationale="Testing redaction"
+        )
+
+        otu_after = initialized_repo.get_otu(otu_id)
+
+        assert otu_before != otu_after
+
+        assert len(otu_after.isolates) == len(otu_before.isolates) - 1
+
+        assert isolate_before.id not in otu_after.isolate_ids
+
+        assert isolate_before.accessions not in otu_after.accessions
+
+    def test_redact_sequence(self, initialized_repo: Repo):
+        """Test that a sequence can be redacted from an OTU."""
+        otu_before = next(initialized_repo.iter_otus())
+
+        otu_id = otu_before.id
+
+        accession = list(otu_before.accessions)[0]
+
+        isolate_id, sequence_id = otu_before.get_sequence_id_hierarchy_from_accession(accession)
+
+        initialized_repo.redact_sequence(
+            otu_id, isolate_id, sequence_id, replacement_accession=None, rationale="Testing redaction"
+        )
+
+        otu_after = initialized_repo.get_otu(otu_id)
+
+        assert otu_before != otu_after
+
+        assert len(otu_after.accessions) == len(otu_before.accessions) - 1
+
+        assert accession not in otu_after.accessions
+
+        assert sequence_id not in otu_after.sequence_ids
+
+        for isolate in otu_after.isolates:
+            assert accession not in isolate.accessions
