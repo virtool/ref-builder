@@ -35,6 +35,8 @@ from ref_builder.events import (
     CreateSchemaData,
     CreateSequence,
     CreateSequenceData,
+    RedactSequence,
+    RedactSequenceData,
     Event,
     EventData,
     EventQuery,
@@ -313,6 +315,30 @@ class Repo:
             .get_sequence_by_accession(versioned_accession.key)
         )
 
+    def redact_sequence(
+        self,
+        otu_id: uuid.UUID,
+        isolate_id: uuid.UUID,
+        sequence_id: uuid.UUID,
+        replacement_accession: Accession | None,
+        rationale: str,
+    ):
+        """Redact an existing sequence from an OTU"""
+        self._event_store.write_event(
+            RedactSequence,
+            RedactSequenceData(
+                replacement=replacement_accession,
+                rationale=rationale,
+            ),
+            SequenceQuery(
+                otu_id=otu_id,
+                isolate_id=isolate_id,
+                sequence_id=sequence_id,
+            ),
+        )
+
+
+
     def create_schema(
         self,
         otu_id: uuid.UUID,
@@ -450,6 +476,11 @@ class Repo:
                                 sequence=event.data.sequence,
                             ),
                         )
+
+            elif isinstance(event, RedactSequence):
+                otu.remove_sequence(
+                    event.query.sequence_id, event.query.isolate_id
+                )
 
         otu.isolates.sort(key=lambda i: f"{i.name.type} {i.name.value}")
 
@@ -620,6 +651,8 @@ class EventStore:
                     return CreateIsolate(**loaded)
                 case "CreateSequence":
                     return CreateSequence(**loaded)
+                case "RedactSequence":
+                    return RedactSequence(**loaded)
                 case "CreateSchema":
                     return CreateSchema(**loaded)
                 case "SetReprIsolate":
