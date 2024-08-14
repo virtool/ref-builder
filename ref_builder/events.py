@@ -137,6 +137,16 @@ class CreateSequence(Event):
     query: SequenceQuery
 
 
+class RedactSequenceData(EventData):
+    replacement: Accession | None
+    rationale: str
+
+
+class RedactSequence(Event):
+    data: RedactSequenceData
+    query: SequenceQuery
+
+
 class ExcludeAccessionData(EventData):
     """The data for the exclusion of an accession."""
 
