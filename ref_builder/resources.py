@@ -154,6 +154,16 @@ class RepoIsolate:
         """
         return self._sequences_by_accession.get(accession)
 
+    def get_sequence_by_id(self, sequence_id: UUID) -> RepoSequence | None:
+        if sequence_id not in self.sequence_ids:
+            return None
+
+        for sequence in self.sequences:
+            if sequence.id:
+                return sequence
+
+        return None
+
     def dict(self, exclude_contents: bool = False):
         isolate_dict = {
             "id": self.id,
