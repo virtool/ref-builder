@@ -145,6 +145,14 @@ class RepoIsolate:
         """Add a sequence to the isolate."""
         self._sequences_by_accession[sequence.accession.key] = sequence
 
+    def remove_sequence(self, sequence_id: UUID) -> None:
+        if sequence_id not in self.sequence_ids:
+            raise ValueError("This sequence ID does not exist")
+
+        sequence = self.get_sequence_by_id(sequence_id)
+
+        self._sequences_by_accession.pop(sequence.accession.key)
+
     def get_sequence_by_accession(
         self,
         accession: str,
