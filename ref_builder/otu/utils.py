@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict
+from enum import StrEnum
 from uuid import uuid4
 
 import structlog
@@ -10,6 +11,11 @@ from ref_builder.schema import OTUSchema, Segment
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
 logger = structlog.get_logger("otu.utils")
+
+
+class DeleteRationale(StrEnum):
+    USER = "Requested by user"
+    REFSEQ = "Superceded by RefSeq"
 
 
 def create_schema_from_records(
