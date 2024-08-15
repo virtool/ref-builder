@@ -5,6 +5,7 @@ from structlog import get_logger
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.utils import (
+    DeleteRationale,
     create_schema_from_records,
     group_genbank_records_by_isolate,
     parse_refseq_comment,
@@ -322,6 +323,18 @@ def add_schema_from_accessions(
             molecule=schema.molecule,
             segments=schema.segments,
         )
+
+
+def remove_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID):
+    """Remove an isolate from the OTU."""
+    if (isolate := otu.get_isolate(isolate_id)) is None:
+        logger.error("This isolate does not exist in this OTU.")
+        return
+
+    repo.delete_isolate(otu.id, isolate.id, rationale=DeleteRationale.USER)
+
+    logger.info(f"{isolate.name} removed.")
+
 
 
 def _bin_refseq_records(
