@@ -7,7 +7,7 @@ from ref_builder.otu.utils import (
     group_genbank_records_by_isolate,
 )
 from ref_builder.repo import Repo
-from ref_builder.resources import RepoOTU
+from ref_builder.resources import RepoOTU, RepoIsolate
 from ref_builder.utils import IsolateName, Accession
 
 
@@ -19,7 +19,7 @@ def add_isolate(
     otu: RepoOTU,
     accessions: list[str],
     ignore_cache: bool = False
-) -> None:
+) -> RepoIsolate | None:
     """Take a list of accessions that make up a new isolate and a new isolate to the OTU.
 
     Download the GenBank records, categorize into an isolate bin and pass the isolate name
