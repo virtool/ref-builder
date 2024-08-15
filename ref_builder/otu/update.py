@@ -31,7 +31,18 @@ def add_isolate(
 
     fetch_list = list(set(accessions).difference(otu.blocked_accessions))
     if not fetch_list:
-        otu_logger.info("OTU already includes these accessions.")
+        otu_logger.warning(
+            "None of the requested accessions were eligible for inclusion.",
+            requested_accessions=accessions,
+            otu_accessions=otu.accessions,
+            excluded_accessions=otu.excluded_accessions
+        )
+
+        otu_logger.error(
+            "Could not create a new isolate using the requested accessions.",
+            requested_accessions=accessions
+        )
+
         return
 
     otu_logger.info(
