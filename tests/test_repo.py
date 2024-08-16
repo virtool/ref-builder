@@ -565,29 +565,39 @@ class TestDirectDelete:
 
         assert isolate_before.accessions not in otu_after.accessions
 
-    def test_redact_sequence(self, initialized_repo: Repo):
+    def test_replace_sequence(self, initialized_repo: Repo):
         """Test that a sequence can be redacted from an OTU."""
-        otu_before = next(initialized_repo.iter_otus())
+        otu_before = initialized_repo.get_otu_by_taxid(12242)
 
         otu_id = otu_before.id
 
-        accession = list(otu_before.accessions)[0]
+        accession = "TMVABC"
 
-        isolate_id, sequence_id = otu_before.get_sequence_id_hierarchy_from_accession(accession)
+        isolate_id, replaced_sequence_id = otu_before.get_sequence_id_hierarchy_from_accession(accession)
 
-        initialized_repo.redact_sequence(
-            otu_id, isolate_id, sequence_id, replacement_accession=None, rationale="Testing redaction"
+        assert otu_before.get_isolate(isolate_id).accessions == {"TMVABC"}
+
+        new_sequence = initialized_repo.replace_sequence(
+            otu_id,
+            isolate_id,
+            "TMVABCC.1",
+            "TMV edit",
+            None,
+            "RNA",
+            "ACGTGGAGAGACCA",
+            replaced_sequence_id=replaced_sequence_id,
+            rationale="Testing redaction",
         )
 
         otu_after = initialized_repo.get_otu(otu_id)
 
         assert otu_before != otu_after
 
-        assert len(otu_after.accessions) == len(otu_before.accessions) - 1
+        assert len(otu_after.accessions) == len(otu_before.accessions)
 
-        assert accession not in otu_after.accessions
+        assert replaced_sequence_id not in otu_after.sequence_ids
 
-        assert sequence_id not in otu_after.sequence_ids
+        assert new_sequence.id in otu_after.sequence_ids
 
-        for isolate in otu_after.isolates:
-            assert accession not in isolate.accessions
+        assert otu_after.get_isolate(isolate_id).accessions == {"TMVABCC"}
+
