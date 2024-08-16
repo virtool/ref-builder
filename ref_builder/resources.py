@@ -145,7 +145,15 @@ class RepoIsolate:
         """Add a sequence to the isolate."""
         self._sequences_by_accession[sequence.accession.key] = sequence
 
-    def remove_sequence(self, sequence_id: UUID) -> None:
+    def replace_sequence(
+        self, sequence: RepoSequence, replaced_sequence_id: UUID
+    ) -> None:
+        """Replace a sequence with the given ID with a new sequence."""
+        self.add_sequence(sequence)
+        self.delete_sequence(replaced_sequence_id)
+
+    def delete_sequence(self, sequence_id: UUID) -> None:
+        """Delete a sequence from a given isolate."""
         if sequence_id not in self.sequence_ids:
             raise ValueError("This sequence ID does not exist")
 
@@ -326,8 +334,15 @@ class RepoOTU:
         """Add a sequence to a given isolate."""
         self._isolates_by_id[isolate_id].add_sequence(sequence)
 
-    def remove_sequence(self, sequence_id: UUID, isolate_id: UUID) -> None:
-        self._isolates_by_id[isolate_id].remove_sequence(sequence_id)
+    def replace_sequence(
+        self, sequence: RepoSequence, isolate_id: UUID, replaced_sequence_id: UUID
+    ) -> None:
+        """Replace a sequence with the given ID with a new sequence."""
+        self._isolates_by_id[isolate_id].replace_sequence(sequence, replaced_sequence_id)
+
+    def delete_sequence(self, sequence_id: UUID, isolate_id: UUID) -> None:
+        """Delete a sequence from a given isolate. Used only for rehydration."""
+        self._isolates_by_id[isolate_id].delete_sequence(sequence_id)
 
     def get_isolate(self, isolate_id: UUID) -> RepoIsolate | None:
         """Get isolate associated with a given ID.

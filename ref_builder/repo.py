@@ -510,7 +510,7 @@ class Repo:
                         )
 
             elif isinstance(event, DeleteSequence):
-                otu.remove_sequence(
+                otu.delete_sequence(
                     event.query.sequence_id, event.query.isolate_id
                 )
 
