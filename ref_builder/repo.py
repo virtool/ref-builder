@@ -327,29 +327,46 @@ class Repo:
             .get_sequence_by_accession(versioned_accession.key)
         )
 
-    def redact_sequence(
+    def replace_sequence(
         self,
         otu_id: uuid.UUID,
         isolate_id: uuid.UUID,
-        sequence_id: uuid.UUID,
-        replacement_accession: Accession | None,
+        accession: str,
+        definition: str,
+        legacy_id: str | None,
+        segment: str,
+        sequence: str,
+        replaced_sequence_id: uuid.UUID,
         rationale: str,
-    ):
-        """Redact an existing sequence from an OTU"""
+    ) -> RepoSequence | None:
+        """Create a new sequence, replacing an existing sequence in the isolate."""
+        new_sequence = self.create_sequence(
+            otu_id=otu_id,
+            isolate_id=isolate_id,
+            accession=accession,
+            definition=definition,
+            legacy_id=legacy_id,
+            segment=segment,
+            sequence=sequence,
+        )
+
+        if new_sequence is None:
+            return None
+
         self._event_store.write_event(
             DeleteSequence,
             DeleteSequenceData(
-                replacement=replacement_accession,
+                replacement=new_sequence.id,
                 rationale=rationale,
             ),
             SequenceQuery(
                 otu_id=otu_id,
                 isolate_id=isolate_id,
-                sequence_id=sequence_id,
+                sequence_id=replaced_sequence_id,
             ),
         )
 
-
+        return new_sequence
 
     def create_schema(
         self,
