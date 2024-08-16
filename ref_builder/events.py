@@ -119,12 +119,12 @@ class CreateIsolate(Event):
     query: IsolateQuery
 
 
-class RedactIsolateData(EventData):
+class DeleteIsolateData(EventData):
     rationale: str
 
 
-class RedactIsolate(Event):
-    data: RedactIsolateData
+class DeleteIsolate(Event):
+    data: DeleteIsolateData
     query: IsolateQuery
 
 
@@ -146,13 +146,13 @@ class CreateSequence(Event):
     query: SequenceQuery
 
 
-class RedactSequenceData(EventData):
-    replacement: Accession | None
+class DeleteSequenceData(EventData):
+    replacement: UUID4
     rationale: str
 
 
-class RedactSequence(Event):
-    data: RedactSequenceData
+class DeleteSequence(Event):
+    data: DeleteSequenceData
     query: SequenceQuery
 
 

@@ -35,10 +35,10 @@ from ref_builder.events import (
     CreateSchemaData,
     CreateSequence,
     CreateSequenceData,
-    RedactIsolate,
-    RedactIsolateData,
-    RedactSequence,
-    RedactSequenceData,
+    DeleteIsolate,
+    DeleteIsolateData,
+    DeleteSequence,
+    DeleteSequenceData,
     Event,
     EventData,
     EventQuery,
@@ -259,8 +259,8 @@ class Repo:
     ) -> None:
         """Redact an existing isolate from the OTU."""
         self._event_store.write_event(
-            RedactIsolate,
-            RedactIsolateData(rationale=rationale),
+            DeleteIsolate,
+            DeleteIsolateData(rationale=rationale),
             IsolateQuery(otu_id=otu_id, isolate_id=isolate_id,),
         )
 
@@ -337,8 +337,8 @@ class Repo:
     ):
         """Redact an existing sequence from an OTU"""
         self._event_store.write_event(
-            RedactSequence,
-            RedactSequenceData(
+            DeleteSequence,
+            DeleteSequenceData(
                 replacement=replacement_accession,
                 rationale=rationale,
             ),
@@ -472,7 +472,7 @@ class Repo:
                     ),
                 )
 
-            elif isinstance(event, RedactIsolate):
+            elif isinstance(event, DeleteIsolate):
                 otu.remove_isolate(event.query.isolate_id)
 
             elif isinstance(event, ExcludeAccession):
@@ -492,7 +492,7 @@ class Repo:
                             ),
                         )
 
-            elif isinstance(event, RedactSequence):
+            elif isinstance(event, DeleteSequence):
                 otu.remove_sequence(
                     event.query.sequence_id, event.query.isolate_id
                 )
@@ -666,10 +666,10 @@ class EventStore:
                     return CreateIsolate(**loaded)
                 case "CreateSequence":
                     return CreateSequence(**loaded)
-                case "RedactIsolate":
-                    return RedactIsolate(**loaded)
-                case "RedactSequence":
-                    return RedactSequence(**loaded)
+                case "DeleteIsolate":
+                    return DeleteIsolate(**loaded)
+                case "DeleteSequence":
+                    return DeleteSequence(**loaded)
                 case "CreateSchema":
                     return CreateSchema(**loaded)
                 case "SetReprIsolate":
