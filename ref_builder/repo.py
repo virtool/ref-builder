@@ -339,7 +339,9 @@ class Repo:
         replaced_sequence_id: uuid.UUID,
         rationale: str,
     ) -> RepoSequence | None:
-        """Create a new sequence, replacing an existing sequence in the isolate."""
+        """Create a new sequence and delete an existing sequence,
+        replacing the old sequence under the isolate.
+        """
         new_sequence = self.create_sequence(
             otu_id=otu_id,
             isolate_id=isolate_id,
