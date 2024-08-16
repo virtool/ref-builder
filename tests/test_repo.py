@@ -542,8 +542,8 @@ def test_exclude_accession(empty_repo: Repo):
     }
 
 
-class TestDirectRedact:
-    def test_redact_isolate(self, initialized_repo: Repo):
+class TestDirectDelete:
+    def test_delete_isolate(self, initialized_repo: Repo):
         """Test that an isolate can be redacted from an OTU."""
         otu_before = next(initialized_repo.iter_otus())
 
