@@ -551,7 +551,7 @@ class TestDirectDelete:
 
         isolate_before = list(otu_before.isolates)[0]
 
-        initialized_repo.redact_isolate(
+        initialized_repo.delete_isolate(
             otu_id, isolate_before.id, rationale="Testing redaction"
         )
 

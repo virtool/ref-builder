@@ -254,10 +254,10 @@ class Repo:
 
         return otu.get_isolate(isolate_id)
 
-    def redact_isolate(
+    def delete_isolate(
         self, otu_id: uuid.UUID, isolate_id: uuid.UUID, rationale: str
     ) -> None:
-        """Redact an existing isolate from the OTU."""
+        """Delete an existing isolate from a given OTU."""
         self._event_store.write_event(
             DeleteIsolate,
             DeleteIsolateData(rationale=rationale),
