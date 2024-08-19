@@ -10,7 +10,7 @@
     'segments': list([
       dict({
         'length': 7424,
-        'name': 'Pagoda yellow mosaic associated virus',
+        'name': 'genomic DNA',
         'required': True,
       }),
     ]),
