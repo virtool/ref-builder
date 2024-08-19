@@ -1,10 +1,12 @@
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, UUID4, computed_field
 
 from ref_builder.models import Molecule
 
 
 class Segment(BaseModel):
     """The metadata of the segment"""
+    id: UUID4
+    """The unique id number of this segment"""
 
     name: str
     """The name of the segment"""
