@@ -27,32 +27,32 @@
     'segments': list([
       dict({
         'length': 1090,
-        'name': 'DNA N',
+        'name': 'N',
         'required': True,
       }),
       dict({
         'length': 1057,
-        'name': 'DNA U3',
+        'name': 'U3',
         'required': True,
       }),
       dict({
         'length': 1087,
-        'name': 'DNA S',
+        'name': 'S',
         'required': True,
       }),
       dict({
         'length': 1074,
-        'name': 'DNA M',
+        'name': 'M',
         'required': True,
       }),
       dict({
         'length': 1015,
-        'name': 'DNA C',
+        'name': 'C',
         'required': True,
       }),
       dict({
         'length': 1099,
-        'name': 'DNA R',
+        'name': 'R',
         'required': True,
       }),
     ]),
