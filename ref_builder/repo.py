@@ -35,6 +35,10 @@ from ref_builder.events import (
     CreateSchemaData,
     CreateSequence,
     CreateSequenceData,
+    DeleteIsolate,
+    DeleteIsolateData,
+    DeleteSequence,
+    DeleteSequenceData,
     Event,
     EventData,
     EventQuery,
@@ -250,6 +254,16 @@ class Repo:
 
         return otu.get_isolate(isolate_id)
 
+    def delete_isolate(
+        self, otu_id: uuid.UUID, isolate_id: uuid.UUID, rationale: str
+    ) -> None:
+        """Delete an existing isolate from a given OTU."""
+        self._event_store.write_event(
+            DeleteIsolate,
+            DeleteIsolateData(rationale=rationale),
+            IsolateQuery(otu_id=otu_id, isolate_id=isolate_id,),
+        )
+
     def create_sequence(
         self,
         otu_id: uuid.UUID,
@@ -312,6 +326,49 @@ class Repo:
             .get_isolate(isolate_id)
             .get_sequence_by_accession(versioned_accession.key)
         )
+
+    def replace_sequence(
+        self,
+        otu_id: uuid.UUID,
+        isolate_id: uuid.UUID,
+        accession: str,
+        definition: str,
+        legacy_id: str | None,
+        segment: str,
+        sequence: str,
+        replaced_sequence_id: uuid.UUID,
+        rationale: str,
+    ) -> RepoSequence | None:
+        """Create a new sequence and delete an existing sequence,
+        replacing the old sequence under the isolate.
+        """
+        new_sequence = self.create_sequence(
+            otu_id=otu_id,
+            isolate_id=isolate_id,
+            accession=accession,
+            definition=definition,
+            legacy_id=legacy_id,
+            segment=segment,
+            sequence=sequence,
+        )
+
+        if new_sequence is None:
+            return None
+
+        self._event_store.write_event(
+            DeleteSequence,
+            DeleteSequenceData(
+                replacement=new_sequence.id,
+                rationale=rationale,
+            ),
+            SequenceQuery(
+                otu_id=otu_id,
+                isolate_id=isolate_id,
+                sequence_id=replaced_sequence_id,
+            ),
+        )
+
+        return new_sequence
 
     def create_schema(
         self,
@@ -434,6 +491,9 @@ class Repo:
                     ),
                 )
 
+            elif isinstance(event, DeleteIsolate):
+                otu.remove_isolate(event.query.isolate_id)
+
             elif isinstance(event, ExcludeAccession):
                 otu.excluded_accessions.add(event.data.accession)
 
@@ -450,6 +510,11 @@ class Repo:
                                 sequence=event.data.sequence,
                             ),
                         )
+
+            elif isinstance(event, DeleteSequence):
+                otu.delete_sequence(
+                    event.query.sequence_id, event.query.isolate_id
+                )
 
         otu.isolates.sort(key=lambda i: f"{i.name.type} {i.name.value}")
 
@@ -620,6 +685,10 @@ class EventStore:
                     return CreateIsolate(**loaded)
                 case "CreateSequence":
                     return CreateSequence(**loaded)
+                case "DeleteIsolate":
+                    return DeleteIsolate(**loaded)
+                case "DeleteSequence":
+                    return DeleteSequence(**loaded)
                 case "CreateSchema":
                     return CreateSchema(**loaded)
                 case "SetReprIsolate":

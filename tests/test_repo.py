@@ -540,3 +540,64 @@ def test_exclude_accession(empty_repo: Repo):
         "TMVABC.1",
         "ABTV",
     }
+
+
+class TestDirectDelete:
+    def test_delete_isolate(self, initialized_repo: Repo):
+        """Test that an isolate can be redacted from an OTU."""
+        otu_before = next(initialized_repo.iter_otus())
+
+        otu_id = otu_before.id
+
+        isolate_before = list(otu_before.isolates)[0]
+
+        initialized_repo.delete_isolate(
+            otu_id, isolate_before.id, rationale="Testing redaction"
+        )
+
+        otu_after = initialized_repo.get_otu(otu_id)
+
+        assert otu_before != otu_after
+
+        assert len(otu_after.isolates) == len(otu_before.isolates) - 1
+
+        assert isolate_before.id not in otu_after.isolate_ids
+
+        assert isolate_before.accessions not in otu_after.accessions
+
+    def test_replace_sequence(self, initialized_repo: Repo):
+        """Test that a sequence can be redacted from an OTU."""
+        otu_before = initialized_repo.get_otu_by_taxid(12242)
+
+        otu_id = otu_before.id
+
+        accession = "TMVABC"
+
+        isolate_id, replaced_sequence_id = otu_before.get_sequence_id_hierarchy_from_accession(accession)
+
+        assert otu_before.get_isolate(isolate_id).accessions == {"TMVABC"}
+
+        new_sequence = initialized_repo.replace_sequence(
+            otu_id,
+            isolate_id,
+            "TMVABCC.1",
+            "TMV edit",
+            None,
+            "RNA",
+            "ACGTGGAGAGACCA",
+            replaced_sequence_id=replaced_sequence_id,
+            rationale="Testing redaction",
+        )
+
+        otu_after = initialized_repo.get_otu(otu_id)
+
+        assert otu_before != otu_after
+
+        assert len(otu_after.accessions) == len(otu_before.accessions)
+
+        assert replaced_sequence_id not in otu_after.sequence_ids
+
+        assert new_sequence.id in otu_after.sequence_ids
+
+        assert otu_after.get_isolate(isolate_id).accessions == {"TMVABCC"}
+

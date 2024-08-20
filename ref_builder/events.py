@@ -119,6 +119,15 @@ class CreateIsolate(Event):
     query: IsolateQuery
 
 
+class DeleteIsolateData(EventData):
+    rationale: str
+
+
+class DeleteIsolate(Event):
+    data: DeleteIsolateData
+    query: IsolateQuery
+
+
 class CreateSequenceData(EventData):
     """The data for the creation of a new sequence."""
 
@@ -134,6 +143,18 @@ class CreateSequence(Event):
     """A sequence creation event."""
 
     data: CreateSequenceData
+    query: SequenceQuery
+
+
+class DeleteSequenceData(EventData):
+    """The data for the deletion of a sequence."""
+    replacement: UUID4
+    rationale: str
+
+
+class DeleteSequence(Event):
+    """A sequence deletion event. The second part of a sequence replacement."""
+    data: DeleteSequenceData
     query: SequenceQuery
 
 

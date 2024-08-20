@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Tuple
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -145,6 +145,22 @@ class RepoIsolate:
         """Add a sequence to the isolate."""
         self._sequences_by_accession[sequence.accession.key] = sequence
 
+    def replace_sequence(
+        self, sequence: RepoSequence, replaced_sequence_id: UUID
+    ) -> None:
+        """Replace a sequence with the given ID with a new sequence."""
+        self.add_sequence(sequence)
+        self.delete_sequence(replaced_sequence_id)
+
+    def delete_sequence(self, sequence_id: UUID) -> None:
+        """Delete a sequence from a given isolate."""
+        if sequence_id not in self.sequence_ids:
+            raise ValueError("This sequence ID does not exist")
+
+        sequence = self.get_sequence_by_id(sequence_id)
+
+        self._sequences_by_accession.pop(sequence.accession.key)
+
     def get_sequence_by_accession(
         self,
         accession: str,
@@ -153,6 +169,16 @@ class RepoIsolate:
         else None.
         """
         return self._sequences_by_accession.get(accession)
+
+    def get_sequence_by_id(self, sequence_id: UUID) -> RepoSequence | None:
+        if sequence_id not in self.sequence_ids:
+            return None
+
+        for sequence in self.sequences:
+            if sequence.id:
+                return sequence
+
+        return None
 
     def dict(self, exclude_contents: bool = False):
         isolate_dict = {
@@ -308,6 +334,16 @@ class RepoOTU:
         """Add a sequence to a given isolate."""
         self._isolates_by_id[isolate_id].add_sequence(sequence)
 
+    def replace_sequence(
+        self, sequence: RepoSequence, isolate_id: UUID, replaced_sequence_id: UUID
+    ) -> None:
+        """Replace a sequence with the given ID with a new sequence."""
+        self._isolates_by_id[isolate_id].replace_sequence(sequence, replaced_sequence_id)
+
+    def delete_sequence(self, sequence_id: UUID, isolate_id: UUID) -> None:
+        """Delete a sequence from a given isolate. Used only for rehydration."""
+        self._isolates_by_id[isolate_id].delete_sequence(sequence_id)
+
     def get_isolate(self, isolate_id: UUID) -> RepoIsolate | None:
         """Get isolate associated with a given ID.
 
@@ -317,6 +353,10 @@ class RepoOTU:
         :return: the isolate or ``None``
         """
         return self._isolates_by_id.get(isolate_id)
+
+    def remove_isolate(self, isolate_id: UUID) -> None:
+        """Remove an isolate from the OTU."""
+        self._isolates_by_id.pop(isolate_id)
 
     def get_sequence_by_accession(
         self,
@@ -331,6 +371,21 @@ class RepoOTU:
         for isolate in self.isolates:
             if (sequence := isolate.get_sequence_by_accession(accession)) is not None:
                 return sequence
+
+        raise ValueError(f"Accession {accession} found in index, but not in data")
+
+    def get_sequence_id_hierarchy_from_accession(
+        self,
+        accession: str,
+    ) -> Tuple[UUID, UUID] | Tuple[None, None]:
+        """Return the isolate ID and sequence ID of a given accession.
+        """
+        if accession not in self.accessions:
+            return None, None
+
+        for isolate in self.isolates:
+            if (sequence := isolate.get_sequence_by_accession(accession)) is not None:
+                return isolate.id, sequence.id
 
         raise ValueError(f"Accession {accession} found in index, but not in data")
 
