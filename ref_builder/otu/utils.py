@@ -6,7 +6,7 @@ import structlog
 
 from ref_builder.models import Molecule
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.schema import Segment, OTUSchema
+from ref_builder.schema import Segment, OTUSchema, parse_segment_name
 from ref_builder.utils import IsolateName, Accession, IsolateNameType
 
 
@@ -123,7 +123,7 @@ def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
         record = records[0]
 
         if record.source.segment != "":
-            segment_name = record.source.segment
+            segment_name = parse_segment_name(record.source.segment)
         else:
             segment_name = record.source.organism
 
@@ -134,7 +134,7 @@ def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
         if record.source.segment:
             segments.append(
                 Segment(
-                    name=record.source.segment,
+                    name=parse_segment_name(record.source.segment),
                     required=True,
                     length=len(record.sequence),
                 ),
