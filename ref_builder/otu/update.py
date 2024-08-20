@@ -8,7 +8,7 @@ from ref_builder.otu.utils import (
     parse_refseq_comment,
 )
 from ref_builder.repo import Repo
-from ref_builder.resources import RepoOTU
+from ref_builder.resources import RepoOTU, RepoIsolate
 from ref_builder.utils import IsolateName, Accession
 
 
@@ -20,7 +20,7 @@ def add_isolate(
     otu: RepoOTU,
     accessions: list[str],
     ignore_cache: bool = False
-) -> None:
+) -> RepoIsolate | None:
     """Take a list of accessions that make up a new isolate and a new isolate to the OTU.
 
     Download the GenBank records, categorize into an isolate bin and pass the isolate name
@@ -32,7 +32,18 @@ def add_isolate(
 
     fetch_list = list(set(accessions).difference(otu.blocked_accessions))
     if not fetch_list:
-        otu_logger.info("OTU already includes these accessions.")
+        otu_logger.warning(
+            "None of the requested accessions were eligible for inclusion.",
+            requested_accessions=accessions,
+            otu_accessions=otu.accessions,
+            excluded_accessions=otu.excluded_accessions
+        )
+
+        otu_logger.error(
+            "Could not create a new isolate using the requested accessions.",
+            requested_accessions=accessions
+        )
+
         return
 
     otu_logger.info(
@@ -131,13 +142,29 @@ def auto_update_otu(
         otu_logger.info("OTU is up to date.")
         return
 
-    otu_logger.debug(
+    update_otu_with_accessions(repo, otu, fetch_list)
+
+
+def update_otu_with_accessions(
+    repo: Repo,
+    otu: RepoOTU,
+    accessions: list,
+    ignore_cache: bool = False,
+):
+    """Take a list of accessions, filter for eligible accessions and
+    add new sequences to the OTU.
+    """
+    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
+
+    ncbi = NCBIClient(ignore_cache)
+
+    otu_logger.info(
         "Fetching accessions",
-        count={len(fetch_list)},
-        fetch_list=fetch_list,
+        count={len(accessions)},
+        fetch_list=accessions,
     )
 
-    records = ncbi.fetch_genbank_records(fetch_list)
+    records = ncbi.fetch_genbank_records(accessions)
 
     record_bins = group_genbank_records_by_isolate(records)
 
@@ -158,51 +185,14 @@ def auto_update_otu(
             otu_logger.debug(f"Skipping {isolate_name}")
             continue
 
-        isolate = create_isolate_from_records(repo, otu, isolate_name, list(isolate_records.values()))
+        isolate = create_isolate_from_records(
+            repo, otu, isolate_name, list(isolate_records.values())
+        )
         if isolate is not None:
             new_isolates.append(isolate_name)
 
     if not new_isolates:
         otu_logger.info("No new isolates added.")
-
-
-def update_otu_with_accessions(
-    repo: Repo,
-    otu: RepoOTU,
-    accessions: list,
-    ignore_cache: bool = False,
-):
-    """Take a list of accessions, filter for eligible accessions and
-    add new sequences to the OTU.
-    """
-    ncbi = NCBIClient(ignore_cache)
-
-    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
-    fetch_list = list(set(accessions).difference(otu.blocked_accessions))
-    if not fetch_list:
-        otu_logger.info("OTU is up to date.")
-        return
-
-    otu_logger.info(
-        "Fetching accessions",
-        count={len(fetch_list)},
-        fetch_list=fetch_list,
-    )
-
-    records = ncbi.fetch_genbank_records(fetch_list)
-
-    new_accessions = _file_and_create_sequences(repo, otu, records)
-
-    if new_accessions:
-        otu_logger.info(
-            "Added  sequences to OTU",
-            count=len(new_accessions),
-            new_accessions=new_accessions,
-            taxid=otu.taxid,
-        )
-        return
-
-    otu_logger.info("No new sequences added to OTU")
 
 
 def exclude_accessions_from_otu(
@@ -248,58 +238,3 @@ def add_schema_from_accessions(
             molecule=schema.molecule,
             segments=schema.segments,
         )
-
-
-def _file_and_create_sequences(
-    repo: Repo,
-    otu: RepoOTU,
-    records: list[NCBIGenbank],
-) -> list[Accession]:
-    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
-
-    record_bins = group_genbank_records_by_isolate(records)
-
-    new_accessions = []
-
-    for isolate_key in record_bins:
-        record_bin = record_bins[isolate_key]
-
-        isolate_id = otu.get_isolate_id_by_name(isolate_key)
-        if isolate_id is None:
-            otu_logger.debug(
-                f"Creating isolate for {isolate_key.type}, {isolate_key.value}",
-            )
-            isolate = repo.create_isolate(
-                otu_id=otu.id,
-                legacy_id=None,
-                source_name=isolate_key.value,
-                source_type=isolate_key.type,
-            )
-            isolate_id = isolate.id
-
-        for accession in record_bin:
-            record = record_bin[accession]
-            if accession.key in otu.accessions:
-                extant_sequence = otu.get_sequence_by_accession(accession.key)
-                if extant_sequence.accession.version == accession.version:
-                    otu_logger.warning(f"{accession} already exists in OTU")
-                    continue
-
-                otu_logger.warning(
-                    f"New version of {accession.key} found. Replacing {extant_sequence.accession} with {accession}...")
-                otu_logger.warning("SEQUENCE REPLACEMENT NOT YET IMPLEMENTED")
-
-            else:
-                sequence = repo.create_sequence(
-                    otu_id=otu.id,
-                    isolate_id=isolate_id,
-                    accession=record.accession_version,
-                    definition=record.definition,
-                    legacy_id=None,
-                    segment=record.source.segment,
-                    sequence=record.sequence,
-                )
-
-                new_accessions.append(sequence.accession)
-
-    return sorted(new_accessions)
