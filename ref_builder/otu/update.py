@@ -5,6 +5,7 @@ from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.utils import (
     create_schema_from_records,
     group_genbank_records_by_isolate,
+    parse_refseq_comment,
 )
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
@@ -94,6 +95,13 @@ def create_isolate_from_records(
             segment=record.source.segment,
             sequence=record.sequence,
         )
+
+        if record.refseq:
+            refseq_status, old_accession = parse_refseq_comment(record.comment)
+            repo.exclude_accession(
+                otu.id,
+                old_accession,
+            )
 
     isolate_logger.info(
         f"{isolate.name} created",
