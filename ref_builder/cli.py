@@ -17,9 +17,11 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.options import debug_option, ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
-    auto_update_otu,
     add_isolate,
-    set_schema_from_isolate,
+    add_schema_from_accessions,
+    auto_update_otu,
+    exclude_accessions_from_otu,
+    set_default_isolate,
 )
 from ref_builder.repo import Repo
 from ref_builder.utils import DataType, IsolateName, IsolateNameType, format_json
@@ -222,10 +224,42 @@ def isolate_create(
         sys.exit(1)
 
 
+@update.command(name="schema")
+@click.argument(
+    "accessions_",
+    metavar="ACCESSIONS",
+    nargs=-1,
+    type=str,
+    required=True,
+)
+@debug_option
+@ignore_cache_option
+@click.pass_context
+def otu_schema(
+    ctx,
+    debug: bool,
+    accessions_: list[str],
+    ignore_cache: bool
+):
+    """Update the OTU with a new schema."""
+    configure_logger(debug)
+
+    taxid = ctx.obj['TAXID']
+
+    repo = ctx.obj['REPO']
+
+    otu_id = repo.get_otu_id_by_taxid(taxid)
+
+    if otu_id is None:
+        click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
+        sys.exit(1)
+
+    add_schema_from_accessions(repo, taxid, accessions_, ignore_cache=ignore_cache)
+
+
 @update.command(name="default")
 @click.argument("ISOLATE_KEY", type=str)
 @debug_option
-@ignore_cache_option
 @click.pass_context
 def otu_set_default_isolate(
     ctx,
