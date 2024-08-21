@@ -79,7 +79,7 @@ def create_isolate_from_records(
     otu: RepoOTU,
     isolate_name: IsolateName,
     records: list[NCBIGenbank],
-):
+) -> RepoIsolate | None:
     """Take a list of GenBank records that make up a new isolate
     and add them to the OTU."""
     isolate_logger = get_logger("otu.isolate").bind(
@@ -173,7 +173,7 @@ def update_otu_with_accessions(
         potential_isolates=[str(isolate_name) for isolate_name in record_bins.keys()],
     )
 
-    new_isolates = []
+    new_isolate_names = []
 
     for isolate_name in record_bins:
         isolate_records = record_bins[isolate_name]
@@ -189,10 +189,12 @@ def update_otu_with_accessions(
             repo, otu, isolate_name, list(isolate_records.values())
         )
         if isolate is not None:
-            new_isolates.append(isolate_name)
+            new_isolate_names.append(isolate_name)
 
-    if not new_isolates:
-        otu_logger.info("No new isolates added.")
+    if new_isolate_names:
+        otu_logger.info(f"New isolates added", new_isolates=new_isolate_names)
+
+    otu_logger.info("No new isolates added.")
 
 
 def exclude_accessions_from_otu(
