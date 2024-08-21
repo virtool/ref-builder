@@ -29,6 +29,16 @@
     'taxid': 345184,
   })
 # ---
+# name: TestCreateOTU.test_otu_create_refseq_autoexclude
+  set({
+    'EF546808',
+    'EF546809',
+    'EF546810',
+    'EF546811',
+    'EF546812',
+    'EF546813',
+  })
+# ---
 # name: TestCreateOTUCommands.test_autofill_ok
   dict({
     'molecule': dict({

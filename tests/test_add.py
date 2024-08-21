@@ -97,6 +97,35 @@ class TestCreateOTU:
         assert otu.schema is not None
         assert otu.repr_isolate is not None
 
+    def test_otu_create_refseq_autoexclude(
+        self, precached_repo: Repo, snapshot: SnapshotAssertion
+    ):
+        """Test that the superceded accessions included in RefSeq metadata
+        are automatically added to the OTU's excluded accessions list."""
+        otu = create_otu(
+            precached_repo,
+            3158377,
+            [
+                "NC_010314",
+                "NC_010316",
+                "NC_010315",
+                "NC_010317",
+                "NC_010318",
+                "NC_010319",
+            ], ""
+        )
+
+        assert (
+            otu.excluded_accessions == {
+                "EF546808",
+                "EF546809",
+                "EF546810",
+                "EF546811",
+                "EF546812",
+                "EF546813",
+            } == snapshot
+        )
+
     def test_otu_create_with_acronym_auto(self, precached_repo: Repo):
         otu = create_otu(
             precached_repo,
