@@ -232,6 +232,21 @@ class TestAddIsolate:
 
         assert otu.get_isolate(isolate.id).accessions == set(isolate_2_accessions)
 
+    def test_conflict_fail(self, precached_repo: Repo):
+        """Test that an isolate cannot be added to an OTU
+        if both its name and its accessions are already contained."""
+        taxid = 2164102
+        accessions = ["MF062136", "MF062137", "MF062138"]
+
+        otu = create_otu(
+            precached_repo,
+            taxid,
+            accessions,
+            "",
+        )
+
+        assert add_isolate(precached_repo, otu, accessions) is None
+
 
 @pytest.mark.ncbi()
 class TestUpdateOTU:
