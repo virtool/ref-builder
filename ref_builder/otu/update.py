@@ -431,6 +431,47 @@ def remove_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID):
     logger.info(f"{isolate.name} removed.")
 
 
+def replace_sequence_in_otu(
+    repo: Repo,
+    otu: RepoOTU,
+    new_accession: str,
+    replaced_accession: str,
+    ignore_cache: bool = False,
+) -> RepoSequence | None:
+    """Replace a sequence in an OTU."""
+    ncbi = NCBIClient(ignore_cache)
+
+    isolate_id, sequence_id, = otu.get_sequence_id_hierarchy_from_accession(replaced_accession)
+    if sequence_id is None:
+        logger.error("This sequence does not exist in this OTU.")
+        return
+
+    isolate = otu.get_isolate(isolate_id)
+
+    records = ncbi.fetch_genbank_records([new_accession])
+    record = records[0]
+
+    new_sequence = repo.replace_sequence(
+        otu.id,
+        isolate.id,
+        accession=record.accession_version,
+        definition=record.definition,
+        legacy_id=None,
+        segment=record.source.segment,
+        sequence=record.sequence,
+        replaced_sequence_id=sequence_id,
+        rationale="Requested by user"
+    )
+
+    if new_sequence is not None:
+        logger.info(
+            f"{replaced_accession} replaced by {new_sequence.accession}.",
+            new_sequence_id=new_sequence.id
+        )
+        return new_sequence
+
+    logger.error(f"{replaced_accession} could not be replaced.")
+
 
 def _bin_refseq_records(
     records: list[NCBIGenbank]) -> tuple[list[NCBIGenbank], list[NCBIGenbank]
