@@ -71,6 +71,20 @@ def add_isolate(
         )
         return None
 
+    if (isolate_id := otu.get_isolate_id_by_name(isolate_name)) is not None:
+        otu_logger.debug(f"{isolate_name} already exists in this OTU")
+
+        for record in isolate_records.values():
+            if record.accession.startswith("NC_"):
+                otu_logger.debug("Accession is RefSeq")
+                update_isolate_from_records(repo, otu, isolate_id, list(isolate_records.values()))
+
+                otu = repo.get_otu(otu.id)
+
+                return otu.get_isolate(isolate_id)
+
+            return None
+
     return create_isolate_from_records(
         repo,
         otu,
