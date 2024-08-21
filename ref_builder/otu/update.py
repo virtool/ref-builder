@@ -11,7 +11,7 @@ from ref_builder.otu.utils import (
     parse_refseq_comment,
 )
 from ref_builder.repo import Repo
-from ref_builder.resources import RepoIsolate, RepoOTU
+from ref_builder.resources import RepoOTU, RepoIsolate, RepoSequence
 from ref_builder.utils import IsolateName
 
 logger = get_logger("otu.update")
@@ -168,6 +168,87 @@ def set_representative_isolate(
     )
 
     return new_representative_isolate.id
+
+
+def update_isolate_from_accessions(
+    repo: Repo,
+    otu: RepoOTU,
+    isolate_name: IsolateName,
+    accessions: list[str],
+    ignore_cache: bool = False,
+) -> RepoIsolate | None:
+    """Fetch the records attached to a given list of accessions and rebuild the isolate with it."""
+    ncbi = NCBIClient(ignore_cache)
+
+    new_records = ncbi.fetch_genbank_records(accessions)
+
+    if (isolate_id := otu.get_isolate_id_by_name(isolate_name)) is None:
+        logger.error(f"OTU does not include {isolate_name}.")
+        return
+
+    return update_isolate_from_records(repo, otu, isolate_id, new_records)
+
+
+def update_isolate_from_records(
+    repo: Repo,
+    otu: RepoOTU,
+    isolate_id: UUID,
+    records: list[NCBIGenbank],
+) -> RepoIsolate | None:
+    """Take a list of GenBank records and replace the existing sequences,
+    adding the previous sequence accessions to the excluded accessions list."""
+    isolate = otu.get_isolate(isolate_id)
+
+    sequences = isolate.sequences
+
+    isolate_logger = get_logger("otu.isolate").bind(
+        isolate_name=str(isolate.name),
+        otu_name=otu.name,
+        taxid=otu.taxid,
+    )
+
+    for record in records:
+        status, accession = parse_refseq_comment(record.comment)
+        if accession in isolate.accessions:
+            old_sequence = isolate.get_sequence_by_accession(accession)
+
+            new_sequence = repo.replace_sequence(
+                otu.id,
+                isolate.id,
+                accession=record.accession_version,
+                definition=record.definition,
+                legacy_id=None,
+                segment=record.source.segment,
+                sequence=record.sequence,
+                replaced_sequence_id=old_sequence.id,
+                rationale=DeleteRationale.REFSEQ,
+            )
+            if new_sequence is None:
+                isolate_logger.error("Isolate could not be refilled.")
+                return None
+
+            logger.debug(f"{old_sequence.accession} replaced by {new_sequence.accession}")
+
+            repo.exclude_accession(otu.id, old_sequence.accession.key)
+
+            logger.debug(f"{accession} added to exclusion list.")
+
+    otu = repo.get_otu(otu.id)
+    isolate = otu.get_isolate(isolate_id)
+
+    isolate_logger.info(
+        f"{sorted(isolate.accessions)} added to {isolate.name}, " +
+        f"replacing {sorted([str(sequence.accession) for sequence in sequences])}",
+        isolate_id=str(isolate.id),
+        sequences=sorted([str(record.accession) for record in records]),
+    )
+
+    logger.debug(
+        f"Excluded accessions updated",
+        excluded_accessions=sorted(otu.excluded_accessions)
+    )
+
+    return isolate
 
 
 def auto_update_otu(
