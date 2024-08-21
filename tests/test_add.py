@@ -11,6 +11,7 @@ from ref_builder.otu.update import (
     auto_update_otu,
     add_isolate,
     remove_isolate_from_otu,
+    update_isolate_from_accessions,
 )
 from ref_builder.repo import Repo
 from ref_builder.utils import IsolateName, IsolateNameType
@@ -273,3 +274,40 @@ class TestRemoveIsolate:
         assert otu_before.get_isolate(isolate_id).accessions not in otu_after.accessions
 
         assert len(otu_after.isolate_ids) == len(otu_before.isolate_ids) - 1
+
+
+class TestReplaceIsolateSequences:
+    @pytest.mark.parametrize(
+        "taxid, original_accessions, refseq_accessions",
+        [
+            (1169032, ["AB017503"], ["NC_003355"]),
+            (345184, ["DQ178608", "DQ178609"], ["NC_038792", "NC_038793"])
+        ]
+    )
+    def test_manual_replace_ok(
+        self,
+            empty_repo,
+            taxid: int,
+            original_accessions: list[str],
+            refseq_accessions: list[str]
+    ):
+        """Test that a given isolate can receive a new set of accessions
+        and update its contents accordingly.
+        The OTU should also update its excluded list."""
+        otu_before = create_otu(empty_repo, taxid, accessions=original_accessions, acronym="")
+
+        otu_before = empty_repo.get_otu(otu_before.id)
+
+        assert otu_before.accessions == set(original_accessions)
+
+        isolate_before = list(otu_before.isolates)[0]
+
+        isolate_after = update_isolate_from_accessions(
+            empty_repo, otu_before, isolate_before.name, refseq_accessions
+        )
+
+        otu_after = empty_repo.get_otu(otu_before.id)
+
+        assert otu_after.get_isolate(isolate_after.id).accessions == set(refseq_accessions)
+
+        assert otu_after.excluded_accessions == set(original_accessions)
