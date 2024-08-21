@@ -358,7 +358,6 @@ class TestReplaceIsolateSequences:
         assert otu_after.sequence_ids != otu_before.sequence_ids
 
 
-
 class TestRemoveIsolate:
     @pytest.mark.parametrize(
         "taxid, isolate_name",
