@@ -1,13 +1,19 @@
 import subprocess
 from pathlib import Path
+from uuid import UUID
 
 import pytest
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
 from ref_builder.otu.create import create_otu
-from ref_builder.otu.update import auto_update_otu, add_isolate
+from ref_builder.otu.update import (
+    auto_update_otu,
+    add_isolate,
+    remove_isolate_from_otu,
+)
 from ref_builder.repo import Repo
+from ref_builder.utils import IsolateName, IsolateNameType
 
 
 def run_create_otu_command(
@@ -241,3 +247,29 @@ class TestUpdateOTU:
             "NC_055391",
             "NC_055392",
         }
+
+
+class TestRemoveIsolate:
+    @pytest.mark.parametrize(
+        "taxid, isolate_name",
+        [
+            (1169032, IsolateName(type=IsolateNameType.ISOLATE, value="WMoV-6.3"))
+        ]
+    )
+    def test_ok(self, scratch_repo, taxid: int, isolate_name: IsolateName):
+        """Test that a given isolate can be removed from the OTU."""
+        otu_before = scratch_repo.get_otu_by_taxid(taxid)
+
+        isolate_id = otu_before.get_isolate_id_by_name(isolate_name)
+
+        assert type(isolate_id) is UUID
+
+        remove_isolate_from_otu(scratch_repo, otu_before, isolate_id)
+
+        otu_after = scratch_repo.get_otu_by_taxid(taxid)
+
+        assert otu_after.get_isolate(isolate_id) is None
+
+        assert otu_before.get_isolate(isolate_id).accessions not in otu_after.accessions
+
+        assert len(otu_after.isolate_ids) == len(otu_before.isolate_ids) - 1
