@@ -11,6 +11,7 @@ from ref_builder.otu.update import (
     auto_update_otu,
     add_isolate,
     remove_isolate_from_otu,
+    replace_sequence_in_otu,
     update_isolate_from_accessions,
 )
 from ref_builder.repo import Repo
@@ -311,3 +312,34 @@ class TestReplaceIsolateSequences:
         assert otu_after.get_isolate(isolate_after.id).accessions == set(refseq_accessions)
 
         assert otu_after.excluded_accessions == set(original_accessions)
+
+
+class TestReplaceSequence:
+    def test_ok(self, precached_repo):
+        otu_before = create_otu(
+            precached_repo,
+            1169032,
+            ["MK431779"],
+            acronym=""
+        )
+        """Test that a sequence in an OTU can be replaced manually."""
+        isolate_id, old_sequence_id = otu_before.get_sequence_id_hierarchy_from_accession(
+            "MK431779"
+        )
+
+        assert type(old_sequence_id) is UUID
+
+        sequence = replace_sequence_in_otu(
+            repo=precached_repo,
+            otu=otu_before,
+            new_accession="NC_003355",
+            replaced_accession="MK431779"
+        )
+
+        assert sequence is not None
+
+        otu_after = precached_repo.get_otu_by_taxid(1169032)
+
+        assert otu_after.accessions == {"NC_003355"}
+
+        assert otu_after.get_isolate(isolate_id).accessions == {"NC_003355"}
