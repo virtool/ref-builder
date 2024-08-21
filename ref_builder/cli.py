@@ -20,7 +20,6 @@ from ref_builder.otu.update import (
     add_isolate,
     add_schema_from_accessions,
     auto_update_otu,
-    exclude_accessions_from_otu,
     set_default_isolate,
 )
 from ref_builder.repo import Repo
