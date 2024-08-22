@@ -1,0 +1,7 @@
+# serializer version: 1
+# name: test_update_schema_command
+  OTUSchema(molecule=Molecule(strandedness='double', topology='circular', type='DNA'), segments=[Segment(name='DNA-A', required=True, length=2575), Segment(name='DNA-B', required=True, length=2494)], multipartite=True)
+# ---
+# name: test_update_schema_command.1
+  OTUSchema(molecule=Molecule(strandedness='double', topology='circular', type='DNA'), segments=[Segment(name='DNA-B', required=True, length=2506), Segment(name='DNA-A', required=True, length=2577)], multipartite=True)
+# ---
