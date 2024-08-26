@@ -410,11 +410,16 @@ class Repo:
         :param accession: the accession to exclude
 
         """
-        self._event_store.write_event(
-            ExcludeAccession,
-            ExcludeAccessionData(accession=accession),
-            OTUQuery(otu_id=otu_id),
-        )
+        otu = self.get_otu(otu_id)
+
+        if accession in otu.excluded_accessions:
+            logger.debug(f"{accession} is already excluded.")
+        else:
+            self._event_store.write_event(
+                ExcludeAccession,
+                ExcludeAccessionData(accession=accession),
+                OTUQuery(otu_id=otu_id),
+            )
 
         return self.get_otu(otu_id).excluded_accessions
 
