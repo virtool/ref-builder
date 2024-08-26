@@ -203,7 +203,7 @@ def exclude_accessions_from_otu(
     """Take a list of accessions and add them to an OTU's excluded accessions list."""
     otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
-    excluded_accessions = {}
+    excluded_accessions = set()
     for accession in accessions:
         if accession in otu.excluded_accessions:
             otu_logger.warning(f"{accession} is already excluded.")
