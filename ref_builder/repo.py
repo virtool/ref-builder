@@ -401,7 +401,7 @@ class Repo:
 
         return self.get_otu(otu_id).repr_isolate
 
-    def exclude_accession(self, otu_id: uuid.UUID, accession: str) -> None:
+    def exclude_accession(self, otu_id: uuid.UUID, accession: str) -> set:
         """Exclude an accession for an OTU.
 
         This accession will not be allowed in the repository in the future.
@@ -410,11 +410,18 @@ class Repo:
         :param accession: the accession to exclude
 
         """
-        self._event_store.write_event(
-            ExcludeAccession,
-            ExcludeAccessionData(accession=accession),
-            OTUQuery(otu_id=otu_id),
-        )
+        otu = self.get_otu(otu_id)
+
+        if accession in otu.excluded_accessions:
+            logger.debug(f"{accession} is already excluded.")
+        else:
+            self._event_store.write_event(
+                ExcludeAccession,
+                ExcludeAccessionData(accession=accession),
+                OTUQuery(otu_id=otu_id),
+            )
+
+        return self.get_otu(otu_id).excluded_accessions
 
     def get_otu(self, otu_id: uuid.UUID) -> RepoOTU | None:
         """Return an OTU corresponding with a given OTU ID if it exists, else None."""
