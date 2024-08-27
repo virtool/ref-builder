@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import NamedTuple
 from pathlib import Path
+from typing import NamedTuple
 
 import orjson
 
@@ -10,26 +10,42 @@ ZERO_PADDING_MAX = 99999999
 
 
 class Accession(NamedTuple):
+    """A Genbank accession number."""
+
     key: str
+    """The accession key.
+
+    In the accession "MN908947.3", the key is "MN908947".
+    """
+
     version: int
+    """The version number.
+
+    In the accession "MN908947.3", the version is 3.
+    """
 
     @classmethod
-    def create_from_string(cls, raw_accession: str) -> "Accession":
-        accession_parts = raw_accession.split(".")
+    def from_string(cls, string: str) -> "Accession":
+        """Create an Accession from a raw accession string."""
+        accession_parts = string.split(".")
 
         if len(accession_parts) == 2:
             try:
-                return Accession(key=accession_parts[0], version=int(accession_parts[1]))
+                return Accession(
+                    key=accession_parts[0],
+                    version=int(accession_parts[1]),
+                )
             except ValueError:
-                msg = f"Raw accession {raw_accession} does not include a valid version."
-                raise ValueError(msg)
+                raise ValueError(
+                    f"Raw accession {string} does not include a valid version.",
+                )
 
-        msg = f"Raw accession {raw_accession} is not versioned."
+        msg = f"Raw accession {string} is not versioned."
         raise ValueError(msg)
 
     def __str__(self) -> str:
+        """Return the accession as a string."""
         return f"{self.key}.{self.version}"
-
 
 
 class DataType(StrEnum):
@@ -82,11 +98,12 @@ class IsolateName:
     """The name of this subcategory."""
 
     def __str__(self) -> str:
+        """Return the isolate name as a formatted string."""
         return f"{self.type.capitalize()} {self.value}"
 
 
 def format_json(path: Path) -> None:
-    """Format the JSON file at `path` in place.
+    """Format the JSON file at ``path`` in place.
 
     :param path: the path to the JSON file to format
     """

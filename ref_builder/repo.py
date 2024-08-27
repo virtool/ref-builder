@@ -18,7 +18,6 @@ import uuid
 from collections import defaultdict
 from collections.abc import Generator
 from pathlib import Path
-from uuid import UUID
 
 import arrow
 from orjson import orjson
@@ -48,7 +47,8 @@ from ref_builder.events import (
     OTUQuery,
     RepoQuery,
     SequenceQuery,
-    SetReprIsolate, SetReprIsolateData,
+    SetReprIsolate,
+    SetReprIsolateData,
 )
 from ref_builder.index import EventIndex, EventIndexError
 from ref_builder.models import Molecule
@@ -60,7 +60,13 @@ from ref_builder.resources import (
 )
 from ref_builder.schema import OTUSchema, Segment
 from ref_builder.snapshotter.snapshotter import Snapshotter
-from ref_builder.utils import Accession, DataType, IsolateName, IsolateNameType, pad_zeroes
+from ref_builder.utils import (
+    Accession,
+    DataType,
+    IsolateName,
+    IsolateNameType,
+    pad_zeroes,
+)
 
 logger = get_logger("repo")
 
@@ -255,13 +261,16 @@ class Repo:
         return otu.get_isolate(isolate_id)
 
     def delete_isolate(
-        self, otu_id: uuid.UUID, isolate_id: uuid.UUID, rationale: str
+        self,
+        otu_id: uuid.UUID,
+        isolate_id: uuid.UUID,
+        rationale: str,
     ) -> None:
         """Delete an existing isolate from a given OTU."""
         self._event_store.write_event(
             DeleteIsolate,
             DeleteIsolateData(rationale=rationale),
-            IsolateQuery(otu_id=otu_id, isolate_id=isolate_id,),
+            IsolateQuery(otu_id=otu_id, isolate_id=isolate_id),
         )
 
     def create_sequence(
@@ -279,7 +288,7 @@ class Repo:
         """
         otu = self.get_otu(otu_id)
 
-        versioned_accession = Accession.create_from_string(accession)
+        versioned_accession = Accession.from_string(accession)
 
         if versioned_accession.key in otu.accessions:
             extant_sequence = otu.get_sequence_by_accession(versioned_accession.key)
@@ -396,7 +405,7 @@ class Repo:
         self._event_store.write_event(
             SetReprIsolate,
             SetReprIsolateData(isolate_id=isolate_id),
-            OTUQuery(otu_id=otu.id)
+            OTUQuery(otu_id=otu.id),
         )
 
         return self.get_otu(otu_id).repr_isolate
@@ -513,7 +522,8 @@ class Repo:
 
             elif isinstance(event, DeleteSequence):
                 otu.delete_sequence(
-                    event.query.sequence_id, event.query.isolate_id
+                    event.query.sequence_id,
+                    event.query.isolate_id,
                 )
 
         otu.isolates.sort(key=lambda i: f"{i.name.type} {i.name.value}")

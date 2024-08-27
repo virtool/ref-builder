@@ -65,7 +65,8 @@ class NCBIClient:
                     logger.debug("Missing accession", missing_accession=accession)
 
         fetch_list = list(
-            set(accessions) - {record.get(GBSeq.ACCESSION_UNVERSIONED) for record in records},
+            set(accessions)
+            - {record.get(GBSeq.ACCESSION_UNVERSIONED) for record in records},
         )
 
         if fetch_list:
@@ -74,9 +75,13 @@ class NCBIClient:
 
             for record in new_records:
                 try:
-                    versioned_accession = Accession.create_from_string(record[GBSeq.ACCESSION_VERSIONED])
+                    versioned_accession = Accession.from_string(
+                        record[GBSeq.ACCESSION_VERSIONED]
+                    )
                     self.cache.cache_genbank_record(
-                        record, versioned_accession.key, versioned_accession.version
+                        record,
+                        versioned_accession.key,
+                        versioned_accession.version,
                     )
                 except FileNotFoundError:
                     logger.error("Failed to cache record")
@@ -158,10 +163,14 @@ class NCBIClient:
             return []
 
         for record in records:
-            versioned_accession = Accession.create_from_string(record[GBSeq.ACCESSION_VERSIONED])
+            versioned_accession = Accession.from_string(
+                record[GBSeq.ACCESSION_VERSIONED]
+            )
             try:
                 self.cache.cache_genbank_record(
-                    record, versioned_accession.key, versioned_accession.version
+                    record,
+                    versioned_accession.key,
+                    versioned_accession.version,
                 )
             except FileNotFoundError:
                 logger.error("Failed to cache record")
