@@ -1,14 +1,12 @@
 import re
 from collections import defaultdict
-from typing import Tuple
 
 import structlog
 
 from ref_builder.models import Molecule
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.schema import Segment, OTUSchema
-from ref_builder.utils import IsolateName, Accession, IsolateNameType
-
+from ref_builder.schema import OTUSchema, Segment
+from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
 logger = structlog.get_logger("otu.utils")
 
@@ -49,7 +47,7 @@ def group_genbank_records_by_isolate(
     return isolates
 
 
-def parse_refseq_comment(comment: str) -> Tuple[str, str]:
+def parse_refseq_comment(comment: str) -> tuple[str, str]:
     """Parse a standard RefSeq comment."""
     if not comment:
         raise ValueError("Empty comment")
@@ -59,7 +57,6 @@ def parse_refseq_comment(comment: str) -> Tuple[str, str]:
     match = refseq_pattern.search(comment)
 
     return match.group(1), match.group(2)
-
 
 
 def _get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
@@ -143,5 +140,3 @@ def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
             raise ValueError("No segment name found for multipartite OTU segment.")
 
     return segments
-
-
