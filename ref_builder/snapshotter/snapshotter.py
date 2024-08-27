@@ -1,3 +1,4 @@
+import sqlite3
 from collections.abc import Generator, Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -62,6 +63,9 @@ class Snapshotter:
         self.path = path
         """The path to the snapshot root directory."""
 
+        self._db_path = self.path / "index.db"
+        """The path to the SQLite database."""
+
         self._meta_path = self.path / "meta.json"
         """The path to the reconstructed Repo metadata."""
 
@@ -72,6 +76,26 @@ class Snapshotter:
 
         self._index = _index if _index is not None else self._build_index()
         """The index data of this snapshot index."""
+
+        self.con = sqlite3.connect(path, isolation_level=None)
+
+        self.con.execute("PRAGMA journal_mode = WAL")
+
+        self.con.execute(
+            """
+            CREATE TABLE IF NOT EXISTS otus (
+                id TEXT PRIMARY KEY,
+                acronym TEXT,
+                at_index INTEGER,
+                legacy_id TEXT,
+                name TEXT,
+                taxid INTEGER,
+                snapshot BLOB
+            );
+            """,
+        )
+
+        self.con.commit()
 
     @classmethod
     def new(cls, path: Path, metadata: RepoMeta) -> "Snapshotter":
