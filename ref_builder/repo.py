@@ -192,10 +192,10 @@ class Repo:
                 f"OTU already exists as {otu}",
             )
 
-        if name in self._snapshotter.index_by_name:
+        if self._snapshotter.get_id_by_name(name):
             raise ValueError(f"An OTU with the name '{name}' already exists")
 
-        if legacy_id in self._snapshotter.index_by_legacy_id:
+        if self._snapshotter.get_id_by_legacy_id(legacy_id):
             raise ValueError(f"An OTU with the legacy ID '{legacy_id}' already exists")
 
         otu_logger = logger.bind(taxid=taxid, name=name, legacy_id=legacy_id)
@@ -462,7 +462,7 @@ class Repo:
         :return: the UUID of the OTU or ``None``
 
         """
-        return self._snapshotter.index_by_taxid.get(taxid)
+        return self._snapshotter.get_id_by_taxid(taxid)
 
     def _rehydrate_otu(self, event_ids: list[int]) -> RepoOTU:
         """Rebuild OTU data from a list of event IDs."""
