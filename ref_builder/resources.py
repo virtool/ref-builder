@@ -344,7 +344,8 @@ class RepoOTU:
     ) -> None:
         """Replace a sequence with the given ID with a new sequence."""
         self._isolates_by_id[isolate_id].replace_sequence(
-            sequence, replaced_sequence_id
+            sequence,
+            replaced_sequence_id,
         )
 
     def delete_sequence(self, sequence_id: UUID, isolate_id: UUID) -> None:
