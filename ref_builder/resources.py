@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass
-from typing import Any, Tuple
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -146,7 +146,9 @@ class RepoIsolate:
         self._sequences_by_accession[sequence.accession.key] = sequence
 
     def replace_sequence(
-        self, sequence: RepoSequence, replaced_sequence_id: UUID
+        self,
+        sequence: RepoSequence,
+        replaced_sequence_id: UUID,
     ) -> None:
         """Replace a sequence with the given ID with a new sequence."""
         self.add_sequence(sequence)
@@ -335,10 +337,16 @@ class RepoOTU:
         self._isolates_by_id[isolate_id].add_sequence(sequence)
 
     def replace_sequence(
-        self, sequence: RepoSequence, isolate_id: UUID, replaced_sequence_id: UUID
+        self,
+        sequence: RepoSequence,
+        isolate_id: UUID,
+        replaced_sequence_id: UUID,
     ) -> None:
         """Replace a sequence with the given ID with a new sequence."""
-        self._isolates_by_id[isolate_id].replace_sequence(sequence, replaced_sequence_id)
+        self._isolates_by_id[isolate_id].replace_sequence(
+            sequence,
+            replaced_sequence_id,
+        )
 
     def delete_sequence(self, sequence_id: UUID, isolate_id: UUID) -> None:
         """Delete a sequence from a given isolate. Used only for rehydration."""
@@ -377,9 +385,8 @@ class RepoOTU:
     def get_sequence_id_hierarchy_from_accession(
         self,
         accession: str,
-    ) -> Tuple[UUID, UUID] | Tuple[None, None]:
-        """Return the isolate ID and sequence ID of a given accession.
-        """
+    ) -> tuple[UUID, UUID] | tuple[None, None]:
+        """Return the isolate ID and sequence ID of a given accession."""
         if accession not in self.accessions:
             return None, None
 

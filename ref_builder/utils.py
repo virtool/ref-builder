@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import NamedTuple
 from pathlib import Path
+from typing import NamedTuple
 
 import orjson
 
@@ -19,7 +19,9 @@ class Accession(NamedTuple):
 
         if len(accession_parts) == 2:
             try:
-                return Accession(key=accession_parts[0], version=int(accession_parts[1]))
+                return Accession(
+                    key=accession_parts[0], version=int(accession_parts[1])
+                )
             except ValueError:
                 msg = f"Raw accession {raw_accession} does not include a valid version."
                 raise ValueError(msg)
@@ -29,7 +31,6 @@ class Accession(NamedTuple):
 
     def __str__(self) -> str:
         return f"{self.key}.{self.version}"
-
 
 
 class DataType(StrEnum):
