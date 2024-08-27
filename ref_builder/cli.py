@@ -16,7 +16,12 @@ from ref_builder.logs import configure_logger
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.options import debug_option, ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu
-from ref_builder.otu.update import add_isolate, auto_update_otu, exclude_accessions_from_otu
+from ref_builder.otu.update import (
+    add_isolate,
+    auto_update_otu,
+    exclude_accessions_from_otu,
+    set_representative_isolate,
+)
 from ref_builder.repo import Repo
 from ref_builder.utils import DataType, IsolateName, IsolateNameType, format_json
 
@@ -251,9 +256,8 @@ def accession_exclude(
 @update.command(name="default")
 @click.argument("ISOLATE_KEY", type=str)
 @debug_option
-@ignore_cache_option
 @click.pass_context
-def otu_set_default_isolate(
+def otu_set_representative_isolate(
     ctx,
     debug: bool,
     isolate_key: str,
@@ -287,7 +291,7 @@ def otu_set_default_isolate(
         click.echo("Isolate could not be found in this OTU.", err=True)
         sys.exit(1)
 
-    set_default_isolate(repo, otu_, isolate_id)
+    set_representative_isolate(repo, otu_, isolate_id)
 
 
 @entry.group()

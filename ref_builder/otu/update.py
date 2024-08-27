@@ -11,7 +11,7 @@ from ref_builder.otu.utils import (
 )
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU, RepoIsolate
-from ref_builder.utils import IsolateName, Accession
+from ref_builder.utils import IsolateName
 
 
 logger = get_logger("otu.update")
@@ -124,7 +124,8 @@ def create_isolate_from_records(
 
     return isolate
 
-def set_default_isolate(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> UUID | None:
+
+def set_representative_isolate(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> UUID | None:
     """Sets an OTU's representative isolate to a given existing isolate ID.
 
     Returns the isolate ID if successful, else None."""
