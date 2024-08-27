@@ -38,6 +38,11 @@ class EventIndex:
         self.path = path
         self.path.mkdir(exist_ok=True)
 
+    @property
+    def otu_ids(self) -> list[UUID]:
+        """Return a list of all OTU IDs in the event index."""
+        return [UUID(p.stem) for p in self.path.iterdir() if p.suffix == ".json"]
+
     def set(self, otu_id: UUID, event_ids: list[int], last_id: int) -> None:
         """Cache the event list for a given OTU.
 
@@ -74,7 +79,7 @@ class EventIndex:
         return event_index
 
     def get(self, otu_id: UUID) -> EventIndexItem | None:
-        """Takes a requested OTU Id and returns an OTUEventCache object.
+        """Takes a requested OTU ID and returns an OTUEventCache object.
 
         If no object exists for ``otu_id``, ``None`` is returned.
 

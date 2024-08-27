@@ -15,7 +15,6 @@ TODO: Check for accession conflicts.
 
 import shutil
 import uuid
-from collections import defaultdict
 from collections.abc import Generator
 from pathlib import Path
 from uuid import UUID
@@ -48,7 +47,8 @@ from ref_builder.events import (
     OTUQuery,
     RepoQuery,
     SequenceQuery,
-    SetReprIsolate, SetReprIsolateData,
+    SetReprIsolate,
+    SetReprIsolateData,
 )
 from ref_builder.index import EventIndex, EventIndexError
 from ref_builder.models import Molecule
@@ -60,7 +60,13 @@ from ref_builder.resources import (
 )
 from ref_builder.schema import OTUSchema, Segment
 from ref_builder.snapshotter.snapshotter import Snapshotter
-from ref_builder.utils import Accession, DataType, IsolateName, IsolateNameType, pad_zeroes
+from ref_builder.utils import (
+    Accession,
+    DataType,
+    IsolateName,
+    IsolateNameType,
+    pad_zeroes,
+)
 
 logger = get_logger("repo")
 
@@ -69,17 +75,15 @@ class Repo:
     """An event-sourced repository."""
 
     def __init__(self, path: Path) -> None:
+        """Create a new instance of the repository."""
         self.path = path
         """The path to the repo directory."""
 
         self.cache_path = self.path / ".cache"
         """The path to the cache subdirectory."""
 
-        self._event_store = EventStore(self.path / "src")
+        self._event_store = EventStore(self.cache_path, self.path / "src")
         """The event store of the event sourced repository."""
-
-        self._event_index = EventIndex(self.cache_path / "index")
-        """The event index cache of the event sourced repository."""
 
         snapshot_path = path / ".cache/snapshot"
 
@@ -118,8 +122,8 @@ class Repo:
 
         repo_id = uuid.uuid4()
 
-        _src = EventStore(path / "src")
-        _src.write_event(
+        store = EventStore(path / ".cache", path / "src")
+        store.write_event(
             CreateRepo,
             CreateRepoData(
                 id=repo_id,
@@ -133,7 +137,7 @@ class Repo:
         return Repo(path)
 
     @property
-    def last_id(self):
+    def last_id(self) -> int:
         """The id of the most recently added event in the event store."""
         return self._event_store.last_id
 
@@ -158,17 +162,15 @@ class Repo:
     def iter_otus(self, ignore_cache: bool = False) -> Generator[RepoOTU, None, None]:
         """Iterate over the OTUs in the snapshot."""
         if ignore_cache:
-            event_index = defaultdict(list)
-
-            for event in self._event_store.iter_events():
-                otu_id = event.query.model_dump().get("otu_id")
-
-                if otu_id is not None:
-                    event_index[otu_id].append(event.id)
+            otu_ids = {
+                event.query.model_dump().get("otu_id")
+                for event in self._event_store.iter_events()
+                if isinstance(event.query, OTUQuery)
+            }
         else:
-            event_index = self._event_index.load()
+            otu_ids = self._snapshotter.otu_ids
 
-        for otu_id in event_index:
+        for otu_id in otu_ids:
             yield self.get_otu(otu_id)
 
     def create_otu(
@@ -255,13 +257,16 @@ class Repo:
         return otu.get_isolate(isolate_id)
 
     def delete_isolate(
-        self, otu_id: uuid.UUID, isolate_id: uuid.UUID, rationale: str
+        self,
+        otu_id: uuid.UUID,
+        isolate_id: uuid.UUID,
+        rationale: str,
     ) -> None:
         """Delete an existing isolate from a given OTU."""
         self._event_store.write_event(
             DeleteIsolate,
             DeleteIsolateData(rationale=rationale),
-            IsolateQuery(otu_id=otu_id, isolate_id=isolate_id,),
+            IsolateQuery(otu_id=otu_id, isolate_id=isolate_id),
         )
 
     def create_sequence(
@@ -396,7 +401,7 @@ class Repo:
         self._event_store.write_event(
             SetReprIsolate,
             SetReprIsolateData(isolate_id=isolate_id),
-            OTUQuery(otu_id=otu.id)
+            OTUQuery(otu_id=otu.id),
         )
 
         return self.get_otu(otu_id).repr_isolate
@@ -425,7 +430,7 @@ class Repo:
 
     def get_otu(self, otu_id: uuid.UUID) -> RepoOTU | None:
         """Return an OTU corresponding with a given OTU ID if it exists, else None."""
-        if event_ids := self._get_otu_event_ids(otu_id):
+        if event_ids := self._event_store.get_event_ids_by_otu_id(otu_id):
             return self._rehydrate_otu(event_ids)
 
         return None
@@ -520,7 +525,8 @@ class Repo:
 
             elif isinstance(event, DeleteSequence):
                 otu.delete_sequence(
-                    event.query.sequence_id, event.query.isolate_id
+                    event.query.sequence_id,
+                    event.query.isolate_id,
                 )
 
         otu.isolates.sort(key=lambda i: f"{i.name.type} {i.name.value}")
@@ -532,7 +538,37 @@ class Repo:
 
         return otu
 
-    def _get_otu_event_ids(self, otu_id: uuid.UUID) -> list[int]:
+
+class EventStore:
+    """Interface for the event store."""
+
+    def __init__(self, cache_path: Path, path: Path) -> None:
+        """Create a new instance of the event store.
+
+        If no store exists at ``path``, a new store will be created.
+
+        :param path: the path to the event store directory
+
+        """
+        path.mkdir(exist_ok=True)
+
+        self.path = path
+        """The path to the event store directory."""
+
+        self._event_index = EventIndex(cache_path / "index")
+        """An index to efficiently find events for a given OTU."""
+
+        self.last_id = 0
+        """The id of the latest event."""
+
+        # Check that all events are present and set .last_id to the latest event.
+        for event_id in self.event_ids:
+            if event_id - self.last_id != 1:
+                raise ValueError("Event IDs are not sequential.")
+
+            self.last_id = event_id
+
+    def get_event_ids_by_otu_id(self, otu_id: UUID) -> list[int]:
         """Get a list of all event IDs associated with ``otu_id``."""
         event_ids = []
 
@@ -549,7 +585,7 @@ class Repo:
             at_event = indexed.at_event
             event_ids = indexed.event_ids
 
-        for event in self._event_store.iter_events(start=at_event + 1):
+        for event in self.iter_events(start=at_event + 1):
             if (
                 issubclass(type(event.query), OTUQuery)
                 and event.query.model_dump().get("otu_id") == otu_id
@@ -568,33 +604,6 @@ class Repo:
         )
 
         return event_ids
-
-
-class EventStore:
-    """Interface for the event store."""
-
-    def __init__(self, path: Path) -> None:
-        """Create a new instance of the event store.
-
-        If no store exists at ``path``, a new store will be created.
-
-        :param path: the path to the event store directory
-
-        """
-        path.mkdir(exist_ok=True)
-
-        self.path = path
-        """The path to the event store directory."""
-
-        self.last_id = 0
-        """The id of the latest event."""
-
-        # Check that all events are present and set .last_id to the latest event.
-        for event_id in self.event_ids:
-            if event_id - self.last_id != 1:
-                raise ValueError("Event IDs are not sequential.")
-
-            self.last_id = event_id
 
     @property
     def event_ids(self) -> list:
