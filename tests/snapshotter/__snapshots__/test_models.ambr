@@ -32,7 +32,7 @@
       'segments': list([
         dict({
           'length': 1001,
-          'name': 'Faba bean necrotic stunt alphasatellite 1',
+          'name': 'genomic DNA',
           'required': True,
         }),
       ]),
@@ -55,7 +55,7 @@
       'segments': list([
         dict({
           'length': 1612,
-          'name': 'Vallota mosaic virus',
+          'name': 'genomic RNA',
           'required': True,
         }),
       ]),
