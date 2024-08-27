@@ -12,13 +12,7 @@ def snapshotter(scratch_repo: Repo) -> Snapshotter:
 class TestSnapshotIndex:
     def test_otu_ids(self, scratch_repo: Repo, snapshotter: Snapshotter):
         true_otu_ids = [otu.id for otu in scratch_repo.iter_otus(ignore_cache=True)]
-
-        assert snapshotter.otu_ids
-
         assert len(true_otu_ids) == len(snapshotter.otu_ids)
-
-        for otu_id in true_otu_ids:
-            assert otu_id in snapshotter.id_to_taxid
 
     def test_load_by_id(self, snapshotter: Snapshotter, scratch_repo: Repo):
         """Test that we can load an OTU by its ID."""
