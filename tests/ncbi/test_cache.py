@@ -37,7 +37,7 @@ class TestGenbank:
         snapshot: SnapshotAssertion,
     ):
         """Test that a record is cached, cleared, and loaded correctly."""
-        accession = Accession.create_from_string(raw_accession)
+        accession = Accession.from_string(raw_accession)
 
         record = scratch_ncbi_cache.load_genbank_record(accession.key)
 
@@ -45,13 +45,18 @@ class TestGenbank:
 
         assert scratch_ncbi_cache.load_genbank_record(accession.key) is None
 
-        scratch_ncbi_cache.cache_genbank_record(record, accession.key, accession.version)
+        scratch_ncbi_cache.cache_genbank_record(
+            record, accession.key, accession.version
+        )
 
-        assert scratch_ncbi_cache.load_genbank_record(accession.key) == record == snapshot
+        assert (
+            scratch_ncbi_cache.load_genbank_record(accession.key) == record == snapshot
+        )
 
     def test_cache_multi_version_retrieve(self, scratch_ncbi_cache: NCBICache):
         """Test that the cache can load two different versions of the same accession,
-        but loads the latest version by default."""
+        but loads the latest version by default.
+        """
         v_1 = scratch_ncbi_cache.load_genbank_record("FJ028650", 1)
 
         assert v_1 is not None

@@ -1,11 +1,11 @@
 from typing import Annotated
 
 from pydantic import (
+    UUID4,
     AliasChoices,
     BaseModel,
     Field,
     TypeAdapter,
-    UUID4,
     field_serializer,
     field_validator,
 )
@@ -52,12 +52,11 @@ class OTUSnapshotSequence(BaseModel):
             return v
 
         if type(v) is str:
-            return Accession.create_from_string(v)
+            return Accession.from_string(v)
 
     @field_serializer("accession")
     def serialize_accession(self, _info) -> str:
         return str(self.accession)
-
 
 
 class OTUSnapshotIsolate(BaseModel):
@@ -98,8 +97,8 @@ class OTUSnapshotOTU(BaseModel):
         OTUSchema,
         Field(
             validation_alias=AliasChoices("otu_schema", "schema"),
-            serialization_alias="schema"
-        )
+            serialization_alias="schema",
+        ),
     ]
     """The OTU schema."""
 

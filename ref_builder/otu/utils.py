@@ -41,7 +41,7 @@ def group_genbank_records_by_isolate(
 
     for record in records:
         if (isolate_name := _get_isolate_name(record)) is not None:
-            versioned_accession = Accession.create_from_string(record.accession_version)
+            versioned_accession = Accession.from_string(record.accession_version)
             isolates[isolate_name][versioned_accession] = record
 
     return isolates
