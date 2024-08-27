@@ -116,15 +116,15 @@ class Snapshotter:
         :return: The ID of the OTU with the given legacy ID or ``None``.
 
         """
-        self._update_index()
+        cursor = self.con.execute(
+            "SELECT id FROM otus WHERE legacy_id = ?",
+            (legacy_id,),
+        )
 
-        index_by_legacy_id = {}
+        if result := cursor.fetchone():
+            return UUID(result[0])
 
-        for otu_id in self._index:
-            if (legacy_id := self._index[otu_id].legacy_id) is not None:
-                index_by_legacy_id[legacy_id] = otu_id
-
-        return index_by_legacy_id.get(legacy_id)
+        return None
 
     def get_id_by_name(self, name: str) -> UUID | None:
         """Get an OTU ID by its name.
@@ -135,8 +135,15 @@ class Snapshotter:
         :return: The ID of the OTU with the given name or ``None``.
 
         """
-        self._update_index()
-        return {self._index[otu_id].name: otu_id for otu_id in self._index}.get(name)
+        cursor = self.con.execute(
+            "SELECT id FROM otus WHERE name = ?",
+            (name,),
+        )
+
+        if result := cursor.fetchone():
+            return UUID(result[0])
+
+        return None
 
     def get_id_by_taxid(self, taxid: int) -> UUID | None:
         """Get an OTU ID by its taxonomy ID.
@@ -146,8 +153,15 @@ class Snapshotter:
         :param taxid: The taxonomy ID to search for.
         :return: The ID of the OTU with the given taxonomy ID or ``None``.
         """
-        self._update_index()
-        return {self._index[otu_id].taxid: otu_id for otu_id in self._index}.get(taxid)
+        cursor = self.con.execute(
+            "SELECT id FROM otus WHERE taxid = ?",
+            (taxid,),
+        )
+
+        if result := cursor.fetchone():
+            return UUID(result[0])
+
+        return None
 
     @property
     def otu_ids(self) -> set[UUID]:
@@ -277,6 +291,25 @@ class Snapshotter:
                     {str(otu_id): self._index[otu_id].dict() for otu_id in self._index},
                 ),
             )
+
+    def _load_from_db(self):
+        """Load an OTU snapshot."""
+        cursor = self.con.execute(
+            "SELECT at_index, snapshot FROM otus WHERE id = ?",
+            (str(otu_id),),
+        )
+
+        if result := cursor.fetchone():
+            at_index, snapshot = result
+
+            snapshot = orjson.loads(snapshot)
+
+            return Snapshot(
+                at_index=at_index,
+                otu=RepoOTU.from_dict(snapshot),
+            )
+
+        return None
 
     def _load_index(self) -> dict | None:
         """Load the index from disk."""
