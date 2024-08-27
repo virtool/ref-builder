@@ -16,9 +16,14 @@ from ref_builder.logs import configure_logger
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.options import debug_option, ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu
-from ref_builder.otu.update import add_isolate, auto_update_otu, exclude_accessions_from_otu
+from ref_builder.otu.update import (
+    add_isolate,
+    auto_update_otu,
+    exclude_accessions_from_otu,
+    set_representative_isolate,
+)
 from ref_builder.repo import Repo
-from ref_builder.utils import DataType, format_json
+from ref_builder.utils import DataType, IsolateName, IsolateNameType, format_json
 
 
 @click.group()
@@ -246,6 +251,47 @@ def accession_exclude(
         sys.exit(1)
 
     exclude_accessions_from_otu(repo, otu_, accessions_)
+
+
+@update.command(name="default")
+@click.argument("ISOLATE_KEY", type=str)
+@debug_option
+@click.pass_context
+def otu_set_representative_isolate(
+    ctx,
+    debug: bool,
+    isolate_key: str,
+):
+    """Update the OTU with a new representative isolate."""
+    configure_logger(debug)
+
+    taxid = ctx.obj['TAXID']
+
+    repo = ctx.obj['REPO']
+
+    otu_ = repo.get_otu_by_taxid(taxid)
+
+    if otu_ is None:
+        click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
+        sys.exit(1)
+
+    try:
+        isolate_id = UUID(isolate_key)
+    except ValueError:
+        parts = isolate_key.split(" ")
+        try:
+            isolate_name = IsolateName(IsolateNameType(parts[0].lower()), parts[1])
+        except ValueError:
+            click.echo(f'Error: "{isolate_key}" is not a valid isolate name.', err=True)
+            sys.exit(1)
+
+        isolate_id = otu_.get_isolate_id_by_name(isolate_name)
+
+    if isolate_id is None:
+        click.echo("Isolate could not be found in this OTU.", err=True)
+        sys.exit(1)
+
+    set_representative_isolate(repo, otu_, isolate_id)
 
 
 @entry.group()

@@ -57,7 +57,7 @@ class OTUKeys:
 class Snapshotter:
     """Load and cache OTU snapshots."""
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path) -> None:
         """Create a new snapshotter."""
         self.path = path
         """The path to the snapshot root directory."""
@@ -83,37 +83,52 @@ class Snapshotter:
 
         return Snapshotter(path)
 
-    @property
-    def index_by_taxid(self) -> dict[int, UUID]:
-        """A mapping of Taxonomy ID to OTU id."""
-        self._update_index()
+    def get_id_by_legacy_id(self, legacy_id: str) -> UUID | None:
+        """Get an OTU ID by its legacy ID.
 
-        return {self._index[otu_id].taxid: otu_id for otu_id in self._index}
+        Returns ``None`` if the legacy ID is not found.
 
-    @property
-    def index_by_name(self) -> dict[str, UUID]:
-        """A mapping of OTU organism name to OTU ID."""
-        self._update_index()
+        :param legacy_id: The legacy ID to search for.
+        :return: The ID of the OTU with the given legacy ID or ``None``.
 
-        return {self._index[otu_id].name: otu_id for otu_id in self._index}
-
-    @property
-    def index_by_legacy_id(self) -> dict[str, UUID]:
-        """A mapping of legacy Virtool id to OTU UUID."""
+        """
         self._update_index()
 
         index_by_legacy_id = {}
+
         for otu_id in self._index:
             if (legacy_id := self._index[otu_id].legacy_id) is not None:
                 index_by_legacy_id[legacy_id] = otu_id
 
-        return index_by_legacy_id
+        return index_by_legacy_id.get(legacy_id)
+
+    def get_id_by_name(self, name: str) -> UUID | None:
+        """Get an OTU ID by its name.
+
+        Returns ``None`` if the name is not found.
+
+        :param name: The name to search for.
+        :return: The ID of the OTU with the given name or ``None``.
+
+        """
+        self._update_index()
+        return {self._index[otu_id].name: otu_id for otu_id in self._index}.get(name)
+
+    def get_id_by_taxid(self, taxid: int) -> UUID | None:
+        """Get an OTU ID by its taxonomy ID.
+
+        Returns ``None`` if the taxonomy ID is not found.
+
+        :param taxid: The taxonomy ID to search for.
+        :return: The ID of the OTU with the given taxonomy ID or ``None``.
+        """
+        self._update_index()
+        return {self._index[otu_id].taxid: otu_id for otu_id in self._index}.get(taxid)
 
     @property
     def otu_ids(self) -> set[UUID]:
         """A list of OTU ids of snapshots."""
         self._update_index()
-
         return set(self._index.keys())
 
     def snapshot(
@@ -186,7 +201,7 @@ class Snapshotter:
         :return: The OTU or ``None`` if it is not found.
 
         """
-        if otu_id := self.index_by_name.get(name):
+        if otu_id := self.get_id_by_name(name):
             return self.load_by_id(otu_id)
 
         return None
@@ -200,7 +215,7 @@ class Snapshotter:
         :return: The OTU or ``None`` if it is not found.
 
         """
-        if otu_id := self.index_by_taxid[taxid]:
+        if otu_id := self.get_id_by_taxid(taxid):
             return self.load_by_id(otu_id)
 
         return None
