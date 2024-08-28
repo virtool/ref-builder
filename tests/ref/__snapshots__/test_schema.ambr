@@ -9,6 +9,7 @@
     'multipartite': False,
     'segments': list([
       dict({
+        'id': 1,
         'length': 7424,
         'name': 'Pagoda yellow mosaic associated virus',
         'required': True,
@@ -26,31 +27,37 @@
     'multipartite': True,
     'segments': list([
       dict({
+        'id': 1,
         'length': 1090,
         'name': 'DNA N',
         'required': True,
       }),
       dict({
+        'id': 2,
         'length': 1057,
         'name': 'DNA U3',
         'required': True,
       }),
       dict({
+        'id': 3,
         'length': 1087,
         'name': 'DNA S',
         'required': True,
       }),
       dict({
+        'id': 4,
         'length': 1074,
         'name': 'DNA M',
         'required': True,
       }),
       dict({
+        'id': 5,
         'length': 1015,
         'name': 'DNA C',
         'required': True,
       }),
       dict({
+        'id': 6,
         'length': 1099,
         'name': 'DNA R',
         'required': True,
