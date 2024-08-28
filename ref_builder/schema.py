@@ -6,6 +6,9 @@ from ref_builder.models import Molecule
 class Segment(BaseModel):
     """The metadata of the segment"""
 
+    id: int
+    """The numerical identifier of the segment."""
+
     name: str
     """The name of the segment"""
 
