@@ -28,7 +28,7 @@ def initialized_repo(empty_repo: Repo):
                 type=MolType.RNA,
                 topology=Topology.LINEAR,
             ),
-            segments=[Segment(name="A", length=150, required=True)],
+            segments=[Segment(id=1, length=100, name="RNA A", required=True)],
         ),
         12242,
     )
@@ -58,7 +58,7 @@ def init_otu(empty_repo: Repo) -> RepoOTU:
                 type=MolType.RNA,
                 topology=Topology.LINEAR,
             ),
-            segments=[Segment(name="A", required=True, length=100)],
+            segments=[Segment(id=1, length=100, name="RNA A", required=True)],
         ),
         taxid=12242,
     )
@@ -91,7 +91,7 @@ class TestCreateOTU:
                     type=MolType.RNA,
                     topology=Topology.LINEAR,
                 ),
-                segments=[Segment(name="A", required=True, length=100)],
+                segments=[Segment(id=1, length=100, name="RNA A", required=True)],
             ),
             taxid=12242,
         )
@@ -110,7 +110,7 @@ class TestCreateOTU:
                         type=MolType.RNA,
                         topology=Topology.LINEAR,
                     ),
-                    segments=[Segment(name="A", required=True, length=100)],
+                    segments=[Segment(id=1, length=100, name="RNA A", required=True)],
                 ),
                 taxid=12242,
                 isolates=[],
@@ -134,7 +134,7 @@ class TestCreateOTU:
                         "type": "RNA",
                         "topology": "linear",
                     },
-                    "segments": [{"length": 100, "name": "A", "required": True}],
+                    "segments": [{"id": 1, "length": 100, "name": "RNA A", "required": True}],
                     "multipartite": False,
                 },
                 "taxid": 12242,
@@ -162,7 +162,7 @@ class TestCreateOTU:
                     type=MolType.RNA,
                     topology=Topology.LINEAR,
                 ),
-                segments=[Segment(name="A", required=True)],
+                segments=[Segment(id=1, length=100, name="RNA A", required=True)],
             ),
             taxid=12242,
         )
@@ -181,7 +181,7 @@ class TestCreateOTU:
                         type=MolType.RNA,
                         topology=Topology.LINEAR,
                     ),
-                    segments=[Segment(name="A", required=True)],
+                    segments=[Segment(id=1, length=100, name="RNA A", required=True)],
                 ),
                 taxid=438782,
             )
@@ -200,7 +200,7 @@ class TestCreateOTU:
                     type=MolType.RNA,
                     topology=Topology.LINEAR,
                 ),
-                segments=[Segment(name="A", required=True)],
+                segments=[Segment(id=1, length=100, name="RNA A", required=True)],
             ),
             taxid=12242,
         )
@@ -219,7 +219,7 @@ class TestCreateOTU:
                         type=MolType.RNA,
                         topology=Topology.LINEAR,
                     ),
-                    segments=[Segment(name="A", required=True)],
+                    segments=[Segment(id=1, length=100, name="RNA A", required=True)],
                 ),
                 taxid=438782,
             )
@@ -331,7 +331,7 @@ class TestRetrieveOTU:
                     type=MolType.RNA,
                     topology=Topology.LINEAR,
                 ),
-                segments=[Segment(name="A", required=True)],
+                segments=[Segment(id=1, length=100, name="RNA A", required=True)],
             ),
         )
 
@@ -416,7 +416,7 @@ class TestRetrieveOTU:
                         type=MolType.RNA,
                         topology=Topology.LINEAR,
                     ),
-                    segments=[Segment(name="A", required=True)],
+                    segments=[Segment(id=1, length=100, name="RNA A", required=True)],
                 ),
                 taxid=12242,
                 isolates=otu_contents,
