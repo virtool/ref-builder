@@ -154,7 +154,6 @@ class Repo:
         self._snapshotter.snapshot(
             self.iter_otus(ignore_cache=True),
             at_event=self.last_id,
-            indent=True,
         )
 
     def iter_otus(self, ignore_cache: bool = False) -> Generator[RepoOTU, None, None]:

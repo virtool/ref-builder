@@ -196,19 +196,20 @@ class OTUSnapshot:
         self,
         otu: "RepoOTU",
         at_event: int | None = None,
-        indent: int | None = None,
     ):
         """Cache an OTU at a given event."""
         self._metadata.at_event = at_event
 
         try:
-            validated_otu = OTUSnapshotOTU.model_validate(otu.dict(exclude_contents=True))
+            validated_otu = OTUSnapshotOTU.model_validate(
+                otu.dict(exclude_contents=True),
+            )
         except ValidationError:
             msg = f"{otu.dict(exclude_contents=True)} is not a valid OTU."
             raise ValueError(msg)
 
         with open(self._otu_path, "w") as f:
-            f.write(validated_otu.model_dump_json(indent=indent))
+            f.write(validated_otu.model_dump_json())
 
         with open(self._excluded_path, "wb") as f:
             f.write(orjson.dumps(list(otu.excluded_accessions)))
@@ -219,8 +220,7 @@ class OTUSnapshot:
             for sequence in isolate.sequences:
                 self._data.cache_sequence(sequence)
 
-        self._toc.write(data=OTUSnapshotToC.generate_from_otu(otu), indent=indent)
-
+        self._toc.write(data=OTUSnapshotToC.generate_from_otu(otu))
         self._write_metadata(indent=None)
 
     def load(self) -> "RepoOTU":

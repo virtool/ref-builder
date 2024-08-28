@@ -19,12 +19,12 @@ class TestOTUSnapshot:
 
         otu_snapshotter = OTUSnapshot(empty_otu_snapshot_path)
 
-        otu_snapshotter.cache(otu, indent=None)
+        otu_snapshotter.cache(otu)
 
         assert otu_snapshotter.at_event is None
 
-        for filestem in ("otu", "toc", "metadata"):
-            assert (otu_snapshotter.path / f"{filestem}.json").exists()
+        for stem in ("otu", "toc", "metadata"):
+            assert (otu_snapshotter.path / f"{stem}.json").exists()
 
         data_path = otu_snapshotter.path / "data"
 
@@ -67,7 +67,7 @@ class TestOTUSnapshot:
 
         assert rehydrated_otu.accessions == snapshot_otu.accessions
 
-    def test_toc(self, taxid: int,scratch_repo):
+    def test_toc(self, taxid: int, scratch_repo):
         """Test that the table of contents is written correctly."""
         rehydrated_otu = scratch_repo.get_otu_by_taxid(taxid)
 

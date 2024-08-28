@@ -17,13 +17,9 @@ class OTUKeys:
     """Stores indexable data about OTUs."""
 
     id: UUID
-
     taxid: int
-
     name: str
-
     acronym: str = ""
-
     legacy_id: str | None = None
 
     @classmethod
@@ -46,12 +42,6 @@ class OTUKeys:
             "acronym": self.acronym,
             "legacy_id": self.legacy_id,
         }
-
-    def __repr__(self):
-        return (
-            f"<OTUMetadata {self.id}: taxid={self.taxid} name={self.name} "
-            f"acronym={self.acronym} legacy_id={self.legacy_id}>"
-        )
 
 
 class Snapshotter:
@@ -120,23 +110,20 @@ class Snapshotter:
         self,
         otus: Iterable[RepoOTU],
         at_event: int | None = None,
-        indent: bool = False,
     ) -> None:
         """Take a new snapshot."""
-        options = orjson.OPT_INDENT_2 if indent else None
-
         _index = {}
 
         for otu in otus:
-            self.cache_otu(otu, at_event=at_event, options=options)
-            metadata = OTUKeys(
+            self.cache_otu(otu, at_event=at_event)
+
+            _index[otu.id] = OTUKeys(
                 id=otu.id,
                 taxid=otu.taxid,
                 name=otu.name,
                 acronym=otu.acronym,
                 legacy_id=otu.legacy_id,
             )
-            _index[otu.id] = metadata
 
         self._index = _index
 
@@ -156,13 +143,12 @@ class Snapshotter:
         self,
         otu: "RepoOTU",
         at_event: int | None = None,
-        options=None,
     ) -> None:
         """Create a snapshot for a single OTU."""
         logger.debug("Writing a snapshot", otu_id=otu.id)
 
         otu_snap = OTUSnapshot(self.path / f"{otu.id}")
-        otu_snap.cache(otu, at_event, options)
+        otu_snap.cache(otu, at_event)
 
         self._index[otu.id] = OTUKeys.from_otu(otu)
 
@@ -182,7 +168,7 @@ class Snapshotter:
 
         return otu_snap.load()
 
-    def _build_index(self) -> dict[UUID, OTUKeys]:
+    def _build_index(self) -> None:
         """Build a new index from the contents of the snapshot cache directory."""
         index = {}
 
