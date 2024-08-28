@@ -82,8 +82,6 @@ class Snapshotter:
         :return: The ID of the OTU with the given legacy ID or ``None``.
 
         """
-        self._update_index()
-
         index_by_legacy_id = {}
 
         for otu_id in self._index:
@@ -101,7 +99,6 @@ class Snapshotter:
         :return: The ID of the OTU with the given name or ``None``.
 
         """
-        self._update_index()
         return {self._index[otu_id].name: otu_id for otu_id in self._index}.get(name)
 
     def get_id_by_taxid(self, taxid: int) -> UUID | None:
@@ -112,13 +109,11 @@ class Snapshotter:
         :param taxid: The taxonomy ID to search for.
         :return: The ID of the OTU with the given taxonomy ID or ``None``.
         """
-        self._update_index()
         return {self._index[otu_id].taxid: otu_id for otu_id in self._index}.get(taxid)
 
     @property
     def otu_ids(self) -> set[UUID]:
         """A list of OTU ids of snapshots."""
-        self._update_index()
         return set(self._index.keys())
 
     def snapshot(
@@ -144,7 +139,13 @@ class Snapshotter:
             _index[otu.id] = metadata
 
         self._index = _index
-        self._cache_index()
+
+        with open(self._index_path, "wb") as f:
+            f.write(
+                orjson.dumps(
+                    {str(otu_id): self._index[otu_id].dict() for otu_id in self._index},
+                ),
+            )
 
     def iter_otus(self) -> Generator[RepoOTU, None, None]:
         """Iterate over the OTUs in the snapshot."""
@@ -164,7 +165,6 @@ class Snapshotter:
         otu_snap.cache(otu, at_event, options)
 
         self._index[otu.id] = OTUKeys.from_otu(otu)
-        self._cache_index()
 
     def load_by_id(self, otu_id: UUID) -> RepoOTU | None:
         """Load the most recently snapshotted form of an OTU by its ID.
@@ -207,15 +207,6 @@ class Snapshotter:
 
         self._index = index
 
-    def _cache_index(self) -> None:
-        """Cache the index to disk."""
-        with open(self._index_path, "wb") as f:
-            f.write(
-                orjson.dumps(
-                    {str(otu_id): self._index[otu_id].dict() for otu_id in self._index},
-                ),
-            )
-
     def _load_index(self) -> dict | None:
         """Load the index from disk."""
         try:
@@ -239,20 +230,3 @@ class Snapshotter:
             _index[otu_id] = OTUKeys(**index_dict[key])
 
         return _index
-
-    def _update_index(self) -> None:
-        """Update the index in memory."""
-        filename_index = {str(otu_id) for otu_id in self._index}
-
-        for path in self.path.iterdir():
-            if not path.is_dir() or path.stem in filename_index:
-                continue
-
-            try:
-                unlisted_otu_id = UUID(path.stem)
-            except ValueError:
-                continue
-
-            unindexed_otu = self.load_by_id(unlisted_otu_id)
-
-            self._index[unindexed_otu.id] = OTUKeys.from_otu(unindexed_otu)
