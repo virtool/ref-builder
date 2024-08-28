@@ -30,7 +30,7 @@
   })
 # ---
 # name: TestCreateOTUCommands.test_autofill_ok
-  OTUSchema(molecule=Molecule(strandedness='double', topology='circular', type='DNA'), segments=[Segment(name='DNA-A', required=True, length=2575), Segment(name='DNA-B', required=True, length=2494)], multipartite=True)
+  OTUSchema(molecule=Molecule(strandedness='double', topology='circular', type='DNA'), segments=[Segment(id=1, name='DNA-A', required=True, length=2575), Segment(id=2, name='DNA-B', required=True, length=2494)], multipartite=True)
 # ---
 # name: TestCreateOTUCommands.test_ok[1278205-accessions0]
   dict({
