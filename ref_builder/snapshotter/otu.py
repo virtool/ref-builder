@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 from uuid import UUID
 
@@ -61,22 +60,6 @@ class OTUSnapshotToC:
         with open(self.path, "wb") as f:
             f.write(toc_adapter.dump_json(data, indent=indent))
 
-    def add_sequence(
-        self,
-        sequence: RepoSequence,
-        isolate_id: UUID,
-        indent: int | None = None,
-    ):
-        """Add a new sequence to the table of contents."""
-        toc = self.load()
-
-        for key in toc:
-            if toc[key].id == isolate_id:
-                toc[key].accessions[sequence.accession.key] = sequence.id
-                break
-
-        self.write(toc, indent=indent)
-
     def add_isolate(self, isolate: RepoIsolate, indent: int | None = None):
         """Add a new isolate to the table of contents."""
         toc = self.load()
@@ -111,11 +94,6 @@ class OTUSnapshotDataStore:
     def contents(self):
         """A list of the data store's contents."""
         return list(self.path.glob("*.json"))
-
-    def clean(self):
-        """Delete and remake the data store directory."""
-        shutil.rmtree(self.path)
-        self.path.mkdir()
 
     def load_isolate(self, isolate_id: UUID) -> OTUSnapshotIsolate:
         """Load and parse an isolate from the data store."""
@@ -181,11 +159,6 @@ class OTUSnapshot:
     def _otu_path(self):
         """The path to the OTU's taxonomy data."""
         return self.path / "otu.json"
-
-    @property
-    def _toc_path(self):
-        """The path to the OTU's table of contents."""
-        return self.path / "toc.json"
 
     @property
     def _excluded_path(self):
