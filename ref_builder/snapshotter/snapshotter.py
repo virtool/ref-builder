@@ -182,34 +182,6 @@ class Snapshotter:
 
         return otu_snap.load()
 
-    def load_by_name(self, name: str) -> RepoOTU | None:
-        """Load the most recently snapshotted form of an OTU by its name.
-
-        Returns ``None`` if the OTU is not found.
-
-        :param name: The name of the OTU to load.
-        :return: The OTU or ``None`` if it is not found.
-
-        """
-        if otu_id := self.get_id_by_name(name):
-            return self.load_by_id(otu_id)
-
-        return None
-
-    def load_by_taxid(self, taxid: int) -> RepoOTU | None:
-        """Load the most recently snapshotted form of an OTU by its taxonomy ID.
-
-        Returns ``None`` if the OTU is not found.
-
-        :param taxid: The taxonomy ID of the OTU to load.
-        :return: The OTU or ``None`` if it is not found.
-
-        """
-        if otu_id := self.get_id_by_taxid(taxid):
-            return self.load_by_id(otu_id)
-
-        return None
-
     def _build_index(self) -> dict[UUID, OTUKeys]:
         """Build a new index from the contents of the snapshot cache directory."""
         index = {}
