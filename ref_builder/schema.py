@@ -1,4 +1,4 @@
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, computed_field, model_validator
 
 from ref_builder.models import Molecule
 
@@ -30,3 +30,15 @@ class OTUSchema(BaseModel):
     @computed_field
     def multipartite(self) -> bool:
         return len(self.segments) > 1
+
+    @model_validator(mode="after")
+    def check_segment_ids(self):
+        last_segment_id = 0
+        for segment in self.segments:
+            if segment.id != last_segment_id + 1:
+                raise ValueError("Segment IDs are not sequential.")
+            last_segment_id += 1
+
+        return self
+
+
