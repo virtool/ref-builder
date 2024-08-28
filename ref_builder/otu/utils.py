@@ -124,18 +124,21 @@ def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
         else:
             segment_name = record.source.organism
 
-        return [Segment(name=segment_name, required=True, length=len(record.sequence))]
+        return [Segment(id=1, name=segment_name, required=True, length=len(record.sequence))]
 
     segments = []
+    segment_index = 1
     for record in sorted(records, key=lambda record: record.accession):
         if record.source.segment:
             segments.append(
                 Segment(
+                    id=segment_index,
                     name=record.source.segment,
                     required=True,
                     length=len(record.sequence),
                 ),
             )
+            segment_index += 1
         else:
             raise ValueError("No segment name found for multipartite OTU segment.")
 
