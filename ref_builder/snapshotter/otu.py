@@ -13,7 +13,6 @@ from ref_builder.resources import (
 from ref_builder.snapshotter.models import (
     OTUSnapshotIsolate,
     OTUSnapshotMeta,
-    OTUSnapshotOTU,
     OTUSnapshotSequence,
     OTUSnapshotToCIsolate,
     toc_adapter,
@@ -150,6 +149,12 @@ class OTUSnapshot:
         )
         """The metadata for this snapshot."""
 
+    @classmethod
+    def new(cls, at_event: int, otu: RepoOTU, path: Path) -> "OTUSnapshot":
+        return cls(
+            path,
+        )
+
     @property
     def at_event(self) -> int | None:
         """The event at which the snapshot was created."""
@@ -160,11 +165,6 @@ class OTUSnapshot:
         """The path to the OTU's taxonomy data."""
         return self.path / "otu.json"
 
-    @property
-    def _excluded_path(self):
-        """The path to a list of accessions that should not be fetched in the future."""
-        return self.path / "excluded.json"
-
     def cache(
         self,
         otu: "RepoOTU",
@@ -173,19 +173,24 @@ class OTUSnapshot:
         """Cache an OTU at a given event."""
         self._metadata.at_event = at_event
 
-        try:
-            validated_otu = OTUSnapshotOTU.model_validate(
-                otu.dict(exclude_contents=True),
+        with open(self._otu_path, "wb") as f:
+            f.write(
+                orjson.dumps(
+                    {
+                        "at_event": at_event,
+                        "data": {
+                            "acronym": otu.acronym,
+                            "id": otu.id,
+                            "excluded_accessions": list(otu.excluded_accessions),
+                            "legacy_id": otu.legacy_id,
+                            "name": otu.name,
+                            "repr_isolate": otu.repr_isolate,
+                            "schema": otu.schema.model_dump(),
+                            "taxid": otu.taxid,
+                        },
+                    },
+                ),
             )
-        except ValidationError:
-            msg = f"{otu.dict(exclude_contents=True)} is not a valid OTU."
-            raise ValueError(msg)
-
-        with open(self._otu_path, "w") as f:
-            f.write(validated_otu.model_dump_json())
-
-        with open(self._excluded_path, "wb") as f:
-            f.write(orjson.dumps(list(otu.excluded_accessions)))
 
         for isolate in otu.isolates:
             self._data.cache_isolate(isolate)
@@ -194,19 +199,21 @@ class OTUSnapshot:
                 self._data.cache_sequence(sequence)
 
         self._toc.write(data=OTUSnapshotToC.generate_from_otu(otu))
-        self._write_metadata(indent=None)
+
+        with open(self._metadata_path, "w") as f:
+            f.write(self._metadata.model_dump_json())
 
     def load(self) -> "RepoOTU":
         """Load an OTU from the snapshot."""
         with open(self._otu_path, "rb") as f:
-            otu_structure = OTUSnapshotOTU.model_validate_json(f.read())
+            otu_dict = orjson.loads(f.read())["data"]
 
-        with open(self._excluded_path, "rb") as f:
-            excluded_accessions = orjson.loads(f.read())
+        otu_dict["uuid"] = UUID(otu_dict.pop("id"))
 
         toc = self._toc.load()
 
         isolates = []
+
         for key in toc:
             isolate_entry = toc[key]
 
@@ -236,16 +243,7 @@ class OTUSnapshot:
 
             isolates.append(isolate)
 
-        otu_dict = otu_structure.model_dump(by_alias=True)
-        otu_dict["excluded_accessions"] = excluded_accessions
-        otu_dict["uuid"] = otu_dict.pop("id")
-
         return RepoOTU(**otu_dict, isolates=isolates)
-
-    def _write_metadata(self, indent: int | None = None) -> None:
-        """Write the snapshot's metadata to file."""
-        with open(self._metadata_path, "w") as f:
-            f.write(self._metadata.model_dump_json(indent=indent))
 
     def _load_metadata(self) -> OTUSnapshotMeta | None:
         """Load the snapshot's metadata from file."""
