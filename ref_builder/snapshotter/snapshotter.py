@@ -106,16 +106,12 @@ class Snapshotter:
         """A list of OTU ids of snapshots."""
         return set(self._index.keys())
 
-    def snapshot(
-        self,
-        otus: Iterable[RepoOTU],
-        at_event: int | None = None,
-    ) -> None:
+    def snapshot(self, otus: Iterable[RepoOTU], at_event: int) -> None:
         """Take a new snapshot."""
         _index = {}
 
         for otu in otus:
-            self.cache_otu(otu, at_event=at_event)
+            self.cache_otu(otu, at_event)
 
             _index[otu.id] = OTUKeys(
                 id=otu.id,
@@ -142,7 +138,7 @@ class Snapshotter:
     def cache_otu(
         self,
         otu: "RepoOTU",
-        at_event: int | None = None,
+        at_event: int,
     ) -> None:
         """Create a snapshot for a single OTU."""
         logger.debug("Writing a snapshot", otu_id=otu.id)

@@ -153,7 +153,7 @@ class Repo:
         """Create a snapshot using all the OTUs in the event store."""
         self._snapshotter.snapshot(
             self.iter_otus(ignore_cache=True),
-            at_event=self.last_id,
+            self.last_id,
         )
 
     def iter_otus(self, ignore_cache: bool = False) -> Generator[RepoOTU, None, None]:
