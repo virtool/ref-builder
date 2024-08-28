@@ -3,6 +3,7 @@ import re
 from pydantic import BaseModel, UUID4, computed_field
 
 from ref_builder.models import Molecule
+from ref_builder.ncbi.models import NCBISourceMolType
 
 
 class Segment(BaseModel):
@@ -38,16 +39,35 @@ simple_name_pattern = re.compile(r"([A-Za-z0-9])+")
 complex_name_pattern = re.compile(r"([A-Za-z]+)[-_ ]+([A-Za-z0-9]+)")
 
 
+def set_segment_prefix(moltype: NCBISourceMolType):
+    if moltype in (
+        NCBISourceMolType.GENOMIC_DNA,
+        NCBISourceMolType.OTHER_DNA,
+        NCBISourceMolType.UNASSIGNED_DNA,
+    ):
+        return "DNA"
+
+    match moltype:
+        case NCBISourceMolType.GENOMIC_RNA:
+            return "RNA"
+        case NCBISourceMolType.MRNA:
+            return "mRNA"
+        case NCBISourceMolType.TRNA:
+            return "tRNA"
+        case NCBISourceMolType.TRANSCRIBED_RNA:
+            return "RNA"
+        case NCBISourceMolType.VIRAL_CRNA:
+            return "cRNA"
+        case NCBISourceMolType.OTHER_RNA:
+            return "RNA"
+
+
 def parse_segment_name(raw: str):
-    """Takes a raw segment name from a NCBI Genbank source table
-    and standardizes the relevant identifier"""
     if simple_name_pattern.fullmatch(raw):
         return raw
 
     segment_name_parse = complex_name_pattern.fullmatch(raw)
     if segment_name_parse:
-        return segment_name_parse.group(2)
+        return segment_name_parse.group(1), segment_name_parse.group(2)
 
     raise ValueError(f"{raw} is not a valid segment name")
-
-
