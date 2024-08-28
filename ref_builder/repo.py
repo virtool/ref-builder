@@ -89,11 +89,7 @@ class Repo:
 
         snapshot_path = path / ".cache/snapshot"
 
-        self._snapshotter = (
-            Snapshotter(path=snapshot_path)
-            if snapshot_path.exists()
-            else Snapshotter.new(path=snapshot_path, metadata=self.meta)
-        )
+        self._snapshotter = Snapshotter(path=snapshot_path)
         """The snapshot index. Maintains and caches the read model of the Repo."""
 
         # Take a new snapshot if no existing data is found.

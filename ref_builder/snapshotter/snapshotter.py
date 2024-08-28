@@ -6,7 +6,7 @@ from uuid import UUID
 import orjson
 from structlog import get_logger
 
-from ref_builder.resources import RepoMeta, RepoOTU
+from ref_builder.resources import RepoOTU
 from ref_builder.snapshotter.otu import OTUSnapshot
 
 logger = get_logger()
@@ -62,26 +62,16 @@ class Snapshotter:
         self.path = path
         """The path to the snapshot root directory."""
 
-        self._meta_path = self.path / "meta.json"
-        """The path to the reconstructed Repo metadata."""
+        self.path.mkdir(exist_ok=True, parents=True)
 
         self._index_path = self.path / "index.json"
         """The path to the index data."""
 
-        _index = self._load_index()
-
-        self._index = _index if _index is not None else self._build_index()
+        self._index = self._load_index()
         """The index data of this snapshot index."""
 
-    @classmethod
-    def new(cls, path: Path, metadata: RepoMeta) -> "Snapshotter":
-        """Create a new snapshot index."""
-        path.mkdir(exist_ok=True)
-
-        with open(path / "meta.json", "wb") as f:
-            f.write(orjson.dumps(metadata.model_dump()))
-
-        return Snapshotter(path)
+        if self._index is None:
+            self._build_index()
 
     def get_id_by_legacy_id(self, legacy_id: str) -> UUID | None:
         """Get an OTU ID by its legacy ID.
@@ -243,7 +233,7 @@ class Snapshotter:
 
         logger.debug("Snapshot index built", index=index)
 
-        return index
+        self._index = index
 
     def _cache_index(self) -> None:
         """Cache the index to disk."""
