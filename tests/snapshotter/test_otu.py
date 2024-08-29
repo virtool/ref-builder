@@ -37,7 +37,9 @@ class TestOTUSnapshot:
         assert isolate_ids.issubset(data_set)
 
     def test_snapshot_metadata(self, taxid: int, scratch_repo):
-        """Test that EventSourcedRepo's snapshot function produces proper OTU metadata (at_event)."""
+        """Test that EventSourcedRepo's snapshot function produces proper OTU metadata
+        (at_event).
+        """
         otu = scratch_repo.get_otu_by_taxid(taxid)
 
         otu_snapshot_path = scratch_repo.cache_path / f"snapshot/{otu.id}"
