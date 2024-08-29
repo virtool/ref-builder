@@ -11,6 +11,10 @@ class SegmentName(NamedTuple):
     prefix: str
     key: str
 
+    def __str__(self) -> str:
+        """Return the segment name as a formatted string."""
+        return f"{self.prefix} {self.key}"
+
 
 class Segment(BaseModel):
     """The metadata of the segment"""
@@ -62,8 +66,6 @@ def set_segment_prefix(moltype: NCBISourceMolType):
         case NCBISourceMolType.OTHER_RNA:
             return "RNA"
 
-
-simple_name_pattern = re.compile(r"([A-Za-z0-9])+")
 
 complex_name_pattern = re.compile(r"([A-Za-z]+)[-_ ]+([A-Za-z0-9]+)")
 
