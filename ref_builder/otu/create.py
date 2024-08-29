@@ -11,7 +11,6 @@ from ref_builder.otu.utils import (
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
 
-
 logger = structlog.get_logger("otu.create")
 
 
@@ -88,8 +87,7 @@ def create_otu(
     isolate = repo.create_isolate(
         otu_id=otu.id,
         legacy_id=None,
-        source_name=isolate_name.value,
-        source_type=isolate_name.type,
+        name=isolate_name,
     )
 
     otu.add_isolate(isolate)

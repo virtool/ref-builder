@@ -10,9 +10,8 @@ from ref_builder.otu.utils import (
     parse_refseq_comment,
 )
 from ref_builder.repo import Repo
-from ref_builder.resources import RepoOTU, RepoIsolate
+from ref_builder.resources import RepoIsolate, RepoOTU
 from ref_builder.utils import IsolateName
-
 
 logger = get_logger("otu.update")
 
@@ -21,7 +20,7 @@ def add_isolate(
     repo: Repo,
     otu: RepoOTU,
     accessions: list[str],
-    ignore_cache: bool = False
+    ignore_cache: bool = False,
 ) -> RepoIsolate | None:
     """Take a list of accessions that make up a new isolate and a new isolate to the OTU.
 
@@ -38,15 +37,15 @@ def add_isolate(
             "None of the requested accessions were eligible for inclusion.",
             requested_accessions=accessions,
             otu_accessions=otu.accessions,
-            excluded_accessions=otu.excluded_accessions
+            excluded_accessions=otu.excluded_accessions,
         )
 
         otu_logger.error(
             "Could not create a new isolate using the requested accessions.",
-            requested_accessions=accessions
+            requested_accessions=accessions,
         )
 
-        return
+        return None
 
     otu_logger.info(
         "Fetching accessions",
@@ -60,19 +59,22 @@ def add_isolate(
     if len(record_bins) != 1:
         otu_logger.warning("More than one isolate name found in requested accession.")
         # Override later
-        return
+        return None
 
     isolate_name, isolate_records = list(record_bins.items())[0]
 
     if len(isolate_records) != len(otu.schema.segments):
         otu_logger.error(
             f"The schema requires {len(otu.schema.segments)} segments: "
-            + f"{[segment.name for segment in otu.schema.segments]}"
+            + f"{[segment.name for segment in otu.schema.segments]}",
         )
-        return
+        return None
 
     return create_isolate_from_records(
-        repo, otu, isolate_name, list(isolate_records.values())
+        repo,
+        otu,
+        isolate_name,
+        list(isolate_records.values()),
     )
 
 
@@ -83,7 +85,8 @@ def create_isolate_from_records(
     records: list[NCBIGenbank],
 ) -> RepoIsolate | None:
     """Take a list of GenBank records that make up a new isolate
-    and add them to the OTU."""
+    and add them to the OTU.
+    """
     isolate_logger = get_logger("otu.isolate").bind(
         isolate_name=str(isolate_name),
         otu_name=otu.name,
@@ -92,10 +95,12 @@ def create_isolate_from_records(
 
     if otu.get_isolate_id_by_name(isolate_name) is not None:
         isolate_logger.error(f"OTU already contains {isolate_name}.")
-        return
+        return None
 
     isolate = repo.create_isolate(
-        otu.id, legacy_id=None, source_name=isolate_name.value, source_type=isolate_name.type
+        otu.id,
+        None,
+        isolate_name,
     )
 
     for record in records:
@@ -125,10 +130,13 @@ def create_isolate_from_records(
     return isolate
 
 
-def set_representative_isolate(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> UUID | None:
+def set_representative_isolate(
+    repo: Repo, otu: RepoOTU, isolate_id: UUID
+) -> UUID | None:
     """Sets an OTU's representative isolate to a given existing isolate ID.
 
-    Returns the isolate ID if successful, else None."""
+    Returns the isolate ID if successful, else None.
+    """
     otu_logger = logger.bind(name=otu.name, taxid=otu.taxid)
 
     new_representative_isolate = otu.get_isolate(isolate_id)
@@ -138,16 +146,19 @@ def set_representative_isolate(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> UU
 
     if otu.repr_isolate is not None:
         if otu.repr_isolate == new_representative_isolate.id:
-            otu_logger.warning(f"This isolate is already the representative isolate.")
+            otu_logger.warning("This isolate is already the representative isolate.")
             return otu.repr_isolate
 
-        otu_logger.warning(f"Replacing representative isolate {otu.repr_isolate}", representative_isolate_id=str(otu.repr_isolate))
+        otu_logger.warning(
+            f"Replacing representative isolate {otu.repr_isolate}",
+            representative_isolate_id=str(otu.repr_isolate),
+        )
 
     repo.set_repr_isolate(otu.id, new_representative_isolate.id)
 
     otu_logger.info(
         f"Representative isolate set to {new_representative_isolate.name}.",
-        representative_isolate_id=str(new_representative_isolate.id)
+        representative_isolate_id=str(new_representative_isolate.id),
     )
 
     return new_representative_isolate.id
@@ -210,19 +221,22 @@ def update_otu_with_accessions(
         if len(isolate_records) != len(otu.schema.segments):
             otu_logger.debug(
                 f"The schema requires {len(otu.schema.segments)} segments: "
-                + f"{[segment.name for segment in otu.schema.segments]}"
+                + f"{[segment.name for segment in otu.schema.segments]}",
             )
             otu_logger.debug(f"Skipping {isolate_name}")
             continue
 
         isolate = create_isolate_from_records(
-            repo, otu, isolate_name, list(isolate_records.values())
+            repo,
+            otu,
+            isolate_name,
+            list(isolate_records.values()),
         )
         if isolate is not None:
             new_isolate_names.append(isolate_name)
 
     if new_isolate_names:
-        otu_logger.info(f"New isolates added", new_isolates=new_isolate_names)
+        otu_logger.info("New isolates added", new_isolates=new_isolate_names)
 
     otu_logger.info("No new isolates added.")
 
