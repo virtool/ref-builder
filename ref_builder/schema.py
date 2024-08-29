@@ -1,9 +1,15 @@
 import re
+from typing import NamedTuple
 
 from pydantic import BaseModel, UUID4, computed_field
 
 from ref_builder.models import Molecule
 from ref_builder.ncbi.models import NCBISourceMolType
+
+
+class SegmentName(NamedTuple):
+    prefix: str
+    key: str
 
 
 class Segment(BaseModel):
