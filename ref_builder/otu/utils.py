@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict
+from uuid import uuid4
 
 import structlog
 
@@ -122,15 +123,22 @@ def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
         if record.source.segment != "":
             segment_name = record.source.segment
         else:
-            segment_name = record.source.organism
+            segment_name = record.source.mol_type
 
-        return [Segment(name=segment_name, required=True, length=len(record.sequence))]
+        segment_id = uuid4()
+        return [
+            Segment(
+                id=segment_id, name=segment_name, required=True, length=len(record.sequence)
+            )
+        ]
 
     segments = []
     for record in sorted(records, key=lambda record: record.accession):
         if record.source.segment:
+            segment_id = uuid4()
             segments.append(
                 Segment(
+                    id=segment_id,
                     name=record.source.segment,
                     required=True,
                     length=len(record.sequence),

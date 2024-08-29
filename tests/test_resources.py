@@ -72,7 +72,7 @@ class TestOTU:
                     topology=Topology.LINEAR,
                 ),
                 segments=[
-                    Segment(name="genomic RNA", length=6395, required=True)
+                    Segment(id=uuid4(), name="genomic RNA", length=6395, required=True)
                 ]
             ),
         )
