@@ -5,7 +5,7 @@ from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
 from ref_builder.otu.update import create_schema_from_records
-from ref_builder.schema import OTUSchema, parse_segment_name
+from ref_builder.schema import SegmentName, OTUSchema, parse_segment_name
 
 
 @pytest.mark.parametrize(
@@ -42,9 +42,9 @@ class TestSegmentNameParser:
     @pytest.mark.parametrize(
         "expected_result, test_strings",
         [
-            ("A", ["A", "DNA A", "DNA_A", "DNA-A"]),
-            ("BN", ["BN", "RNA BN", "RNA_BN", "RNA-BN"]),
-            ("U3", ["U3", "DNA U3", "DNA U3", "DNA-U3"]),
+            (SegmentName(prefix="DNA", key="A"), ["DNA A", "DNA_A", "DNA-A"]),
+            (SegmentName(prefix="RNA", key="BN"), ["RNA BN", "RNA_BN", "RNA-BN"]),
+            (SegmentName(prefix="DNA", key="U3"), ["DNA U3", "DNA U3", "DNA-U3"]),
         ],
     )
     def test_ok(self, expected_result: str, test_strings: list[str]):
@@ -54,8 +54,6 @@ class TestSegmentNameParser:
             parse_segment_name(test_strings[1])
             ==
             parse_segment_name(test_strings[2])
-            ==
-            parse_segment_name(test_strings[3])
             ==
             expected_result
         )
