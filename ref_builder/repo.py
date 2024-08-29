@@ -188,7 +188,7 @@ class Repo:
         if (otu_id := self.get_otu_by_taxid(taxid)) is not None:
             otu = self.get_otu(otu_id)
             raise ValueError(
-                f"OTU  already exists as {otu}",
+                f"OTU already exists as {otu}",
             )
 
         if self._snapshotter.get_id_by_name(name):
