@@ -153,7 +153,11 @@ class TestCreateOTUCommands:
         assert len(otus) == 1
         otu = otus[0]
 
-        assert otu.schema == snapshot
+        assert otu.schema.model_dump() == snapshot(exclude=props("segments"))
+
+        for segment in otu.schema.segments:
+            assert segment.model_dump() == snapshot(exclude=props("id"))
+
         assert {"DQ178610", "DQ178611"}.intersection(otu.accessions)
 
     def test_add_acronym_ok(self, precached_repo: Repo):

@@ -64,7 +64,6 @@ from ref_builder.utils import (
     Accession,
     DataType,
     IsolateName,
-    IsolateNameType,
     pad_zeroes,
 )
 
@@ -219,22 +218,16 @@ class Repo:
         self,
         otu_id: uuid.UUID,
         legacy_id: str | None,
-        source_name: str,
-        source_type: IsolateNameType,
+        name: IsolateName,
     ) -> RepoIsolate | None:
-        """Create and return a new isolate within the given OTU.
+        """Create and isolate for the OTU with ``otu_id``.
+
         If the isolate name already exists, return None.
         """
         otu = self.get_otu(otu_id)
 
-        name = IsolateName(type=source_type, value=source_name)
-
-        if otu.get_isolate_id_by_name(name) is not None:
-            logger.warning(
-                "An isolate by this name already exists",
-                isolate_name=str(name),
-            )
-            return None
+        if otu.get_isolate_id_by_name(name):
+            raise ValueError(f"Isolate name already exists: {name}")
 
         isolate_id = uuid.uuid4()
 
@@ -251,9 +244,7 @@ class Repo:
             name=str(name),
         )
 
-        otu = self.get_otu(otu_id)
-
-        return otu.get_isolate(isolate_id)
+        return self.get_otu(otu_id).get_isolate(isolate_id)
 
     def delete_isolate(
         self,
