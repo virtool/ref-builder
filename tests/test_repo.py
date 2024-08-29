@@ -33,7 +33,11 @@ def initialized_repo(empty_repo: Repo):
         12242,
     )
 
-    isolate_a = empty_repo.create_isolate(otu.id, None, "A", IsolateNameType.ISOLATE)
+    isolate_a = empty_repo.create_isolate(
+        otu.id,
+        None,
+        IsolateName(IsolateNameType.ISOLATE, "A"),
+    )
     empty_repo.create_sequence(
         otu.id,
         isolate_a.id,
@@ -225,39 +229,64 @@ class TestCreateOTU:
             )
 
 
-def test_create_isolate(empty_repo: Repo):
-    """Test that creating an isolate returns the expected ``RepoIsolate`` object and
-    creates the expected event file.
-    """
-    otu = init_otu(empty_repo)
+class TestCreateIsolate:
+    def test_ok(self, empty_repo: Repo):
+        """Test that creating an isolate returns the expected ``RepoIsolate`` object and
+        creates the expected event file.
+        """
+        otu = init_otu(empty_repo)
 
-    isolate = empty_repo.create_isolate(otu.id, None, "A", IsolateNameType.ISOLATE)
+        isolate = empty_repo.create_isolate(
+            otu.id,
+            None,
+            IsolateName(IsolateNameType.ISOLATE, "A"),
+        )
 
-    assert isinstance(isolate.id, UUID)
-    assert isolate.sequences == []
-    assert isolate.name.value == "A"
-    assert isolate.name.type == "isolate"
+        assert isinstance(isolate.id, UUID)
+        assert isolate.sequences == []
+        assert isolate.name.value == "A"
+        assert isolate.name.type == "isolate"
 
-    with open(empty_repo.path.joinpath("src", "00000003.json")) as f:
-        event = orjson.loads(f.read())
+        with open(empty_repo.path.joinpath("src", "00000003.json")) as f:
+            event = orjson.loads(f.read())
 
-    del event["timestamp"]
+        del event["timestamp"]
 
-    assert event == {
-        "data": {
-            "id": str(isolate.id),
-            "legacy_id": None,
-            "name": {"type": "isolate", "value": "A"},
-        },
-        "id": 3,
-        "query": {
-            "otu_id": str(otu.id),
-            "isolate_id": str(isolate.id),
-        },
-        "type": "CreateIsolate",
-    }
+        assert event == {
+            "data": {
+                "id": str(isolate.id),
+                "legacy_id": None,
+                "name": {"type": "isolate", "value": "A"},
+            },
+            "id": 3,
+            "query": {
+                "otu_id": str(otu.id),
+                "isolate_id": str(isolate.id),
+            },
+            "type": "CreateIsolate",
+        }
 
-    assert empty_repo.last_id == 3
+        assert empty_repo.last_id == 3
+
+    def test_name_exists(self, empty_repo: Repo):
+        """Test that a ValueError is raised if an isolate name is already taken."""
+        otu = init_otu(empty_repo)
+
+        empty_repo.create_isolate(
+            otu.id,
+            None,
+            IsolateName(IsolateNameType.ISOLATE, "A"),
+        )
+
+        with pytest.raises(
+            ValueError,
+            match="Isolate name already exists: Isolate A",
+        ):
+            empty_repo.create_isolate(
+                otu.id,
+                None,
+                IsolateName(IsolateNameType.ISOLATE, "A"),
+            )
 
 
 def test_create_sequence(empty_repo: Repo):
@@ -266,7 +295,11 @@ def test_create_sequence(empty_repo: Repo):
     """
     otu = init_otu(empty_repo)
 
-    isolate = empty_repo.create_isolate(otu.id, None, "A", IsolateNameType.ISOLATE)
+    isolate = empty_repo.create_isolate(
+        otu.id,
+        None,
+        IsolateName(IsolateNameType.ISOLATE, "A"),
+    )
 
     sequence = empty_repo.create_sequence(
         otu.id,
@@ -338,9 +371,9 @@ class TestRetrieveOTU:
         isolate_a = empty_repo.create_isolate(
             otu.id,
             None,
-            "A",
-            IsolateNameType.ISOLATE,
+            IsolateName(IsolateNameType.ISOLATE, "A"),
         )
+
         empty_repo.create_sequence(
             otu.id,
             isolate_a.id,
@@ -354,8 +387,7 @@ class TestRetrieveOTU:
         isolate_b = empty_repo.create_isolate(
             otu.id,
             None,
-            "B",
-            IsolateNameType.ISOLATE,
+            IsolateName(IsolateNameType.ISOLATE, "B"),
         )
         empty_repo.create_sequence(
             otu.id,
@@ -437,8 +469,7 @@ class TestRetrieveOTU:
         isolate_b = initialized_repo.create_isolate(
             otu.id,
             None,
-            "B",
-            IsolateNameType.ISOLATE,
+            IsolateName(type=IsolateNameType.ISOLATE, value="B"),
         )
         initialized_repo.create_sequence(
             otu.id,
@@ -460,8 +491,7 @@ class TestRetrieveOTU:
         isolate_b = initialized_repo.create_isolate(
             otu.id,
             None,
-            "B",
-            IsolateNameType.ISOLATE,
+            IsolateName(type=IsolateNameType.ISOLATE, value="B"),
         )
 
         initialized_repo.create_sequence(
@@ -552,7 +582,9 @@ class TestDirectDelete:
         isolate_before = list(otu_before.isolates)[0]
 
         initialized_repo.delete_isolate(
-            otu_id, isolate_before.id, rationale="Testing redaction"
+            otu_id,
+            isolate_before.id,
+            rationale="Testing redaction",
         )
 
         otu_after = initialized_repo.get_otu(otu_id)
@@ -573,7 +605,9 @@ class TestDirectDelete:
 
         accession = "TMVABC"
 
-        isolate_id, replaced_sequence_id = otu_before.get_sequence_id_hierarchy_from_accession(accession)
+        isolate_id, replaced_sequence_id = (
+            otu_before.get_sequence_id_hierarchy_from_accession(accession)
+        )
 
         assert otu_before.get_isolate(isolate_id).accessions == {"TMVABC"}
 
@@ -600,4 +634,3 @@ class TestDirectDelete:
         assert new_sequence.id in otu_after.sequence_ids
 
         assert otu_after.get_isolate(isolate_id).accessions == {"TMVABCC"}
-
