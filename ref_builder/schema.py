@@ -40,11 +40,6 @@ class OTUSchema(BaseModel):
         return len(self.segments) > 1
 
 
-simple_name_pattern = re.compile(r"([A-Za-z0-9])+")
-
-complex_name_pattern = re.compile(r"([A-Za-z]+)[-_ ]+([A-Za-z0-9]+)")
-
-
 def set_segment_prefix(moltype: NCBISourceMolType):
     if moltype in (
         NCBISourceMolType.GENOMIC_DNA,
@@ -68,12 +63,17 @@ def set_segment_prefix(moltype: NCBISourceMolType):
             return "RNA"
 
 
-def parse_segment_name(raw: str):
-    if simple_name_pattern.fullmatch(raw):
-        return raw
+simple_name_pattern = re.compile(r"([A-Za-z0-9])+")
 
+complex_name_pattern = re.compile(r"([A-Za-z]+)[-_ ]+([A-Za-z0-9]+)")
+
+
+def parse_segment_name(raw: str) -> SegmentName:
     segment_name_parse = complex_name_pattern.fullmatch(raw)
     if segment_name_parse:
-        return segment_name_parse.group(1), segment_name_parse.group(2)
+        return SegmentName(
+            prefix=segment_name_parse.group(1),
+            key=segment_name_parse.group(2)
+        )
 
     raise ValueError(f"{raw} is not a valid segment name")
