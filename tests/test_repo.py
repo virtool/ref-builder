@@ -229,43 +229,64 @@ class TestCreateOTU:
             )
 
 
-def test_create_isolate(empty_repo: Repo):
-    """Test that creating an isolate returns the expected ``RepoIsolate`` object and
-    creates the expected event file.
-    """
-    otu = init_otu(empty_repo)
+class TestCreateIsolate:
+    def test_ok(self, empty_repo: Repo):
+        """Test that creating an isolate returns the expected ``RepoIsolate`` object and
+        creates the expected event file.
+        """
+        otu = init_otu(empty_repo)
 
-    isolate = empty_repo.create_isolate(
-        otu.id,
-        None,
-        IsolateName(IsolateNameType.ISOLATE, "A"),
-    )
+        isolate = empty_repo.create_isolate(
+            otu.id,
+            None,
+            IsolateName(IsolateNameType.ISOLATE, "A"),
+        )
 
-    assert isinstance(isolate.id, UUID)
-    assert isolate.sequences == []
-    assert isolate.name.value == "A"
-    assert isolate.name.type == "isolate"
+        assert isinstance(isolate.id, UUID)
+        assert isolate.sequences == []
+        assert isolate.name.value == "A"
+        assert isolate.name.type == "isolate"
 
-    with open(empty_repo.path.joinpath("src", "00000003.json")) as f:
-        event = orjson.loads(f.read())
+        with open(empty_repo.path.joinpath("src", "00000003.json")) as f:
+            event = orjson.loads(f.read())
 
-    del event["timestamp"]
+        del event["timestamp"]
 
-    assert event == {
-        "data": {
-            "id": str(isolate.id),
-            "legacy_id": None,
-            "name": {"type": "isolate", "value": "A"},
-        },
-        "id": 3,
-        "query": {
-            "otu_id": str(otu.id),
-            "isolate_id": str(isolate.id),
-        },
-        "type": "CreateIsolate",
-    }
+        assert event == {
+            "data": {
+                "id": str(isolate.id),
+                "legacy_id": None,
+                "name": {"type": "isolate", "value": "A"},
+            },
+            "id": 3,
+            "query": {
+                "otu_id": str(otu.id),
+                "isolate_id": str(isolate.id),
+            },
+            "type": "CreateIsolate",
+        }
 
-    assert empty_repo.last_id == 3
+        assert empty_repo.last_id == 3
+
+    def test_name_exists(self, empty_repo: Repo):
+        """Test that a ValueError is raised if an isolate name is already taken."""
+        otu = init_otu(empty_repo)
+
+        empty_repo.create_isolate(
+            otu.id,
+            None,
+            IsolateName(IsolateNameType.ISOLATE, "A"),
+        )
+
+        with pytest.raises(
+            ValueError,
+            match="Isolate name already exists: Isolate A",
+        ):
+            empty_repo.create_isolate(
+                otu.id,
+                None,
+                IsolateName(IsolateNameType.ISOLATE, "A"),
+            )
 
 
 def test_create_sequence(empty_repo: Repo):

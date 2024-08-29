@@ -93,15 +93,18 @@ def create_isolate_from_records(
         taxid=otu.taxid,
     )
 
-    if otu.get_isolate_id_by_name(isolate_name) is not None:
-        isolate_logger.error(f"OTU already contains {isolate_name}.")
-        return None
+    try:
+        isolate = repo.create_isolate(
+            otu.id,
+            None,
+            isolate_name,
+        )
+    except ValueError as e:
+        if "Isolate name already exists" in str(e):
+            isolate_logger.error("OTU already contains isolate with name.")
+            return None
 
-    isolate = repo.create_isolate(
-        otu.id,
-        None,
-        isolate_name,
-    )
+        raise
 
     for record in records:
         repo.create_sequence(
@@ -131,7 +134,9 @@ def create_isolate_from_records(
 
 
 def set_representative_isolate(
-    repo: Repo, otu: RepoOTU, isolate_id: UUID
+    repo: Repo,
+    otu: RepoOTU,
+    isolate_id: UUID,
 ) -> UUID | None:
     """Sets an OTU's representative isolate to a given existing isolate ID.
 

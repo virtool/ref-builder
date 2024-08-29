@@ -231,12 +231,8 @@ class Repo:
         """
         otu = self.get_otu(otu_id)
 
-        if otu.get_isolate_id_by_name(name) is not None:
-            logger.warning(
-                "An isolate by this name already exists",
-                isolate_name=str(name),
-            )
-            return None
+        if otu.get_isolate_id_by_name(name):
+            raise ValueError(f"Isolate name already exists: {name}")
 
         isolate_id = uuid.uuid4()
 
