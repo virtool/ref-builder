@@ -7,7 +7,7 @@ import structlog
 
 from ref_builder.models import Molecule
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.schema import OTUSchema, Segment
+from ref_builder.schema import OTUSchema, SegmentName, Segment, parse_segment_name
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
 logger = structlog.get_logger("otu.utils")
@@ -118,6 +118,8 @@ def _get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
     )
 
 
+simple_name_pattern = re.compile(r"([A-Za-z0-9])+")
+
 def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
     """Get the isolate name from a Genbank record"""
     if record.source.model_fields_set.intersection(
@@ -155,11 +157,18 @@ def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
     segments = []
     for record in sorted(records, key=lambda record: record.accession):
         if record.source.segment:
+            if simple_name_pattern.fullmatch(record.source.segment):
+                segment_name = SegmentName(
+                    prefix=record.moltype, key=record.source.segment
+                )
+            else:
+                segment_name = parse_segment_name(record.source.segment)
+
             segment_id = uuid4()
             segments.append(
                 Segment(
                     id=segment_id,
-                    name=record.source.segment,
+                    name=str(segment_name),
                     required=True,
                     length=len(record.sequence),
                 ),
