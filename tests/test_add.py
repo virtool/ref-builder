@@ -353,7 +353,7 @@ class TestReplaceIsolateSequences:
 
         updated_isolate = add_isolate(empty_repo, otu_before, refseq_accessions)
 
-        assert updated_isolate is not None
+        assert updated_isolate.accessions == set(refseq_accessions)
 
         otu_after = empty_repo.get_otu(otu_before.id)
 
