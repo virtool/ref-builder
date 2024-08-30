@@ -343,9 +343,11 @@ class TestReplaceIsolateSequences:
         """Test that an attempt to add an isolate with the same name as a previous isolate
         maintains the same isolate UUID, but replaces the existing sequences including
         sequence UUIDs."""
-        otu_before = create_otu(empty_repo, taxid, accessions=original_accessions, acronym="")
+        create_otu(
+            empty_repo, taxid, accessions=original_accessions, acronym=""
+        )
 
-        otu_before = empty_repo.get_otu(otu_before.id)
+        otu_before = empty_repo.get_otu_by_taxid(taxid)
 
         assert otu_before.accessions == set(original_accessions)
 
@@ -354,6 +356,8 @@ class TestReplaceIsolateSequences:
         assert updated_isolate is not None
 
         otu_after = empty_repo.get_otu(otu_before.id)
+
+        assert otu_after.get_isolate(updated_isolate.id) == updated_isolate
 
         assert otu_after.isolate_ids == otu_before.isolate_ids
 
