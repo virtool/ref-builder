@@ -349,58 +349,6 @@ class TestReplaceIsolateSequences:
         with pytest.raises(RefSeqConflictError):
             add_isolate(empty_repo, otu_before, refseq_accessions)
 
-    def test_isolate_promote_ok(
-        self,
-        empty_repo,
-        taxid: int,
-        original_accessions: list[str],
-        refseq_accessions: list[str],
-    ):
-        """Test that an attempt to add an isolate with the same name as a previous isolate
-        maintains the same isolate UUID, but replaces the existing sequences including
-        sequence UUIDs."""
-        create_otu(
-            empty_repo, taxid, accessions=original_accessions, acronym=""
-        )
-
-        otu_before = empty_repo.get_otu_by_taxid(taxid)
-
-        assert otu_before.accessions == set(original_accessions)
-
-        isolate_id = list(otu_before.isolate_ids)[0]
-
-        # subprocess.run(
-        #     ["ref-builder", "otu", "update"]
-        #     + [str(taxid)]
-        #     + ["isolate"]
-        #     + refseq_accessions,
-        #     check=False,
-        # )
-        #
-        # print(empty_repo.path)
-        #
-        # try:
-        #     updated_repo = Repo(empty_repo.path)
-        # except FileNotFoundError:
-        #     print("????")
-        #     return
-        #
-        # updated_isolate = updated_repo.get_otu_by_taxid(taxid).get_isolate(isolate_id)
-        #
-        # assert updated_isolate.accessions == set(refseq_accessions)
-        #
-        # otu_after = updated_repo.get_otu(otu_before.id)
-        #
-        # assert otu_after.get_isolate(updated_isolate.id) == updated_isolate
-        #
-        # assert otu_after.isolate_ids == otu_before.isolate_ids
-        #
-        # assert otu_after.accessions == set(refseq_accessions)
-        #
-        # assert otu_after.excluded_accessions == set(original_accessions)
-        #
-        # assert otu_after.sequence_ids != otu_before.sequence_ids
-
 
 class TestRemoveIsolate:
     def test_ok(self, scratch_repo):
