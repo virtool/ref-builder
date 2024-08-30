@@ -21,7 +21,9 @@ from ref_builder.otu.update import (
     auto_update_otu,
     exclude_accessions_from_otu,
     set_representative_isolate,
+    update_isolate_from_accessions,
 )
+from ref_builder.otu.utils import RefSeqConflictError
 from ref_builder.repo import Repo
 from ref_builder.utils import DataType, IsolateName, IsolateNameType, format_json
 
@@ -218,6 +220,12 @@ def isolate_create(
             accessions_,
             ignore_cache=ignore_cache,
         )
+    except RefSeqConflictError as err:
+        click.echo(
+            f"{err.isolate_name} already exists, but RefSeq items may be promotable,",
+        )
+        sys.exit(1)
+
     except ValueError as e:
         click.echo(e, err=True)
         sys.exit(1)

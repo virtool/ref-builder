@@ -1,7 +1,7 @@
 import re
 from collections import defaultdict
 from enum import StrEnum
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import structlog
 
@@ -16,6 +16,20 @@ logger = structlog.get_logger("otu.utils")
 class DeleteRationale(StrEnum):
     USER = "Requested by user"
     REFSEQ = "Superceded by RefSeq"
+
+
+class RefSeqConflictError(ValueError):
+    """Raised when a potential RefSeq replacement is found."""
+    def __init__(
+        self, message, isolate_id: UUID, isolate_name: IsolateName, accessions: list[str]
+    ):
+        super().__init__(message)
+
+        self.isolate_id = isolate_id
+
+        self.isolate_name = isolate_name
+
+        self.accessions = accessions
 
 
 def create_schema_from_records(

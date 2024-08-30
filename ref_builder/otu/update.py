@@ -6,6 +6,7 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.utils import (
     DeleteRationale,
+    RefSeqConflictError,
     create_schema_from_records,
     group_genbank_records_by_isolate,
     parse_refseq_comment,
@@ -76,12 +77,12 @@ def add_isolate(
 
         for record in isolate_records.values():
             if record.accession.startswith("NC_"):
-                otu_logger.debug("Accession is RefSeq")
-                update_isolate_from_records(repo, otu, isolate_id, list(isolate_records.values()))
-
-                otu = repo.get_otu(otu.id)
-
-                return otu.get_isolate(isolate_id)
+                raise RefSeqConflictError(
+                    f"Potential RefSeq replacement for contents of {isolate_name}",
+                    isolate_id=isolate_id,
+                    isolate_name=isolate_name,
+                    accessions=accessions,
+                )
 
             return None
 
