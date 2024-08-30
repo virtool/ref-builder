@@ -15,6 +15,7 @@ from ref_builder.otu.update import (
     update_isolate_from_accessions,
 )
 from ref_builder.repo import Repo
+from ref_builder.resources import RepoSequence
 from ref_builder.utils import IsolateName, IsolateNameType
 
 
@@ -303,10 +304,15 @@ class TestReplaceIsolateSequences:
             (345184, ["DQ178608", "DQ178609"], ["NC_038792", "NC_038793"])
         ]
     )
-    def test_manual_replace_ok(self, empty_repo, taxid, original_accessions, refseq_accessions):
-        otu_before = create_otu(empty_repo, taxid, accessions=original_accessions, acronym="")
+    def test_manual_replace_ok(
+        self, empty_repo, taxid, original_accessions, refseq_accessions
+    ):
+        """Test that a requested replacement occurs as expected."""
+        create_otu(
+            empty_repo, taxid, accessions=original_accessions, acronym=""
+        )
 
-        otu_before = empty_repo.get_otu(otu_before.id)
+        otu_before = empty_repo.get_otu_by_taxid(taxid)
 
         assert otu_before.accessions == set(original_accessions)
 
@@ -359,17 +365,15 @@ class TestReplaceIsolateSequences:
 
 
 class TestRemoveIsolate:
-    @pytest.mark.parametrize(
-        "taxid, isolate_name",
-        [
-            (1169032, IsolateName(type=IsolateNameType.ISOLATE, value="WMoV-6.3"))
-        ]
-    )
-    def test_ok(self, scratch_repo, taxid: int, isolate_name: IsolateName):
+    def test_ok(self, scratch_repo):
         """Test that a given isolate can be removed from the OTU."""
+        taxid = 1169032
+
         otu_before = scratch_repo.get_otu_by_taxid(taxid)
 
-        isolate_id = otu_before.get_isolate_id_by_name(isolate_name)
+        isolate_id = otu_before.get_isolate_id_by_name(
+            IsolateName(type=IsolateNameType.ISOLATE, value="WMoV-6.3")
+        )
 
         assert type(isolate_id) is UUID
 
@@ -386,13 +390,14 @@ class TestRemoveIsolate:
 
 class TestReplaceSequence:
     def test_ok(self, precached_repo):
+        """Test that a sequence in an OTU can be replaced manually."""
         otu_before = create_otu(
             precached_repo,
             1169032,
             ["MK431779"],
             acronym=""
         )
-        """Test that a sequence in an OTU can be replaced manually."""
+
         isolate_id, old_sequence_id = otu_before.get_sequence_id_hierarchy_from_accession(
             "MK431779"
         )
@@ -406,7 +411,7 @@ class TestReplaceSequence:
             replaced_accession="MK431779"
         )
 
-        assert sequence is not None
+        assert type(sequence) is RepoSequence
 
         otu_after = precached_repo.get_otu_by_taxid(1169032)
 
