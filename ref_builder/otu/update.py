@@ -11,7 +11,7 @@ from ref_builder.otu.utils import (
     parse_refseq_comment,
 )
 from ref_builder.repo import Repo
-from ref_builder.resources import RepoOTU, RepoIsolate, RepoSequence
+from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
 from ref_builder.utils import IsolateName
 
 logger = get_logger("otu.update")
