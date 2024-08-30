@@ -10,7 +10,7 @@ from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
     auto_update_otu,
     add_isolate,
-    remove_isolate_from_otu,
+    delete_isolate_from_otu,
     replace_sequence_in_otu,
     update_isolate_from_accessions,
 )
@@ -381,7 +381,7 @@ class TestRemoveIsolate:
 
         assert type(isolate_id) is UUID
 
-        remove_isolate_from_otu(scratch_repo, otu_before, isolate_id)
+        delete_isolate_from_otu(scratch_repo, otu_before, isolate_id)
 
         otu_after = scratch_repo.get_otu_by_taxid(taxid)
 

@@ -192,13 +192,13 @@ def update_isolate_from_accessions(
     ignore_cache: bool = False,
 ) -> RepoIsolate | None:
     """Fetch the records attached to a given list of accessions and rebuild the isolate with it."""
-    ncbi = NCBIClient(ignore_cache)
-
-    new_records = ncbi.fetch_genbank_records(accessions)
-
     if (isolate_id := otu.get_isolate_id_by_name(isolate_name)) is None:
         logger.error(f"OTU does not include {isolate_name}.")
         return
+
+    ncbi = NCBIClient(ignore_cache)
+
+    new_records = ncbi.fetch_genbank_records(accessions)
 
     return update_isolate_from_records(repo, otu, isolate_id, new_records)
 
@@ -420,8 +420,8 @@ def add_schema_from_accessions(
         )
 
 
-def remove_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID):
-    """Remove an isolate from the OTU."""
+def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID):
+    """Remove an isolate from a specified OTU."""
     if (isolate := otu.get_isolate(isolate_id)) is None:
         logger.error("This isolate does not exist in this OTU.")
         return
