@@ -252,7 +252,7 @@ class NCBIClient:
         :param raw: A NCBI Nucleotide dict record, parsed by Bio.Entrez.Parser
         :return: A validated subset of Genbank record data
         """
-        return NCBIGenbank(**raw)
+        return NCBIGenbank.model_validate(raw)
 
     def fetch_taxonomy_record(self, taxid: int) -> NCBITaxonomy | None:
         """Fetch and validate a taxonomy record from NCBI Taxonomy.
