@@ -476,20 +476,27 @@ def replace_sequence_in_otu(
 
 
 def promote_otu_accessions(
-    repo: Repo, otu_id: UUID, ignore_cache: bool = False
+    repo: Repo, otu: RepoOTU, ignore_cache: bool = False
 ) -> set | None:
-    """Fetch all records from"""
-    otu = repo.get_otu(otu_id)
-    if otu is None:
-        return None
-
+    """Fetch new accessions from NCBI Nucleotide and promote accessions
+    with newly added RefSeq equivalents.
+    """
     ncbi = NCBIClient(ignore_cache)
 
     accessions = ncbi.link_accessions_from_taxid(otu.taxid)
-    fetch_list = set(accessions) - otu.excluded_accessions
+    fetch_list = set(accessions) - otu.blocked_accessions
 
-    records = ncbi.fetch_genbank_records(fetch_list)
+    records = ncbi.fetch_genbank_records(list(fetch_list))
 
+    return promote_otu_accessions_from_records(repo, otu, records)
+
+
+def promote_otu_accessions_from_records(
+    repo: Repo, otu: RepoOTU, records: list[NCBIGenbank]
+) -> set:
+    """Take a list of records and check them against the contents of an OTU
+    for promotable RefSeq sequences. Return a list of promoted accessions.
+    """
     refseq_records = [record for record in records if record.refseq]
 
     promoted_accessions = set()
