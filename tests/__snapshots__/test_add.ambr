@@ -110,39 +110,31 @@
   })
 # ---
 # name: TestUpdateOTU.test_without_exclusions_ok
-  list([
-    dict({
-      'acronym': '',
-      'excluded_accessions': list([
-      ]),
-      'legacy_id': None,
-      'name': 'Apple rubbery wood virus 1',
-      'schema': dict({
-        'molecule': dict({
-          'strandedness': 'single',
-          'topology': 'linear',
-          'type': 'RNA',
-        }),
-        'multipartite': True,
-        'segments': list([
-          dict({
-            'length': 7219,
-            'name': 'L',
-            'required': True,
-          }),
-          dict({
-            'length': 1613,
-            'name': 'M',
-            'required': True,
-          }),
-          dict({
-            'length': 1291,
-            'name': 'S',
-            'required': True,
-          }),
-        ]),
-      }),
-      'taxid': 2164102,
+  dict({
+    IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='1148-13'): set({
+      'MF062130',
+      'MF062131',
+      'MF062132',
     }),
-  ])
+    IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='4342-5'): set({
+      'MF062136',
+      'MF062137',
+      'MF062138',
+    }),
+    IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='982-11'): set({
+      'NC_055390',
+      'NC_055391',
+      'NC_055392',
+    }),
+    IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='BR-Mishima'): set({
+      'MK936225',
+      'MK936226',
+      'MK936227',
+    }),
+    IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='Pe2'): set({
+      'OQ420743',
+      'OQ420744',
+      'OQ420745',
+    }),
+  })
 # ---

@@ -203,34 +203,41 @@ class TestUpdateOTU:
         precached_repo: Repo,
         snapshot: SnapshotAssertion,
     ):
-        otu = create_otu(
+        otu_before = create_otu(
             precached_repo,
             2164102,
             ["MF062136", "MF062137", "MF062138"],
             "",
         )
 
-        assert otu.accessions == {"MF062136", "MF062137", "MF062138"}
+        assert otu_before.accessions == {"MF062136", "MF062137", "MF062138"}
 
-        auto_update_otu(precached_repo, otu)
+        auto_update_otu(precached_repo, otu_before)
 
-        otu = precached_repo.get_otu(otu.id)
+        otu_after = precached_repo.get_otu(otu_before.id)
 
-        assert [otu.dict() for otu in precached_repo.iter_otus()] == snapshot(
-            exclude=props("id", "isolates", "repr_isolate"),
-        )
+        assert otu_after.id == otu_before.id
 
-        assert otu.accessions == {
+        assert otu_after.isolate_ids.issuperset(otu_before.isolate_ids)
+
+        assert {isolate.name: isolate.accessions for isolate in otu_after.isolates} == snapshot()
+
+        assert otu_after.excluded_accessions == {"MF062125", "MF062126", "MF062127"}
+
+        assert otu_after.accessions == {
             "MF062136",
             "MF062137",
             "MF062138",
             "MF062130",
             "MF062131",
             "MF062132",
-            "OQ420743",
-            "OQ420744",
-            "OQ420745",
             "MK936225",
             "MK936226",
             "MK936227",
+            "OQ420743",
+            "OQ420744",
+            "OQ420745",
+            "NC_055390",
+            "NC_055391",
+            "NC_055392",
         }
