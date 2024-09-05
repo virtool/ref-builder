@@ -119,7 +119,7 @@ class TestPromoteAccessions:
 
         assert otu_before.get_isolate(isolate.id).accessions == {"MF062125", "MF062126", "MF062127"}
 
-        promoted_accessions = promote_otu_accessions(empty_repo, otu)
+        promoted_accessions = promote_otu_accessions(empty_repo, otu_before)
 
         assert promoted_accessions == {"NC_055390", "NC_055391", "NC_055392"}
 
