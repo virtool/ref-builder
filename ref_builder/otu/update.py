@@ -212,7 +212,7 @@ def update_otu_with_accessions(
 
     records = ncbi.fetch_genbank_records(accessions)
 
-    refseq_records, non_refseq_records = _file_refseq_and_non_refseq_records(records)
+    refseq_records, non_refseq_records = _bin_refseq_records(records)
 
     # Add remaining RefSeq records first
     otu = repo.get_otu(otu.id)
@@ -322,3 +322,22 @@ def add_schema_from_accessions(
             molecule=schema.molecule,
             segments=schema.segments,
         )
+
+
+def _bin_refseq_records(
+    records: list[NCBIGenbank]) -> tuple[list[NCBIGenbank], list[NCBIGenbank]
+]:
+    """Returns a list of GenBank records as two lists, RefSeq and non-RefSeq."""
+    refseq_records = []
+    non_refseq_records = []
+
+    for record in records:
+        if record.refseq:
+            refseq_records.append(record)
+        else:
+            non_refseq_records.append(record)
+
+    if len(refseq_records) + len(non_refseq_records) != len(records):
+        raise ValueError("Invalid total number of records")
+
+    return refseq_records, non_refseq_records
