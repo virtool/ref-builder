@@ -381,7 +381,7 @@ class TestReplaceSequence:
             precached_repo,
             1169032,
             ["MK431779"],
-            acronym=""
+            acronym="",
         )
 
         isolate_id, old_sequence_id = otu_before.get_sequence_id_hierarchy_from_accession(
