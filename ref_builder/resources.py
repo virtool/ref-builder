@@ -106,8 +106,6 @@ class RepoIsolate:
         It the isolate was not migrated from a legacy repository, this will be `None`.
         """
 
-        self.__hash__ = None
-
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "RepoIsolate":
         """Build a new isolate from .dict() output."""
