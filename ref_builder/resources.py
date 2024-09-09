@@ -79,6 +79,15 @@ class RepoSequence:
 class RepoIsolate:
     """Represents an isolate in a Virtool reference repository."""
 
+    id: UUID
+    """The isolate id."""
+
+    name: IsolateName
+    """The isolate's source name metadata."""
+
+    sequences: list[RepoSequence]
+    legacy_id: str | None
+
     def __init__(
         self,
         uuid: UUID,
@@ -87,9 +96,6 @@ class RepoIsolate:
         legacy_id: str | None = None,
     ) -> None:
         """Initialize a new isolate."""
-        self.id = uuid
-        """The isolate id."""
-
         self.name = name
         """The isolate's source name metadata."""
 

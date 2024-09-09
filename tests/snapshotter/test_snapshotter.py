@@ -4,8 +4,10 @@ from uuid import uuid4
 import pytest
 from polyfactory.factories import DataclassFactory
 
+from ref_builder.models import Molecule, MolType, Strandedness, Topology
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
+from ref_builder.schema import OTUSchema, Segment
 from ref_builder.snapshotter.snapshotter import Snapshotter
 from ref_builder.utils import Accession
 
@@ -22,7 +24,27 @@ def test_ok(tmp_path: Path):
         uuid4(),
         12345,
         "Made Up Virus",
-        schema,
+        OTUSchema(
+            molecule=Molecule(
+                strandedness=Strandedness.SINGLE,
+                topology=Topology.LINEAR,
+                type=MolType.RNA,
+            ),
+            segments=[
+                Segment(
+                    id=uuid4(),
+                    length=1000,
+                    name="DNA A",
+                    required=True,
+                ),
+                Segment(
+                    id=uuid4(),
+                    length=1000,
+                    name="DNA B",
+                    required=True,
+                ),
+            ],
+        ),
     )
 
     class SequenceFactory(DataclassFactory[RepoSequence]):

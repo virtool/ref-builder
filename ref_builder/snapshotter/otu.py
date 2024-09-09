@@ -2,7 +2,6 @@ from pathlib import Path
 from uuid import UUID
 
 import orjson
-from pydantic import ValidationError
 from structlog import get_logger
 
 from ref_builder.resources import (
@@ -12,7 +11,6 @@ from ref_builder.resources import (
 )
 from ref_builder.snapshotter.models import (
     OTUSnapshotIsolate,
-    OTUSnapshotMeta,
     OTUSnapshotSequence,
     OTUSnapshotToCIsolate,
     toc_adapter,
@@ -141,14 +139,6 @@ class OTUSnapshot:
         self._toc = OTUSnapshotToC(self.path / "toc.json")
         """The path to this snapshot's table of contents."""
 
-        self._metadata_path = self.path / "metadata.json"
-        """The path of this snapshot's metadata file."""
-
-        self._metadata = (
-            self._load_metadata() if self._metadata_path.exists() else OTUSnapshotMeta()
-        )
-        """The metadata for this snapshot."""
-
     @classmethod
     def new(cls, at_event: int, otu: RepoOTU, path: Path) -> "OTUSnapshot":
         return cls(
@@ -200,9 +190,6 @@ class OTUSnapshot:
 
         self._toc.write(data=OTUSnapshotToC.generate_from_otu(otu))
 
-        with open(self._metadata_path, "w") as f:
-            f.write(self._metadata.model_dump_json())
-
     def load(self) -> "RepoOTU":
         """Load an OTU from the snapshot."""
         with open(self._otu_path, "rb") as f:
@@ -244,11 +231,3 @@ class OTUSnapshot:
             isolates.append(isolate)
 
         return RepoOTU(**otu_dict, isolates=isolates)
-
-    def _load_metadata(self) -> OTUSnapshotMeta | None:
-        """Load the snapshot's metadata from file."""
-        try:
-            with open(self._metadata_path, "rb") as f:
-                return OTUSnapshotMeta.model_validate_json(f.read())
-        except (FileNotFoundError, ValidationError):
-            return None
