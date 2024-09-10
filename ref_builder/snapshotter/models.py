@@ -115,6 +115,9 @@ class OTUSnapshotToCIsolate(BaseModel):
     id: UUID4
     """The isolate id."""
 
+    name: IsolateName | None
+    """The isolate name."""
+
     accessions: dict[str, UUID4]
     """A mapping of accessions to sequence ids."""
 
