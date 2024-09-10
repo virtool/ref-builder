@@ -14,6 +14,7 @@ logger = structlog.get_logger("otu.utils")
 
 
 class DeleteRationale(StrEnum):
+    """Default strings delineating reasons for resource deletion."""
     USER = "Requested by user"
     REFSEQ = "Superceded by RefSeq"
 
