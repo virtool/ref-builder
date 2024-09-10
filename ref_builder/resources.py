@@ -1,9 +1,8 @@
 import datetime
-from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer, field_validator
 
 from ref_builder.schema import OTUSchema
 from ref_builder.utils import Accession, DataType, IsolateName
@@ -28,8 +27,7 @@ class RepoMeta(BaseModel):
     """The repository organism."""
 
 
-@dataclass
-class RepoSequence:
+class RepoSequence(BaseModel):
     """Represents a sequence in a Virtool reference repository."""
 
     id: UUID
@@ -53,27 +51,21 @@ class RepoSequence:
     segment: str
     """The sequence segment."""
 
-    @classmethod
-    def from_dict(cls, standard_dict: dict):
-        return RepoSequence(
-            id=standard_dict["id"],
-            accession=Accession.from_string(standard_dict["accession"]),
-            definition=standard_dict["definition"],
-            sequence=standard_dict["sequence"],
-            segment=standard_dict.get("segment", ""),
-            legacy_id=standard_dict.get("legacy_id"),
-        )
+    @field_validator("accession", mode="before")
+    def convert_accession(cls: "RepoSequence", value: Any) -> Accession:
+        """Convert the accession to an Accession object."""
+        if isinstance(value, Accession):
+            return value
 
-    def dict(self) -> dict[str, Any]:
-        """Return a dictionary representation of the sequence."""
-        return {
-            "id": self.id,
-            "accession": str(self.accession),
-            "definition": self.definition,
-            "legacy_id": self.legacy_id,
-            "sequence": self.sequence,
-            "segment": self.segment,
-        }
+        if isinstance(value, str):
+            return Accession.from_string(value)
+
+        raise ValueError(f"Invalid type for accession: {type(value)}")
+
+    @field_serializer("accession")
+    def serialize_accession(self, accession: Accession) -> str:
+        """Serialize the accession to a string."""
+        return str(accession)
 
 
 class RepoIsolate:
@@ -188,7 +180,9 @@ class RepoIsolate:
         }
 
         if not exclude_contents:
-            isolate_dict["sequences"] = [sequence.dict() for sequence in self.sequences]
+            isolate_dict["sequences"] = [
+                sequence.model_dump() for sequence in self.sequences
+            ]
 
         return isolate_dict
 

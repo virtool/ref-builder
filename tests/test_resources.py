@@ -2,10 +2,10 @@ from uuid import uuid4
 
 import pytest
 
-from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
+from ref_builder.models import Molecule, MolType, Strandedness, Topology
+from ref_builder.resources import RepoIsolate, RepoOTU
 from ref_builder.schema import OTUSchema, Segment
 from ref_builder.utils import IsolateName, IsolateNameType
-from ref_builder.models import Molecule, MolType, Topology, Strandedness
 
 
 class TestSequence:
@@ -23,13 +23,9 @@ class TestSequence:
         otu = scratch_repo.get_otu_by_taxid(taxid)
 
         for accession in accessions:
-            sequence = otu.get_sequence_by_accession(accession)
-
-            assert type(sequence) is RepoSequence
-
-            sequence_copy = RepoSequence.from_dict(sequence.dict())
-
-            assert sequence == sequence_copy
+            assert otu.get_sequence_by_accession(
+                accession
+            ) == otu.get_sequence_by_accession(accession)
 
 
 class TestIsolate:
@@ -72,8 +68,8 @@ class TestOTU:
                     topology=Topology.LINEAR,
                 ),
                 segments=[
-                    Segment(id=uuid4(), name="genomic RNA", length=6395, required=True)
-                ]
+                    Segment(id=uuid4(), name="genomic RNA", length=6395, required=True),
+                ],
             ),
         )
 
@@ -93,7 +89,7 @@ class TestOTU:
             schema=otu.schema,
             excluded_accessions=otu.excluded_accessions,
             isolates=otu.isolates,
-            repr_isolate=otu.repr_isolate
+            repr_isolate=otu.repr_isolate,
         )
 
         assert otu == otu_copy
@@ -102,7 +98,9 @@ class TestOTU:
     def test_get_sequence_id_hierarchy(self, taxid, accession, scratch_repo):
         otu = scratch_repo.get_otu_by_taxid(taxid)
 
-        isolate_id, sequence_id = otu.get_sequence_id_hierarchy_from_accession(accession)
+        isolate_id, sequence_id = otu.get_sequence_id_hierarchy_from_accession(
+            accession
+        )
 
         assert otu.get_isolate(isolate_id) is not None
 

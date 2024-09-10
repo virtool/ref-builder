@@ -143,7 +143,8 @@ class OTUSnapshotDataStore:
         indent: int | None = None,
     ):
         """Serialize and cache a sequence to the data store."""
-        validated_sequence = OTUSnapshotSequence(**sequence.dict())
+        validated_sequence = OTUSnapshotSequence(**sequence.model_dump())
+
         with open(self.path / f"{sequence.id}.json", "w") as f:
             f.write(validated_sequence.model_dump_json(indent=indent))
 
@@ -202,7 +203,9 @@ class OTUSnapshot:
         self._metadata.at_event = at_event
 
         try:
-            validated_otu = OTUSnapshotOTU.model_validate(otu.dict(exclude_contents=True))
+            validated_otu = OTUSnapshotOTU.model_validate(
+                otu.dict(exclude_contents=True),
+            )
         except ValidationError:
             msg = f"{otu.dict(exclude_contents=True)} is not a valid OTU."
             raise ValueError(msg)
