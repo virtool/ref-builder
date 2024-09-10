@@ -575,6 +575,49 @@ class TestGetIsolate:
             in isolate_ids
         )
 
+    def test_get_with_unnamed_isolate(self, initialized_repo: Repo):
+        otu = next(initialized_repo.iter_otus())
+
+        isolate_before = otu.isolates[0]
+
+        isolate_empty = initialized_repo.create_isolate(
+            otu.id,
+            None,
+            None,
+        )
+
+        sequence_a = initialized_repo.create_sequence(
+            otu.id,
+            isolate_id=isolate_empty.id,
+            accession="EMPTY1.1",
+            definition="TMV B",
+            legacy_id=None,
+            segment="RNA A",
+            sequence="GACCACGTGGAGA",
+
+        )
+
+        sequence_b = initialized_repo.create_sequence(
+            otu.id,
+            isolate_id=isolate_empty.id,
+            accession="EMPTY2.1",
+            definition="TMV A",
+            legacy_id=None,
+            segment="RNA B",
+            sequence="ACTAAGAGAAAAA",
+
+        )
+
+        otu_after = next(initialized_repo.iter_otus())
+
+        assert len(otu_after.isolate_ids) == len(otu.isolate_ids) + 1
+
+        assert "EMPTY1" in otu_after.accessions
+
+        assert "EMPTY2" in otu_after.accessions
+
+        assert otu_after.isolate_ids == {isolate_before.id, isolate_empty.id}
+
 
 def test_exclude_accession(empty_repo: Repo):
     """Test that excluding an accession from an OTU writes the expected event file and
