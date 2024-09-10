@@ -212,6 +212,27 @@ def update_otu_with_accessions(
 
     records = ncbi.fetch_genbank_records(accessions)
 
+    refseq_records, non_refseq_records = _bin_refseq_records(records)
+
+    # Add remaining RefSeq records first
+    otu = repo.get_otu(otu.id)
+    file_records_into_otu(repo, otu, refseq_records)
+
+    # Add add non-RefSeq records last
+    otu = repo.get_otu(otu.id)
+    file_records_into_otu(repo, otu, non_refseq_records)
+
+
+def file_records_into_otu(
+    repo: Repo,
+    otu: RepoOTU,
+    records: list[NCBIGenbank],
+) -> list[IsolateName]:
+    """Take a list of GenBank records from NCBI Nucleotide and attempt to create new isolates.
+    If an isolate candidate does not match the schema, the constituent records are not added
+    to the OTU."""
+    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
+
     record_bins = group_genbank_records_by_isolate(records)
 
     otu_logger.debug(
@@ -227,6 +248,7 @@ def update_otu_with_accessions(
             otu_logger.debug(
                 f"The schema requires {len(otu.schema.segments)} segments: "
                 + f"{[segment.name for segment in otu.schema.segments]}",
+                isolate_accessions=[accession.key for accession in isolate_records],
             )
             otu_logger.debug(f"Skipping {isolate_name}")
             continue
@@ -243,7 +265,10 @@ def update_otu_with_accessions(
     if new_isolate_names:
         otu_logger.info("New isolates added", new_isolates=new_isolate_names)
 
+        return new_isolate_names
+
     otu_logger.info("No new isolates added.")
+    return []
 
 
 def exclude_accessions_from_otu(
@@ -256,7 +281,7 @@ def exclude_accessions_from_otu(
     for accession in accessions:
         excluded_accessions = repo.exclude_accession(otu.id, accession)
 
-    logger.info(
+    logger.debug(
         f"Accessions currently excluded from fetches: {excluded_accessions}",
         taxid=otu.taxid,
         otu_id=str(otu.id),
@@ -297,3 +322,22 @@ def add_schema_from_accessions(
             molecule=schema.molecule,
             segments=schema.segments,
         )
+
+
+def _bin_refseq_records(
+    records: list[NCBIGenbank]) -> tuple[list[NCBIGenbank], list[NCBIGenbank]
+]:
+    """Returns a list of GenBank records as two lists, RefSeq and non-RefSeq."""
+    refseq_records = []
+    non_refseq_records = []
+
+    for record in records:
+        if record.refseq:
+            refseq_records.append(record)
+        else:
+            non_refseq_records.append(record)
+
+    if len(refseq_records) + len(non_refseq_records) != len(records):
+        raise ValueError("Invalid total number of records")
+
+    return refseq_records, non_refseq_records
