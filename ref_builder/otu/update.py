@@ -1,3 +1,4 @@
+from collections import defaultdict
 from uuid import UUID
 
 from structlog import get_logger
@@ -472,6 +473,53 @@ def replace_sequence_in_otu(
         return new_sequence
 
     logger.error(f"{replaced_accession} could not be replaced.")
+
+
+def promote_otu_accessions(
+    repo: Repo, otu_id: UUID, ignore_cache: bool = False
+):
+    """Fetch all records from"""
+    otu = repo.get_otu(otu_id)
+    if otu is None:
+        return None
+
+    ncbi = NCBIClient(ignore_cache)
+
+    accessions = ncbi.link_accessions_from_taxid(otu.taxid)
+    fetch_list = set(accessions) - otu.excluded_accessions
+
+    records = ncbi.fetch_genbank_records(fetch_list)
+
+    refseq_records = [record for record in records if record.refseq]
+
+    promoted_isolates = defaultdict(list)
+
+    for record in refseq_records:
+        status, predecessor_accession = parse_refseq_comment(record.comment)
+
+        if predecessor_accession in otu.accessions:
+            logger.debug(
+                "Replaceable accession found",
+                predecessor_accession=predecessor_accession,
+                promoted_accession=record.accession
+            )
+
+            isolate_id, sequence_id, = otu.get_sequence_id_hierarchy_from_accession(predecessor_accession)
+
+            promoted_isolates[isolate_id].append((predecessor_accession, record))
+
+    for isolate_id in promoted_isolates:
+        records = [record for predecession_accession, record in promoted_isolates[isolate_id]]
+        isolate = otu.get_isolate(isolate_id)
+
+        logger.debug(f"Promoting {isolate.name}", predecessor_accessions=isolate.accessions)
+
+        promoted_isolate = update_isolate_from_records(repo, otu, isolate_id, records)
+
+        logger.debug(
+            f"{isolate.name} sequences promoted using RefSeq data",
+            accessions=promoted_isolate.accessions
+        )
 
 
 def _bin_refseq_records(
