@@ -22,10 +22,9 @@ def test_otu_model_adherence(scratch_repo: Repo):
     otu_fields = set(otu.dict().keys())
 
     otu_fields.remove("isolates")
-
     otu_fields.remove("excluded_accessions")
-
     otu_fields.remove("schema")
+
     otu_fields.add("otu_schema")
 
     for field in otu_fields:
@@ -82,10 +81,9 @@ class TestRepoToSnapshotModel:
 
         for isolate in otu.isolates:
             assert type(isolate) is RepoIsolate
-
-            converted_model = OTUSnapshotIsolate(**isolate.dict())
-
-            assert converted_model.model_dump() == snapshot(exclude=props("id"))
+            assert OTUSnapshotIsolate(**isolate.model_dump()).model_dump() == snapshot(
+                exclude=props("id"),
+            )
 
     @pytest.mark.parametrize("taxid", [1441799, 430059])
     def test_otu_conversion(

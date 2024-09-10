@@ -492,9 +492,10 @@ class Repo:
             elif isinstance(event, CreateIsolate):
                 otu.add_isolate(
                     RepoIsolate(
-                        uuid=event.data.id,
+                        id=event.data.id,
                         legacy_id=event.data.legacy_id,
                         name=event.data.name,
+                        sequences=[],
                     ),
                 )
 

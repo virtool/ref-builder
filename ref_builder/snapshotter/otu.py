@@ -128,7 +128,9 @@ class OTUSnapshotDataStore:
         indent: int | None = None,
     ):
         """Serialize and cache an isolate to the data store."""
-        validated_isolate = OTUSnapshotIsolate(**isolate.dict(exclude_contents=True))
+        validated_isolate = OTUSnapshotIsolate(
+            **isolate.model_dump(exclude={"sequences"}),
+        )
         with open(self.path / f"{isolate.id}.json", "w") as f:
             f.write(validated_isolate.model_dump_json(indent=indent))
 
@@ -259,12 +261,9 @@ class OTUSnapshot:
 
                 sequences.append(sequence)
 
-            isolate_dict = isolate_structure.model_dump()
-            isolate_dict["uuid"] = isolate_dict.pop("id")
-
-            isolate = RepoIsolate(**isolate_dict, sequences=sequences)
-
-            isolates.append(isolate)
+            isolates.append(
+                RepoIsolate(**isolate_structure.model_dump(), sequences=sequences)
+            )
 
         otu_dict = otu_structure.model_dump(by_alias=True)
         otu_dict["excluded_accessions"] = excluded_accessions

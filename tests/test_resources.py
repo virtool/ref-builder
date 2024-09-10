@@ -24,7 +24,7 @@ class TestSequence:
 
         for accession in accessions:
             assert otu.get_sequence_by_accession(
-                accession
+                accession,
             ) == otu.get_sequence_by_accession(accession)
 
 
@@ -32,8 +32,10 @@ class TestIsolate:
     def test_no_sequences(self):
         """Test that an isolate intializes correctly with no sequences."""
         isolate = RepoIsolate(
-            uuid=uuid4(),
+            id=uuid4(),
+            legacy_id=None,
             name=IsolateName(type=IsolateNameType.ISOLATE, value="A"),
+            sequences=[],
         )
 
         assert isolate.sequences == []
@@ -44,14 +46,7 @@ class TestIsolate:
         otu = scratch_repo.get_otu_by_taxid(taxid)
 
         for isolate in otu.isolates:
-            isolate_copy = RepoIsolate(
-                uuid=isolate.id,
-                name=isolate.name,
-                legacy_id=isolate.legacy_id,
-                sequences=isolate.sequences,
-            )
-
-            assert isolate == isolate_copy
+            assert isolate == otu.get_isolate(isolate.id)
 
 
 class TestOTU:
@@ -99,7 +94,7 @@ class TestOTU:
         otu = scratch_repo.get_otu_by_taxid(taxid)
 
         isolate_id, sequence_id = otu.get_sequence_id_hierarchy_from_accession(
-            accession
+            accession,
         )
 
         assert otu.get_isolate(isolate_id) is not None

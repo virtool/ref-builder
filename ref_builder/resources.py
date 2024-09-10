@@ -1,8 +1,9 @@
 import datetime
+from pprint import pprint
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, field_serializer, field_validator
+from pydantic import UUID4, BaseModel, field_serializer, field_validator
 
 from ref_builder.schema import OTUSchema
 from ref_builder.utils import Accession, DataType, IsolateName
@@ -11,7 +12,7 @@ from ref_builder.utils import Accession, DataType, IsolateName
 class RepoMeta(BaseModel):
     """Represents the metadata for a Virtool reference repository."""
 
-    id: UUID
+    id: UUID4
     """The repository id."""
 
     created_at: datetime.datetime
@@ -30,7 +31,7 @@ class RepoMeta(BaseModel):
 class RepoSequence(BaseModel):
     """Represents a sequence in a Virtool reference repository."""
 
-    id: UUID
+    id: UUID4
     """The sequence id."""
 
     accession: Accession
@@ -68,50 +69,54 @@ class RepoSequence(BaseModel):
         return str(accession)
 
 
-class RepoIsolate:
+class RepoIsolate(BaseModel):
     """Represents an isolate in a Virtool reference repository."""
 
-    def __init__(
-        self,
-        uuid: UUID,
-        name: IsolateName,
-        sequences: list[RepoSequence] | None = None,
-        legacy_id: str | None = None,
-    ) -> None:
-        """Initialize a new isolate."""
-        self.id = uuid
-        """The isolate id."""
+    id: UUID4
+    """The isolate id."""
 
-        self.name = name
-        """The isolate's source name metadata."""
+    legacy_id: str | None
+    """A string based ID carried over from a legacy Virtool reference repository.
 
-        self._sequences_by_accession = (
-            {}
-            if sequences is None
-            else {sequence.accession.key: sequence for sequence in sequences}
-        )
-        """A dictionary of sequences indexed by accession"""
+    It the isolate was not migrated from a legacy repository, this will be `None`.
+    """
 
-        self.legacy_id = legacy_id
-        """A string based ID carried over from a legacy Virtool reference repository.
+    name: IsolateName
+    """The isolate's source name metadata."""
 
-        It the isolate was not migrated from a legacy repository, this will be `None`.
-        """
+    sequences: list[RepoSequence]
 
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "RepoIsolate":
-        """Build a new isolate from .dict() output."""
-        return RepoIsolate(
-            uuid=data["id"],
-            name=IsolateName(type=data["name"]["type"], value=data["name"]["value"]),
-            sequences=data.get("sequences"),
-            legacy_id=data.get("legacy_id"),
-        )
+    _sequences_by_accession: dict[str, RepoSequence] = {}
+    """A dictionary of sequences indexed by accession"""
 
-    @property
-    def sequences(self) -> list[RepoSequence]:
-        """A list of sequences in this isolate."""
-        return list(self._sequences_by_accession.values())
+    def __init__(self, **data) -> None:
+        super().__init__(**data)
+
+        self._sequences_by_accession = {
+            sequence.accession.key: sequence for sequence in data.get("sequences", [])
+        }
+        self._sequences_by_id = {
+            sequence.id: sequence for sequence in (self.sequences or [])
+        }
+
+    @field_serializer("name")
+    def serialize_name(self, name: IsolateName) -> dict[str, str]:
+        """Serialize the isolate name."""
+        return {
+            "type": name.type,
+            "value": name.value,
+        }
+
+    @field_validator("name", mode="before")
+    def convert_name(cls: "RepoIsolate", value: Any) -> IsolateName:
+        """Convert the name to an IsolateName object."""
+        if isinstance(value, IsolateName):
+            return value
+
+        if isinstance(value, dict):
+            return IsolateName(**value)
+
+        raise ValueError(f"Invalid type for name: {type(value)}")
 
     @property
     def accessions(self) -> set[str]:
@@ -123,17 +128,14 @@ class RepoIsolate:
         """A set of UUIDs for sequences in the isolate."""
         return {sequence.id for sequence in self.sequences}
 
-    def __repr__(self) -> str:
-        """Return a string representation of the isolate."""
-        return (
-            "EventSourcedRepoIsolate("
-            f"{self.id}, type={self.name.type}, name={self.name.value}, "
-            f"accessions={self.accessions})"
-        )
-
     def add_sequence(self, sequence: RepoSequence) -> None:
         """Add a sequence to the isolate."""
+        self.sequences.append(
+            sequence,
+        )
+
         self._sequences_by_accession[sequence.accession.key] = sequence
+        self._sequences_by_id[sequence.id] = sequence
 
     def replace_sequence(
         self,
@@ -144,14 +146,24 @@ class RepoIsolate:
         self.add_sequence(sequence)
         self.delete_sequence(replaced_sequence_id)
 
+        self._sequences_by_accession[sequence.accession.key] = sequence
+        self._sequences_by_id[sequence.id] = sequence
+
+        self._update_sequence_lookups()
+
     def delete_sequence(self, sequence_id: UUID) -> None:
         """Delete a sequence from a given isolate."""
-        if sequence_id not in self.sequence_ids:
-            raise ValueError("This sequence ID does not exist")
-
         sequence = self.get_sequence_by_id(sequence_id)
 
+        if not sequence:
+            raise ValueError("This sequence ID does not exist")
+
         self._sequences_by_accession.pop(sequence.accession.key)
+        self._sequences_by_id.pop(sequence_id)
+
+        for sequence in self.sequences:
+            if sequence.id == sequence_id:
+                self.sequences.remove(sequence)
 
     def get_sequence_by_accession(
         self,
@@ -163,6 +175,8 @@ class RepoIsolate:
         return self._sequences_by_accession.get(accession)
 
     def get_sequence_by_id(self, sequence_id: UUID) -> RepoSequence | None:
+        pprint(self._sequences_by_id)
+
         if sequence_id not in self.sequence_ids:
             return None
 
@@ -172,51 +186,13 @@ class RepoIsolate:
 
         return None
 
-    def dict(self, exclude_contents: bool = False):
-        isolate_dict = {
-            "id": self.id,
-            "legacy_id": self.legacy_id,
-            "name": {"type": self.name.type, "value": self.name.value},
-        }
-
-        if not exclude_contents:
-            isolate_dict["sequences"] = [
-                sequence.model_dump() for sequence in self.sequences
-            ]
-
-        return isolate_dict
-
-    def __eq__(self, other: "RepoIsolate") -> bool:
-        if type(other) is not RepoIsolate:
-            return False
-
-        if self.id != other.id:
-            return False
-
-        if self.name.type != other.name.type:
-            return False
-
-        if self.name.value != other.name.value:
-            return False
-
-        if self.accessions != other.accessions:
-            return False
-
-        for accession in self.accessions:
-            if self.get_sequence_by_accession(
-                accession,
-            ) != other.get_sequence_by_accession(accession):
-                return False
-
-        return True
-
 
 class RepoOTU:
     """Represents an OTU in a Virtool reference repository."""
 
     def __init__(
         self,
-        uuid: UUID,
+        uuid: UUID4,
         taxid: int,
         name: str,
         schema: OTUSchema,
@@ -224,7 +200,7 @@ class RepoOTU:
         legacy_id: str | None = None,
         excluded_accessions: list[str] | None = None,
         isolates: list[RepoIsolate] | None = None,
-        repr_isolate: UUID | None = None,
+        repr_isolate: UUID4 | None = None,
     ):
         self.id = uuid
         """The OTU id."""
@@ -296,6 +272,7 @@ class RepoOTU:
     def sequence_ids(self) -> set[UUID]:
         """A set of UUIDs for sequences in the OTU."""
         sequence_ids = set()
+
         for isolate in self.isolates:
             sequence_ids.update(isolate.sequence_ids)
 
@@ -324,15 +301,15 @@ class RepoOTU:
         """Add an isolate to the OTU."""
         self._isolates_by_id[isolate.id] = isolate
 
-    def add_sequence(self, sequence: RepoSequence, isolate_id: UUID) -> None:
+    def add_sequence(self, sequence: RepoSequence, isolate_id: UUID4) -> None:
         """Add a sequence to a given isolate."""
         self._isolates_by_id[isolate_id].add_sequence(sequence)
 
     def replace_sequence(
         self,
         sequence: RepoSequence,
-        isolate_id: UUID,
-        replaced_sequence_id: UUID,
+        isolate_id: UUID4,
+        replaced_sequence_id: UUID4,
     ) -> None:
         """Replace a sequence with the given ID with a new sequence."""
         self._isolates_by_id[isolate_id].replace_sequence(
@@ -340,11 +317,11 @@ class RepoOTU:
             replaced_sequence_id,
         )
 
-    def delete_sequence(self, sequence_id: UUID, isolate_id: UUID) -> None:
+    def delete_sequence(self, sequence_id: UUID4, isolate_id: UUID4) -> None:
         """Delete a sequence from a given isolate. Used only for rehydration."""
         self._isolates_by_id[isolate_id].delete_sequence(sequence_id)
 
-    def get_isolate(self, isolate_id: UUID) -> RepoIsolate | None:
+    def get_isolate(self, isolate_id: UUID4) -> RepoIsolate | None:
         """Get isolate associated with a given ID.
 
         Returns None if no such isolate exists.
@@ -354,7 +331,7 @@ class RepoOTU:
         """
         return self._isolates_by_id.get(isolate_id)
 
-    def remove_isolate(self, isolate_id: UUID) -> None:
+    def remove_isolate(self, isolate_id: UUID4) -> None:
         """Remove an isolate from the OTU."""
         self._isolates_by_id.pop(isolate_id)
 
@@ -377,7 +354,7 @@ class RepoOTU:
     def get_sequence_id_hierarchy_from_accession(
         self,
         accession: str,
-    ) -> tuple[UUID, UUID] | tuple[None, None]:
+    ) -> tuple[UUID4, UUID4] | tuple[None, None]:
         """Return the isolate ID and sequence ID of a given accession."""
         if accession not in self.accessions:
             return None, None
@@ -388,7 +365,7 @@ class RepoOTU:
 
         raise ValueError(f"Accession {accession} found in index, but not in data")
 
-    def get_isolate_id_by_name(self, name: IsolateName) -> UUID | None:
+    def get_isolate_id_by_name(self, name: IsolateName) -> UUID4 | None:
         """Get the ID for the isolate with the passed ``name``.
 
         Returns None if no such isolate exists.
@@ -417,7 +394,7 @@ class RepoOTU:
 
         if not exclude_contents:
             otu_dict["isolates"] = [
-                isolate.dict(exclude_contents=False) for isolate in self.isolates
+                isolate.model_dump(exclude={"sequences"}) for isolate in self.isolates
             ]
 
         return otu_dict

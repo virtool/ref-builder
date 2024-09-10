@@ -99,8 +99,8 @@ class TestCreateOTU:
                         id=uuid4(),
                         name="A",
                         required=True,
-                        length=100
-                    )
+                        length=100,
+                    ),
                 ],
             ),
             taxid=12242,
@@ -124,8 +124,9 @@ class TestCreateOTU:
                         Segment(
                             id=otu.schema.segments[0].id,
                             name="A",
-                            required=True, length=100
-                        )
+                            required=True,
+                            length=100,
+                        ),
                     ],
                 ),
                 taxid=12242,
@@ -155,8 +156,8 @@ class TestCreateOTU:
                             "id": str(otu.schema.segments[0].id),
                             "length": 100,
                             "name": "A",
-                            "required": True
-                        }
+                            "required": True,
+                        },
                     ],
                     "multipartite": False,
                 },
@@ -186,7 +187,7 @@ class TestCreateOTU:
                     topology=Topology.LINEAR,
                 ),
                 segments=[
-                    Segment(id=uuid4(), name="A", required=True)
+                    Segment(id=uuid4(), name="A", required=True),
                 ],
             ),
             taxid=12242,
@@ -206,7 +207,9 @@ class TestCreateOTU:
                         type=MolType.RNA,
                         topology=Topology.LINEAR,
                     ),
-                    segments=[Segment(id=otu.schema.segments[0].id, name="A", required=True)],
+                    segments=[
+                        Segment(id=otu.schema.segments[0].id, name="A", required=True),
+                    ],
                 ),
                 taxid=438782,
             )
@@ -244,7 +247,9 @@ class TestCreateOTU:
                         type=MolType.RNA,
                         topology=Topology.LINEAR,
                     ),
-                    segments=[Segment(id=otu.schema.segments[0].id, name="A", required=True)],
+                    segments=[
+                        Segment(id=otu.schema.segments[0].id, name="A", required=True),
+                    ],
                 ),
                 taxid=438782,
             )
@@ -424,7 +429,7 @@ class TestRetrieveOTU:
 
         otu_contents = [
             RepoIsolate(
-                uuid=isolate_a.id,
+                id=isolate_a.id,
                 legacy_id=None,
                 name=IsolateName(type=IsolateNameType.ISOLATE, value="A"),
                 sequences=[
@@ -439,7 +444,7 @@ class TestRetrieveOTU:
                 ],
             ),
             RepoIsolate(
-                uuid=isolate_b.id,
+                id=isolate_b.id,
                 legacy_id=None,
                 name=IsolateName(type=IsolateNameType.ISOLATE, value="B"),
                 sequences=[
@@ -469,7 +474,9 @@ class TestRetrieveOTU:
                         type=MolType.RNA,
                         topology=Topology.LINEAR,
                     ),
-                    segments=[Segment(id=otu.schema.segments[0].id, name="A", required=True)],
+                    segments=[
+                        Segment(id=otu.schema.segments[0].id, name="A", required=True),
+                    ],
                 ),
                 taxid=12242,
                 isolates=otu_contents,
