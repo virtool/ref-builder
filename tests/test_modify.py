@@ -135,3 +135,35 @@ class TestPromoteAccessions:
         assert otu_after.get_isolate(isolate.id).accessions == {"NC_055390", "NC_055391", "NC_055392"}
 
         assert otu_after.excluded_accessions == {"MF062125", "MF062126", "MF062127"}
+
+    def test_command_ok(self, empty_repo: Repo):
+        otu = create_otu(
+            empty_repo,
+            2164102,
+            ["MF062125", "MF062126", "MF062127"],
+            acronym=""
+        )
+
+        otu_before = empty_repo.get_otu(otu.id)
+
+        assert otu_before.accessions == {"MF062125", "MF062126", "MF062127"}
+
+        subprocess.run(
+            [
+                "ref-builder",
+                "otu",
+                "update",
+            ]
+            + ["--path", str(empty_repo.path)]
+            + [str(2164102)]
+            + ["promote"],
+            check=False,
+        )
+
+        repo_after = Repo(empty_repo.path)
+
+        otu_after = repo_after.get_otu(otu.id)
+
+        assert otu_after.repr_isolate == otu_before.repr_isolate
+
+        assert otu_after.accessions == {"NC_055390", "NC_055391", "NC_055392",}
