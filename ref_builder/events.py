@@ -109,7 +109,7 @@ class CreateIsolateData(EventData):
 
     id: UUID4
     legacy_id: str | None
-    name: IsolateName
+    name: IsolateName | None
 
 
 class CreateIsolate(Event):
