@@ -106,32 +106,30 @@ class TestCreateOTU:
             taxid=12242,
         )
 
-        assert (
-            otu.dict()
-            == RepoOTU(
-                uuid=otu.id,
-                acronym="TMV",
-                excluded_accessions=None,
-                legacy_id="abcd1234",
-                name="Tobacco mosaic virus",
-                schema=OTUSchema(
-                    molecule=Molecule(
-                        strandedness=Strandedness.SINGLE,
-                        type=MolType.RNA,
-                        topology=Topology.LINEAR,
-                    ),
-                    segments=[
-                        Segment(
-                            id=otu.schema.segments[0].id,
-                            name="A",
-                            required=True,
-                            length=100,
-                        ),
-                    ],
+        assert otu == RepoOTU(
+            id=otu.id,
+            acronym="TMV",
+            excluded_accessions=set(),
+            legacy_id="abcd1234",
+            name="Tobacco mosaic virus",
+            repr_isolate=None,
+            schema=OTUSchema(
+                molecule=Molecule(
+                    strandedness=Strandedness.SINGLE,
+                    type=MolType.RNA,
+                    topology=Topology.LINEAR,
                 ),
-                taxid=12242,
-                isolates=[],
-            ).dict()
+                segments=[
+                    Segment(
+                        id=otu.schema.segments[0].id,
+                        name="A",
+                        required=True,
+                        length=100,
+                    ),
+                ],
+            ),
+            taxid=12242,
+            isolates=[],
         )
 
         with open(empty_repo.path.joinpath("src", "00000002.json")) as f:
@@ -460,27 +458,25 @@ class TestRetrieveOTU:
             ),
         ]
 
-        assert (
-            otu.dict()
-            == RepoOTU(
-                uuid=otu.id,
-                acronym="TMV",
-                excluded_accessions=[],
-                legacy_id=None,
-                name="Tobacco mosaic virus",
-                schema=OTUSchema(
-                    molecule=Molecule(
-                        strandedness=Strandedness.SINGLE,
-                        type=MolType.RNA,
-                        topology=Topology.LINEAR,
-                    ),
-                    segments=[
-                        Segment(id=otu.schema.segments[0].id, name="A", required=True),
-                    ],
+        assert otu == RepoOTU(
+            id=otu.id,
+            acronym="TMV",
+            excluded_accessions=set(),
+            legacy_id=None,
+            name="Tobacco mosaic virus",
+            repr_isolate=None,
+            schema=OTUSchema(
+                molecule=Molecule(
+                    strandedness=Strandedness.SINGLE,
+                    type=MolType.RNA,
+                    topology=Topology.LINEAR,
                 ),
-                taxid=12242,
-                isolates=otu_contents,
-            ).dict()
+                segments=[
+                    Segment(id=otu.schema.segments[0].id, name="A", required=True),
+                ],
+            ),
+            taxid=12242,
+            isolates=otu_contents,
         )
 
         assert empty_repo.last_id == 6

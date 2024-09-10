@@ -19,7 +19,7 @@ def test_otu_model_adherence(scratch_repo: Repo):
     """Check the OTU snapshot model for missing fields relative to RepoOTU."""
     otu = scratch_repo.get_otu_by_taxid(1169032)
 
-    otu_fields = set(otu.dict().keys())
+    otu_fields = set(otu.model_dump().keys())
 
     otu_fields.remove("isolates")
     otu_fields.remove("excluded_accessions")
@@ -96,7 +96,7 @@ class TestRepoToSnapshotModel:
 
         assert type(otu) is RepoOTU
 
-        converted_model = OTUSnapshotOTU(**otu.dict())
+        converted_model = OTUSnapshotOTU(**otu.model_dump())
 
         assert converted_model.id == otu.id
 

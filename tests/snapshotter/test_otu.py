@@ -3,6 +3,7 @@ from uuid import UUID
 import orjson
 import pytest
 
+from ref_builder.repo import Repo
 from ref_builder.snapshotter.otu import OTUSnapshot
 
 
@@ -51,7 +52,7 @@ class TestOTUSnapshot:
 
         assert type(metadata_dict["at_event"]) is int
 
-    def test_load(self, taxid: int, scratch_repo):
+    def test_load(self, taxid: int, scratch_repo: Repo):
         """Test OTUSnapshot.load()"""
         rehydrated_otu = scratch_repo.get_otu_by_taxid(taxid)
 
@@ -67,7 +68,7 @@ class TestOTUSnapshot:
 
         assert rehydrated_otu.accessions == snapshot_otu.accessions
 
-    def test_toc(self, taxid: int,scratch_repo):
+    def test_toc(self, taxid: int, scratch_repo):
         """Test that the table of contents is written correctly."""
         rehydrated_otu = scratch_repo.get_otu_by_taxid(taxid)
 
