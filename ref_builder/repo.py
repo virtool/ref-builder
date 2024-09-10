@@ -223,7 +223,7 @@ class Repo:
         self,
         otu_id: uuid.UUID,
         legacy_id: str | None,
-        name: IsolateName,
+        name: IsolateName | None,
     ) -> RepoIsolate | None:
         """Create and isolate for the OTU with ``otu_id``.
 
@@ -231,8 +231,9 @@ class Repo:
         """
         otu = self.get_otu(otu_id)
 
-        if otu.get_isolate_id_by_name(name):
-            raise ValueError(f"Isolate name already exists: {name}")
+        if name is not None:
+            if otu.get_isolate_id_by_name(name):
+                raise ValueError(f"Isolate name already exists: {name}")
 
         isolate_id = uuid.uuid4()
 
@@ -246,7 +247,7 @@ class Repo:
             "Isolate written",
             event_id=event.id,
             isolate_id=str(isolate_id),
-            name=str(name),
+            name=str(name) if name is not None else None,
         )
 
         return self.get_otu(otu_id).get_isolate(isolate_id)
@@ -527,7 +528,7 @@ class Repo:
                     event.query.isolate_id,
                 )
 
-        otu.isolates.sort(key=lambda i: f"{i.name.type} {i.name.value}")
+        otu.isolates.sort(key=lambda i: f"{i.name.type} {i.name.value}" if type(i.name) is IsolateName else "")
 
         for isolate in otu.isolates:
             isolate.sequences.sort(key=lambda s: s.accession)
