@@ -310,6 +310,10 @@ def update_otu_with_accessions(
 
     records = ncbi.fetch_genbank_records(accessions)
 
+    promoted_accessions = promote_otu_accessions(repo, otu, ignore_cache)
+    if promoted_accessions:
+        otu = repo.get_otu(otu.id)
+
     refseq_records, non_refseq_records = _bin_refseq_records(records)
 
     # Add remaining RefSeq records first
