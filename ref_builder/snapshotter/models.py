@@ -65,7 +65,7 @@ class OTUSnapshotIsolate(BaseModel):
     id: UUID4
     """The isolate ID."""
 
-    name: IsolateName
+    name: IsolateName | None
     """The isolate's source name metadata."""
 
     legacy_id: str | None = None
@@ -73,8 +73,10 @@ class OTUSnapshotIsolate(BaseModel):
 
     @field_validator("name", mode="before")
     @classmethod
-    def convert_isolate_name(cls, raw: dict) -> IsolateName:
+    def convert_isolate_name(cls, raw: dict | None) -> IsolateName | None:
         """Takes a dictionary and converts to IsolateName."""
+        if raw is None:
+            return None
         return IsolateName(type=IsolateNameType(raw["type"]), value=raw["value"])
 
 
