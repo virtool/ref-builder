@@ -312,6 +312,22 @@ class TestCreateIsolate:
                 IsolateName(IsolateNameType.ISOLATE, "A"),
             )
 
+    def test_create_unnamed(self, empty_repo):
+        """Test that creating an isolate returns the expected ``RepoIsolate`` object and
+        creates the expected event file.
+        """
+        otu = init_otu(empty_repo)
+
+        isolate = empty_repo.create_isolate(
+            otu.id,
+            None,
+            None,
+        )
+
+        assert isinstance(isolate.id, UUID)
+        assert isolate.sequences == []
+        assert isolate.name is None
+
 
 def test_create_sequence(empty_repo: Repo):
     """Test that creating a sequence returns the expected ``RepoSequence`` object and
