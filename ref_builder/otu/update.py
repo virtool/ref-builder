@@ -477,7 +477,7 @@ def replace_sequence_in_otu(
 
 def promote_otu_accessions(
     repo: Repo, otu_id: UUID, ignore_cache: bool = False
-):
+) -> set | None:
     """Fetch all records from"""
     otu = repo.get_otu(otu_id)
     if otu is None:
@@ -491,6 +491,8 @@ def promote_otu_accessions(
     records = ncbi.fetch_genbank_records(fetch_list)
 
     refseq_records = [record for record in records if record.refseq]
+
+    promoted_accessions = set()
 
     promoted_isolates = defaultdict(list)
 
@@ -520,6 +522,10 @@ def promote_otu_accessions(
             f"{isolate.name} sequences promoted using RefSeq data",
             accessions=promoted_isolate.accessions
         )
+
+        promoted_accessions.update(promoted_isolate.accessions)
+
+    return promoted_accessions
 
 
 def _bin_refseq_records(
