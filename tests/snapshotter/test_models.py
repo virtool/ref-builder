@@ -66,7 +66,7 @@ class TestRepoToSnapshotModel:
 
             assert type(original_sequence) is RepoSequence
 
-            converted_model = OTUSnapshotSequence(**original_sequence.dict())
+            converted_model = OTUSnapshotSequence.model_validate(original_sequence.model_dump())
 
             assert converted_model.model_dump() == snapshot(exclude=props("id"))
 
@@ -81,7 +81,7 @@ class TestRepoToSnapshotModel:
 
         for isolate in otu.isolates:
             assert type(isolate) is RepoIsolate
-            assert OTUSnapshotIsolate(**isolate.model_dump()).model_dump() == snapshot(
+            assert OTUSnapshotIsolate.model_validate(isolate.model_dump()).model_dump() == snapshot(
                 exclude=props("id"),
             )
 

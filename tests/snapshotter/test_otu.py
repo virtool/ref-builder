@@ -64,4 +64,4 @@ class TestOTUSnapshot:
 
         for isolate in rehydrated_otu.isolates:
             for accession in isolate.accessions:
-                assert accession in toc_dict[str(isolate.name)]["accessions"]
+                assert accession in toc_dict[str(isolate.id)]["accessions"]

@@ -70,7 +70,6 @@ class IsolateNameType(StrEnum):
     VARIANT = "variant"
     GENOTYPE = "genotype"
     SEROTYPE = "serotype"
-    REFSEQ = "refseq"
 
 
 @dataclass(frozen=True)

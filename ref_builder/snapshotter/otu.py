@@ -34,7 +34,7 @@ class OTUSnapshotToC:
         """Return a new table of contents from an OTU."""
         toc = {}
         for isolate in otu.isolates:
-            toc[f"{isolate.name}"] = OTUSnapshotToC._generate_table_from_isolate(
+            toc[str(isolate.id)] = OTUSnapshotToC._generate_table_from_isolate(
                 isolate,
             )
 
@@ -70,6 +70,7 @@ class OTUSnapshotToC:
         """Take an isolate and return a table of contents listing for it."""
         return OTUSnapshotToCIsolate(
             id=isolate.id,
+            name=isolate.name,
             accessions={
                 accession: isolate.get_sequence_by_accession(accession).id
                 for accession in sorted(isolate.accessions)
