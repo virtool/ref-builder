@@ -13,6 +13,17 @@ logger = get_logger()
 
 
 @dataclass
+class Snapshot:
+    """A snapshot of an OTU at a specific event."""
+
+    at_event: int
+    """The event at which the snapshot was taken."""
+
+    otu: RepoOTU
+    """The OTU that was snapshotted."""
+
+
+@dataclass
 class OTUKeys:
     """Stores indexable data about OTUs."""
 
@@ -72,13 +83,15 @@ class Snapshotter:
         :return: The ID of the OTU with the given legacy ID or ``None``.
 
         """
-        index_by_legacy_id = {}
+        legacy_id_index = {
+            self._index[otu_id].legacy_id: otu_id for otu_id in self._index
+        }
 
-        for otu_id in self._index:
-            if (legacy_id := self._index[otu_id].legacy_id) is not None:
-                index_by_legacy_id[legacy_id] = otu_id
+        legacy_id_index.pop(None, None)
 
-        return index_by_legacy_id.get(legacy_id)
+        return legacy_id_index.get(
+            legacy_id,
+        )
 
     def get_id_by_name(self, name: str) -> UUID | None:
         """Get an OTU ID by its name.
@@ -133,7 +146,7 @@ class Snapshotter:
     def iter_otus(self) -> Generator[RepoOTU, None, None]:
         """Iterate over the OTUs in the snapshot."""
         for otu_id in self.otu_ids:
-            yield self.load_by_id(otu_id)
+            yield self.load_by_id(otu_id).otu
 
     def cache_otu(
         self,
@@ -148,7 +161,7 @@ class Snapshotter:
 
         self._index[otu.id] = OTUKeys.from_otu(otu)
 
-    def load_by_id(self, otu_id: UUID) -> RepoOTU | None:
+    def load_by_id(self, otu_id: UUID) -> Snapshot | None:
         """Load the most recently snapshotted form of an OTU by its ID.
 
         Returns ``None`` if the OTU is not found.
@@ -158,11 +171,13 @@ class Snapshotter:
 
         """
         try:
-            otu_snap = OTUSnapshot(self.path / f"{otu_id}")
+            otu_snapshot = OTUSnapshot(self.path / f"{otu_id}")
         except FileNotFoundError:
             return None
 
-        return otu_snap.load()
+        otu = otu_snapshot.load()
+
+        return Snapshot(at_event=otu_snapshot.at_event, otu=otu)
 
     def _build_index(self) -> None:
         """Build a new index from the contents of the snapshot cache directory."""

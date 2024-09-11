@@ -57,7 +57,7 @@ class OTUSnapshotToC:
         with open(self.path, "wb") as f:
             f.write(toc_adapter.dump_json(data, indent=indent))
 
-    def add_isolate(self, isolate: RepoIsolate, indent: int | None = None):
+    def add_isolate(self, isolate: RepoIsolate, indent: int | None = None) -> None:
         """Add a new isolate to the table of contents."""
         toc = self.load()
         toc[f"{isolate.name}"] = self._generate_table_from_isolate(isolate)
@@ -80,7 +80,8 @@ class OTUSnapshotToC:
 class OTUSnapshotDataStore:
     """Stores and retrieves OTU data in snapshot models."""
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path) -> None:
+        """Initialize the data store."""
         if not path.exists():
             path.mkdir()
 
@@ -88,7 +89,7 @@ class OTUSnapshotDataStore:
         """The path to the snapshot's data store directory."""
 
     @property
-    def contents(self):
+    def contents(self) -> list[Path]:
         """A list of the data store's contents."""
         return list(self.path.glob("*.json"))
 
@@ -101,7 +102,7 @@ class OTUSnapshotDataStore:
         self,
         isolate: RepoIsolate,
         indent: int | None = None,
-    ):
+    ) -> None:
         """Serialize and cache an isolate to the data store."""
         validated_isolate = OTUSnapshotIsolate(
             **isolate.model_dump(exclude={"sequences"}),
@@ -118,7 +119,7 @@ class OTUSnapshotDataStore:
         self,
         sequence: RepoSequence,
         indent: int | None = None,
-    ):
+    ) -> None:
         """Serialize and cache a sequence to the data store."""
         validated_sequence = OTUSnapshotSequence(**sequence.model_dump())
 
@@ -129,7 +130,8 @@ class OTUSnapshotDataStore:
 class OTUSnapshot:
     """Manages snapshot data for a single OTU."""
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path) -> None:
+        """Initialize the snapshot."""
         if not path.exists():
             path.mkdir()
 
@@ -142,6 +144,8 @@ class OTUSnapshot:
         self._toc = OTUSnapshotToC(self.path / "toc.json")
         """The path to this snapshot's table of contents."""
 
+        self.at_event: int | None = None
+
     @classmethod
     def new(cls, at_event: int, otu: RepoOTU, path: Path) -> "OTUSnapshot":
         return cls(
@@ -149,22 +153,17 @@ class OTUSnapshot:
         )
 
     @property
-    def at_event(self) -> int | None:
-        """The event at which the snapshot was created."""
-        return self._metadata.at_event
-
-    @property
-    def _otu_path(self):
+    def _otu_path(self) -> Path:
         """The path to the OTU's taxonomy data."""
         return self.path / "otu.json"
 
     def cache(
         self,
         otu: "RepoOTU",
-        at_event: int | None = None,
-    ):
+        at_event: int,
+    ) -> None:
         """Cache an OTU at a given event."""
-        self._metadata.at_event = at_event
+        self.at_event = at_event
 
         with open(self._otu_path, "wb") as f:
             f.write(
@@ -196,9 +195,10 @@ class OTUSnapshot:
     def load(self) -> "RepoOTU":
         """Load an OTU from the snapshot."""
         with open(self._otu_path, "rb") as f:
-            otu_dict = orjson.loads(f.read())["data"]
+            data = orjson.loads(f.read())
 
-        otu_dict["uuid"] = UUID(otu_dict.pop("id"))
+            self.at_event = data["at_event"]
+            otu_dict = data["data"]
 
         toc = self._toc.load()
 
@@ -215,16 +215,16 @@ class OTUSnapshot:
                 sequence_id = toc[key].accessions[accession]
                 sequence_structure = self._data.load_sequence(sequence_id)
 
-                sequence = RepoSequence(
-                    id=sequence_structure.id,
-                    accession=sequence_structure.accession,
-                    definition=sequence_structure.definition,
-                    sequence=sequence_structure.sequence,
-                    legacy_id=sequence_structure.legacy_id,
-                    segment=sequence_structure.segment,
+                sequences.append(
+                    RepoSequence(
+                        id=sequence_structure.id,
+                        accession=sequence_structure.accession,
+                        definition=sequence_structure.definition,
+                        sequence=sequence_structure.sequence,
+                        legacy_id=sequence_structure.legacy_id,
+                        segment=sequence_structure.segment,
+                    ),
                 )
-
-                sequences.append(sequence)
 
             isolates.append(
                 RepoIsolate(
@@ -233,12 +233,7 @@ class OTUSnapshot:
                 ),
             )
 
-            isolate = RepoIsolate(**isolate_dict, sequences=sequences)
-
-            isolates.append(isolate)
-
         return RepoOTU(
             **otu_dict,
-            excluded_accessions=set(excluded_accessions),
             isolates=isolates,
         )
