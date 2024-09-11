@@ -62,9 +62,24 @@ def group_genbank_records_by_isolate(
     isolates = defaultdict(dict)
 
     for record in records:
-        if (isolate_name := _get_isolate_name(record)) is not None:
+        try:
+            isolate_name = _get_isolate_name(record)
+
+            if isolate_name is None:
+                logger.debug(
+                    "RefSeq record does not contain sufficient source data for automatic inclusion."
+                    + "Add this record manually.",
+                    accession=record.accession,
+                    definition=record.definition,
+                    source_data=record.source,
+                )
+                continue
+
             versioned_accession = Accession.from_string(record.accession_version)
             isolates[isolate_name][versioned_accession] = record
+
+        except ValueError:
+            continue
 
     return isolates
 
@@ -105,12 +120,6 @@ def _get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
 
 def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
     """Get the isolate name from a Genbank record"""
-    record_logger = logger.bind(
-        accession=record.accession,
-        definition=record.definition,
-        source_data=record.source,
-    )
-
     if record.source.model_fields_set.intersection(
         {IsolateNameType.ISOLATE, IsolateNameType.STRAIN, IsolateNameType.CLONE},
     ):
@@ -121,17 +130,10 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
                     value=record.source.model_dump()[source_type],
                 )
 
-    elif record.refseq:
-        record_logger.debug(
-            "RefSeq record does not contain sufficient source data. "
-            + "Edit before inclusion.",
-        )
-
+    if record.refseq:
         return None
 
-    record_logger.debug("Record does not contain sufficient source data for inclusion.")
-
-    return None
+    raise ValueError("Record does not contain sufficient source data for inclusion.")
 
 
 def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
