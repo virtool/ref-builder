@@ -25,6 +25,7 @@ def add_isolate(
     accessions: list[str],
     ignore_cache: bool = False,
     ignore_name: bool = False,
+    isolate_name: IsolateName | None = None
 ) -> RepoIsolate | None:
     """Take a list of accessions that make up a new isolate and a new isolate to the OTU.
 
@@ -63,7 +64,7 @@ def add_isolate(
         return create_isolate_from_records(
             repo,
             otu,
-            isolate_name=None,
+            isolate_name=isolate_name,
             records=records,
         )
 
