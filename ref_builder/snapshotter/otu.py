@@ -128,7 +128,9 @@ class OTUSnapshotDataStore:
         indent: int | None = None,
     ):
         """Serialize and cache an isolate to the data store."""
-        validated_isolate = OTUSnapshotIsolate(**isolate.dict(exclude_contents=True))
+        validated_isolate = OTUSnapshotIsolate(
+            **isolate.model_dump(exclude={"sequences"}),
+        )
         with open(self.path / f"{isolate.id}.json", "w") as f:
             f.write(validated_isolate.model_dump_json(indent=indent))
 
@@ -143,7 +145,8 @@ class OTUSnapshotDataStore:
         indent: int | None = None,
     ):
         """Serialize and cache a sequence to the data store."""
-        validated_sequence = OTUSnapshotSequence(**sequence.dict())
+        validated_sequence = OTUSnapshotSequence(**sequence.model_dump())
+
         with open(self.path / f"{sequence.id}.json", "w") as f:
             f.write(validated_sequence.model_dump_json(indent=indent))
 
@@ -201,11 +204,9 @@ class OTUSnapshot:
         """Cache an OTU at a given event."""
         self._metadata.at_event = at_event
 
-        try:
-            validated_otu = OTUSnapshotOTU.model_validate(otu.dict(exclude_contents=True))
-        except ValidationError:
-            msg = f"{otu.dict(exclude_contents=True)} is not a valid OTU."
-            raise ValueError(msg)
+        validated_otu = OTUSnapshotOTU.model_validate(
+            otu.model_dump(exclude={"isolates"}),
+        )
 
         with open(self._otu_path, "w") as f:
             f.write(validated_otu.model_dump_json(indent=indent))
@@ -234,6 +235,7 @@ class OTUSnapshot:
         toc = self._toc.load()
 
         isolates = []
+
         for key in toc:
             isolate_entry = toc[key]
 
@@ -256,18 +258,18 @@ class OTUSnapshot:
 
                 sequences.append(sequence)
 
-            isolate_dict = isolate_structure.model_dump()
-            isolate_dict["uuid"] = isolate_dict.pop("id")
+            isolates.append(
+                RepoIsolate(
+                    **isolate_structure.model_dump(),
+                    sequences=sequences,
+                ),
+            )
 
-            isolate = RepoIsolate(**isolate_dict, sequences=sequences)
-
-            isolates.append(isolate)
-
-        otu_dict = otu_structure.model_dump(by_alias=True)
-        otu_dict["excluded_accessions"] = excluded_accessions
-        otu_dict["uuid"] = otu_dict.pop("id")
-
-        return RepoOTU(**otu_dict, isolates=isolates)
+        return RepoOTU(
+            **otu_structure.model_dump(by_alias=True),
+            excluded_accessions=set(excluded_accessions),
+            isolates=isolates,
+        )
 
     def _write_metadata(self, indent: int | None = None) -> None:
         """Write the snapshot's metadata to file."""

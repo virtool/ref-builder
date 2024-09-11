@@ -19,13 +19,12 @@ def test_otu_model_adherence(scratch_repo: Repo):
     """Check the OTU snapshot model for missing fields relative to RepoOTU."""
     otu = scratch_repo.get_otu_by_taxid(1169032)
 
-    otu_fields = set(otu.dict().keys())
+    otu_fields = set(otu.model_dump().keys())
 
     otu_fields.remove("isolates")
-
     otu_fields.remove("excluded_accessions")
-
     otu_fields.remove("schema")
+
     otu_fields.add("otu_schema")
 
     for field in otu_fields:
@@ -82,10 +81,9 @@ class TestRepoToSnapshotModel:
 
         for isolate in otu.isolates:
             assert type(isolate) is RepoIsolate
-
-            converted_model = OTUSnapshotIsolate(**isolate.dict())
-
-            assert converted_model.model_dump() == snapshot(exclude=props("id"))
+            assert OTUSnapshotIsolate(**isolate.model_dump()).model_dump() == snapshot(
+                exclude=props("id"),
+            )
 
     @pytest.mark.parametrize("taxid", [1441799, 430059])
     def test_otu_conversion(
@@ -98,12 +96,10 @@ class TestRepoToSnapshotModel:
 
         assert type(otu) is RepoOTU
 
-        converted_model = OTUSnapshotOTU(**otu.dict())
+        converted_model = OTUSnapshotOTU(**otu.model_dump())
 
         assert converted_model.id == otu.id
 
         assert converted_model.model_dump(by_alias=True) == snapshot(
-            exclude=props("id", "repr_isolate")
+            exclude=props("id", "repr_isolate"),
         )
-
-
