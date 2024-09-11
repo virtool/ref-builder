@@ -88,11 +88,7 @@ class Repo:
 
         snapshot_path = path / ".cache/snapshot"
 
-        self._snapshotter = (
-            Snapshotter(path=snapshot_path)
-            if snapshot_path.exists()
-            else Snapshotter.new(path=snapshot_path, metadata=self.meta)
-        )
+        self._snapshotter = Snapshotter(path=snapshot_path)
         """The snapshot index. Maintains and caches the read model of the Repo."""
 
         # Take a new snapshot if no existing data is found.
@@ -156,8 +152,7 @@ class Repo:
         """Create a snapshot using all the OTUs in the event store."""
         self._snapshotter.snapshot(
             self.iter_otus(ignore_cache=True),
-            at_event=self.last_id,
-            indent=True,
+            self.last_id,
         )
 
     def iter_otus(self, ignore_cache: bool = False) -> Generator[RepoOTU, None, None]:

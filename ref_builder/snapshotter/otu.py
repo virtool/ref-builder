@@ -1,9 +1,7 @@
-import shutil
 from pathlib import Path
 from uuid import UUID
 
 import orjson
-from pydantic import ValidationError
 from structlog import get_logger
 
 from ref_builder.resources import (
@@ -13,8 +11,6 @@ from ref_builder.resources import (
 )
 from ref_builder.snapshotter.models import (
     OTUSnapshotIsolate,
-    OTUSnapshotMeta,
-    OTUSnapshotOTU,
     OTUSnapshotSequence,
     OTUSnapshotToCIsolate,
     toc_adapter,
@@ -61,23 +57,7 @@ class OTUSnapshotToC:
         with open(self.path, "wb") as f:
             f.write(toc_adapter.dump_json(data, indent=indent))
 
-    def add_sequence(
-        self,
-        sequence: RepoSequence,
-        isolate_id: UUID,
-        indent: int | None = None,
-    ):
-        """Add a new sequence to the table of contents."""
-        toc = self.load()
-
-        for key in toc:
-            if toc[key].id == isolate_id:
-                toc[key].accessions[sequence.accession.key] = sequence.id
-                break
-
-        self.write(toc, indent=indent)
-
-    def add_isolate(self, isolate: RepoIsolate, indent: int | None = None):
+    def add_isolate(self, isolate: RepoIsolate, indent: int | None = None) -> None:
         """Add a new isolate to the table of contents."""
         toc = self.load()
         toc[f"{isolate.name}"] = self._generate_table_from_isolate(isolate)
@@ -101,7 +81,8 @@ class OTUSnapshotToC:
 class OTUSnapshotDataStore:
     """Stores and retrieves OTU data in snapshot models."""
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path) -> None:
+        """Initialize the data store."""
         if not path.exists():
             path.mkdir()
 
@@ -109,14 +90,9 @@ class OTUSnapshotDataStore:
         """The path to the snapshot's data store directory."""
 
     @property
-    def contents(self):
+    def contents(self) -> list[Path]:
         """A list of the data store's contents."""
         return list(self.path.glob("*.json"))
-
-    def clean(self):
-        """Delete and remake the data store directory."""
-        shutil.rmtree(self.path)
-        self.path.mkdir()
 
     def load_isolate(self, isolate_id: UUID) -> OTUSnapshotIsolate:
         """Load and parse an isolate from the data store."""
@@ -127,7 +103,7 @@ class OTUSnapshotDataStore:
         self,
         isolate: RepoIsolate,
         indent: int | None = None,
-    ):
+    ) -> None:
         """Serialize and cache an isolate to the data store."""
         validated_isolate = OTUSnapshotIsolate(
             **isolate.model_dump(exclude={"sequences"}),
@@ -144,7 +120,7 @@ class OTUSnapshotDataStore:
         self,
         sequence: RepoSequence,
         indent: int | None = None,
-    ):
+    ) -> None:
         """Serialize and cache a sequence to the data store."""
         validated_sequence = OTUSnapshotSequence(**sequence.model_dump())
 
@@ -155,7 +131,8 @@ class OTUSnapshotDataStore:
 class OTUSnapshot:
     """Manages snapshot data for a single OTU."""
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path) -> None:
+        """Initialize the snapshot."""
         if not path.exists():
             path.mkdir()
 
@@ -168,52 +145,39 @@ class OTUSnapshot:
         self._toc = OTUSnapshotToC(self.path / "toc.json")
         """The path to this snapshot's table of contents."""
 
-        self._metadata_path = self.path / "metadata.json"
-        """The path of this snapshot's metadata file."""
-
-        self._metadata = (
-            self._load_metadata() if self._metadata_path.exists() else OTUSnapshotMeta()
-        )
-        """The metadata for this snapshot."""
+        self.at_event: int | None = None
 
     @property
-    def at_event(self) -> int | None:
-        """The event at which the snapshot was created."""
-        return self._metadata.at_event
-
-    @property
-    def _otu_path(self):
+    def _otu_path(self) -> Path:
         """The path to the OTU's taxonomy data."""
         return self.path / "otu.json"
-
-    @property
-    def _toc_path(self):
-        """The path to the OTU's table of contents."""
-        return self.path / "toc.json"
-
-    @property
-    def _excluded_path(self):
-        """The path to a list of accessions that should not be fetched in the future."""
-        return self.path / "excluded.json"
 
     def cache(
         self,
         otu: "RepoOTU",
-        at_event: int | None = None,
-        indent: int | None = None,
-    ):
+        at_event: int,
+    ) -> None:
         """Cache an OTU at a given event."""
-        self._metadata.at_event = at_event
+        self.at_event = at_event
 
-        validated_otu = OTUSnapshotOTU.model_validate(
-            otu.model_dump(exclude={"isolates"}),
-        )
-
-        with open(self._otu_path, "w") as f:
-            f.write(validated_otu.model_dump_json(indent=indent))
-
-        with open(self._excluded_path, "wb") as f:
-            f.write(orjson.dumps(list(otu.excluded_accessions)))
+        with open(self._otu_path, "wb") as f:
+            f.write(
+                orjson.dumps(
+                    {
+                        "at_event": at_event,
+                        "data": {
+                            "acronym": otu.acronym,
+                            "id": otu.id,
+                            "excluded_accessions": list(otu.excluded_accessions),
+                            "legacy_id": otu.legacy_id,
+                            "name": otu.name,
+                            "repr_isolate": otu.repr_isolate,
+                            "schema": otu.schema.model_dump(),
+                            "taxid": otu.taxid,
+                        },
+                    },
+                ),
+            )
 
         for isolate in otu.isolates:
             self._data.cache_isolate(isolate)
@@ -221,17 +185,15 @@ class OTUSnapshot:
             for sequence in isolate.sequences:
                 self._data.cache_sequence(sequence)
 
-        self._toc.write(data=OTUSnapshotToC.generate_from_otu(otu), indent=indent)
-
-        self._write_metadata(indent=None)
+        self._toc.write(data=OTUSnapshotToC.generate_from_otu(otu))
 
     def load(self) -> "RepoOTU":
         """Load an OTU from the snapshot."""
         with open(self._otu_path, "rb") as f:
-            otu_structure = OTUSnapshotOTU.model_validate_json(f.read())
+            data = orjson.loads(f.read())
 
-        with open(self._excluded_path, "rb") as f:
-            excluded_accessions = orjson.loads(f.read())
+            self.at_event = data["at_event"]
+            otu_dict = data["data"]
 
         toc = self._toc.load()
 
@@ -248,16 +210,16 @@ class OTUSnapshot:
                 sequence_id = toc[key].accessions[accession]
                 sequence_structure = self._data.load_sequence(sequence_id)
 
-                sequence = RepoSequence(
-                    id=sequence_structure.id,
-                    accession=sequence_structure.accession,
-                    definition=sequence_structure.definition,
-                    sequence=sequence_structure.sequence,
-                    legacy_id=sequence_structure.legacy_id,
-                    segment=sequence_structure.segment,
+                sequences.append(
+                    RepoSequence(
+                        id=sequence_structure.id,
+                        accession=sequence_structure.accession,
+                        definition=sequence_structure.definition,
+                        sequence=sequence_structure.sequence,
+                        legacy_id=sequence_structure.legacy_id,
+                        segment=sequence_structure.segment,
+                    ),
                 )
-
-                sequences.append(sequence)
 
             isolates.append(
                 RepoIsolate(
@@ -267,20 +229,6 @@ class OTUSnapshot:
             )
 
         return RepoOTU(
-            **otu_structure.model_dump(by_alias=True),
-            excluded_accessions=set(excluded_accessions),
+            **otu_dict,
             isolates=isolates,
         )
-
-    def _write_metadata(self, indent: int | None = None) -> None:
-        """Write the snapshot's metadata to file."""
-        with open(self._metadata_path, "w") as f:
-            f.write(self._metadata.model_dump_json(indent=indent))
-
-    def _load_metadata(self) -> OTUSnapshotMeta | None:
-        """Load the snapshot's metadata from file."""
-        try:
-            with open(self._metadata_path, "rb") as f:
-                return OTUSnapshotMeta.model_validate_json(f.read())
-        except (FileNotFoundError, ValidationError):
-            return None

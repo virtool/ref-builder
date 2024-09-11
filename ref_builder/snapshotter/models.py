@@ -83,17 +83,17 @@ class OTUSnapshotIsolate(BaseModel):
 class OTUSnapshotOTU(BaseModel):
     """Stores and parses OTU data."""
 
+    acronym: str = ""
+    """The OTU acronym (eg. TMV for Tobacco mosaic virus)."""
+
     id: UUID4
     """The OTU id."""
 
+    name: str
+    """The name of the OTU (eg. TMV for Tobacco mosaic virus)."""
+
     taxid: int
     """The NCBI Taxonomy id for this OTU."""
-
-    name: str
-    """The name of the OTU (eg. TMV for Tobacco mosaic virus)"""
-
-    acronym: str = ""
-    """The OTU acronym (eg. TMV for Tobacco mosaic virus)."""
 
     otu_schema: Annotated[
         OTUSchema,
