@@ -185,7 +185,7 @@ class Repo:
         taxid: int,
     ):
         """Create an OTU."""
-        if (otu_id := self.get_otu_by_taxid(taxid)) is not None:
+        if (otu_id := self.get_otu_id_by_taxid(taxid)) is not None:
             otu = self.get_otu(otu_id)
             raise ValueError(
                 f"OTU already exists as {otu}",
