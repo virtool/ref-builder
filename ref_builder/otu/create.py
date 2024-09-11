@@ -84,12 +84,10 @@ def create_otu(
         otu_logger.fatal(e)
         sys.exit(1)
 
-    isolate_name = list(binned_records.keys())[0]
-
     isolate = repo.create_isolate(
         otu_id=otu.id,
         legacy_id=None,
-        name=isolate_name,
+        name=list(binned_records.keys())[0] if binned_records else None,
     )
 
     otu.add_isolate(isolate)

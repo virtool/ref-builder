@@ -11,10 +11,7 @@
 # name: TestRepoToSnapshotModel.test_isolate_conversion[430059]
   dict({
     'legacy_id': None,
-    'name': dict({
-      'type': <IsolateNameType.REFSEQ: 'refseq'>,
-      'value': 'NC_043170',
-    }),
+    'name': None,
   })
 # ---
 # name: TestRepoToSnapshotModel.test_otu_conversion[1441799]

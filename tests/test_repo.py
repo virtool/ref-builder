@@ -312,6 +312,22 @@ class TestCreateIsolate:
                 IsolateName(IsolateNameType.ISOLATE, "A"),
             )
 
+    def test_create_unnamed(self, empty_repo):
+        """Test that creating an isolate returns the expected ``RepoIsolate`` object and
+        creates the expected event file.
+        """
+        otu = init_otu(empty_repo)
+
+        isolate = empty_repo.create_isolate(
+            otu.id,
+            None,
+            None,
+        )
+
+        assert isinstance(isolate.id, UUID)
+        assert isolate.sequences == []
+        assert isolate.name is None
+
 
 def test_create_sequence(empty_repo: Repo):
     """Test that creating a sequence returns the expected ``RepoSequence`` object and
@@ -558,6 +574,54 @@ class TestGetIsolate:
             )
             in isolate_ids
         )
+
+    def test_get_with_unnamed_isolate(self, initialized_repo: Repo):
+        """Test that getting an OTU with an unnamed isolate ID behaves as expected."""
+        otu = next(initialized_repo.iter_otus())
+
+        isolate_before = otu.isolates[0]
+
+        isolate_unnamed = initialized_repo.create_isolate(
+            otu.id,
+            None,
+            None,
+        )
+
+        initialized_repo.create_sequence(
+            otu.id,
+            isolate_id=isolate_unnamed.id,
+            accession="EMPTY1.1",
+            definition="TMV B",
+            legacy_id=None,
+            segment="RNA A",
+            sequence="GACCACGTGGAGA",
+        )
+
+        initialized_repo.create_sequence(
+            otu.id,
+            isolate_id=isolate_unnamed.id,
+            accession="EMPTY2.1",
+            definition="TMV A",
+            legacy_id=None,
+            segment="RNA B",
+            sequence="ACTAAGAGAAAAA",
+        )
+
+        otu_after = next(initialized_repo.iter_otus())
+
+        assert len(otu_after.isolate_ids) == len(otu.isolate_ids) + 1
+
+        assert "EMPTY1" in otu_after.accessions
+
+        assert "EMPTY2" in otu_after.accessions
+
+        assert otu_after.isolate_ids == {isolate_before.id, isolate_unnamed.id}
+
+        isolate_unnamed_after = otu_after.get_isolate(isolate_unnamed.id)
+
+        assert isolate_unnamed_after.name is None
+
+        assert isolate_unnamed_after.accessions == {"EMPTY1", "EMPTY2"}
 
 
 def test_exclude_accession(empty_repo: Repo):

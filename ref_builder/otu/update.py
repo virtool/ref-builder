@@ -24,6 +24,8 @@ def add_isolate(
     otu: RepoOTU,
     accessions: list[str],
     ignore_cache: bool = False,
+    ignore_name: bool = False,
+    isolate_name: IsolateName | None = None
 ) -> RepoIsolate | None:
     """Take a list of accessions that make up a new isolate and a new isolate to the OTU.
 
@@ -57,6 +59,14 @@ def add_isolate(
     )
 
     records = ncbi.fetch_genbank_records(fetch_list)
+
+    if ignore_name:
+        return create_isolate_from_records(
+            repo,
+            otu,
+            isolate_name=isolate_name,
+            records=records,
+        )
 
     record_bins = group_genbank_records_by_isolate(records)
     if len(record_bins) != 1:
@@ -98,14 +108,14 @@ def add_isolate(
 def create_isolate_from_records(
     repo: Repo,
     otu: RepoOTU,
-    isolate_name: IsolateName,
+    isolate_name: IsolateName | None,
     records: list[NCBIGenbank],
 ) -> RepoIsolate | None:
     """Take a list of GenBank records that make up a new isolate
     and add them to the OTU.
     """
     isolate_logger = get_logger("otu.isolate").bind(
-        isolate_name=str(isolate_name),
+        isolate_name=str(isolate_name) if IsolateName is not None else None,
         otu_name=otu.name,
         taxid=otu.taxid,
     )

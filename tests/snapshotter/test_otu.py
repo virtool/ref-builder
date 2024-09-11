@@ -80,7 +80,7 @@ class TestOTUSnapshot:
             toc_dict = orjson.loads(f.read())
 
         for isolate in rehydrated_otu.isolates:
-            key = str(isolate.name)
+            key = str(isolate.id)
 
             assert key in toc_dict
 

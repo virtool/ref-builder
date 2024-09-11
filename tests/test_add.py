@@ -234,6 +234,54 @@ class TestAddIsolate:
 
         assert otu.get_isolate(isolate.id).accessions == set(isolate_2_accessions)
 
+    def test_ignore_name_ok(self, precached_repo: Repo):
+        """Test that ignore_name flag works as planned."""
+        isolate_1_accessions = ["DQ178610", "DQ178611"]
+        isolate_2_accessions = ["DQ178613", "DQ178614"]
+
+        otu = create_otu(precached_repo, 345184, isolate_1_accessions, acronym="")
+
+        assert otu.accessions == set(isolate_1_accessions)
+
+        isolate = add_isolate(precached_repo, otu, isolate_2_accessions, ignore_name=True)
+
+        otu_after = precached_repo.get_otu_by_taxid(345184)
+
+        assert otu_after.isolate_ids == {otu_after.repr_isolate, isolate.id}
+
+        isolate_after = otu_after.get_isolate(isolate.id)
+
+        assert isolate_after.name is None
+
+        assert isolate_after.accessions == {"DQ178613", "DQ178614"}
+
+    def test_ignore_name_override_ok(self, precached_repo: Repo):
+        """Test that ignore_name flag works as planned."""
+        isolate_1_accessions = ["DQ178610", "DQ178611"]
+        isolate_2_accessions = ["DQ178613", "DQ178614"]
+
+        otu = create_otu(precached_repo, 345184, isolate_1_accessions, acronym="")
+
+        assert otu.accessions == set(isolate_1_accessions)
+
+        isolate = add_isolate(
+            precached_repo,
+            otu,
+            isolate_2_accessions,
+            ignore_name=True,
+            isolate_name=IsolateName(type=IsolateNameType.ISOLATE, value="dummy")
+        )
+
+        otu_after = precached_repo.get_otu_by_taxid(345184)
+
+        assert otu_after.isolate_ids == {otu_after.repr_isolate, isolate.id}
+
+        isolate_after = otu_after.get_isolate(isolate.id)
+
+        assert isolate_after.name == IsolateName(type=IsolateNameType.ISOLATE, value="dummy")
+
+        assert isolate_after.accessions == {"DQ178613", "DQ178614"}
+
     def test_conflict_fail(self, precached_repo: Repo):
         """Test that an isolate cannot be added to an OTU
         if both its name and its accessions are already contained."""

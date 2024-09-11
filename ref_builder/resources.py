@@ -80,7 +80,7 @@ class RepoIsolate(BaseModel):
     It the isolate was not migrated from a legacy repository, this will be `None`.
     """
 
-    name: IsolateName
+    name: IsolateName | None
     """The isolate's source name metadata."""
 
     sequences: list[RepoSequence]
@@ -99,16 +99,22 @@ class RepoIsolate(BaseModel):
         }
 
     @field_serializer("name")
-    def serialize_name(self, name: IsolateName) -> dict[str, str]:
+    def serialize_name(self, name: IsolateName | None) -> dict[str, str] | None:
         """Serialize the isolate name."""
+        if name is None:
+            return None
+
         return {
             "type": name.type,
             "value": name.value,
         }
 
     @field_validator("name", mode="before")
-    def convert_name(cls: "RepoIsolate", value: Any) -> IsolateName:
+    def convert_name(cls: "RepoIsolate", value: Any) -> IsolateName | None:
         """Convert the name to an IsolateName object."""
+        if value is None:
+            return value
+
         if isinstance(value, IsolateName):
             return value
 
