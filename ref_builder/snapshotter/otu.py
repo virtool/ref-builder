@@ -146,12 +146,6 @@ class OTUSnapshot:
 
         self.at_event: int | None = None
 
-    @classmethod
-    def new(cls, at_event: int, otu: RepoOTU, path: Path) -> "OTUSnapshot":
-        return cls(
-            path,
-        )
-
     @property
     def _otu_path(self) -> Path:
         """The path to the OTU's taxonomy data."""
