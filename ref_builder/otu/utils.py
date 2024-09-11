@@ -127,10 +127,7 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
             + "Edit before inclusion.",
         )
 
-        return IsolateName(
-            type=IsolateNameType(IsolateNameType.REFSEQ),
-            value=record.accession,
-        )
+        return None
 
     record_logger.debug("Record does not contain sufficient source data for inclusion.")
 
