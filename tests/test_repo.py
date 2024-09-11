@@ -576,36 +576,35 @@ class TestGetIsolate:
         )
 
     def test_get_with_unnamed_isolate(self, initialized_repo: Repo):
+        """Test that getting an OTU with an unnamed isolate ID behaves as expected."""
         otu = next(initialized_repo.iter_otus())
 
         isolate_before = otu.isolates[0]
 
-        isolate_empty = initialized_repo.create_isolate(
+        isolate_unnamed = initialized_repo.create_isolate(
             otu.id,
             None,
             None,
         )
 
-        sequence_a = initialized_repo.create_sequence(
+        initialized_repo.create_sequence(
             otu.id,
-            isolate_id=isolate_empty.id,
+            isolate_id=isolate_unnamed.id,
             accession="EMPTY1.1",
             definition="TMV B",
             legacy_id=None,
             segment="RNA A",
             sequence="GACCACGTGGAGA",
-
         )
 
-        sequence_b = initialized_repo.create_sequence(
+        initialized_repo.create_sequence(
             otu.id,
-            isolate_id=isolate_empty.id,
+            isolate_id=isolate_unnamed.id,
             accession="EMPTY2.1",
             definition="TMV A",
             legacy_id=None,
             segment="RNA B",
             sequence="ACTAAGAGAAAAA",
-
         )
 
         otu_after = next(initialized_repo.iter_otus())
@@ -616,7 +615,13 @@ class TestGetIsolate:
 
         assert "EMPTY2" in otu_after.accessions
 
-        assert otu_after.isolate_ids == {isolate_before.id, isolate_empty.id}
+        assert otu_after.isolate_ids == {isolate_before.id, isolate_unnamed.id}
+
+        isolate_unnamed_after = otu_after.get_isolate(isolate_unnamed.id)
+
+        assert isolate_unnamed_after.name is None
+
+        assert isolate_unnamed_after.accessions == {"EMPTY1", "EMPTY2"}
 
 
 def test_exclude_accession(empty_repo: Repo):
