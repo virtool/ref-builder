@@ -20,8 +20,11 @@ from ref_builder.otu.update import (
     add_isolate,
     auto_update_otu,
     exclude_accessions_from_otu,
+    promote_otu_accessions,
     set_representative_isolate,
+    update_isolate_from_accessions,
 )
+from ref_builder.otu.utils import RefSeqConflictError
 from ref_builder.repo import Repo
 from ref_builder.utils import DataType, IsolateName, IsolateNameType, format_json
 
@@ -182,6 +185,27 @@ def otu_autoupdate(ctx, debug: bool, ignore_cache: bool) -> None:
     auto_update_otu(repo, otu_, ignore_cache=ignore_cache)
 
 
+@update.command(name="promote")
+@debug_option
+@ignore_cache_option
+@click.pass_context
+def otu_promote_accessions(
+    ctx,
+    debug: bool = False,
+    ignore_cache: bool = False,
+):
+    """Promote all RefSeq accessions within this OTU."""
+    configure_logger(debug)
+
+    taxid = ctx.obj['TAXID']
+
+    repo = ctx.obj['REPO']
+
+    otu_ = repo.get_otu_by_taxid(taxid)
+
+    promote_otu_accessions(repo, otu_, ignore_cache)
+
+
 @update.command(name="isolate")
 @click.argument(
     "accessions_",
@@ -218,6 +242,12 @@ def isolate_create(
             accessions_,
             ignore_cache=ignore_cache,
         )
+    except RefSeqConflictError as err:
+        click.echo(
+            f"{err.isolate_name} already exists, but RefSeq items may be promotable,",
+        )
+        sys.exit(1)
+
     except ValueError as e:
         click.echo(e, err=True)
         sys.exit(1)
@@ -236,6 +266,7 @@ def isolate_create(
 def accession_exclude(
     ctx,
     debug: bool,
+    ignore_cache: bool,
     accessions_: list[str],
 ) -> None:
     """Exclude the given accessions from this OTU."""
@@ -292,6 +323,7 @@ def otu_set_representative_isolate(
         sys.exit(1)
 
     set_representative_isolate(repo, otu_, isolate_id)
+
 
 
 @entry.group()
