@@ -463,13 +463,15 @@ class Repo:
             )
 
         otu = RepoOTU(
-            uuid=event.data.id,
+            id=event.data.id,
             acronym=event.data.acronym,
-            excluded_accessions=[],
+            excluded_accessions=set(),
+            isolates=[],
             legacy_id=event.data.legacy_id,
             name=event.data.name,
-            taxid=event.data.taxid,
+            repr_isolate=None,
             schema=event.data.otu_schema,
+            taxid=event.data.taxid,
         )
 
         for event_id in event_ids[1:]:
@@ -487,14 +489,15 @@ class Repo:
             elif isinstance(event, CreateIsolate):
                 otu.add_isolate(
                     RepoIsolate(
-                        uuid=event.data.id,
+                        id=event.data.id,
                         legacy_id=event.data.legacy_id,
                         name=event.data.name,
+                        sequences=[],
                     ),
                 )
 
             elif isinstance(event, DeleteIsolate):
-                otu.remove_isolate(event.query.isolate_id)
+                otu.delete_isolate(event.query.isolate_id)
 
             elif isinstance(event, ExcludeAccession):
                 otu.excluded_accessions.add(event.data.accession)

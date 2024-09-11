@@ -2,8 +2,8 @@
 # name: TestCreateOTU.test_empty_success
   dict({
     'acronym': '',
-    'excluded_accessions': list([
-    ]),
+    'excluded_accessions': set({
+    }),
     'legacy_id': None,
     'name': 'Cabbage leaf curl Jamaica virus',
     'schema': dict({
@@ -66,9 +66,9 @@
 # name: TestCreateOTUCommands.test_ok[1278205-accessions0]
   dict({
     'acronym': '',
-    'excluded_accessions': list([
+    'excluded_accessions': set({
       'JX263426',
-    ]),
+    }),
     'legacy_id': None,
     'name': 'Dahlia latent viroid',
     'schema': dict({
@@ -92,8 +92,8 @@
 # name: TestCreateOTUCommands.test_ok[345184-accessions1]
   dict({
     'acronym': '',
-    'excluded_accessions': list([
-    ]),
+    'excluded_accessions': set({
+    }),
     'legacy_id': None,
     'name': 'Cabbage leaf curl Jamaica virus',
     'schema': dict({
