@@ -7,8 +7,8 @@ from syrupy.filters import props
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.models import MolType
 from ref_builder.otu.update import create_schema_from_records
-from ref_builder.otu.utils import get_multipartite_segment_name
-from ref_builder.schema import SegmentName, OTUSchema, parse_segment_name
+from ref_builder.otu.utils import get_multipartite_segment_name, parse_segment_name
+from ref_builder.schema import SegmentName, OTUSchema
 
 
 class MockNCBISource:

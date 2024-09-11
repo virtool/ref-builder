@@ -1,10 +1,11 @@
-import re
 from typing import NamedTuple
 
 from pydantic import BaseModel, UUID4, computed_field
 
 from ref_builder.models import Molecule
 from ref_builder.ncbi.models import NCBISourceMolType
+
+"""Regex pattern for parsing segment name strings containing both a prefix and a key."""
 
 
 class SegmentName(NamedTuple):
@@ -44,7 +45,10 @@ class OTUSchema(BaseModel):
         return len(self.segments) > 1
 
 
-def set_segment_prefix(moltype: NCBISourceMolType):
+def determine_segment_prefix(moltype: NCBISourceMolType) -> str:
+    """Returns an acceptable SegmentName prefix
+    corresponding to the given NCBISourceMolType.
+    """
     if moltype in (
         NCBISourceMolType.GENOMIC_DNA,
         NCBISourceMolType.OTHER_DNA,
@@ -65,17 +69,3 @@ def set_segment_prefix(moltype: NCBISourceMolType):
             return "cRNA"
         case NCBISourceMolType.OTHER_RNA:
             return "RNA"
-
-
-complex_name_pattern = re.compile(r"([A-Za-z]+)[-_ ]+([A-Za-z0-9]+)")
-
-
-def parse_segment_name(raw: str) -> SegmentName:
-    segment_name_parse = complex_name_pattern.fullmatch(raw)
-    if segment_name_parse:
-        return SegmentName(
-            prefix=segment_name_parse.group(1),
-            key=segment_name_parse.group(2)
-        )
-
-    raise ValueError(f"{raw} is not a valid segment name")

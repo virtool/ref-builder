@@ -7,8 +7,15 @@ import structlog
 
 from ref_builder.models import Molecule, MolType
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.schema import OTUSchema, SegmentName, Segment, parse_segment_name
+from ref_builder.schema import OTUSchema, SegmentName, Segment
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
+
+
+SIMPLE_NAME_PATTERN = re.compile(r"([A-Za-z0-9])+")
+"""Regex pattern for parsing segment name strings with no prefix."""
+
+COMPLEX_NAME_PATTERN = re.compile(r"([A-Za-z]+)[-_ ]+([A-Za-z0-9]+)")
+"""Regex pattern for parsing segment name strings consisting of a prefix and a key."""
 
 logger = structlog.get_logger("otu.utils")
 
@@ -170,13 +177,21 @@ def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
     return segments
 
 
-simple_name_pattern = re.compile(r"([A-Za-z0-9])+")
-
-
 def get_multipartite_segment_name(record: NCBIGenbank) -> SegmentName:
-    if simple_name_pattern.fullmatch(record.source.segment):
+    if SIMPLE_NAME_PATTERN.fullmatch(record.source.segment):
         return SegmentName(
             prefix=record.moltype, key=record.source.segment
         )
     else:
         return parse_segment_name(record.source.segment)
+
+
+def parse_segment_name(raw: str) -> SegmentName:
+    segment_name_parse = COMPLEX_NAME_PATTERN.fullmatch(raw)
+    if segment_name_parse:
+        return SegmentName(
+            prefix=segment_name_parse.group(1),
+            key=segment_name_parse.group(2)
+        )
+
+    raise ValueError(f"{raw} is not a valid segment name")
