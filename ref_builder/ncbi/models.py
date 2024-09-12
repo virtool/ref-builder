@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import (
     AliasChoices,
@@ -86,6 +86,8 @@ class NCBISource(BaseModel):
 
 
 class NCBIGenbank(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     accession: Annotated[str, Field(validation_alias="GBSeq_primary-accession")]
     accession_version: Annotated[str, Field(validation_alias="GBSeq_accession-version")]
     strandedness: Annotated[
@@ -110,6 +112,7 @@ class NCBIGenbank(BaseModel):
     def refseq(self) -> bool:
         return self.accession.startswith("NC_")
 
+
     @field_validator("sequence", mode="after")
     @classmethod
     def to_uppercase(cls, raw: str) -> str:
@@ -117,8 +120,12 @@ class NCBIGenbank(BaseModel):
 
     @field_validator("source", mode="before")
     @classmethod
-    def create_source(cls, raw: list) -> NCBISource:
-        """Create a source object from the feature table."""
+    def format_source(cls, raw: NCBISource | list[dict[str: Any]]) -> NCBISource:
+        """If source is not already set to a premade NCBISource,
+        create a source object from the feature table."""
+        if type(raw) is NCBISource:
+            return raw
+
         for feature in raw:
             if feature["GBFeature_key"] == "source":
                 source_dict = {}
