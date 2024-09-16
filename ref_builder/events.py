@@ -158,6 +158,17 @@ class DeleteSequence(Event):
     query: SequenceQuery
 
 
+class LinkSequenceData(EventData):
+    """The data for the linking of an existing sequence to a new isolate."""
+    original_query: SequenceQuery
+
+
+class LinkSequence(Event):
+    """A sequence link event. Links an existing sequence to an isolate."""
+    data: LinkSequenceData
+    query: SequenceQuery
+
+
 class ExcludeAccessionData(EventData):
     """The data for the exclusion of an accession."""
 
