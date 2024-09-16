@@ -3,9 +3,12 @@ from polyfactory import Use
 from polyfactory.decorators import post_generated
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from ref_builder.ncbi.models import NCBIGenbank, NCBISource, NCBISourceMolType
+from ref_builder.models import MolType
 from ref_builder.utils import Accession
-from tests.fixtures.providers import OrganismProvider, SourceProvider
+from ref_builder.ncbi.models import NCBIGenbank, NCBISource, NCBISourceMolType
+from tests.fixtures.providers import (
+    AccessionProvider, OrganismProvider, SequenceProvider, SourceProvider
+)
 
 DNA_MOLTYPES = {
     NCBISourceMolType.GENOMIC_DNA,
@@ -90,8 +93,66 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
         return False
 
 
-if __name__ == '__main__':
-    sources = NCBISourceFactory.batch(10)
+class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
+    __faker__ = Faker()
+    __faker__.add_provider(AccessionProvider)
+    __faker__.add_provider(SequenceProvider)
 
-    for source in sources:
-        print(source)
+    source = NCBISourceFactory
+
+    @classmethod
+    def accession(cls) -> str:
+        return cls.__faker__.accession()
+
+    @classmethod
+    def sequence(cls):
+        return cls.__faker__.sequence()
+
+    @post_generated
+    @classmethod
+    def accession_versioned(cls, accession: str):
+        return f"{accession}.{cls.__faker__.random_int(1, 3)}"
+
+    @post_generated
+    @classmethod
+    def organism(cls, source: NCBISource) -> str:
+        return source.organism
+
+    @post_generated
+    @classmethod
+    def taxid(cls, source: NCBISource) -> int:
+        return source.taxid
+
+    @post_generated
+    @classmethod
+    def moltype(self, source: NCBISource) -> MolType:
+        if source.mol_type in DNA_MOLTYPES:
+            return MolType.DNA
+
+        match source.mol_type:
+            case NCBISourceMolType.GENOMIC_RNA:
+                return MolType.RNA
+            case NCBISourceMolType.MRNA:
+                return MolType.MRNA
+            case NCBISourceMolType.TRANSCRIBED_RNA:
+                return MolType.RNA
+            case NCBISourceMolType.VIRAL_CRNA:
+                return MolType.CRNA
+            case NCBISourceMolType.TRNA:
+                return MolType.TRNA
+            case NCBISourceMolType.OTHER_RNA:
+                return MolType.RNA
+
+        raise ValueError(f"Source moltype {source.mol_type} cannot be matched to MolType")
+
+
+if __name__ == '__main__':
+    records = NCBIGenbankFactory.batch(10)
+
+    for record in records:
+        print(record)
+
+    # sources = NCBISourceFactory.batch(10)
+    #
+    # for source in sources:
+    #     print(source)
