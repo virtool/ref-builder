@@ -48,7 +48,7 @@ from ref_builder.events import (
     RepoQuery,
     SequenceQuery,
     SetReprIsolate,
-    SetReprIsolateData,
+    SetReprIsolateData, LinkSequence, LinkSequenceData,
 )
 from ref_builder.index import EventIndex, EventIndexError
 from ref_builder.models import Molecule
@@ -366,6 +366,34 @@ class Repo:
 
         return new_sequence
 
+    def link_sequence(
+            self,
+            otu_id: uuid.UUID,
+            isolate_id: uuid.UUID,
+            sequence_id: uuid.UUID,
+            original_isolate_id: uuid.UUID
+    ):
+        """Link an existing sequence to the given isolate."""
+        otu = self.get_otu(otu_id)
+
+        original_isolate = otu.get_isolate(original_isolate_id)
+        if original_isolate is None:
+            raise ValueError("Original isolate not found.")
+
+        sequence = original_isolate.get_sequence_by_id(sequence_id)
+
+        self._event_store.write_event(
+            LinkSequence,
+            LinkSequenceData(
+                original_query=SequenceQuery(
+                    otu_id=otu_id, isolate_id=original_isolate_id, sequence_id=sequence_id
+                )
+            ),
+            SequenceQuery(otu_id=otu_id, isolate_id=isolate_id, sequence_id=sequence_id),
+        )
+
+        return sequence
+
     def create_schema(
         self,
         otu_id: uuid.UUID,
@@ -522,6 +550,23 @@ class Repo:
                     event.query.sequence_id,
                     event.query.isolate_id,
                 )
+
+            elif isinstance(event, LinkSequence):
+                original_isolate = otu.get_isolate(event.data.original_query.isolate_id)
+                sequence = original_isolate.get_sequence_by_id(event.data.original_query.sequence_id)
+
+                for isolate in otu.isolates:
+                    if isolate.id == event.query.isolate_id:
+                        isolate.add_sequence(
+                            RepoSequence(
+                                id=sequence.id,
+                                accession=sequence.accession,
+                                definition=sequence.definition,
+                                legacy_id=sequence.legacy_id,
+                                segment=sequence.segment,
+                                sequence=sequence.sequence,
+                            ),
+                        )
 
         otu.isolates.sort(key=lambda i: f"{i.name.type} {i.name.value}" if type(i.name) is IsolateName else "")
 
@@ -702,5 +747,7 @@ class EventStore:
                     return SetReprIsolate(**loaded)
                 case "ExcludeAccession":
                     return ExcludeAccession(**loaded)
+                case "LinkSequence":
+                    return LinkSequence(**loaded)
 
             raise ValueError(f"Unknown event type: {loaded['type']}")
