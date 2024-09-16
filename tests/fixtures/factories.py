@@ -37,7 +37,18 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
     @classmethod
     def isolate(cls) -> str:
         if cls.__faker__.boolean(80):
-            return cls.__faker__.text(20).replace(".", "")
+            delimiter = cls.__faker__.random_element(["", "-", "_"])
+            components = cls.__faker__.random_elements([
+                cls.__faker__.country().replace(" ", ""),
+                cls.__faker__.last_name(),
+                cls.__faker__.country_code(),
+                str(cls.__faker__.random_int(0, 9)),
+                str(cls.__faker__.random_int(10, 99)),
+                str(cls.__faker__.random_int(100, 9999)),
+            ], 2, unique=True)
+
+            return delimiter.join(components)
+
         return ""
 
     @classmethod
@@ -53,15 +64,17 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
 
     @classmethod
     def clone(cls) -> str:
+        delimiter = cls.__faker__.random_element(["-", "_", " ", "/"])
         if cls.__faker__.boolean(10):
-            return cls.__faker__.text(20).replace(".", "")
+            return delimiter.join(cls.__faker__.words(2))
 
         return ""
 
     @classmethod
     def strain(cls):
-        if cls.__faker__.boolean(20):
-            return cls.__faker__.text(20).replace(".", "")
+        delimiter = cls.__faker__.random_element(["-", "_", " ", "/"])
+        if cls.__faker__.boolean(10):
+            return delimiter.join(cls.__faker__.words(2))
 
         return ""
 
@@ -147,12 +160,12 @@ class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
 
 
 if __name__ == '__main__':
-    records = NCBIGenbankFactory.batch(10)
-
-    for record in records:
-        print(record)
-
-    # sources = NCBISourceFactory.batch(10)
+    # records = NCBIGenbankFactory.batch(10)
     #
-    # for source in sources:
-    #     print(source)
+    # for record in records:
+    #     print(record)
+
+    sources = NCBISourceFactory.batch(10)
+
+    for source in sources:
+        print(source)
