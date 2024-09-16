@@ -722,3 +722,109 @@ class TestDirectDelete:
         assert new_sequence.id in otu_after.sequence_ids
 
         assert otu_after.get_isolate(isolate_id).accessions == {"TMVABCC"}
+
+
+class TestLinkSequence:
+    def test_create_with_linked_sequence(self, empty_repo):
+        otu = empty_repo.create_otu(
+            acronym="ARWV1",
+            legacy_id=None,
+            name="Apple rubbery wood virus 1",
+            schema=OTUSchema(
+                molecule=Molecule(
+                    strandedness=Strandedness.SINGLE,
+                    type=MolType.RNA,
+                    topology=Topology.LINEAR,
+                ),
+                segments=[
+                    Segment(id=uuid4(), name="RNA L", required=True, length=100),
+                    Segment(id=uuid4(), name="RNA M", required=True, length=101),
+                    Segment(id=uuid4(), name="RNA S", required=True, length=102),
+                ],
+            ),
+            taxid=2164102,
+        )
+
+        repr_isolate = empty_repo.create_isolate(
+            otu.id,
+            legacy_id=None,
+            name=IsolateName(type=IsolateNameType.ISOLATE, value="repr"),
+        )
+
+        empty_repo.set_repr_isolate(otu.id, repr_isolate.id)
+
+        original_sequence = empty_repo.create_sequence(
+            otu.id,
+            repr_isolate.id,
+            accession="MF062136.1",
+            definition="L",
+            legacy_id=None,
+            segment="RNA L",
+            sequence="GACT",
+        )
+        empty_repo.create_sequence(
+            otu.id,
+            repr_isolate.id,
+            accession="MF062137.1",
+            definition="M",
+            legacy_id=None,
+            segment="RNA M",
+            sequence="ACTG",
+        )
+        empty_repo.create_sequence(
+            otu.id,
+            repr_isolate.id,
+            accession="MF062138.1",
+            definition="S",
+            legacy_id=None,
+            segment="RNA S",
+            sequence="TCAG",
+        )
+
+        otu = empty_repo.get_otu(otu.id)
+
+        assert otu.isolate_ids == {repr_isolate.id}
+
+        linked_isolate = empty_repo.create_isolate(
+            otu.id,
+            legacy_id=None,
+            name=IsolateName(type=IsolateNameType.ISOLATE, value="linked"),
+        )
+        empty_repo.link_sequence(
+            otu.id,
+            linked_isolate.id,
+            original_sequence.id,
+            repr_isolate.id,
+        )
+        empty_repo.create_sequence(
+            otu.id,
+            linked_isolate.id,
+            accession="OR640156.1",
+            definition="M",
+            legacy_id=None,
+            segment="RNA M",
+            sequence="ACTG",
+        )
+        empty_repo.create_sequence(
+            otu.id,
+            linked_isolate.id,
+            accession="OR640157.1",
+            definition="S",
+            legacy_id=None,
+            segment="RNA S",
+            sequence="TCAG",
+        )
+
+        otu_after = empty_repo.get_otu(otu.id)
+
+        assert otu_after.accessions == {"MF062136", "MF062137", "MF062138", "OR640156", "OR640157"}
+
+        assert otu_after.get_isolate(repr_isolate.id).accessions == {"MF062136", "MF062137", "MF062138"}
+
+        assert otu_after.get_isolate(linked_isolate.id).accessions == {"MF062136", "OR640156", "OR640157"}
+
+        assert (
+            otu_after.get_isolate(repr_isolate.id).get_sequence_by_id(original_sequence.id)
+            ==
+            otu_after.get_isolate(linked_isolate.id).get_sequence_by_id(original_sequence.id)
+        )
