@@ -218,12 +218,12 @@ def otu_promote_accessions(
     "--ignore-name",
     is_flag=True,
     default=False,
-    help="Ignore isolate names in Genbank sources.",
+    help="ignore isolate names in Genbank sources",
 )
 @click.option(
     "--isolate-type",
     default=None,
-    help="an overriding type for the isolate",
+    help="an overriding type for the isolate if --ignore-name is true",
     type=click.Choice(
         [
             None,
@@ -235,7 +235,7 @@ def otu_promote_accessions(
 )
 @click.option(
     "--isolate-name",
-    help="an overriding name for the isolate",
+    help="an overriding name for the isolate if --ignore-name is true",
     type=str,
 )
 @ignore_cache_option
@@ -248,7 +248,7 @@ def isolate_create(
     accessions_: list[str],
     ignore_name: bool,
     isolate_type: IsolateNameType | None,
-    isolate_name: str | None = None,
+    isolate_name: str | None,
 ) -> None:
     """Create a new isolate using the given accessions."""
     configure_logger(debug)
@@ -269,7 +269,11 @@ def isolate_create(
             accessions_,
             ignore_cache=ignore_cache,
             ignore_name=ignore_name,
-            isolate_name=None if isolate_name is None else IsolateName(type=isolate_type, value=isolate_name),
+            isolate_name=(
+                IsolateName(type=isolate_type, value=isolate_name)
+                if (ignore_name and isolate_type) is not None and isolate_name
+                else None
+            ),
         )
     except RefSeqConflictError as err:
         click.echo(
