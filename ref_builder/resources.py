@@ -68,8 +68,8 @@ class RepoSequence(BaseModel):
         return str(accession)
 
 
-class RepoIsolate(BaseModel):
-    """Represents an isolate in a Virtool reference repository."""
+class IsolateModel(BaseModel):
+    """Models the metadata in an Isolate."""
 
     id: UUID4
     """The isolate id."""
@@ -82,21 +82,6 @@ class RepoIsolate(BaseModel):
 
     name: IsolateName | None
     """The isolate's source name metadata."""
-
-    sequences: list[RepoSequence]
-
-    _sequences_by_accession: dict[str, RepoSequence] = {}
-    """A dictionary of sequences indexed by accession"""
-
-    def __init__(self, **data) -> None:
-        super().__init__(**data)
-
-        self._sequences_by_accession = {
-            sequence.accession.key: sequence for sequence in data.get("sequences", [])
-        }
-        self._sequences_by_id = {
-            sequence.id: sequence for sequence in (self.sequences or [])
-        }
 
     @field_serializer("name")
     def serialize_name(self, name: IsolateName | None) -> dict[str, str] | None:
@@ -122,6 +107,25 @@ class RepoIsolate(BaseModel):
             return IsolateName(**value)
 
         raise ValueError(f"Invalid type for name: {type(value)}")
+
+
+class RepoIsolate(IsolateModel):
+    """Represents an isolate in a Virtool reference repository."""
+
+    sequences: list[RepoSequence]
+
+    _sequences_by_accession: dict[str, RepoSequence] = {}
+    """A dictionary of sequences indexed by accession"""
+
+    def __init__(self, **data) -> None:
+        super().__init__(**data)
+
+        self._sequences_by_accession = {
+            sequence.accession.key: sequence for sequence in data.get("sequences", [])
+        }
+        self._sequences_by_id = {
+            sequence.id: sequence for sequence in (self.sequences or [])
+        }
 
     @property
     def accessions(self) -> set[str]:
@@ -190,9 +194,8 @@ class RepoIsolate(BaseModel):
         return None
 
 
-class RepoOTU(BaseModel):
-    """Represents an OTU in a Virtool reference repository."""
-
+class OTUModel(BaseModel):
+    """Models the metadata in an OTU."""
     id: UUID4
     """The OTU id."""
 
@@ -201,9 +204,6 @@ class RepoOTU(BaseModel):
 
     excluded_accessions: set[str]
     """A set of accessions that should not be retrieved in future fetch operations."""
-
-    isolates: list[RepoIsolate]
-    """Isolates contained in this OTU."""
 
     legacy_id: str | None
     """A string based ID carried over from a legacy Virtool reference repository."""
@@ -219,6 +219,13 @@ class RepoOTU(BaseModel):
 
     taxid: int
     """The NCBI Taxonomy id for this OTU."""
+
+
+class RepoOTU(OTUModel):
+    """Represents an OTU in a Virtool reference repository."""
+
+    isolates: list[RepoIsolate]
+    """Isolates contained in this OTU."""
 
     _isolates_by_id: dict[UUID4:RepoIsolate]
     """A dictionary of isolates indexed by isolate UUID"""
