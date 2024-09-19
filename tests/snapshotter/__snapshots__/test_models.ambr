@@ -17,6 +17,9 @@
 # name: TestRepoToSnapshotModel.test_otu_conversion[1441799]
   dict({
     'acronym': '',
+    'excluded_accessions': set({
+      'KC978991',
+    }),
     'legacy_id': None,
     'name': 'Faba bean necrotic stunt alphasatellite 1',
     'schema': dict({
@@ -40,6 +43,9 @@
 # name: TestRepoToSnapshotModel.test_otu_conversion[430059]
   dict({
     'acronym': '',
+    'excluded_accessions': set({
+      'FJ618540',
+    }),
     'legacy_id': None,
     'name': 'Vallota mosaic virus',
     'schema': dict({
