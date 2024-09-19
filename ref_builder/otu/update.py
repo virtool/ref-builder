@@ -64,14 +64,21 @@ def add_isolate(
         return create_isolate_from_records(
             repo,
             otu,
+            isolate_name=None,
+            records=records,
+        )
+
+    if isolate_name:
+        return create_isolate_from_records(
+            repo,
+            otu,
             isolate_name=isolate_name,
             records=records,
         )
 
     record_bins = group_genbank_records_by_isolate(records)
     if len(record_bins) != 1:
-        otu_logger.warning("More than one isolate name found in requested accession.")
-        # Override later
+        otu_logger.error("More than one isolate name found in requested accession.")
         return None
 
     isolate_name, isolate_records = list(record_bins.items())[0]
@@ -94,7 +101,6 @@ def add_isolate(
                     isolate_name=isolate_name,
                     accessions=accessions,
                 )
-
             return None
 
     return create_isolate_from_records(
