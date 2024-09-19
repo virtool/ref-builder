@@ -9,10 +9,7 @@ from ref_builder.resources import (
     RepoOTU,
     RepoSequence,
 )
-from ref_builder.snapshotter.models import (
-    OTUSnapshotOTU,
-    OTUSnapshotSequence,
-)
+from ref_builder.snapshotter.models import OTUSnapshotOTU
 
 
 def test_otu_model_adherence(scratch_repo: Repo):
@@ -66,7 +63,7 @@ class TestRepoToSnapshotModel:
 
             assert type(original_sequence) is RepoSequence
 
-            converted_model = OTUSnapshotSequence.model_validate(original_sequence.model_dump())
+            converted_model = RepoSequence.model_validate(original_sequence.model_dump())
 
             assert converted_model.model_dump() == snapshot(exclude=props("id"))
 

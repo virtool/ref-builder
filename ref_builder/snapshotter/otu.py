@@ -10,11 +10,7 @@ from ref_builder.resources import (
     RepoOTU,
     RepoSequence,
 )
-from ref_builder.snapshotter.models import (
-    OTUSnapshotSequence,
-    OTUSnapshotToCIsolate,
-    toc_adapter,
-)
+from ref_builder.snapshotter.models import OTUSnapshotToCIsolate, toc_adapter
 
 logger = get_logger("snapshotter.otu")
 
@@ -111,10 +107,10 @@ class OTUSnapshotDataStore:
         with open(self.path / f"{isolate.id}.json", "w") as f:
             f.write(validated_isolate.model_dump_json(indent=indent))
 
-    def load_sequence(self, sequence_id: UUID) -> OTUSnapshotSequence:
+    def load_sequence(self, sequence_id: UUID) -> RepoSequence:
         """Load and parse a sequence from the data store."""
         with open(self.path / f"{sequence_id}.json", "rb") as f:
-            return OTUSnapshotSequence.model_validate_json(f.read())
+            return RepoSequence.model_validate_json(f.read())
 
     def cache_sequence(
         self,
@@ -122,7 +118,7 @@ class OTUSnapshotDataStore:
         indent: int | None = None,
     ) -> None:
         """Serialize and cache a sequence to the data store."""
-        validated_sequence = OTUSnapshotSequence(**sequence.model_dump())
+        validated_sequence = RepoSequence(**sequence.model_dump())
 
         with open(self.path / f"{sequence.id}.json", "w") as f:
             f.write(validated_sequence.model_dump_json(indent=indent))
