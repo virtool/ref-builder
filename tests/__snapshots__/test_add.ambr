@@ -47,20 +47,18 @@
       'type': 'DNA',
     }),
     'multipartite': True,
-  })
-# ---
-# name: TestCreateOTUCommands.test_autofill_ok.1
-  dict({
-    'length': 2575,
-    'name': 'DNA-A',
-    'required': True,
-  })
-# ---
-# name: TestCreateOTUCommands.test_autofill_ok.2
-  dict({
-    'length': 2494,
-    'name': 'DNA-B',
-    'required': True,
+    'segments': list([
+      dict({
+        'length': 2575,
+        'name': 'DNA-A',
+        'required': True,
+      }),
+      dict({
+        'length': 2494,
+        'name': 'DNA-B',
+        'required': True,
+      }),
+    ]),
   })
 # ---
 # name: TestCreateOTUCommands.test_ok[1278205-accessions0]
