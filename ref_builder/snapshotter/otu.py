@@ -102,11 +102,11 @@ class OTUSnapshotDataStore:
         indent: int | None = None,
     ) -> None:
         """Serialize and cache an isolate to the data store."""
-        validated_isolate = IsolateModel(
+        isolate_metadata = IsolateModel(
             **isolate.model_dump(exclude={"sequences"}),
         )
         with open(self.path / f"{isolate.id}.json", "w") as f:
-            f.write(validated_isolate.model_dump_json(indent=indent))
+            f.write(isolate_metadata.model_dump_json(indent=indent))
 
     def load_sequence(self, sequence_id: UUID) -> RepoSequence:
         """Load and parse a sequence from the data store."""
@@ -190,7 +190,7 @@ class OTUSnapshot:
         for key in toc:
             isolate_entry = toc[key]
 
-            isolate_structure = self._data.load_isolate(isolate_entry.id)
+            isolate_metadata = self._data.load_isolate(isolate_entry.id)
 
             sequences = []
 
@@ -201,7 +201,7 @@ class OTUSnapshot:
 
             isolates.append(
                 RepoIsolate(
-                    **isolate_structure.model_dump(),
+                    **isolate_metadata.model_dump(),
                     sequences=sequences,
                 ),
             )
