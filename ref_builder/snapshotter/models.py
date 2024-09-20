@@ -1,18 +1,6 @@
-from typing import Annotated
+from pydantic import BaseModel, TypeAdapter, UUID4
 
-from pydantic import (
-    UUID4,
-    AliasChoices,
-    BaseModel,
-    Field,
-    TypeAdapter,
-    field_serializer,
-    field_validator,
-)
-
-from ref_builder.resources import OTUModel
-from ref_builder.schema import OTUSchema
-from ref_builder.utils import Accession, IsolateName, IsolateNameType
+from ref_builder.utils import IsolateName
 
 
 class OTUSnapshotToCIsolate(BaseModel):
