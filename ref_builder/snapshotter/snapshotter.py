@@ -6,7 +6,7 @@ from uuid import UUID
 import orjson
 from structlog import get_logger
 
-from ref_builder.resources import RepoOTU
+from ref_builder.resources import OTUModel, RepoOTU
 from ref_builder.snapshotter.otu import OTUSnapshot
 
 logger = get_logger()
@@ -34,7 +34,7 @@ class OTUKeys:
     legacy_id: str | None = None
 
     @classmethod
-    def from_otu(cls, otu: RepoOTU) -> "OTUKeys":
+    def from_otu(cls, otu: RepoOTU | OTUModel ) -> "OTUKeys":
         """Create a new OTUKeys instance from a ``RepoOTU``."""
         return OTUKeys(
             id=otu.id,
@@ -189,15 +189,15 @@ class Snapshotter:
             except ValueError:
                 continue
 
-            otu = self.load_by_id(otu_id)
-            if otu is None:
+            otu_snapshot = self.load_by_id(otu_id)
+            if otu_snapshot is None:
                 raise FileNotFoundError("OTU not found")
-            index[otu.id] = OTUKeys(
-                id=otu.id,
-                taxid=otu.taxid,
-                name=otu.name,
-                acronym=otu.acronym,
-                legacy_id=otu.legacy_id,
+            index[otu_snapshot.otu.id] = OTUKeys(
+                id=otu_snapshot.otu.id,
+                taxid=otu_snapshot.otu.taxid,
+                name=otu_snapshot.otu.name,
+                acronym=otu_snapshot.otu.acronym,
+                legacy_id=otu_snapshot.otu.legacy_id,
             )
 
         logger.debug("Snapshot index built", index=index)
