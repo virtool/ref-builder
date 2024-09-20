@@ -6,6 +6,7 @@ from structlog import get_logger
 
 from ref_builder.resources import (
     IsolateModel,
+    OTUModel,
     RepoIsolate,
     RepoOTU,
     RepoSequence,
@@ -156,21 +157,14 @@ class OTUSnapshot:
         """Cache an OTU at a given event."""
         self.at_event = at_event
 
+        otu_metadata = OTUModel(**otu.model_dump())
+
         with open(self._otu_path, "wb") as f:
             f.write(
                 orjson.dumps(
                     {
                         "at_event": at_event,
-                        "data": {
-                            "acronym": otu.acronym,
-                            "id": otu.id,
-                            "excluded_accessions": list(otu.excluded_accessions),
-                            "legacy_id": otu.legacy_id,
-                            "name": otu.name,
-                            "repr_isolate": otu.repr_isolate,
-                            "schema": otu.schema.model_dump(),
-                            "taxid": otu.taxid,
-                        },
+                        "data": otu_metadata.model_dump(mode="json")
                     },
                 ),
             )

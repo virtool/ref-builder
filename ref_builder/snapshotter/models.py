@@ -10,15 +10,9 @@ from pydantic import (
     field_validator,
 )
 
+from ref_builder.resources import OTUModel
 from ref_builder.schema import OTUSchema
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
-
-
-class OTUSnapshotMeta(BaseModel):
-    """Structures metadata about the OTU snapshot itself."""
-
-    at_event: int | None = None
-    """The event ID of the last change made to this snapshot."""
 
 
 class OTUSnapshotToCIsolate(BaseModel):
