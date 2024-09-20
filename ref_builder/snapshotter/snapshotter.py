@@ -1,9 +1,9 @@
 from collections.abc import Generator, Iterable
-from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
 
 import orjson
+from pydantic.dataclasses import dataclass
 from structlog import get_logger
 
 from ref_builder.resources import OTUModel, RepoOTU
@@ -160,6 +160,13 @@ class Snapshotter:
         otu_snap.cache(otu, at_event)
 
         self._index[otu.id] = OTUKeys.from_otu(otu)
+
+        with open(self._index_path, "wb") as f:
+            f.write(
+                orjson.dumps(
+                    {str(otu_id): self._index[otu_id].dict() for otu_id in self._index},
+                ),
+            )
 
     def load_by_id(self, otu_id: UUID) -> Snapshot | None:
         """Load the most recently snapshotted form of an OTU by its ID.
