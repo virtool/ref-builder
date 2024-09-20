@@ -119,10 +119,8 @@ class OTUSnapshotDataStore:
         indent: int | None = None,
     ) -> None:
         """Serialize and cache a sequence to the data store."""
-        validated_sequence = RepoSequence(**sequence.model_dump())
-
         with open(self.path / f"{sequence.id}.json", "w") as f:
-            f.write(validated_sequence.model_dump_json(indent=indent))
+            f.write(sequence.model_dump_json(indent=indent))
 
 
 class OTUSnapshot:
@@ -198,18 +196,8 @@ class OTUSnapshot:
 
             for accession in toc[key].accessions:
                 sequence_id = toc[key].accessions[accession]
-                sequence_structure = self._data.load_sequence(sequence_id)
 
-                sequences.append(
-                    RepoSequence(
-                        id=sequence_structure.id,
-                        accession=sequence_structure.accession,
-                        definition=sequence_structure.definition,
-                        sequence=sequence_structure.sequence,
-                        legacy_id=sequence_structure.legacy_id,
-                        segment=sequence_structure.segment,
-                    ),
-                )
+                sequences.append(self._data.load_sequence(sequence_id))
 
             isolates.append(
                 RepoIsolate(
