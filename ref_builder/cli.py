@@ -215,13 +215,13 @@ def otu_promote_accessions(
     required=True,
 )
 @click.option(
-    "--ignore-name",
+    "--unnamed",
     is_flag=True,
     default=False,
     help="ignore isolate names in Genbank sources",
 )
 @click.option(
-    "--isolate-name",
+    "--name",
     type=(IsolateNameType, str),
     help='an overriding name for the isolate, e.g. "isolate ARWV1"',
 )
@@ -233,8 +233,8 @@ def isolate_create(
     debug: bool,
     ignore_cache: bool,
     accessions_: list[str],
-    ignore_name: bool,
-    isolate_name: tuple[IsolateNameType, str] | None,
+    unnamed: bool,
+    name: tuple[IsolateNameType, str] | None,
 ) -> None:
     """Create a new isolate using the given accessions."""
     configure_logger(debug)
@@ -249,8 +249,8 @@ def isolate_create(
         sys.exit(1)
 
     isolate_name_ = None
-    if isolate_name is not None:
-        isolate_name_type, isolate_name_value = isolate_name
+    if name is not None:
+        isolate_name_type, isolate_name_value = name
         isolate_name_ = IsolateName(type=isolate_name_type, value=isolate_name_value)
 
     try:
@@ -259,7 +259,7 @@ def isolate_create(
             otu_,
             accessions_,
             ignore_cache=ignore_cache,
-            ignore_name=ignore_name,
+            ignore_name=unnamed,
             isolate_name=isolate_name_,
         )
     except RefSeqConflictError as err:
@@ -286,7 +286,6 @@ def isolate_create(
 def accession_exclude(
     ctx,
     debug: bool,
-    ignore_cache: bool,
     accessions_: list[str],
 ) -> None:
     """Exclude the given accessions from this OTU."""
