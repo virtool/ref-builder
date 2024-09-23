@@ -9,7 +9,9 @@ from syrupy.filters import props
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
     auto_update_otu,
-    add_isolate,
+    add_genbank_isolate,
+    add_unnamed_isolate,
+    add_and_name_isolate,
     delete_isolate_from_otu,
     replace_sequence_in_otu,
     update_isolate_from_accessions,
@@ -226,7 +228,7 @@ class TestAddIsolate:
 
         assert otu.accessions == set(isolate_1_accessions)
 
-        isolate = add_isolate(precached_repo, otu, isolate_2_accessions)
+        isolate = add_genbank_isolate(precached_repo, otu, isolate_2_accessions)
 
         otu = precached_repo.get_otu_by_taxid(345184)
 
@@ -243,7 +245,7 @@ class TestAddIsolate:
 
         assert otu.accessions == set(isolate_1_accessions)
 
-        isolate = add_isolate(precached_repo, otu, isolate_2_accessions, ignore_name=True)
+        isolate = add_unnamed_isolate(precached_repo, otu, isolate_2_accessions)
 
         otu_after = precached_repo.get_otu_by_taxid(345184)
 
@@ -281,7 +283,7 @@ class TestAddIsolate:
 
         assert otu.accessions == set(isolate_1_accessions)
 
-        isolate = add_isolate(
+        isolate = add_and_name_isolate(
             precached_repo,
             otu,
             isolate_2_accessions,
@@ -311,7 +313,7 @@ class TestAddIsolate:
             "",
         )
 
-        assert add_isolate(precached_repo, otu, accessions) is None
+        assert add_genbank_isolate(precached_repo, otu, accessions) is None
 
 
 @pytest.mark.ncbi()
@@ -472,10 +474,10 @@ class TestReplaceIsolateSequences:
 
         assert otu_before.accessions == set(original_accessions)
 
-        add_isolate(empty_repo, otu_before, original_accessions)
+        add_genbank_isolate(empty_repo, otu_before, original_accessions)
 
         with pytest.raises(RefSeqConflictError):
-            add_isolate(empty_repo, otu_before, refseq_accessions)
+            add_genbank_isolate(empty_repo, otu_before, refseq_accessions)
 
 
 class TestRemoveIsolate:
