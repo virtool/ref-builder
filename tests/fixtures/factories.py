@@ -1,13 +1,14 @@
 from faker import Faker
-from polyfactory import Use
 from polyfactory.decorators import post_generated
 from polyfactory.factories.pydantic_factory import ModelFactory
 
 from ref_builder.models import MolType
-from ref_builder.utils import Accession
 from ref_builder.ncbi.models import NCBIGenbank, NCBISource, NCBISourceMolType
 from tests.fixtures.providers import (
-    AccessionProvider, OrganismProvider, SequenceProvider, SourceProvider
+    AccessionProvider,
+    OrganismProvider,
+    SegmentProvider,
+    SequenceProvider,
 )
 
 DNA_MOLTYPES = {
@@ -22,7 +23,7 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
 
     __faker__ = Faker()
     __faker__.add_provider(OrganismProvider)
-    __faker__.add_provider(SourceProvider)
+    __faker__.add_provider(SegmentProvider)
 
     @classmethod
     def taxid(cls) -> int:
@@ -158,7 +159,7 @@ class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
 
     @post_generated
     @classmethod
-    def moltype(cls, source: NCBISource) -> MolType:  # noqa: PLR0911
+    def moltype(cls, source: NCBISource) -> MolType:
         """Map moltype field to source.moltype equivalent."""
         if source.mol_type in DNA_MOLTYPES:
             return MolType.DNA

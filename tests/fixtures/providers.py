@@ -1,19 +1,16 @@
 from collections import OrderedDict
 
-from faker.providers import BaseProvider, DynamicProvider
+from faker.providers import BaseProvider
 
-from ref_builder.utils import Accession
 from tests.fixtures.data.organism import (
-    ORGANISM_HOSTS,
-    ORGANISM_PARTS,
-    ORGANISM_DESCRIPTOR_NOUNS,
     ORGANISM_DESCRIPTOR_ADJECTIVES,
+    ORGANISM_DESCRIPTOR_NOUNS,
+    ORGANISM_HOSTS,
     ORGANISM_PART_AND_DESCRIPTORS,
+    ORGANISM_PARTS,
     ORGANISM_TYPES,
     ORGANISM_VIRUSES,
-    ORGANISM_SPECIFIC_VIRUS_TYPES,
 )
-
 
 UNCOMMON_PROBABILITY = 0.01
 SEQUENCE_DICTIONARY = OrderedDict([
@@ -83,9 +80,6 @@ class OrganismProvider(BaseProvider):
     to create quasi-realistic organisms.
     """
 
-    def __init__(self, generator):
-        super().__init__(generator)
-
     def condition_adjective(self) -> str:
         """Return an adjective used to describe properties of an organism."""
         return self.random_element(ORGANISM_DESCRIPTOR_ADJECTIVES)
@@ -153,11 +147,8 @@ class OrganismProvider(BaseProvider):
         return self.host_part_and_descriptor_virus_organism()
 
 
-class SourceProvider(BaseProvider):
-    """Quasi-realistic NCBISource field provider."""
-
-    def __init__(self, generator):
-        super().__init__(generator)
+class SegmentProvider(BaseProvider):
+    """Quasi-realistic NCBISource segment field provider."""
 
     def segment_delimiter(self) -> str:
         """Return a segment delimiter."""
@@ -168,9 +159,11 @@ class SourceProvider(BaseProvider):
         return self.random_element({"DNA", "RNA"})
 
     def segment_key(self) -> str:
-        """Return a segment key."""
+        """Return a segment key denoting the key identifier
+        in the segment.
+        """
         return self.random_element(
-            {"1", "2", "A", "B", "C", "L", "N", "M", "R", "S", "U3"}
+            {"1", "2", "A", "B", "C", "L", "N", "M", "R", "S", "U3"},
         )
 
     def segment(self) -> str:
