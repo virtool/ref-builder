@@ -3,7 +3,7 @@ import subprocess
 from ref_builder.repo import Repo
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
-    add_isolate,
+    add_genbank_isolate,
     promote_otu_accessions,
     set_representative_isolate,
 )
@@ -68,8 +68,6 @@ class TestUpdateRepresentativeIsolateCommand:
 
         otu_before = scratch_repo.get_otu_by_taxid(taxid)
 
-        repr_isolate_name_before = otu_before.get_isolate(otu_before.repr_isolate).name
-
         repr_isolate_name_after = None
 
         for isolate_id in otu_before.isolate_ids:
@@ -108,7 +106,7 @@ class TestPromoteAccessions:
             ["MF062136", "MF062137", "MF062138"],
             acronym=""
         )
-        isolate = add_isolate(empty_repo, otu, ["MF062125", "MF062126", "MF062127"])
+        isolate = add_genbank_isolate(empty_repo, otu, ["MF062125", "MF062126", "MF062127"])
 
         otu_before = empty_repo.get_otu(otu.id)
 
@@ -166,4 +164,4 @@ class TestPromoteAccessions:
 
         assert otu_after.repr_isolate == otu_before.repr_isolate
 
-        assert otu_after.accessions == {"NC_055390", "NC_055391", "NC_055392",}
+        assert otu_after.accessions == {"NC_055390", "NC_055391", "NC_055392"}

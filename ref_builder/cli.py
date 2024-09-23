@@ -17,7 +17,9 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.options import debug_option, ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
-    add_isolate,
+    add_genbank_isolate,
+    add_unnamed_isolate,
+    add_and_name_isolate,
     auto_update_otu,
     exclude_accessions_from_otu,
     promote_otu_accessions,
@@ -214,6 +216,17 @@ def otu_promote_accessions(
     type=str,
     required=True,
 )
+@click.option(
+    "--unnamed",
+    is_flag=True,
+    default=False,
+    help="ignore isolate names in Genbank sources",
+)
+@click.option(
+    "--name",
+    type=(IsolateNameType, str),
+    help='an overriding name for the isolate, e.g. "isolate ARWV1"',
+)
 @ignore_cache_option
 @debug_option
 @click.pass_context
@@ -222,6 +235,8 @@ def isolate_create(
     debug: bool,
     ignore_cache: bool,
     accessions_: list[str],
+    unnamed: bool,
+    name: tuple[IsolateNameType, str] | None,
 ) -> None:
     """Create a new isolate using the given accessions."""
     configure_logger(debug)
@@ -235,8 +250,35 @@ def isolate_create(
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
+    if unnamed:
+        add_unnamed_isolate(
+            repo,
+            otu_,
+            accessions_,
+            ignore_cache=ignore_cache,
+            ignore_name=unnamed,
+        )
+
+    if name is not None:
+        isolate_name_type, isolate_name_value = name
+        isolate_name_ = IsolateName(type=isolate_name_type, value=isolate_name_value)
+
+        try:
+            add_and_name_isolate(
+                repo,
+                otu_,
+                accessions_,
+                ignore_cache=ignore_cache,
+                isolate_name=isolate_name_,
+            )
+        except RefSeqConflictError as err:
+            click.echo(
+                f"{err.isolate_name} already exists, but RefSeq items may be promotable,",
+            )
+            sys.exit(1)
+
     try:
-        add_isolate(
+        add_genbank_isolate(
             repo,
             otu_,
             accessions_,
@@ -266,7 +308,6 @@ def isolate_create(
 def accession_exclude(
     ctx,
     debug: bool,
-    ignore_cache: bool,
     accessions_: list[str],
 ) -> None:
     """Exclude the given accessions from this OTU."""
