@@ -76,13 +76,13 @@ ORGANISM_DESCRIPTOR_NOUNS = [
 ]
 ORGANISM_PARTS = [
     "leaf",
-    "vein"
+    "vein",
 ]
-
 
 ORGANISM_TYPES = [
     "virus",
 ]
+
 ORGANISM_SPECIFIC_VIRUS_TYPES = [
     "alphasatellite",
     "betasatellite",
