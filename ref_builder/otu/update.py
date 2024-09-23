@@ -638,10 +638,12 @@ def _bin_refseq_records(
 
 
 def _create_fetch_list(
-    linked_accessions: list | set,
+    requested_accessions: list | set,
     blocked_accessions: set,
 ) -> list[str]:
-    fetch_list = list(set(linked_accessions).difference(blocked_accessions))
+    """Return the difference between a set of requested accessions and a set of blocked accessions.
+    Raise a ValueError if the intersection is complete."""
+    fetch_list = list(set(requested_accessions).difference(blocked_accessions))
     if fetch_list:
         return fetch_list
 
