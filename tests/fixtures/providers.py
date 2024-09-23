@@ -134,9 +134,7 @@ class OrganismProvider(BaseProvider):
 
     def organism(self):
         """Return a pseudorandom organism name."""
-        roll = self.random_int(0, 9)
-
-        match roll:
+        match self.random_int(0, 9):
             case 0:
                 return self.host_adjective_virus_organism()
             case 1:

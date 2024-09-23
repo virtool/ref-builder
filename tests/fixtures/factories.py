@@ -14,8 +14,9 @@ from tests.fixtures.providers import (
 DNA_MOLTYPES = {
     NCBISourceMolType.GENOMIC_DNA,
     NCBISourceMolType.OTHER_DNA,
-    NCBISourceMolType.UNASSIGNED_DNA
+    NCBISourceMolType.UNASSIGNED_DNA,
 }
+"""NCBISourceMolTypes that map to MolType.DNA"""
 
 
 class NCBISourceFactory(ModelFactory[NCBISource]):
@@ -122,7 +123,7 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
 
 class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
     """NCBIGenbank Factory with quasi-realistic data."""
-    
+
     __faker__ = Faker()
     __faker__.add_provider(AccessionProvider)
     __faker__.add_provider(SequenceProvider)
