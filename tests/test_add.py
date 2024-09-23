@@ -220,7 +220,8 @@ class TestCreateOTUCommands:
 
 
 class TestAddIsolate:
-    def test_ok(self, precached_repo: Repo):
+    def test_genbank_ok(self, precached_repo: Repo):
+        """Test that add_genbank_isolate() adds an isolate with a correctly parsed name."""
         isolate_1_accessions = ["DQ178610", "DQ178611"]
         isolate_2_accessions = ["DQ178613", "DQ178614"]
 
@@ -230,14 +231,18 @@ class TestAddIsolate:
 
         isolate = add_genbank_isolate(precached_repo, otu, isolate_2_accessions)
 
-        otu = precached_repo.get_otu_by_taxid(345184)
+        otu_after = precached_repo.get_otu_by_taxid(345184)
 
-        assert otu.accessions == set(isolate_1_accessions).union(set(isolate_2_accessions))
+        assert otu_after.accessions == set(isolate_1_accessions).union(set(isolate_2_accessions))
 
-        assert otu.get_isolate(isolate.id).accessions == set(isolate_2_accessions)
+        isolate_after = otu_after.get_isolate(isolate.id)
+
+        assert isolate_after.accessions == set(isolate_2_accessions)
+
+        assert isolate_after.name == IsolateName(IsolateNameType.ISOLATE, "Douglas Castle")
 
     def test_ignore_name_ok(self, precached_repo: Repo):
-        """Test that ignore_name flag works as planned."""
+        """Test that add_unnamed_isolate() adds the correct isolate with its name set to None."""
         isolate_1_accessions = ["DQ178610", "DQ178611"]
         isolate_2_accessions = ["DQ178613", "DQ178614"]
 
@@ -257,8 +262,8 @@ class TestAddIsolate:
 
         assert isolate_after.accessions == {"DQ178613", "DQ178614"}
 
-    def test_name_override_ok(self, precached_repo: Repo):
-        """Test that ignore_name flag works as planned."""
+    def test_add_and_name_ok(self, precached_repo: Repo):
+        """Test that add_and_name_isolate() creates an isolate with the correct name."""
         isolate_1_accessions = ["DQ178610", "DQ178611"]
         isolate_2_accessions = ["DQ178613", "DQ178614"]
 
