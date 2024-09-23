@@ -18,24 +18,30 @@ DNA_MOLTYPES = {
 
 
 class NCBISourceFactory(ModelFactory[NCBISource]):
+    """NCBISource Factory with quasi-realistic data."""
+
     __faker__ = Faker()
     __faker__.add_provider(OrganismProvider)
     __faker__.add_provider(SourceProvider)
 
     @classmethod
     def taxid(cls) -> int:
+        """Taxon ID faker."""
         return cls.__faker__.random_int(1000, 999999)
 
     @classmethod
     def organism(cls) -> str:
+        """Organism name faker."""
         return cls.__faker__.organism()
 
     @classmethod
     def host(cls) -> str:
+        """Pathogen host name faker."""
         return cls.__faker__.host().capitalize()
 
     @classmethod
     def isolate(cls) -> str:
+        """Raw isolate name faker."""
         if cls.__faker__.boolean(80):
             delimiter = cls.__faker__.random_element(["", "-", "_"])
             components = cls.__faker__.random_elements([
@@ -52,7 +58,8 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
         return ""
 
     @classmethod
-    def segment(cls):
+    def segment(cls) -> str:
+        """Raw segment name faker."""
         if cls.__faker__.boolean(80):
             return (
                 cls.__faker__.segment_prefix()
@@ -64,6 +71,7 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
 
     @classmethod
     def clone(cls) -> str:
+        """Raw clone name faker."""
         delimiter = cls.__faker__.random_element(["-", "_", " ", "/"])
         if cls.__faker__.boolean(10):
             return delimiter.join(cls.__faker__.words(2))
@@ -71,7 +79,8 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
         return ""
 
     @classmethod
-    def strain(cls):
+    def strain(cls) -> str:
+        """Raw strain name faker."""
         delimiter = cls.__faker__.random_element(["-", "_", " ", "/"])
         if cls.__faker__.boolean(10):
             return delimiter.join(cls.__faker__.words(2))
@@ -80,11 +89,13 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
 
     @classmethod
     def proviral(cls) -> bool:
+        """Pseudorandom proviral flag."""
         return cls.__faker__.boolean(5)
 
     @post_generated
     @classmethod
     def macronuclear(cls, mol_type: NCBISourceMolType) -> bool:
+        """Pseudorandom macronuclear flag for DNA records only."""
         if mol_type in DNA_MOLTYPES:
             return cls.__faker__.boolean(5)
         return False
@@ -92,7 +103,9 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
     @post_generated
     @classmethod
     def focus(cls, mol_type: NCBISourceMolType) -> bool:
-        """Mutually exclusive with transgenic"""
+        """Pseudorandom focus flag for DNA records only.
+        Mutually exclusive with transgenic.
+        """
         if mol_type in DNA_MOLTYPES:
             return cls.__faker__.boolean(5)
         return False
@@ -100,13 +113,15 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
     @post_generated
     @classmethod
     def transgenic(cls, focus: bool) -> bool:
-        """Mutually exclusive with focus"""
-        if focus:
+        """Transgenic flag set to False if focus is True."""
+        if focus and cls.__faker__.boolean(5):
             return not focus
         return False
 
 
 class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
+    """NCBIGenbank Factory with quasi-realistic data."""
+    
     __faker__ = Faker()
     __faker__.add_provider(AccessionProvider)
     __faker__.add_provider(SequenceProvider)
@@ -115,30 +130,36 @@ class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
 
     @classmethod
     def accession(cls) -> str:
+        """Raw accession faker."""
         return cls.__faker__.accession()
 
     @classmethod
-    def sequence(cls):
+    def sequence(cls) -> str:
+        """Sequence faker."""
         return cls.__faker__.sequence()
 
     @post_generated
     @classmethod
-    def accession_versioned(cls, accession: str):
+    def accession_version(cls, accession: str) -> str:
+        """Raw accession_version faker."""
         return f"{accession}.{cls.__faker__.random_int(1, 3)}"
 
     @post_generated
     @classmethod
     def organism(cls, source: NCBISource) -> str:
+        """Match organism field to source.organism."""
         return source.organism
 
     @post_generated
     @classmethod
     def taxid(cls, source: NCBISource) -> int:
+        """Match taxid field to source.taxid."""
         return source.taxid
 
     @post_generated
     @classmethod
-    def moltype(self, source: NCBISource) -> MolType:
+    def moltype(cls, source: NCBISource) -> MolType:  # noqa: PLR0911
+        """Map moltype field to source.moltype equivalent."""
         if source.mol_type in DNA_MOLTYPES:
             return MolType.DNA
 
@@ -157,15 +178,3 @@ class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
                 return MolType.RNA
 
         raise ValueError(f"Source moltype {source.mol_type} cannot be matched to MolType")
-
-
-if __name__ == '__main__':
-    # records = NCBIGenbankFactory.batch(10)
-    #
-    # for record in records:
-    #     print(record)
-
-    sources = NCBISourceFactory.batch(10)
-
-    for source in sources:
-        print(source)
