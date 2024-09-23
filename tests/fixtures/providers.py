@@ -38,10 +38,14 @@ SEQUENCE_MAX = 1500
 
 
 class AccessionProvider(BaseProvider):
-    def refseq_accession(self):
+    """Raw accession provider based on GenBank's guidelines for accession numbers."""
+
+    def refseq_accession(self) -> str:
+        """Return a pseudorandom RefSeq accession number."""
         return "NC_" + self.numerify("######")
 
-    def genbank_accession(self):
+    def genbank_accession(self) -> str:
+        """Return a pseudorandom non-RefSeq accession number."""
         dice_roll = self.random_int(0, 10)
 
         if dice_roll > 6:
@@ -50,16 +54,22 @@ class AccessionProvider(BaseProvider):
         return self.bothify("??######").upper()
 
     def accession(self) -> str:
+        """Return a pseudorandom accession number."""
         dice_roll = self.random_int(0, 10)
 
         if dice_roll > 7:
             return self.genbank_accession()
-        else:
-            return self.refseq_accession()
+
+        return self.refseq_accession()
 
 
 class SequenceProvider(BaseProvider):
-    def sequence(self):
+    """Dummy sequence data provider."""
+
+    def sequence(self) -> str:
+        """Return a pseudorandom string consisting of
+        acceptable genetic sequence letters.
+        """
         return "".join(
             self.random_elements(
                 SEQUENCE_DICTIONARY,
@@ -69,28 +79,39 @@ class SequenceProvider(BaseProvider):
 
 
 class OrganismProvider(BaseProvider):
+    """Organism name provider. Recombines parts of preexisting taxon names
+    to create quasi-realistic organisms.
+    """
+
     def __init__(self, generator):
         super().__init__(generator)
 
-    def condition_adjective(self):
+    def condition_adjective(self) -> str:
+        """Return an adjective used to describe properties of an organism."""
         return self.random_element(ORGANISM_DESCRIPTOR_ADJECTIVES)
 
-    def condition_noun(self):
+    def condition_noun(self) -> str:
+        """Return a noun used to describe properties of an organism."""
         return self.random_element(ORGANISM_DESCRIPTOR_NOUNS)
 
-    def host(self):
+    def host(self) -> str:
+        """Return the host affected by the organism."""
         return self.random_element(ORGANISM_HOSTS)
 
-    def part(self):
+    def part(self) -> str:
+        """Return the part of the host affected by the organism."""
         return self.random_element(ORGANISM_PARTS)
 
-    def virus_species(self):
+    def virus_species(self) -> str:
+        """Return the species of virus."""
         return self.random_element(ORGANISM_VIRUSES)
 
-    def virus_type(self):
+    def virus_type(self) -> str:
+        """Return the type of organism."""
         return self.random_element(ORGANISM_TYPES)
 
-    def host_part_and_descriptor_virus_organism(self):
+    def host_part_and_descriptor_virus_organism(self) -> str:
+        """Return an organism name consisting of HOST PART_AND_DESCRIPTOR VIRUS."""
         return " ".join(
             [
                 self.host(),
@@ -99,35 +120,26 @@ class OrganismProvider(BaseProvider):
             ]
         ).capitalize()
 
-    def host_adjective_virus_organism(self):
-        return " ".join(
-            [
-                self.host(),
-                self.condition_adjective(),
-                self.virus_type(),
-            ]
+    def host_adjective_virus_organism(self) -> str:
+        """Return an organism name consisting of HOST ADJECTIVE VIRUS."""
+        return (
+            f"{self.host()} {self.condition_adjective()} {self.virus_type()}"
         ).capitalize()
 
     def host_noun_virus_organism(self):
-        return " ".join(
-            [
-                self.host(),
-                self.condition_noun(),
-                self.virus_type(),
-            ]
+        """Return an organism name consisting of HOST NOUN VIRUS."""
+        return (
+            f"{self.host()} {self.condition_noun()} {self.virus_type()}"
         ).capitalize()
 
     def host_adjective_noun_virus_organism(self):
-        return " ".join(
-            [
-                self.host(),
-                self.condition_adjective(),
-                self.condition_noun(),
-                self.virus_type(),
-            ]
+        """Return an organism name consisting of HOST ADJECTIVE NOUN VIRUS."""
+        return (
+            f"{self.host()} {self.condition_adjective()} {self.condition_noun()} {self.virus_type()}"
         ).capitalize()
 
     def organism(self):
+        """Return a pseudorandom organism name."""
         roll = self.random_int(0, 9)
 
         match roll:
@@ -142,38 +154,28 @@ class OrganismProvider(BaseProvider):
 
 
 class SourceProvider(BaseProvider):
+    """Quasi-realistic NCBISource field provider."""
+
     def __init__(self, generator):
         super().__init__(generator)
 
-    def segment_delimiter(self):
+    def segment_delimiter(self) -> str:
+        """Return a segment delimiter."""
         return self.random_element({" ", "-", "_"})
 
-    def segment_prefix(self):
+    def segment_prefix(self) -> str:
+        """Return a segment prefix."""
         return self.random_element({"DNA", "RNA"})
 
-    def segment_key(self):
-        return self.random_element({"1", "2", "A", "B", "C", "L", "N", "M", "R", "S", "U3"})
+    def segment_key(self) -> str:
+        """Return a segment key."""
+        return self.random_element(
+            {"1", "2", "A", "B", "C", "L", "N", "M", "R", "S", "U3"}
+        )
 
-    def segment(self):
+    def segment(self) -> str:
+        """Return a segment name."""
         if self.random_int(0, 9) < 7:
             return self.segment_prefix() + self.segment_delimiter() + self.segment_key()
 
         return self.segment_key()
-
-
-if __name__ == '__main__':
-    from faker import Faker
-
-    fake = Faker()
-    fake.add_provider(SourceProvider)
-    fake.add_provider(OrganismProvider)
-    fake.add_provider(SequenceProvider)
-    fake.add_provider(AccessionProvider)
-
-    for _ in range(10):
-        print(fake.segment())
-        print(fake.organism())
-        print(fake.sequence())
-        print(fake.accession())
-        print()
-
