@@ -257,24 +257,7 @@ class TestAddIsolate:
 
         assert isolate_after.accessions == {"DQ178613", "DQ178614"}
 
-    @pytest.mark.parametrize(
-        "expected_name, ignore_name, isolate_name",
-        [
-            (None, True, None),
-            (
-                IsolateName(type=IsolateNameType.ISOLATE, value="dummy"),
-                True,
-                IsolateName(type=IsolateNameType.ISOLATE, value="dummy")
-            ),
-            (
-                None,
-                True,
-                IsolateName(type=IsolateNameType.ISOLATE, value="dummy")
-            ),
-        ]
-    )
-    def test_ignore_name_override_ok(
-        self, precached_repo: Repo, expected_name: IsolateName | None, ignore_name: bool, isolate_name: IsolateName | None):
+    def test_name_override_ok(self, precached_repo: Repo):
         """Test that ignore_name flag works as planned."""
         isolate_1_accessions = ["DQ178610", "DQ178611"]
         isolate_2_accessions = ["DQ178613", "DQ178614"]
