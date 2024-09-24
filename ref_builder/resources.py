@@ -69,7 +69,7 @@ class RepoSequence(BaseModel):
         return str(accession)
 
 
-class IsolateModel(BaseModel):
+class IsolateSnapshot(BaseModel):
     """Models the metadata in an Isolate."""
 
     id: UUID4
@@ -113,7 +113,7 @@ class IsolateModel(BaseModel):
         raise ValueError(f"Invalid type for name: {type(value)}")
 
 
-class RepoIsolate(IsolateModel):
+class RepoIsolate(IsolateSnapshot):
     """Represents an isolate in a Virtool reference repository."""
 
     sequences: list[RepoSequence]
@@ -201,8 +201,8 @@ class RepoIsolate(IsolateModel):
         return None
 
 
-class OTUModel(BaseModel):
-    """Models the metadata in an OTU."""
+class OTUSnapshot(BaseModel):
+    """Holds the metadata in an OTU."""
 
     id: UUID4
     """The OTU id."""
@@ -229,7 +229,7 @@ class OTUModel(BaseModel):
     """The NCBI Taxonomy id for this OTU."""
 
 
-class RepoOTU(OTUModel):
+class RepoOTU(OTUSnapshot):
     """Represents an OTU in a Virtool reference repository."""
 
     isolates: list[RepoIsolate]

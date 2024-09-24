@@ -5,8 +5,8 @@ import orjson
 from structlog import get_logger
 
 from ref_builder.resources import (
-    IsolateModel,
-    OTUModel,
+    IsolateSnapshot,
+    OTUSnapshot,
     RepoIsolate,
     RepoOTU,
     RepoSequence,
@@ -91,10 +91,10 @@ class OTUSnapshotDataStore:
         """A list of the data store's contents."""
         return list(self.path.glob("*.json"))
 
-    def load_isolate(self, isolate_id: UUID) -> IsolateModel:
+    def load_isolate(self, isolate_id: UUID) -> IsolateSnapshot:
         """Load and parse an isolate from the data store."""
         with open(self.path / f"{isolate_id}.json", "rb") as f:
-            return IsolateModel.model_validate_json(f.read())
+            return IsolateSnapshot.model_validate_json(f.read())
 
     def cache_isolate(
         self,
@@ -102,7 +102,7 @@ class OTUSnapshotDataStore:
         indent: int | None = None,
     ) -> None:
         """Serialize and cache an isolate to the data store."""
-        isolate_metadata = IsolateModel(
+        isolate_metadata = IsolateSnapshot(
             **isolate.model_dump(exclude={"sequences"}),
         )
         with open(self.path / f"{isolate.id}.json", "w") as f:
@@ -155,7 +155,7 @@ class OTUSnapshotter:
         """Cache an OTU at a given event."""
         self.at_event = at_event
 
-        otu_metadata = OTUModel(**otu.model_dump())
+        otu_metadata = OTUSnapshot(**otu.model_dump())
 
         with open(self._otu_path, "wb") as f:
             f.write(

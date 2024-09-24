@@ -4,8 +4,8 @@ from syrupy.filters import props
 
 from ref_builder.repo import Repo
 from ref_builder.resources import (
-    IsolateModel,
-    OTUModel,
+    IsolateSnapshot,
+    OTUSnapshot,
     RepoIsolate,
     RepoOTU,
     RepoSequence,
@@ -62,7 +62,7 @@ class TestRepoToSnapshotModel:
 
         for isolate in otu.isolates:
             assert type(isolate) is RepoIsolate
-            assert IsolateModel.model_validate(isolate.model_dump()).model_dump() == snapshot(
+            assert IsolateSnapshot.model_validate(isolate.model_dump()).model_dump() == snapshot(
                 exclude=props("id"),
             )
 
@@ -77,7 +77,7 @@ class TestRepoToSnapshotModel:
 
         assert type(otu) is RepoOTU
 
-        converted_model = OTUModel(**otu.model_dump())
+        converted_model = OTUSnapshot(**otu.model_dump())
 
         assert converted_model.id == otu.id
 

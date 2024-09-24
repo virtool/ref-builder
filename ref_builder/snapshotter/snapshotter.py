@@ -6,7 +6,7 @@ import orjson
 from pydantic.dataclasses import dataclass
 from structlog import get_logger
 
-from ref_builder.resources import OTUModel, RepoOTU
+from ref_builder.resources import OTUSnapshot, RepoOTU
 from ref_builder.snapshotter.otu import OTUSnapshotter
 
 logger = get_logger()
@@ -34,7 +34,7 @@ class OTUKeys:
     legacy_id: str | None = None
 
     @classmethod
-    def from_otu(cls, otu: RepoOTU | OTUModel ) -> "OTUKeys":
+    def from_otu(cls, otu: RepoOTU | OTUSnapshot) -> "OTUKeys":
         """Create a new OTUKeys instance from a ``RepoOTU``."""
         return OTUKeys(
             id=otu.id,
