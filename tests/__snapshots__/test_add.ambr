@@ -2,8 +2,8 @@
 # name: TestCreateOTU.test_empty_success
   dict({
     'acronym': '',
-    'excluded_accessions': list([
-    ]),
+    'excluded_accessions': set({
+    }),
     'legacy_id': None,
     'name': 'Cabbage leaf curl Jamaica virus',
     'schema': dict({
@@ -29,15 +29,44 @@
     'taxid': 345184,
   })
 # ---
+# name: TestCreateOTU.test_otu_create_refseq_autoexclude
+  set({
+    'EF546808',
+    'EF546809',
+    'EF546810',
+    'EF546811',
+    'EF546812',
+    'EF546813',
+  })
+# ---
 # name: TestCreateOTUCommands.test_autofill_ok
-  OTUSchema(molecule=Molecule(strandedness='double', topology='circular', type='DNA'), segments=[Segment(name='DNA-A', required=True, length=2575), Segment(name='DNA-B', required=True, length=2494)], multipartite=True)
+  dict({
+    'molecule': dict({
+      'strandedness': 'double',
+      'topology': 'circular',
+      'type': 'DNA',
+    }),
+    'multipartite': True,
+    'segments': list([
+      dict({
+        'length': 2575,
+        'name': 'DNA-A',
+        'required': True,
+      }),
+      dict({
+        'length': 2494,
+        'name': 'DNA-B',
+        'required': True,
+      }),
+    ]),
+  })
 # ---
 # name: TestCreateOTUCommands.test_ok[1278205-accessions0]
   dict({
     'acronym': '',
-    'excluded_accessions': list([
+    'excluded_accessions': set({
       'JX263426',
-    ]),
+    }),
     'legacy_id': None,
     'name': 'Dahlia latent viroid',
     'schema': dict({
@@ -50,7 +79,7 @@
       'segments': list([
         dict({
           'length': 342,
-          'name': 'Dahlia latent viroid',
+          'name': 'genomic RNA',
           'required': True,
         }),
       ]),
@@ -61,8 +90,8 @@
 # name: TestCreateOTUCommands.test_ok[345184-accessions1]
   dict({
     'acronym': '',
-    'excluded_accessions': list([
-    ]),
+    'excluded_accessions': set({
+    }),
     'legacy_id': None,
     'name': 'Cabbage leaf curl Jamaica virus',
     'schema': dict({
@@ -89,39 +118,31 @@
   })
 # ---
 # name: TestUpdateOTU.test_without_exclusions_ok
-  list([
-    dict({
-      'acronym': '',
-      'excluded_accessions': list([
-      ]),
-      'legacy_id': None,
-      'name': 'Apple rubbery wood virus 1',
-      'schema': dict({
-        'molecule': dict({
-          'strandedness': 'single',
-          'topology': 'linear',
-          'type': 'RNA',
-        }),
-        'multipartite': True,
-        'segments': list([
-          dict({
-            'length': 7219,
-            'name': 'L',
-            'required': True,
-          }),
-          dict({
-            'length': 1613,
-            'name': 'M',
-            'required': True,
-          }),
-          dict({
-            'length': 1291,
-            'name': 'S',
-            'required': True,
-          }),
-        ]),
-      }),
-      'taxid': 2164102,
+  dict({
+    IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='1148-13'): set({
+      'MF062130',
+      'MF062131',
+      'MF062132',
     }),
-  ])
+    IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='4342-5'): set({
+      'MF062136',
+      'MF062137',
+      'MF062138',
+    }),
+    IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='982-11'): set({
+      'NC_055390',
+      'NC_055391',
+      'NC_055392',
+    }),
+    IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='BR-Mishima'): set({
+      'MK936225',
+      'MK936226',
+      'MK936227',
+    }),
+    IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='Pe2'): set({
+      'OQ420743',
+      'OQ420744',
+      'OQ420745',
+    }),
+  })
 # ---

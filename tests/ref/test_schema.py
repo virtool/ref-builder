@@ -1,5 +1,8 @@
+from uuid import UUID
+
 import pytest
 from syrupy import SnapshotAssertion
+from syrupy.filters import props
 
 from ref_builder.otu.update import create_schema_from_records
 from ref_builder.schema import OTUSchema
@@ -29,4 +32,7 @@ def test_create_schema_from_records(
 
     assert type(auto_schema) is OTUSchema
 
-    assert auto_schema.model_dump() == snapshot
+    assert auto_schema.model_dump() == snapshot(exclude=props("id"))
+
+    for segment in auto_schema.segments:
+        assert type(segment.id) is UUID

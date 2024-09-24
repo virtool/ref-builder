@@ -17,11 +17,16 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.options import debug_option, ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
-    add_isolate,
+    add_genbank_isolate,
+    add_unnamed_isolate,
+    add_and_name_isolate,
     auto_update_otu,
     exclude_accessions_from_otu,
+    promote_otu_accessions,
     set_representative_isolate,
+    update_isolate_from_accessions,
 )
+from ref_builder.otu.utils import RefSeqConflictError
 from ref_builder.repo import Repo
 from ref_builder.utils import DataType, IsolateName, IsolateNameType, format_json
 
@@ -182,6 +187,27 @@ def otu_autoupdate(ctx, debug: bool, ignore_cache: bool) -> None:
     auto_update_otu(repo, otu_, ignore_cache=ignore_cache)
 
 
+@update.command(name="promote")
+@debug_option
+@ignore_cache_option
+@click.pass_context
+def otu_promote_accessions(
+    ctx,
+    debug: bool = False,
+    ignore_cache: bool = False,
+):
+    """Promote all RefSeq accessions within this OTU."""
+    configure_logger(debug)
+
+    taxid = ctx.obj['TAXID']
+
+    repo = ctx.obj['REPO']
+
+    otu_ = repo.get_otu_by_taxid(taxid)
+
+    promote_otu_accessions(repo, otu_, ignore_cache)
+
+
 @update.command(name="isolate")
 @click.argument(
     "accessions_",
@@ -189,6 +215,17 @@ def otu_autoupdate(ctx, debug: bool, ignore_cache: bool) -> None:
     nargs=-1,
     type=str,
     required=True,
+)
+@click.option(
+    "--unnamed",
+    is_flag=True,
+    default=False,
+    help="ignore isolate names in Genbank sources",
+)
+@click.option(
+    "--name",
+    type=(IsolateNameType, str),
+    help='an overriding name for the isolate, e.g. "isolate ARWV1"',
 )
 @ignore_cache_option
 @debug_option
@@ -198,6 +235,8 @@ def isolate_create(
     debug: bool,
     ignore_cache: bool,
     accessions_: list[str],
+    unnamed: bool,
+    name: tuple[IsolateNameType, str] | None,
 ) -> None:
     """Create a new isolate using the given accessions."""
     configure_logger(debug)
@@ -211,13 +250,46 @@ def isolate_create(
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
+    if unnamed:
+        add_unnamed_isolate(
+            repo,
+            otu_,
+            accessions_,
+            ignore_cache=ignore_cache,
+            ignore_name=unnamed,
+        )
+
+    if name is not None:
+        isolate_name_type, isolate_name_value = name
+        isolate_name_ = IsolateName(type=isolate_name_type, value=isolate_name_value)
+
+        try:
+            add_and_name_isolate(
+                repo,
+                otu_,
+                accessions_,
+                ignore_cache=ignore_cache,
+                isolate_name=isolate_name_,
+            )
+        except RefSeqConflictError as err:
+            click.echo(
+                f"{err.isolate_name} already exists, but RefSeq items may be promotable,",
+            )
+            sys.exit(1)
+
     try:
-        add_isolate(
+        add_genbank_isolate(
             repo,
             otu_,
             accessions_,
             ignore_cache=ignore_cache,
         )
+    except RefSeqConflictError as err:
+        click.echo(
+            f"{err.isolate_name} already exists, but RefSeq items may be promotable,",
+        )
+        sys.exit(1)
+
     except ValueError as e:
         click.echo(e, err=True)
         sys.exit(1)
@@ -292,6 +364,7 @@ def otu_set_representative_isolate(
         sys.exit(1)
 
     set_representative_isolate(repo, otu_, isolate_id)
+
 
 
 @entry.group()

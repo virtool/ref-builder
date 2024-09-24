@@ -1,81 +1,116 @@
+"""Tests for the Snapshotter class."""
+
+from pathlib import Path
+from uuid import UUID
+
+import orjson
 import pytest
 
-from ref_builder.repo import Repo
-from ref_builder.snapshotter.snapshotter import Snapshotter
+from ref_builder.resources import RepoOTU
+from ref_builder.snapshotter.snapshotter import OTUKeys, Snapshotter
+
+SNAPSHOT_AT_EVENTS = (
+    31,
+    22,
+    21,
+    24,
+    11,
+    32,
+    32,
+    30,
+)
+"""Hardcoded at_event values for the snapshotter_otus fixture."""
 
 
 @pytest.fixture()
-def snapshotter(scratch_repo: Repo) -> Snapshotter:
-    return Snapshotter(scratch_repo.path / ".cache/snapshot")
+def snapshotter(snapshotter_otus: list[RepoOTU], tmp_path: Path) -> Snapshotter:
+    """A snapshotter with eight OTUs already cached."""
+    _snapshotter = Snapshotter(tmp_path / "snapshotter")
+
+    for otu, at_event in zip(snapshotter_otus, SNAPSHOT_AT_EVENTS, strict=True):
+        _snapshotter.cache_otu(otu, at_event)
+
+    return _snapshotter
 
 
-class TestSnapshotIndex:
-    def test_otu_ids(self, scratch_repo: Repo, snapshotter: Snapshotter):
-        true_otu_ids = [otu.id for otu in scratch_repo.iter_otus(ignore_cache=True)]
-        assert len(true_otu_ids) == len(snapshotter.otu_ids)
+def test_load(snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
+    """Test that the snapshotter loads snapshots containing the correct OTUs and
+    at_event values.
+    """
+    for otu, at_event in zip(snapshotter_otus, SNAPSHOT_AT_EVENTS, strict=True):
+        snapshot = snapshotter.load_by_id(otu.id)
 
-    def test_load_by_id(self, snapshotter: Snapshotter, scratch_repo: Repo):
-        """Test that we can load an OTU by its ID."""
-        otu_ids = [otu.id for otu in scratch_repo.iter_otus(ignore_cache=True)]
-
-        for otu_id in otu_ids:
-            assert snapshotter.load_by_id(otu_id).id == otu_id
-
-    def test_load_by_taxid(
-        self,
-        scratch_repo: Repo,
-        snapshotter: Snapshotter,
-    ):
-        """Test that we can load an OTU by its taxid."""
-        taxids = [otu.taxid for otu in scratch_repo.iter_otus(ignore_cache=True)]
-
-        for taxid in taxids:
-            assert snapshotter.load_by_taxid(taxid).taxid == taxid
-
-    def test_load_by_name(
-        self,
-        scratch_repo: Repo,
-        snapshotter: Snapshotter,
-    ):
-        """Test that we can load an OTU by its name."""
-        true_otu_names = [otu.name for otu in scratch_repo.iter_otus(ignore_cache=True)]
-
-        for name in true_otu_names:
-            assert snapshotter.load_by_name(name).name == name
+        assert snapshot.at_event == at_event
+        assert snapshot.otu == otu
 
 
-class TestSnapshotIndexCaching:
-    @pytest.mark.parametrize(
-        ("taxid", "accessions"),
-        [
-            (
-                3158377,
-                [
-                    "NC_010314",
-                    "NC_010315",
-                    "NC_010316",
-                    "NC_010317",
-                    "NC_010318",
-                    "NC_010319",
-                ],
-            ),
-        ],
+def test_index_integrity(snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
+    """Test that the snapshotter index contains all OTUs on creation"""
+    assert (snapshotter.path / "index.json").exists()
+
+    with open(snapshotter.path / "index.json", "rb") as f:
+        loaded_index = orjson.loads(f.read())
+
+    for otu in snapshotter_otus:
+        index_item = loaded_index[str(otu.id)]
+
+        item_keys = OTUKeys(**index_item)
+
+        assert item_keys == OTUKeys.from_otu(otu)
+
+
+def test_iter_otus(snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
+    """Test that the snapshotter iterates over all OTUs."""
+    assert sorted(snapshotter.iter_otus(), key=lambda otu: otu.id) == sorted(
+        snapshotter_otus,
+        key=lambda otu: otu.id,
     )
-    def test_load_otu_by_taxid(
-        self,
-        taxid: int,
-        accessions: list[str],
-        scratch_repo: Repo,
-        snapshotter: Snapshotter,
-    ):
-        scratch_repo.snapshot()
 
-        rehydrated_otu = scratch_repo.get_otu_by_taxid(taxid)
 
-        assert rehydrated_otu
+def test_otu_ids(snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
+    """Test that the snapshotter has the correct OTU IDs."""
+    assert set(snapshotter.otu_ids) == {otu.id for otu in snapshotter_otus}
 
-        snapshot_otu = snapshotter.load_by_taxid(taxid)
 
-        assert snapshot_otu
+class TestGetIDByLegacyID:
+    """Test the `get_id_by_legacy_id` method of the Snapshotter class."""
 
-        assert rehydrated_otu.accessions == snapshot_otu.accessions
+    def test_ok(self, snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
+        """Test that the correct OTU ID is retrieved by legacy ID."""
+        for otu in snapshotter_otus:
+            if otu.legacy_id is not None:
+                assert snapshotter.get_id_by_legacy_id(otu.legacy_id) == otu.id
+
+    def test_not_found(self, snapshotter: Snapshotter):
+        """Test that `None` is returned when the legacy ID is not found."""
+        assert snapshotter.get_id_by_legacy_id("not found") is None
+
+    def test_none(self, snapshotter: Snapshotter):
+        """Test that `None` is returned when the legacy ID is `None`."""
+        assert snapshotter.get_id_by_legacy_id(None) is None
+
+
+class TestGetIDByName:
+    """Test the `get_id_by_name` method of the Snapshotter class."""
+
+    def test_ok(self, snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
+        """Test that the correct OTU ID is retrieved by name."""
+        for otu in snapshotter_otus:
+            assert snapshotter.get_id_by_name(otu.name) == otu.id
+
+    def test_not_found(self, snapshotter: Snapshotter):
+        """Test that `None` is returned when the name is not found."""
+        assert snapshotter.get_id_by_name("not found") is None
+
+
+class TestGetIDByTaxid:
+    """Test the `get_id_by_taxid` method of the Snapshotter class."""
+
+    def test_ok(self, snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
+        """Test that the correct OTU ID is retrieved by taxid."""
+        for otu in snapshotter_otus:
+            assert snapshotter.get_id_by_taxid(otu.taxid) == otu.id
+
+    def test_not_found(self, snapshotter: Snapshotter):
+        """Test that `None` is returned when the taxid is not found."""
+        assert snapshotter.get_id_by_taxid(999999999999999) is None

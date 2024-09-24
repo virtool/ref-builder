@@ -1,5 +1,7 @@
 import re
 from collections import defaultdict
+from enum import StrEnum
+from uuid import UUID, uuid4
 
 import structlog
 
@@ -9,6 +11,26 @@ from ref_builder.schema import OTUSchema, Segment
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
 logger = structlog.get_logger("otu.utils")
+
+
+class DeleteRationale(StrEnum):
+    """Default strings delineating reasons for resource deletion."""
+    USER = "Requested by user"
+    REFSEQ = "Superceded by RefSeq"
+
+
+class RefSeqConflictError(ValueError):
+    """Raised when a potential RefSeq replacement is found."""
+    def __init__(
+        self, message, isolate_id: UUID, isolate_name: IsolateName, accessions: list[str]
+    ):
+        super().__init__(message)
+
+        self.isolate_id = isolate_id
+
+        self.isolate_name = isolate_name
+
+        self.accessions = accessions
 
 
 def create_schema_from_records(
@@ -40,9 +62,24 @@ def group_genbank_records_by_isolate(
     isolates = defaultdict(dict)
 
     for record in records:
-        if (isolate_name := _get_isolate_name(record)) is not None:
+        try:
+            isolate_name = _get_isolate_name(record)
+
+            if isolate_name is None:
+                logger.debug(
+                    "RefSeq record does not contain sufficient source data for automatic inclusion."
+                    + "Add this record manually.",
+                    accession=record.accession,
+                    definition=record.definition,
+                    source_data=record.source,
+                )
+                continue
+
             versioned_accession = Accession.from_string(record.accession_version)
             isolates[isolate_name][versioned_accession] = record
+
+        except ValueError:
+            continue
 
     return isolates
 
@@ -83,12 +120,6 @@ def _get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
 
 def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
     """Get the isolate name from a Genbank record"""
-    record_logger = logger.bind(
-        accession=record.accession,
-        definition=record.definition,
-        source_data=record.source,
-    )
-
     if record.source.model_fields_set.intersection(
         {IsolateNameType.ISOLATE, IsolateNameType.STRAIN, IsolateNameType.CLONE},
     ):
@@ -99,20 +130,10 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
                     value=record.source.model_dump()[source_type],
                 )
 
-    elif record.refseq:
-        record_logger.debug(
-            "RefSeq record does not contain sufficient source data. "
-            + "Edit before inclusion.",
-        )
+    if record.refseq:
+        return None
 
-        return IsolateName(
-            type=IsolateNameType(IsolateNameType.REFSEQ),
-            value=record.accession,
-        )
-
-    record_logger.debug("Record does not contain sufficient source data for inclusion.")
-
-    return None
+    raise ValueError("Record does not contain sufficient source data for inclusion.")
 
 
 def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
@@ -122,15 +143,22 @@ def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
         if record.source.segment != "":
             segment_name = record.source.segment
         else:
-            segment_name = record.source.organism
+            segment_name = record.source.mol_type
 
-        return [Segment(name=segment_name, required=True, length=len(record.sequence))]
+        segment_id = uuid4()
+        return [
+            Segment(
+                id=segment_id, name=segment_name, required=True, length=len(record.sequence)
+            )
+        ]
 
     segments = []
     for record in sorted(records, key=lambda record: record.accession):
         if record.source.segment:
+            segment_id = uuid4()
             segments.append(
                 Segment(
+                    id=segment_id,
                     name=record.source.segment,
                     required=True,
                     length=len(record.sequence),

@@ -11,7 +11,6 @@ from ref_builder.otu.utils import (
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
 
-
 logger = structlog.get_logger("otu.create")
 
 
@@ -43,6 +42,7 @@ def create_otu(
         )
 
     taxonomy = client.fetch_taxonomy_record(taxid)
+
     if taxonomy is None:
         otu_logger.fatal(f"Could not retrieve {taxid} from NCBI Taxonomy")
         return None
@@ -52,6 +52,7 @@ def create_otu(
             acronym = taxonomy.other_names.acronym[0]
 
     records = client.fetch_genbank_records(accessions)
+
     if len(records) != len(accessions):
         otu_logger.fatal("Could not retrieve all requested accessions.")
         return None
@@ -83,13 +84,10 @@ def create_otu(
         otu_logger.fatal(e)
         sys.exit(1)
 
-    isolate_name = list(binned_records.keys())[0]
-
     isolate = repo.create_isolate(
         otu_id=otu.id,
         legacy_id=None,
-        source_name=isolate_name.value,
-        source_type=isolate_name.type,
+        name=list(binned_records.keys())[0] if binned_records else None,
     )
 
     otu.add_isolate(isolate)

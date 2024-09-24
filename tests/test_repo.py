@@ -1,6 +1,5 @@
-import uuid
 from pathlib import Path
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import orjson
 import pytest
@@ -28,12 +27,16 @@ def initialized_repo(empty_repo: Repo):
                 type=MolType.RNA,
                 topology=Topology.LINEAR,
             ),
-            segments=[Segment(name="A", length=150, required=True)],
+            segments=[Segment(id=uuid4(), name="A", length=150, required=True)],
         ),
         12242,
     )
 
-    isolate_a = empty_repo.create_isolate(otu.id, None, "A", IsolateNameType.ISOLATE)
+    isolate_a = empty_repo.create_isolate(
+        otu.id,
+        None,
+        IsolateName(IsolateNameType.ISOLATE, "A"),
+    )
     empty_repo.create_sequence(
         otu.id,
         isolate_a.id,
@@ -58,7 +61,7 @@ def init_otu(empty_repo: Repo) -> RepoOTU:
                 type=MolType.RNA,
                 topology=Topology.LINEAR,
             ),
-            segments=[Segment(name="A", required=True, length=100)],
+            segments=[Segment(id=uuid4(), name="A", required=True, length=100)],
         ),
         taxid=12242,
     )
@@ -91,30 +94,42 @@ class TestCreateOTU:
                     type=MolType.RNA,
                     topology=Topology.LINEAR,
                 ),
-                segments=[Segment(name="A", required=True, length=100)],
+                segments=[
+                    Segment(
+                        id=uuid4(),
+                        name="A",
+                        required=True,
+                        length=100,
+                    ),
+                ],
             ),
             taxid=12242,
         )
 
-        assert (
-            otu.dict()
-            == RepoOTU(
-                uuid=otu.id,
-                acronym="TMV",
-                excluded_accessions=None,
-                legacy_id="abcd1234",
-                name="Tobacco mosaic virus",
-                schema=OTUSchema(
-                    molecule=Molecule(
-                        strandedness=Strandedness.SINGLE,
-                        type=MolType.RNA,
-                        topology=Topology.LINEAR,
-                    ),
-                    segments=[Segment(name="A", required=True, length=100)],
+        assert otu == RepoOTU(
+            id=otu.id,
+            acronym="TMV",
+            excluded_accessions=set(),
+            legacy_id="abcd1234",
+            name="Tobacco mosaic virus",
+            repr_isolate=None,
+            schema=OTUSchema(
+                molecule=Molecule(
+                    strandedness=Strandedness.SINGLE,
+                    type=MolType.RNA,
+                    topology=Topology.LINEAR,
                 ),
-                taxid=12242,
-                isolates=[],
-            ).dict()
+                segments=[
+                    Segment(
+                        id=otu.schema.segments[0].id,
+                        name="A",
+                        required=True,
+                        length=100,
+                    ),
+                ],
+            ),
+            taxid=12242,
+            isolates=[],
         )
 
         with open(empty_repo.path.joinpath("src", "00000002.json")) as f:
@@ -134,7 +149,14 @@ class TestCreateOTU:
                         "type": "RNA",
                         "topology": "linear",
                     },
-                    "segments": [{"length": 100, "name": "A", "required": True}],
+                    "segments": [
+                        {
+                            "id": str(otu.schema.segments[0].id),
+                            "length": 100,
+                            "name": "A",
+                            "required": True,
+                        },
+                    ],
                     "multipartite": False,
                 },
                 "taxid": 12242,
@@ -152,7 +174,7 @@ class TestCreateOTU:
         """Test that creating an OTU with a name that already exists raises a
         ``ValueError``.
         """
-        empty_repo.create_otu(
+        otu = empty_repo.create_otu(
             acronym="TMV",
             legacy_id=None,
             name="Tobacco mosaic virus",
@@ -162,7 +184,9 @@ class TestCreateOTU:
                     type=MolType.RNA,
                     topology=Topology.LINEAR,
                 ),
-                segments=[Segment(name="A", required=True)],
+                segments=[
+                    Segment(id=uuid4(), name="A", required=True),
+                ],
             ),
             taxid=12242,
         )
@@ -181,7 +205,9 @@ class TestCreateOTU:
                         type=MolType.RNA,
                         topology=Topology.LINEAR,
                     ),
-                    segments=[Segment(name="A", required=True)],
+                    segments=[
+                        Segment(id=otu.schema.segments[0].id, name="A", required=True),
+                    ],
                 ),
                 taxid=438782,
             )
@@ -190,7 +216,7 @@ class TestCreateOTU:
         """Test that creating an OTU with a legacy ID that already exists raises a
         ``ValueError``.
         """
-        empty_repo.create_otu(
+        otu = empty_repo.create_otu(
             acronym="TMV",
             legacy_id="abcd1234",
             name="Tobacco mosaic virus",
@@ -200,7 +226,7 @@ class TestCreateOTU:
                     type=MolType.RNA,
                     topology=Topology.LINEAR,
                 ),
-                segments=[Segment(name="A", required=True)],
+                segments=[Segment(id=uuid4(), name="A", required=True)],
             ),
             taxid=12242,
         )
@@ -219,45 +245,88 @@ class TestCreateOTU:
                         type=MolType.RNA,
                         topology=Topology.LINEAR,
                     ),
-                    segments=[Segment(name="A", required=True)],
+                    segments=[
+                        Segment(id=otu.schema.segments[0].id, name="A", required=True),
+                    ],
                 ),
                 taxid=438782,
             )
 
 
-def test_create_isolate(empty_repo: Repo):
-    """Test that creating an isolate returns the expected ``RepoIsolate`` object and
-    creates the expected event file.
-    """
-    otu = init_otu(empty_repo)
+class TestCreateIsolate:
+    def test_ok(self, empty_repo: Repo):
+        """Test that creating an isolate returns the expected ``RepoIsolate`` object and
+        creates the expected event file.
+        """
+        otu = init_otu(empty_repo)
 
-    isolate = empty_repo.create_isolate(otu.id, None, "A", IsolateNameType.ISOLATE)
+        isolate = empty_repo.create_isolate(
+            otu.id,
+            None,
+            IsolateName(IsolateNameType.ISOLATE, "A"),
+        )
 
-    assert isinstance(isolate.id, UUID)
-    assert isolate.sequences == []
-    assert isolate.name.value == "A"
-    assert isolate.name.type == "isolate"
+        assert isinstance(isolate.id, UUID)
+        assert isolate.sequences == []
+        assert isolate.name.value == "A"
+        assert isolate.name.type == "isolate"
 
-    with open(empty_repo.path.joinpath("src", "00000003.json")) as f:
-        event = orjson.loads(f.read())
+        with open(empty_repo.path.joinpath("src", "00000003.json")) as f:
+            event = orjson.loads(f.read())
 
-    del event["timestamp"]
+        del event["timestamp"]
 
-    assert event == {
-        "data": {
-            "id": str(isolate.id),
-            "legacy_id": None,
-            "name": {"type": "isolate", "value": "A"},
-        },
-        "id": 3,
-        "query": {
-            "otu_id": str(otu.id),
-            "isolate_id": str(isolate.id),
-        },
-        "type": "CreateIsolate",
-    }
+        assert event == {
+            "data": {
+                "id": str(isolate.id),
+                "legacy_id": None,
+                "name": {"type": "isolate", "value": "A"},
+            },
+            "id": 3,
+            "query": {
+                "otu_id": str(otu.id),
+                "isolate_id": str(isolate.id),
+            },
+            "type": "CreateIsolate",
+        }
 
-    assert empty_repo.last_id == 3
+        assert empty_repo.last_id == 3
+
+    def test_name_exists(self, empty_repo: Repo):
+        """Test that a ValueError is raised if an isolate name is already taken."""
+        otu = init_otu(empty_repo)
+
+        empty_repo.create_isolate(
+            otu.id,
+            None,
+            IsolateName(IsolateNameType.ISOLATE, "A"),
+        )
+
+        with pytest.raises(
+            ValueError,
+            match="Isolate name already exists: Isolate A",
+        ):
+            empty_repo.create_isolate(
+                otu.id,
+                None,
+                IsolateName(IsolateNameType.ISOLATE, "A"),
+            )
+
+    def test_create_unnamed(self, empty_repo):
+        """Test that creating an isolate returns the expected ``RepoIsolate`` object and
+        creates the expected event file.
+        """
+        otu = init_otu(empty_repo)
+
+        isolate = empty_repo.create_isolate(
+            otu.id,
+            None,
+            None,
+        )
+
+        assert isinstance(isolate.id, UUID)
+        assert isolate.sequences == []
+        assert isolate.name is None
 
 
 def test_create_sequence(empty_repo: Repo):
@@ -266,7 +335,11 @@ def test_create_sequence(empty_repo: Repo):
     """
     otu = init_otu(empty_repo)
 
-    isolate = empty_repo.create_isolate(otu.id, None, "A", IsolateNameType.ISOLATE)
+    isolate = empty_repo.create_isolate(
+        otu.id,
+        None,
+        IsolateName(IsolateNameType.ISOLATE, "A"),
+    )
 
     sequence = empty_repo.create_sequence(
         otu.id,
@@ -331,16 +404,16 @@ class TestRetrieveOTU:
                     type=MolType.RNA,
                     topology=Topology.LINEAR,
                 ),
-                segments=[Segment(name="A", required=True)],
+                segments=[Segment(id=uuid4(), name="A", required=True)],
             ),
         )
 
         isolate_a = empty_repo.create_isolate(
             otu.id,
             None,
-            "A",
-            IsolateNameType.ISOLATE,
+            IsolateName(IsolateNameType.ISOLATE, "A"),
         )
+
         empty_repo.create_sequence(
             otu.id,
             isolate_a.id,
@@ -354,8 +427,7 @@ class TestRetrieveOTU:
         isolate_b = empty_repo.create_isolate(
             otu.id,
             None,
-            "B",
-            IsolateNameType.ISOLATE,
+            IsolateName(IsolateNameType.ISOLATE, "B"),
         )
         empty_repo.create_sequence(
             otu.id,
@@ -371,7 +443,7 @@ class TestRetrieveOTU:
 
         otu_contents = [
             RepoIsolate(
-                uuid=isolate_a.id,
+                id=isolate_a.id,
                 legacy_id=None,
                 name=IsolateName(type=IsolateNameType.ISOLATE, value="A"),
                 sequences=[
@@ -386,7 +458,7 @@ class TestRetrieveOTU:
                 ],
             ),
             RepoIsolate(
-                uuid=isolate_b.id,
+                id=isolate_b.id,
                 legacy_id=None,
                 name=IsolateName(type=IsolateNameType.ISOLATE, value="B"),
                 sequences=[
@@ -402,32 +474,32 @@ class TestRetrieveOTU:
             ),
         ]
 
-        assert (
-            otu.dict()
-            == RepoOTU(
-                uuid=otu.id,
-                acronym="TMV",
-                excluded_accessions=[],
-                legacy_id=None,
-                name="Tobacco mosaic virus",
-                schema=OTUSchema(
-                    molecule=Molecule(
-                        strandedness=Strandedness.SINGLE,
-                        type=MolType.RNA,
-                        topology=Topology.LINEAR,
-                    ),
-                    segments=[Segment(name="A", required=True)],
+        assert otu == RepoOTU(
+            id=otu.id,
+            acronym="TMV",
+            excluded_accessions=set(),
+            legacy_id=None,
+            name="Tobacco mosaic virus",
+            repr_isolate=None,
+            schema=OTUSchema(
+                molecule=Molecule(
+                    strandedness=Strandedness.SINGLE,
+                    type=MolType.RNA,
+                    topology=Topology.LINEAR,
                 ),
-                taxid=12242,
-                isolates=otu_contents,
-            ).dict()
+                segments=[
+                    Segment(id=otu.schema.segments[0].id, name="A", required=True),
+                ],
+            ),
+            taxid=12242,
+            isolates=otu_contents,
         )
 
         assert empty_repo.last_id == 6
 
     def test_retrieve_nonexistent_otu(self, initialized_repo: Repo):
         """Test that getting an OTU that does not exist returns ``None``."""
-        assert initialized_repo.get_otu(uuid.uuid4()) is None
+        assert initialized_repo.get_otu(uuid4()) is None
 
     def test_get_accessions(self, initialized_repo: Repo):
         otu = next(initialized_repo.iter_otus(ignore_cache=True))
@@ -437,8 +509,7 @@ class TestRetrieveOTU:
         isolate_b = initialized_repo.create_isolate(
             otu.id,
             None,
-            "B",
-            IsolateNameType.ISOLATE,
+            IsolateName(type=IsolateNameType.ISOLATE, value="B"),
         )
         initialized_repo.create_sequence(
             otu.id,
@@ -460,8 +531,7 @@ class TestRetrieveOTU:
         isolate_b = initialized_repo.create_isolate(
             otu.id,
             None,
-            "B",
-            IsolateNameType.ISOLATE,
+            IsolateName(type=IsolateNameType.ISOLATE, value="B"),
         )
 
         initialized_repo.create_sequence(
@@ -504,6 +574,54 @@ class TestGetIsolate:
             )
             in isolate_ids
         )
+
+    def test_get_with_unnamed_isolate(self, initialized_repo: Repo):
+        """Test that getting an OTU with an unnamed isolate ID behaves as expected."""
+        otu = next(initialized_repo.iter_otus())
+
+        isolate_before = otu.isolates[0]
+
+        isolate_unnamed = initialized_repo.create_isolate(
+            otu.id,
+            None,
+            None,
+        )
+
+        initialized_repo.create_sequence(
+            otu.id,
+            isolate_id=isolate_unnamed.id,
+            accession="EMPTY1.1",
+            definition="TMV B",
+            legacy_id=None,
+            segment="RNA A",
+            sequence="GACCACGTGGAGA",
+        )
+
+        initialized_repo.create_sequence(
+            otu.id,
+            isolate_id=isolate_unnamed.id,
+            accession="EMPTY2.1",
+            definition="TMV A",
+            legacy_id=None,
+            segment="RNA B",
+            sequence="ACTAAGAGAAAAA",
+        )
+
+        otu_after = next(initialized_repo.iter_otus())
+
+        assert len(otu_after.isolate_ids) == len(otu.isolate_ids) + 1
+
+        assert "EMPTY1" in otu_after.accessions
+
+        assert "EMPTY2" in otu_after.accessions
+
+        assert otu_after.isolate_ids == {isolate_before.id, isolate_unnamed.id}
+
+        isolate_unnamed_after = otu_after.get_isolate(isolate_unnamed.id)
+
+        assert isolate_unnamed_after.name is None
+
+        assert isolate_unnamed_after.accessions == {"EMPTY1", "EMPTY2"}
 
 
 def test_exclude_accession(empty_repo: Repo):
@@ -552,7 +670,9 @@ class TestDirectDelete:
         isolate_before = list(otu_before.isolates)[0]
 
         initialized_repo.delete_isolate(
-            otu_id, isolate_before.id, rationale="Testing redaction"
+            otu_id,
+            isolate_before.id,
+            rationale="Testing redaction",
         )
 
         otu_after = initialized_repo.get_otu(otu_id)
@@ -573,7 +693,9 @@ class TestDirectDelete:
 
         accession = "TMVABC"
 
-        isolate_id, replaced_sequence_id = otu_before.get_sequence_id_hierarchy_from_accession(accession)
+        isolate_id, replaced_sequence_id = (
+            otu_before.get_sequence_id_hierarchy_from_accession(accession)
+        )
 
         assert otu_before.get_isolate(isolate_id).accessions == {"TMVABC"}
 
@@ -600,4 +722,3 @@ class TestDirectDelete:
         assert new_sequence.id in otu_after.sequence_ids
 
         assert otu_after.get_isolate(isolate_id).accessions == {"TMVABCC"}
-

@@ -64,7 +64,6 @@ from ref_builder.utils import (
     Accession,
     DataType,
     IsolateName,
-    IsolateNameType,
     pad_zeroes,
 )
 
@@ -89,11 +88,7 @@ class Repo:
 
         snapshot_path = path / ".cache/snapshot"
 
-        self._snapshotter = (
-            Snapshotter(path=snapshot_path)
-            if snapshot_path.exists()
-            else Snapshotter.new(path=snapshot_path, metadata=self.meta)
-        )
+        self._snapshotter = Snapshotter(path=snapshot_path)
         """The snapshot index. Maintains and caches the read model of the Repo."""
 
         # Take a new snapshot if no existing data is found.
@@ -157,8 +152,7 @@ class Repo:
         """Create a snapshot using all the OTUs in the event store."""
         self._snapshotter.snapshot(
             self.iter_otus(ignore_cache=True),
-            at_event=self.last_id,
-            indent=True,
+            self.last_id,
         )
 
     def iter_otus(self, ignore_cache: bool = False) -> Generator[RepoOTU, None, None]:
@@ -186,7 +180,7 @@ class Repo:
         taxid: int,
     ):
         """Create an OTU."""
-        if (otu_id := self.get_otu_by_taxid(taxid)) is not None:
+        if (otu_id := self.get_otu_id_by_taxid(taxid)) is not None:
             otu = self.get_otu(otu_id)
             raise ValueError(
                 f"OTU already exists as {otu}",
@@ -224,22 +218,17 @@ class Repo:
         self,
         otu_id: uuid.UUID,
         legacy_id: str | None,
-        source_name: str,
-        source_type: IsolateNameType,
+        name: IsolateName | None,
     ) -> RepoIsolate | None:
-        """Create and return a new isolate within the given OTU.
+        """Create and isolate for the OTU with ``otu_id``.
+
         If the isolate name already exists, return None.
         """
         otu = self.get_otu(otu_id)
 
-        name = IsolateName(type=source_type, value=source_name)
-
-        if otu.get_isolate_id_by_name(name) is not None:
-            logger.warning(
-                "An isolate by this name already exists",
-                isolate_name=str(name),
-            )
-            return None
+        if name is not None:
+            if otu.get_isolate_id_by_name(name):
+                raise ValueError(f"Isolate name already exists: {name}")
 
         isolate_id = uuid.uuid4()
 
@@ -253,12 +242,10 @@ class Repo:
             "Isolate written",
             event_id=event.id,
             isolate_id=str(isolate_id),
-            name=str(name),
+            name=str(name) if name is not None else None,
         )
 
-        otu = self.get_otu(otu_id)
-
-        return otu.get_isolate(isolate_id)
+        return self.get_otu(otu_id).get_isolate(isolate_id)
 
     def delete_isolate(
         self,
@@ -477,13 +464,15 @@ class Repo:
             )
 
         otu = RepoOTU(
-            uuid=event.data.id,
+            id=event.data.id,
             acronym=event.data.acronym,
-            excluded_accessions=[],
+            excluded_accessions=set(),
+            isolates=[],
             legacy_id=event.data.legacy_id,
             name=event.data.name,
-            taxid=event.data.taxid,
+            repr_isolate=None,
             schema=event.data.otu_schema,
+            taxid=event.data.taxid,
         )
 
         for event_id in event_ids[1:]:
@@ -501,14 +490,15 @@ class Repo:
             elif isinstance(event, CreateIsolate):
                 otu.add_isolate(
                     RepoIsolate(
-                        uuid=event.data.id,
+                        id=event.data.id,
                         legacy_id=event.data.legacy_id,
                         name=event.data.name,
+                        sequences=[],
                     ),
                 )
 
             elif isinstance(event, DeleteIsolate):
-                otu.remove_isolate(event.query.isolate_id)
+                otu.delete_isolate(event.query.isolate_id)
 
             elif isinstance(event, ExcludeAccession):
                 otu.excluded_accessions.add(event.data.accession)
@@ -533,7 +523,7 @@ class Repo:
                     event.query.isolate_id,
                 )
 
-        otu.isolates.sort(key=lambda i: f"{i.name.type} {i.name.value}")
+        otu.isolates.sort(key=lambda i: f"{i.name.type} {i.name.value}" if type(i.name) is IsolateName else "")
 
         for isolate in otu.isolates:
             isolate.sequences.sort(key=lambda s: s.accession)

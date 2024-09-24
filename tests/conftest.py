@@ -1,8 +1,11 @@
 import shutil
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import orjson
 import pytest
+from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel, TypeAdapter
 from pytest_mock import MockerFixture
 
@@ -12,7 +15,8 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import update_otu_with_accessions
 from ref_builder.repo import Repo
-from ref_builder.utils import DataType
+from ref_builder.resources import RepoOTU
+from ref_builder.utils import Accession, DataType
 
 
 @pytest.fixture()
@@ -145,7 +149,9 @@ def scratch_user_cache_path(files_path: Path, tmp_path: Path) -> Path:
 
 @pytest.fixture()
 def scratch_event_store_data(
-    pytestconfig, tmp_path, scratch_repo_contents_path
+    pytestconfig,
+    tmp_path,
+    scratch_repo_contents_path,
 ) -> dict:
     """Scratch repo events. Cached in .pytest_cache."""
     scratch_src = pytestconfig.cache.get("scratch_src", None)
@@ -197,3 +203,35 @@ class OTUContents(BaseModel):
 
 otu_contents_list_adapter = TypeAdapter(list[OTUContents])
 """Aids the serialization of a scratch repo's table of contents."""
+
+
+@pytest.fixture()
+def snapshotter_otus() -> list[RepoOTU]:
+    """A list of eight OTUs for use in Snapshotter testing."""
+
+    class OTUFactory(ModelFactory[RepoOTU]):
+        __model__ = RepoOTU
+
+        @classmethod
+        def get_provider_map(cls) -> dict[Any, Callable[[], Any]]:
+            providers_map = super().get_provider_map()
+
+            return {
+                **providers_map,
+                Accession: lambda: Accession(
+                    key="".join(cls.__faker__.random_letters(8)).upper(),
+                    version=cls.__faker__.random_int(1, 4),
+                ),
+            }
+
+    otus = [OTUFactory.build() for _ in range(8)]
+
+    # We want at least one OTU with a `None` legacy ID to test `get_id_by_legacy_id`.
+    if all(otu.legacy_id is not None for otu in otus):
+        otus[2].legacy_id = None
+
+    # We want at least one OTU with an assigned legacy ID to test `get_id_by_legacy_id`.
+    if all(otu.legacy_id is None for otu in otus):
+        otus[2].legacy_id = "legacy"
+
+    return otus
