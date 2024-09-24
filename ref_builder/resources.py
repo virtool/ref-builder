@@ -1,5 +1,4 @@
 import datetime
-from typing import Any
 from uuid import UUID
 
 from pydantic import UUID4, BaseModel, field_serializer, field_validator
@@ -52,7 +51,8 @@ class RepoSequence(BaseModel):
     """The sequence segment."""
 
     @field_validator("accession", mode="before")
-    def convert_accession(cls: "RepoSequence", value: Any) -> Accession:
+    @classmethod
+    def convert_accession(cls: "RepoSequence", value: Accession | str) -> Accession:
         """Convert the accession to an Accession object."""
         if isinstance(value, Accession):
             return value
@@ -63,6 +63,7 @@ class RepoSequence(BaseModel):
         raise ValueError(f"Invalid type for accession: {type(value)}")
 
     @field_serializer("accession")
+    @classmethod
     def serialize_accession(self, accession: Accession) -> str:
         """Serialize the accession to a string."""
         return str(accession)
@@ -95,7 +96,10 @@ class IsolateModel(BaseModel):
         }
 
     @field_validator("name", mode="before")
-    def convert_name(cls: "RepoIsolate", value: Any) -> IsolateName | None:
+    @classmethod
+    def convert_name(
+        cls: "RepoIsolate", value: dict | IsolateName | None,
+    ) -> IsolateName | None:
         """Convert the name to an IsolateName object."""
         if value is None:
             return value
@@ -184,6 +188,9 @@ class RepoIsolate(IsolateModel):
         return self._sequences_by_accession.get(accession)
 
     def get_sequence_by_id(self, sequence_id: UUID) -> RepoSequence | None:
+        """Return a sequence with the given ID if it exists in the isolate,
+        else None.
+        """
         if sequence_id not in self.sequence_ids:
             return None
 
@@ -196,6 +203,7 @@ class RepoIsolate(IsolateModel):
 
 class OTUModel(BaseModel):
     """Models the metadata in an OTU."""
+
     id: UUID4
     """The OTU id."""
 
