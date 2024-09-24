@@ -178,15 +178,17 @@ def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
 
 
 def get_multipartite_segment_name(record: NCBIGenbank) -> SegmentName:
+    """Get a multipartite segment name from the record."""
     if SIMPLE_NAME_PATTERN.fullmatch(record.source.segment):
         return SegmentName(
-            prefix=record.moltype, key=record.source.segment
+            prefix=record.moltype, key=record.source.segment,
         )
-    else:
-        return parse_segment_name(record.source.segment)
+
+    return parse_segment_name(record.source.segment)
 
 
 def parse_segment_name(raw: str) -> SegmentName:
+    """Parse a SegmentName from a raw string."""
     segment_name_parse = COMPLEX_NAME_PATTERN.fullmatch(raw)
     if segment_name_parse:
         return SegmentName(
