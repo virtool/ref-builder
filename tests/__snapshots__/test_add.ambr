@@ -50,29 +50,15 @@
     'segments': list([
       dict({
         'length': 2575,
-        'name': 'DNA-A',
+        'name': 'DNA A',
         'required': True,
       }),
       dict({
         'length': 2494,
-        'name': 'DNA-B',
+        'name': 'DNA B',
         'required': True,
       }),
     ]),
-  })
-# ---
-# name: TestCreateOTUCommands.test_autofill_ok.1
-  dict({
-    'length': 2575,
-    'name': 'DNA A',
-    'required': True,
-  })
-# ---
-# name: TestCreateOTUCommands.test_autofill_ok.2
-  dict({
-    'length': 2494,
-    'name': 'DNA B',
-    'required': True,
   })
 # ---
 # name: TestCreateOTUCommands.test_ok[1278205-accessions0]
@@ -132,39 +118,11 @@
   })
 # ---
 # name: TestUpdateOTU.test_without_exclusions_ok
-  list([
-    dict({
-      'acronym': '',
-      'excluded_accessions': list([
-      ]),
-      'legacy_id': None,
-      'name': 'Apple rubbery wood virus 1',
-      'schema': dict({
-        'molecule': dict({
-          'strandedness': 'single',
-          'topology': 'linear',
-          'type': 'RNA',
-        }),
-        'multipartite': True,
-        'segments': list([
-          dict({
-            'length': 7219,
-            'name': 'RNA L',
-            'required': True,
-          }),
-          dict({
-            'length': 1613,
-            'name': 'RNA M',
-            'required': True,
-          }),
-          dict({
-            'length': 1291,
-            'name': 'RNA S',
-            'required': True,
-          }),
-        ]),
-      }),
-      'taxid': 2164102,
+  dict({
+    IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='1148-13'): set({
+      'MF062130',
+      'MF062131',
+      'MF062132',
     }),
     IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='4342-5'): set({
       'MF062136',
