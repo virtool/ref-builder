@@ -5,7 +5,7 @@ import orjson
 import pytest
 
 from ref_builder.repo import Repo
-from ref_builder.snapshotter.otu import OTUSnapshot
+from ref_builder.snapshotter.otu import OTUSnapshotter
 
 
 @pytest.fixture()
@@ -24,7 +24,7 @@ class TestOTUSnapshot:
         """Test that OTUSnapshot can build a snapshot directly from a floating OTU."""
         otu = scratch_repo.get_otu_by_taxid(taxid)
 
-        snapshot = OTUSnapshot(empty_snapshot_path)
+        snapshot = OTUSnapshotter(empty_snapshot_path)
 
         snapshot.cache(otu, 5)
 
@@ -45,7 +45,7 @@ class TestOTUSnapshot:
         """Test OTUSnapshot.load()"""
         otu = scratch_repo.get_otu_by_taxid(taxid)
 
-        snapshot = OTUSnapshot(
+        snapshot = OTUSnapshotter(
             path=scratch_repo.cache_path / f"snapshot/{otu.id}",
         )
 
@@ -55,7 +55,7 @@ class TestOTUSnapshot:
         """Test that the table of contents is written correctly."""
         rehydrated_otu = scratch_repo.get_otu_by_taxid(taxid)
 
-        otu_snapshotter = OTUSnapshot(
+        otu_snapshotter = OTUSnapshotter(
             path=scratch_repo.cache_path / f"snapshot/{rehydrated_otu.id}",
         )
 

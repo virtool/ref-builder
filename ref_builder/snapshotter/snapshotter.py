@@ -7,7 +7,7 @@ from pydantic.dataclasses import dataclass
 from structlog import get_logger
 
 from ref_builder.resources import OTUModel, RepoOTU
-from ref_builder.snapshotter.otu import OTUSnapshot
+from ref_builder.snapshotter.otu import OTUSnapshotter
 
 logger = get_logger()
 
@@ -156,7 +156,7 @@ class Snapshotter:
         """Create a snapshot for a single OTU."""
         logger.debug("Writing a snapshot", otu_id=otu.id)
 
-        otu_snap = OTUSnapshot(self.path / f"{otu.id}")
+        otu_snap = OTUSnapshotter(self.path / f"{otu.id}")
         otu_snap.cache(otu, at_event)
 
         self._index[otu.id] = OTUKeys.from_otu(otu)
@@ -178,7 +178,7 @@ class Snapshotter:
 
         """
         try:
-            otu_snapshot = OTUSnapshot(self.path / f"{otu_id}")
+            otu_snapshot = OTUSnapshotter(self.path / f"{otu_id}")
         except FileNotFoundError:
             return None
 

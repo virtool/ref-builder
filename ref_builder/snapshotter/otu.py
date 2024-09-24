@@ -123,7 +123,7 @@ class OTUSnapshotDataStore:
             f.write(sequence.model_dump_json(indent=indent))
 
 
-class OTUSnapshot:
+class OTUSnapshotter:
     """Manages snapshot data for a single OTU."""
 
     def __init__(self, path: Path) -> None:
