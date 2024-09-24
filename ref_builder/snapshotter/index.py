@@ -5,6 +5,7 @@ updated by calling `update` with a list of OTUs.
 
 """
 
+import binascii
 import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
@@ -24,9 +25,7 @@ class Snapshot:
 class Index:
     def __init__(self, path: Path):
         self.con = sqlite3.connect(path, isolation_level=None)
-
         self.con.execute("PRAGMA journal_mode = WAL")
-
         self.con.execute(
             """
             CREATE TABLE IF NOT EXISTS otus (
@@ -93,7 +92,7 @@ class Index:
 
         self.con.commit()
 
-    def load(self, otu_id: UUID):
+    def load(self, otu_id: UUID) -> Snapshot:
         """Load an OTU snapshot."""
         cursor = self.con.execute(
             "SELECT at_index, snapshot FROM otus WHERE id = ?",
@@ -136,7 +135,7 @@ class Index:
                 otu.legacy_id,
                 otu.name,
                 otu.taxid,
-                orjson.dumps(otu.dict()),
+                otu.model_dump_json(),
             ),
         )
 
@@ -150,7 +149,7 @@ def calculate_crc32(sequence: str) -> str:
     :return: the CRC32 checksum as a hexadecimal string.
 
     """
-    crc = zlib.crc32(sequence.encode("utf-8"))
+    crc = binascii.crc32(sequence.encode("utf-8"))
 
     # Convert CRC as a hexadecimal string.
     return hex(crc & 0xFFFFFFFF)[2:].zfill(8)

@@ -1,4 +1,3 @@
-import sqlite3
 from collections.abc import Generator, Iterable
 from pathlib import Path
 from uuid import UUID
@@ -8,6 +7,7 @@ from pydantic.dataclasses import dataclass
 from structlog import get_logger
 
 from ref_builder.resources import OTUSnapshot, RepoOTU
+from ref_builder.snapshotter.index import Index
 from ref_builder.snapshotter.otu import OTUSnapshotter
 
 logger = get_logger()
@@ -78,22 +78,7 @@ class Snapshotter:
         self._index = self._load_index()
         """The index data of this snapshot index."""
 
-        self.con = sqlite3.connect(path, isolation_level=None)
-        self.con.execute("PRAGMA journal_mode = WAL")
-        self.con.execute(
-            """
-            CREATE TABLE IF NOT EXISTS otus (
-                id TEXT PRIMARY KEY,
-                acronym TEXT,
-                at_index INTEGER,
-                legacy_id TEXT,
-                name TEXT,
-                taxid INTEGER,
-                snapshot BLOB
-            );
-            """,
-        )
-        self.con.commit()
+        self._sqlite_index = Index(self._db_path)
 
         if self._index is None:
             self._build_index()
@@ -107,13 +92,8 @@ class Snapshotter:
         :return: The ID of the OTU with the given legacy ID or ``None``.
 
         """
-        cursor = self.con.execute(
-            "SELECT id FROM otus WHERE legacy_id = ?",
-            (legacy_id,),
-        )
-
-        if result_ := cursor.fetchone():
-            return UUID(result_[0])
+        if otu_id := self._sqlite_index.get_id_by_legacy_id(legacy_id):
+            return otu_id
 
         legacy_id_index = {
             self._index[otu_id].legacy_id: otu_id for otu_id in self._index
@@ -134,13 +114,8 @@ class Snapshotter:
         :return: The ID of the OTU with the given name or ``None``.
 
         """
-        cursor = self.con.execute(
-            "SELECT id FROM otus WHERE name = ?",
-            (name,),
-        )
-
-        if result_ := cursor.fetchone():
-            return UUID(result_[0])
+        if otu_id := self._sqlite_index.get_id_by_name(name):
+            return otu_id
 
         return {self._index[otu_id].name: otu_id for otu_id in self._index}.get(name)
 
@@ -152,13 +127,8 @@ class Snapshotter:
         :param taxid: The taxonomy ID to search for.
         :return: The ID of the OTU with the given taxonomy ID or ``None``.
         """
-        cursor = self.con.execute(
-            "SELECT id FROM otus WHERE taxid = ?",
-            (taxid,),
-        )
-
-        if result := cursor.fetchone():
-            return UUID(result[0])
+        if otu_id := self._sqlite_index.get_id_by_taxid(taxid):
+            return otu_id
 
         return {self._index[otu_id].taxid: otu_id for otu_id in self._index}.get(taxid)
 
