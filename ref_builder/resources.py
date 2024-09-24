@@ -1,5 +1,4 @@
 import datetime
-from typing import Any
 from uuid import UUID
 
 from pydantic import UUID4, BaseModel, field_serializer, field_validator
@@ -52,7 +51,8 @@ class RepoSequence(BaseModel):
     """The sequence segment."""
 
     @field_validator("accession", mode="before")
-    def convert_accession(cls: "RepoSequence", value: Any) -> Accession:
+    @classmethod
+    def convert_accession(cls: "RepoSequence", value: Accession | str) -> Accession:
         """Convert the accession to an Accession object."""
         if isinstance(value, Accession):
             return value
@@ -63,13 +63,14 @@ class RepoSequence(BaseModel):
         raise ValueError(f"Invalid type for accession: {type(value)}")
 
     @field_serializer("accession")
+    @classmethod
     def serialize_accession(self, accession: Accession) -> str:
         """Serialize the accession to a string."""
         return str(accession)
 
 
-class RepoIsolate(BaseModel):
-    """Represents an isolate in a Virtool reference repository."""
+class IsolateSnapshot(BaseModel):
+    """Represents the metadata of an isolate as would exist in snapshot file data."""
 
     id: UUID4
     """The isolate id."""
@@ -82,6 +83,38 @@ class RepoIsolate(BaseModel):
 
     name: IsolateName | None
     """The isolate's source name metadata."""
+
+    @field_serializer("name")
+    def serialize_name(self, name: IsolateName | None) -> dict[str, str] | None:
+        """Serialize the isolate name."""
+        if name is None:
+            return None
+
+        return {
+            "type": name.type,
+            "value": name.value,
+        }
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def convert_name(
+        cls: "RepoIsolate", value: dict | IsolateName | None,
+    ) -> IsolateName | None:
+        """Convert the name to an IsolateName object."""
+        if value is None:
+            return value
+
+        if isinstance(value, IsolateName):
+            return value
+
+        if isinstance(value, dict):
+            return IsolateName(**value)
+
+        raise ValueError(f"Invalid type for name: {type(value)}")
+
+
+class RepoIsolate(IsolateSnapshot):
+    """Represents an isolate in a Virtool reference repository."""
 
     sequences: list[RepoSequence]
 
@@ -97,31 +130,6 @@ class RepoIsolate(BaseModel):
         self._sequences_by_id = {
             sequence.id: sequence for sequence in (self.sequences or [])
         }
-
-    @field_serializer("name")
-    def serialize_name(self, name: IsolateName | None) -> dict[str, str] | None:
-        """Serialize the isolate name."""
-        if name is None:
-            return None
-
-        return {
-            "type": name.type,
-            "value": name.value,
-        }
-
-    @field_validator("name", mode="before")
-    def convert_name(cls: "RepoIsolate", value: Any) -> IsolateName | None:
-        """Convert the name to an IsolateName object."""
-        if value is None:
-            return value
-
-        if isinstance(value, IsolateName):
-            return value
-
-        if isinstance(value, dict):
-            return IsolateName(**value)
-
-        raise ValueError(f"Invalid type for name: {type(value)}")
 
     @property
     def accessions(self) -> set[str]:
@@ -180,6 +188,9 @@ class RepoIsolate(BaseModel):
         return self._sequences_by_accession.get(accession)
 
     def get_sequence_by_id(self, sequence_id: UUID) -> RepoSequence | None:
+        """Return a sequence with the given ID if it exists in the isolate,
+        else None.
+        """
         if sequence_id not in self.sequence_ids:
             return None
 
@@ -190,8 +201,8 @@ class RepoIsolate(BaseModel):
         return None
 
 
-class RepoOTU(BaseModel):
-    """Represents an OTU in a Virtool reference repository."""
+class OTUSnapshot(BaseModel):
+    """Represents the metadata of an OTU as would exist in snapshot file data."""
 
     id: UUID4
     """The OTU id."""
@@ -201,9 +212,6 @@ class RepoOTU(BaseModel):
 
     excluded_accessions: set[str]
     """A set of accessions that should not be retrieved in future fetch operations."""
-
-    isolates: list[RepoIsolate]
-    """Isolates contained in this OTU."""
 
     legacy_id: str | None
     """A string based ID carried over from a legacy Virtool reference repository."""
@@ -219,6 +227,13 @@ class RepoOTU(BaseModel):
 
     taxid: int
     """The NCBI Taxonomy id for this OTU."""
+
+
+class RepoOTU(OTUSnapshot):
+    """Represents an OTU in a Virtool reference repository."""
+
+    isolates: list[RepoIsolate]
+    """Isolates contained in this OTU."""
 
     _isolates_by_id: dict[UUID4:RepoIsolate]
     """A dictionary of isolates indexed by isolate UUID"""

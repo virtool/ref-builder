@@ -5,16 +5,13 @@ import orjson
 from structlog import get_logger
 
 from ref_builder.resources import (
+    IsolateSnapshot,
+    OTUSnapshot,
     RepoIsolate,
     RepoOTU,
     RepoSequence,
 )
-from ref_builder.snapshotter.models import (
-    OTUSnapshotIsolate,
-    OTUSnapshotSequence,
-    OTUSnapshotToCIsolate,
-    toc_adapter,
-)
+from ref_builder.snapshotter.models import OTUSnapshotToCIsolate, toc_adapter
 
 logger = get_logger("snapshotter.otu")
 
@@ -94,10 +91,10 @@ class OTUSnapshotDataStore:
         """A list of the data store's contents."""
         return list(self.path.glob("*.json"))
 
-    def load_isolate(self, isolate_id: UUID) -> OTUSnapshotIsolate:
+    def load_isolate(self, isolate_id: UUID) -> IsolateSnapshot:
         """Load and parse an isolate from the data store."""
         with open(self.path / f"{isolate_id}.json", "rb") as f:
-            return OTUSnapshotIsolate.model_validate_json(f.read())
+            return IsolateSnapshot.model_validate_json(f.read())
 
     def cache_isolate(
         self,
@@ -105,16 +102,16 @@ class OTUSnapshotDataStore:
         indent: int | None = None,
     ) -> None:
         """Serialize and cache an isolate to the data store."""
-        validated_isolate = OTUSnapshotIsolate(
+        isolate_metadata = IsolateSnapshot(
             **isolate.model_dump(exclude={"sequences"}),
         )
         with open(self.path / f"{isolate.id}.json", "w") as f:
-            f.write(validated_isolate.model_dump_json(indent=indent))
+            f.write(isolate_metadata.model_dump_json(indent=indent))
 
-    def load_sequence(self, sequence_id: UUID) -> OTUSnapshotSequence:
+    def load_sequence(self, sequence_id: UUID) -> RepoSequence:
         """Load and parse a sequence from the data store."""
         with open(self.path / f"{sequence_id}.json", "rb") as f:
-            return OTUSnapshotSequence.model_validate_json(f.read())
+            return RepoSequence.model_validate_json(f.read())
 
     def cache_sequence(
         self,
@@ -122,13 +119,11 @@ class OTUSnapshotDataStore:
         indent: int | None = None,
     ) -> None:
         """Serialize and cache a sequence to the data store."""
-        validated_sequence = OTUSnapshotSequence(**sequence.model_dump())
-
         with open(self.path / f"{sequence.id}.json", "w") as f:
-            f.write(validated_sequence.model_dump_json(indent=indent))
+            f.write(sequence.model_dump_json(indent=indent))
 
 
-class OTUSnapshot:
+class OTUSnapshotter:
     """Manages snapshot data for a single OTU."""
 
     def __init__(self, path: Path) -> None:
@@ -160,21 +155,14 @@ class OTUSnapshot:
         """Cache an OTU at a given event."""
         self.at_event = at_event
 
+        otu_metadata = OTUSnapshot(**otu.model_dump())
+
         with open(self._otu_path, "wb") as f:
             f.write(
                 orjson.dumps(
                     {
                         "at_event": at_event,
-                        "data": {
-                            "acronym": otu.acronym,
-                            "id": otu.id,
-                            "excluded_accessions": list(otu.excluded_accessions),
-                            "legacy_id": otu.legacy_id,
-                            "name": otu.name,
-                            "repr_isolate": otu.repr_isolate,
-                            "schema": otu.schema.model_dump(),
-                            "taxid": otu.taxid,
-                        },
+                        "data": otu_metadata.model_dump(mode="json")
                     },
                 ),
             )
@@ -202,28 +190,18 @@ class OTUSnapshot:
         for key in toc:
             isolate_entry = toc[key]
 
-            isolate_structure = self._data.load_isolate(isolate_entry.id)
+            isolate_metadata = self._data.load_isolate(isolate_entry.id)
 
             sequences = []
 
             for accession in toc[key].accessions:
                 sequence_id = toc[key].accessions[accession]
-                sequence_structure = self._data.load_sequence(sequence_id)
 
-                sequences.append(
-                    RepoSequence(
-                        id=sequence_structure.id,
-                        accession=sequence_structure.accession,
-                        definition=sequence_structure.definition,
-                        sequence=sequence_structure.sequence,
-                        legacy_id=sequence_structure.legacy_id,
-                        segment=sequence_structure.segment,
-                    ),
-                )
+                sequences.append(self._data.load_sequence(sequence_id))
 
             isolates.append(
                 RepoIsolate(
-                    **isolate_structure.model_dump(),
+                    **isolate_metadata.model_dump(),
                     sequences=sequences,
                 ),
             )

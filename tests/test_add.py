@@ -63,7 +63,7 @@ class TestCreateOTU:
             "",
         )
 
-        assert otu.dict() == snapshot(exclude=props("id", "isolates", "repr_isolate"))
+        assert otu.model_dump() == snapshot(exclude=props("id", "isolates", "repr_isolate"))
 
         # Ensure only one OTU is present in the repository, and it matches the return
         # value of the creation function.
@@ -174,7 +174,7 @@ class TestCreateOTUCommands:
         assert len(otus) == 1
         otu = otus[0]
 
-        assert otu.dict() == snapshot(exclude=props("id", "isolates", "repr_isolate"))
+        assert otu.model_dump() == snapshot(exclude=props("id", "isolates", "repr_isolate"))
 
     @pytest.mark.ncbi()
     def test_autofill_ok(
@@ -194,10 +194,7 @@ class TestCreateOTUCommands:
         assert len(otus) == 1
         otu = otus[0]
 
-        assert otu.schema.model_dump() == snapshot(exclude=props("segments"))
-
-        for segment in otu.schema.segments:
-            assert segment.model_dump() == snapshot(exclude=props("id"))
+        assert otu.schema.model_dump() == snapshot(exclude=props("id"))
 
         assert {"DQ178610", "DQ178611"}.intersection(otu.accessions)
 

@@ -1,11 +1,13 @@
 """Tests for the Snapshotter class."""
 
 from pathlib import Path
+from uuid import UUID
 
+import orjson
 import pytest
 
 from ref_builder.resources import RepoOTU
-from ref_builder.snapshotter.snapshotter import Snapshotter
+from ref_builder.snapshotter.snapshotter import OTUKeys, Snapshotter
 
 SNAPSHOT_AT_EVENTS = (
     31,
@@ -40,6 +42,21 @@ def test_load(snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
 
         assert snapshot.at_event == at_event
         assert snapshot.otu == otu
+
+
+def test_index_integrity(snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
+    """Test that the snapshotter index contains all OTUs on creation"""
+    assert (snapshotter.path / "index.json").exists()
+
+    with open(snapshotter.path / "index.json", "rb") as f:
+        loaded_index = orjson.loads(f.read())
+
+    for otu in snapshotter_otus:
+        index_item = loaded_index[str(otu.id)]
+
+        item_keys = OTUKeys(**index_item)
+
+        assert item_keys == OTUKeys.from_otu(otu)
 
 
 def test_iter_otus(snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):

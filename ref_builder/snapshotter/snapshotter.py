@@ -1,13 +1,13 @@
 from collections.abc import Generator, Iterable
-from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
 
 import orjson
+from pydantic.dataclasses import dataclass
 from structlog import get_logger
 
-from ref_builder.resources import RepoOTU
-from ref_builder.snapshotter.otu import OTUSnapshot
+from ref_builder.resources import OTUSnapshot, RepoOTU
+from ref_builder.snapshotter.otu import OTUSnapshotter
 
 logger = get_logger()
 
@@ -34,7 +34,7 @@ class OTUKeys:
     legacy_id: str | None = None
 
     @classmethod
-    def from_otu(cls, otu: RepoOTU) -> "OTUKeys":
+    def from_otu(cls, otu: RepoOTU | OTUSnapshot) -> "OTUKeys":
         """Create a new OTUKeys instance from a ``RepoOTU``."""
         return OTUKeys(
             id=otu.id,
@@ -156,10 +156,17 @@ class Snapshotter:
         """Create a snapshot for a single OTU."""
         logger.debug("Writing a snapshot", otu_id=otu.id)
 
-        otu_snap = OTUSnapshot(self.path / f"{otu.id}")
+        otu_snap = OTUSnapshotter(self.path / f"{otu.id}")
         otu_snap.cache(otu, at_event)
 
         self._index[otu.id] = OTUKeys.from_otu(otu)
+
+        with open(self._index_path, "wb") as f:
+            f.write(
+                orjson.dumps(
+                    {str(otu_id): self._index[otu_id].dict() for otu_id in self._index},
+                ),
+            )
 
     def load_by_id(self, otu_id: UUID) -> Snapshot | None:
         """Load the most recently snapshotted form of an OTU by its ID.
@@ -171,7 +178,7 @@ class Snapshotter:
 
         """
         try:
-            otu_snapshot = OTUSnapshot(self.path / f"{otu_id}")
+            otu_snapshot = OTUSnapshotter(self.path / f"{otu_id}")
         except FileNotFoundError:
             return None
 
@@ -189,15 +196,15 @@ class Snapshotter:
             except ValueError:
                 continue
 
-            otu = self.load_by_id(otu_id)
-            if otu is None:
+            otu_snapshot = self.load_by_id(otu_id)
+            if otu_snapshot is None:
                 raise FileNotFoundError("OTU not found")
-            index[otu.id] = OTUKeys(
-                id=otu.id,
-                taxid=otu.taxid,
-                name=otu.name,
-                acronym=otu.acronym,
-                legacy_id=otu.legacy_id,
+            index[otu_snapshot.otu.id] = OTUKeys(
+                id=otu_snapshot.otu.id,
+                taxid=otu_snapshot.otu.taxid,
+                name=otu_snapshot.otu.name,
+                acronym=otu_snapshot.otu.acronym,
+                legacy_id=otu_snapshot.otu.legacy_id,
             )
 
         logger.debug("Snapshot index built", index=index)

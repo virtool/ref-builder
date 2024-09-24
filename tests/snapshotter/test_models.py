@@ -4,31 +4,12 @@ from syrupy.filters import props
 
 from ref_builder.repo import Repo
 from ref_builder.resources import (
+    IsolateSnapshot,
+    OTUSnapshot,
     RepoIsolate,
     RepoOTU,
     RepoSequence,
 )
-from ref_builder.snapshotter.models import (
-    OTUSnapshotIsolate,
-    OTUSnapshotOTU,
-    OTUSnapshotSequence,
-)
-
-
-def test_otu_model_adherence(scratch_repo: Repo):
-    """Check the OTU snapshot model for missing fields relative to RepoOTU."""
-    otu = scratch_repo.get_otu_by_taxid(1169032)
-
-    otu_fields = set(otu.model_dump().keys())
-
-    otu_fields.remove("isolates")
-    otu_fields.remove("excluded_accessions")
-    otu_fields.remove("schema")
-
-    otu_fields.add("otu_schema")
-
-    for field in otu_fields:
-        assert field in OTUSnapshotOTU.model_fields
 
 
 class TestRepoToSnapshotModel:
@@ -66,7 +47,7 @@ class TestRepoToSnapshotModel:
 
             assert type(original_sequence) is RepoSequence
 
-            converted_model = OTUSnapshotSequence.model_validate(original_sequence.model_dump())
+            converted_model = RepoSequence.model_validate(original_sequence.model_dump())
 
             assert converted_model.model_dump() == snapshot(exclude=props("id"))
 
@@ -81,7 +62,7 @@ class TestRepoToSnapshotModel:
 
         for isolate in otu.isolates:
             assert type(isolate) is RepoIsolate
-            assert OTUSnapshotIsolate.model_validate(isolate.model_dump()).model_dump() == snapshot(
+            assert IsolateSnapshot.model_validate(isolate.model_dump()).model_dump() == snapshot(
                 exclude=props("id"),
             )
 
@@ -96,7 +77,7 @@ class TestRepoToSnapshotModel:
 
         assert type(otu) is RepoOTU
 
-        converted_model = OTUSnapshotOTU(**otu.model_dump())
+        converted_model = OTUSnapshot(**otu.model_dump())
 
         assert converted_model.id == otu.id
 
