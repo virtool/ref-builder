@@ -4,22 +4,12 @@ import pytest
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
-from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.models import MolType
+from ref_builder.ncbi.client import NCBIClient
+from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.update import create_schema_from_records
 from ref_builder.otu.utils import get_multipartite_segment_name, parse_segment_name
-from ref_builder.schema import SegmentName, OTUSchema
-
-
-class MockNCBISource:
-    def __init__(self, segment_name: str):
-        self.segment = segment_name
-
-
-class MockNCBIGenbank:
-    def __init__(self, moltype: MolType, source: MockNCBISource):
-        self.moltype = moltype
-        self.source = source
+from ref_builder.schema import OTUSchema, SegmentName
 
 
 @pytest.mark.parametrize(
@@ -38,7 +28,7 @@ class MockNCBIGenbank:
 )
 def test_create_schema_from_records(
     accessions: list[str],
-    scratch_ncbi_client,
+    scratch_ncbi_client: NCBIClient,
     snapshot: SnapshotAssertion,
 ):
     records = scratch_ncbi_client.fetch_genbank_records(accessions)
@@ -53,6 +43,8 @@ def test_create_schema_from_records(
 
 
 class TestSegmentNameParser:
+    """Test different configurations of segment name."""
+
     @pytest.mark.parametrize(
         "expected_result, test_strings",
         [
