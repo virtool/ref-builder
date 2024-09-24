@@ -70,7 +70,7 @@ class RepoSequence(BaseModel):
 
 
 class IsolateSnapshot(BaseModel):
-    """Models the metadata in an Isolate."""
+    """Represents the metadata of an isolate as would exist in snapshot file data."""
 
     id: UUID4
     """The isolate id."""
@@ -202,7 +202,7 @@ class RepoIsolate(IsolateSnapshot):
 
 
 class OTUSnapshot(BaseModel):
-    """Holds the metadata in an OTU."""
+    """Represents the metadata of an OTU as would exist in snapshot file data."""
 
     id: UUID4
     """The OTU id."""
