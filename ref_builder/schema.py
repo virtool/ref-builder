@@ -46,6 +46,7 @@ class OTUSchema(BaseModel):
 
     @computed_field
     def multipartite(self) -> bool:
+        """Is true if multiple sequences are required to form a complete isolate."""
         return len(self.segments) > 1
 
 
@@ -60,7 +61,7 @@ def determine_segment_prefix(moltype: NCBISourceMolType) -> str:
     ):
         return "DNA"
 
-    prefix = ""
+    prefix = None
 
     match moltype:
         case NCBISourceMolType.GENOMIC_RNA:
