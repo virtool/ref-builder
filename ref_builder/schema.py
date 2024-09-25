@@ -1,16 +1,19 @@
-from typing import NamedTuple
-
 from pydantic import UUID4, BaseModel, computed_field
+from pydantic.dataclasses import dataclass
 
 from ref_builder.models import Molecule
 from ref_builder.ncbi.models import NCBISourceMolType
 
 
-class SegmentName(NamedTuple):
+@dataclass(frozen=True)
+class SegmentName:
     """A normalized segment name. Can be used as a key."""
 
     prefix: str
+    """The prefix of the segment name."""
+
     key: str
+    """The identifying key portion of the segment name."""
 
     def __str__(self) -> str:
         """Return the segment name as a formatted string."""
