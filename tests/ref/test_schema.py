@@ -7,8 +7,12 @@ from syrupy.filters import props
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBISourceMolType
 from ref_builder.otu.update import create_schema_from_records
-from ref_builder.otu.utils import get_multipartite_segment_name, parse_segment_name
-from ref_builder.schema import OTUSchema, SegmentName
+from ref_builder.schema import (
+    OTUSchema,
+    SegmentName,
+    get_multipartite_segment_name,
+    parse_segment_name,
+)
 from tests.fixtures.factories import NCBIGenbankFactory, NCBISourceFactory
 
 
