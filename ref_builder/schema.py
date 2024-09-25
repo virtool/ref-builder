@@ -1,14 +1,14 @@
 from typing import NamedTuple
 
-from pydantic import BaseModel, UUID4, computed_field
+from pydantic import UUID4, BaseModel, computed_field
 
 from ref_builder.models import Molecule
 from ref_builder.ncbi.models import NCBISourceMolType
 
-"""Regex pattern for parsing segment name strings containing both a prefix and a key."""
-
 
 class SegmentName(NamedTuple):
+    """A normalized segment name. Can be used as a key."""
+
     prefix: str
     key: str
 
@@ -18,7 +18,8 @@ class SegmentName(NamedTuple):
 
 
 class Segment(BaseModel):
-    """The metadata of the segment"""
+    """The metadata of the segment."""
+
     id: UUID4
     """The unique id number of this segment"""
 
@@ -32,7 +33,7 @@ class Segment(BaseModel):
 
 
 class OTUSchema(BaseModel):
-    """A schema for the intended data"""
+    """A schema for the intended data."""
 
     molecule: Molecule
     """The molecular metadata for this OTU."""
@@ -46,8 +47,8 @@ class OTUSchema(BaseModel):
 
 
 def determine_segment_prefix(moltype: NCBISourceMolType) -> str:
-    """Returns an acceptable SegmentName prefix
-    corresponding to the given NCBISourceMolType.
+    """Return an acceptable SegmentName prefix corresponding to
+    the given NCBISourceMolType.
     """
     if moltype in (
         NCBISourceMolType.GENOMIC_DNA,
@@ -56,16 +57,23 @@ def determine_segment_prefix(moltype: NCBISourceMolType) -> str:
     ):
         return "DNA"
 
+    prefix = ""
+
     match moltype:
         case NCBISourceMolType.GENOMIC_RNA:
-            return "RNA"
+            prefix = "RNA"
         case NCBISourceMolType.MRNA:
-            return "mRNA"
+            prefix = "mRNA"
         case NCBISourceMolType.TRNA:
-            return "tRNA"
+            prefix = "tRNA"
         case NCBISourceMolType.TRANSCRIBED_RNA:
-            return "RNA"
+            prefix = "RNA"
         case NCBISourceMolType.VIRAL_CRNA:
-            return "cRNA"
+            prefix = "cRNA"
         case NCBISourceMolType.OTHER_RNA:
-            return "RNA"
+            prefix = "RNA"
+
+    if prefix:
+        return prefix
+
+    raise ValueError(f"{moltype} may not be a valid NCBISourceMolType.")
