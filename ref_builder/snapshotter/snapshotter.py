@@ -32,9 +32,6 @@ class Snapshotter:
 
         self.path.mkdir(exist_ok=True, parents=True)
 
-        self._meta_path = self.path / "meta.json"
-        """The path to the reconstructed Repo metadata."""
-
         self._index = Index(self.path / "index.db")
         """The index of all OTUs in the snapshotter."""
 
