@@ -86,9 +86,7 @@ class Repo:
         self._event_index = EventIndex(self.cache_path / "index")
         """The event index cache of the event sourced repository."""
 
-        snapshot_path = path / ".cache/snapshot"
-
-        self._snapshotter = Snapshotter(path=snapshot_path)
+        self._snapshotter = Snapshotter(self.cache_path / "snapshot")
         """The snapshot index. Maintains and caches the read model of the Repo."""
 
         # Take a new snapshot if no existing data is found.
@@ -420,45 +418,16 @@ class Repo:
 
     def get_otu(self, otu_id: uuid.UUID) -> RepoOTU | None:
         """Return an OTU corresponding with a given OTU ID if it exists, else None."""
-        if event_ids := self._get_otu_event_ids(otu_id):
-            return self._rehydrate_otu(event_ids)
+        event_ids = self._get_otu_event_ids(otu_id)
 
-        return None
+        if not event_ids:
+            return None
 
-    def get_otu_by_taxid(self, taxid: int) -> RepoOTU | None:
-        """Return the OTU with the given ``taxid``.
-
-        If no OTU is found, return None.
-
-        :param taxid: the taxonomy ID of the OTU
-        :return: the matching OTU or ``None``
-
-        """
-        if (otu_id := self.get_otu_id_by_taxid(taxid)) is not None:
-            return self.get_otu(otu_id)
-
-        return None
-
-    def get_otu_id_by_taxid(self, taxid: int) -> uuid.UUID | None:
-        """Return the UUID of the OTU with the given ``taxid``.
-
-        If no OTU is found, return None.
-
-        :param taxid: the taxonomy ID of the OTU
-        :return: the UUID of the OTU or ``None``
-
-        """
-        return self._snapshotter.get_id_by_taxid(taxid)
-
-    def _rehydrate_otu(self, event_ids: list[int]) -> RepoOTU:
-        """Rebuild OTU data from a list of event IDs."""
-        first_event_id = sorted(event_ids)[0]
-
-        event = self._event_store.read_event(first_event_id)
+        event = self._event_store.read_event(event_ids[0])
 
         if not isinstance(event, CreateOTU):
-            raise ValueError(
-                f"The first event ({first_event_id}) for an OTU is not a CreateOTU "
+            raise TypeError(
+                f"The first event ({event_ids[0]}) for an OTU is not a CreateOTU "
                 "event",
             )
 
@@ -535,6 +504,31 @@ class Repo:
 
         return otu
 
+    def get_otu_by_taxid(self, taxid: int) -> RepoOTU | None:
+        """Return the OTU with the given ``taxid``.
+
+        If no OTU is found, return None.
+
+        :param taxid: the taxonomy ID of the OTU
+        :return: the matching OTU or ``None``
+
+        """
+        if (otu_id := self.get_otu_id_by_taxid(taxid)) is not None:
+            return self.get_otu(otu_id)
+
+        return None
+
+    def get_otu_id_by_taxid(self, taxid: int) -> uuid.UUID | None:
+        """Return the UUID of the OTU with the given ``taxid``.
+
+        If no OTU is found, return None.
+
+        :param taxid: the taxonomy ID of the OTU
+        :return: the UUID of the OTU or ``None``
+
+        """
+        return self._snapshotter.get_id_by_taxid(taxid)
+
     def _get_otu_event_ids(self, otu_id: uuid.UUID) -> list[int]:
         """Get a list of all event IDs associated with ``otu_id``."""
         event_ids = []
@@ -561,8 +555,6 @@ class Repo:
                     raise ValueError("Event ID already in event list.")
 
                 event_ids.append(event.id)
-
-        event_ids.sort()
 
         self._event_index.set(
             otu_id,
@@ -632,15 +624,14 @@ class EventStore:
         if start < 1:
             raise IndexError("Start event ID cannot be less than 1")
 
-        if start not in [int(path.stem) for path in self.path.glob("*.json")]:
+        if not Path(self.path / f"{pad_zeroes(start)}.json").exists():
             raise IndexError(f"Event {start} not found in event store")
 
-        for path in sorted(self.path.glob("*.json")):
-            if path.stem == "meta":
-                continue
-
-            if int(path.stem) >= start:
-                yield EventStore._read_event_at_path(path)
+        for event_id in range(start, self.last_id + 1):
+            try:
+                yield self.read_event(event_id)
+            except FileNotFoundError:
+                break
 
     def read_event(self, event_id: int) -> Event:
         """Read the event with the given ``event_id``.
@@ -649,9 +640,26 @@ class EventStore:
         :return: the event
 
         """
-        return EventStore._read_event_at_path(
-            self.path / f"{pad_zeroes(event_id)}.json",
-        )
+        with open(self.path / f"{pad_zeroes(event_id)}.json", "rb") as f:
+            loaded = orjson.loads(f.read())
+
+            try:
+                cls = {
+                    "CreateRepo": CreateRepo,
+                    "CreateOTU": CreateOTU,
+                    "CreateIsolate": CreateIsolate,
+                    "CreateSequence": CreateSequence,
+                    "DeleteIsolate": DeleteIsolate,
+                    "DeleteSequence": DeleteSequence,
+                    "CreateSchema": CreateSchema,
+                    "SetReprIsolate": SetReprIsolate,
+                    "ExcludeAccession": ExcludeAccession,
+                }[loaded["type"]]
+
+                return cls(**loaded)
+
+            except KeyError:
+                raise ValueError(f"Unknown event type: {loaded['type']}")
 
     def write_event(
         self,
@@ -680,30 +688,3 @@ class EventStore:
         self.last_id = event_id
 
         return event
-
-    @staticmethod
-    def _read_event_at_path(path: Path) -> Event:
-        with open(path, "rb") as f:
-            loaded = orjson.loads(f.read())
-
-            match loaded["type"]:
-                case "CreateRepo":
-                    return CreateRepo(**loaded)
-                case "CreateOTU":
-                    return CreateOTU(**loaded)
-                case "CreateIsolate":
-                    return CreateIsolate(**loaded)
-                case "CreateSequence":
-                    return CreateSequence(**loaded)
-                case "DeleteIsolate":
-                    return DeleteIsolate(**loaded)
-                case "DeleteSequence":
-                    return DeleteSequence(**loaded)
-                case "CreateSchema":
-                    return CreateSchema(**loaded)
-                case "SetReprIsolate":
-                    return SetReprIsolate(**loaded)
-                case "ExcludeAccession":
-                    return ExcludeAccession(**loaded)
-
-            raise ValueError(f"Unknown event type: {loaded['type']}")

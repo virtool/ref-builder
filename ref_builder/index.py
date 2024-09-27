@@ -38,8 +38,12 @@ class EventIndex:
         self.path = path
         self.path.mkdir(exist_ok=True)
 
+        self._data: dict[UUID, EventIndexItem] = {}
+
     def set(self, otu_id: UUID, event_ids: list[int], last_id: int) -> None:
         """Cache the event list for a given OTU.
+
+        The event ID list **must** be sorted.
 
         :param otu_id: an OTU ID
         :param event_ids: the list of event IDs
@@ -48,12 +52,18 @@ class EventIndex:
         if last_id < 1:
             raise ValueError("last_id must be greater than 0")
 
+        self._data[otu_id] = EventIndexItem(
+            last_id,
+            event_ids,
+            otu_id,
+        )
+
         with open(self.path / f"{otu_id}.json", "wb") as f:
             f.write(
                 orjson.dumps(
                     {
                         "at_event": last_id,
-                        "event_ids": sorted(event_ids),
+                        "event_ids": event_ids,
                     },
                 ),
             )
@@ -64,30 +74,32 @@ class EventIndex:
 
         returns: a dictionary of OTU IDs to event IDs
         """
-        event_index = {}
+        self._data = {}
 
         for path in self.path.iterdir():
             if path.suffix == ".json":
                 otu_id = UUID(path.stem)
-                event_index[otu_id] = self.get(otu_id).event_ids
+                self._data[otu_id] = self.get(otu_id).event_ids
 
-        return event_index
+        return self._data
 
     def get(self, otu_id: UUID) -> EventIndexItem | None:
-        """Takes a requested OTU Id and returns an OTUEventCache object.
+        """Return the event index for a given OTU ID.
 
         If no object exists for ``otu_id``, ``None`` is returned.
 
-        If the cached data is not compatible with the repo's event store,
-        raise an EventIndexCacheError.
-
         :param otu_id: A Virtool OTU Id
-        :return: An OTUEventCache object or None
+        :return: An EventIndexItem object or None
         """
-        path = self.path / f"{otu_id}.json"
+        if otu_id in self._data:
+            return EventIndexItem(
+                self._data[otu_id].at_event,
+                self._data[otu_id].event_ids,
+                otu_id,
+            )
 
         try:
-            with open(path, "rb") as f:
+            with open(self.path / f"{otu_id}.json", "rb") as f:
                 return EventIndexItem(
                     **{**orjson.loads(f.read()), "otu_id": otu_id},
                 )
