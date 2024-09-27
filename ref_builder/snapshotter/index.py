@@ -16,29 +16,64 @@ import orjson
 from ref_builder.resources import RepoOTU
 
 
+def default_json(obj):
+    if isinstance(obj, set):
+        return list(obj)
+
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
+
 @dataclass
 class Snapshot:
-    at_index: int
+    at_event: int
     otu: RepoOTU
 
 
 class Index:
     def __init__(self, path: Path):
         self.con = sqlite3.connect(path, isolation_level=None)
+
         self.con.execute("PRAGMA journal_mode = WAL")
+        self.con.execute("PRAGMA synchronous = NORMAL")
+
         self.con.execute(
             """
             CREATE TABLE IF NOT EXISTS otus (
                 id TEXT PRIMARY KEY,
                 acronym TEXT,
-                at_index INTEGER,
+                at_event INTEGER,
                 legacy_id TEXT,
                 name TEXT,
-                taxid INTEGER,
-                snapshot BLOB
+                otu JSONB,
+                taxid INTEGER
             );
             """,
         )
+
+        self.con.execute(
+            """
+            CREATE TABLE IF NOT EXISTS sequences (
+                id TEXT PRIMARY KEY,
+                crc TEXT,
+                otu_id TEXT,
+                sequence TEXT
+            );
+            """,
+        )
+
+        for table, column in [
+            ("otus", "id"),
+            ("otus", "legacy_id"),
+            ("otus", "name"),
+            ("otus", "taxid"),
+            ("sequences", "otu_id"),
+            ("sequences", "crc"),
+        ]:
+            self.con.execute(
+                f"""
+                CREATE INDEX IF NOT EXISTS {table}_{column} ON {table} ({column});
+                """,
+            )
 
         self.con.commit()
 
@@ -92,50 +127,136 @@ class Index:
 
         self.con.commit()
 
-    def load(self, otu_id: UUID) -> Snapshot:
+    def load(self, otu_id: UUID) -> Snapshot | None:
         """Load an OTU snapshot."""
         cursor = self.con.execute(
-            "SELECT at_index, snapshot FROM otus WHERE id = ?",
+            "SELECT at_event, otu FROM otus WHERE id = ?",
             (str(otu_id),),
         )
 
-        if result := cursor.fetchone():
-            at_index, snapshot = result
+        result = cursor.fetchone()
 
-            snapshot = orjson.loads(snapshot)
+        if not result:
+            return None
 
-            return Snapshot(
-                at_index=at_index,
-                otu=RepoOTU.from_dict(snapshot),
-            )
+        at_event, otu_json = result
 
-        return None
+        otu = orjson.loads(otu_json)
+
+        sequence_ids = [
+            str(sequence["id"])
+            for isolate in otu["isolates"]
+            for sequence in isolate["sequences"]
+        ]
+
+        # Fetch all sequences in a single query
+        sequence_map = dict(
+            self.con.execute(
+                "SELECT id, sequence FROM sequences WHERE id IN ({})".format(
+                    ",".join("?" * len(sequence_ids)),
+                ),
+                sequence_ids,
+            ).fetchall(),
+        )
+
+        # Update the data structure and check for missing sequences
+        missing_sequences = []
+
+        for isolate in otu["isolates"]:
+            for sequence in isolate["sequences"]:
+                sequence_id = str(sequence["id"])
+
+                if sequence_id in sequence_map:
+                    sequence["sequence"] = sequence_map[sequence_id]
+                else:
+                    missing_sequences.append(sequence_id)
+
+        # Raise an error if any sequences are missing
+        if missing_sequences:
+            raise ValueError(f"Sequences not found: {', '.join(missing_sequences)}")
+
+        return Snapshot(
+            at_event=at_event,
+            otu=RepoOTU.model_validate(otu),
+        )
 
     @property
     def otu_ids(self) -> set[UUID]:
         """A list of OTU ids of snapshots."""
         return {UUID(row[0]) for row in self.con.execute("SELECT id FROM otus")}
 
-    def update(self, otu: RepoOTU, at_index: int):
+    def update(self, otu: RepoOTU, at_event: int):
         """Update the index based on a list of OTUs.
 
         OTUs that aren't already in the index will be added, and those that are will be
         updated.
 
+        Only sequences that have changed will be updated.
+
         """
+        sequence_ids = {
+            str(seq.id) for isolate in otu.isolates for seq in isolate.sequences
+        }
+
+        otu_dict = otu.model_dump()
+
+        placeholders = ",".join("?" for _ in sequence_ids)
+
+        # Delete any sequences that are no longer in the OTU.
+        self.con.execute(
+            f"""
+            DELETE FROM sequences WHERE otu_id = ? AND NOT id IN ({ placeholders });
+            """,
+            (str(otu.id), *sequence_ids),
+        )
+
+        batch = []
+
+        # Insert or update the sequences.
+        for isolate in otu_dict["isolates"]:
+            for sequence in isolate["sequences"]:
+                crc = calculate_crc32(sequence["sequence"])
+                batch.append(
+                    (
+                        str(sequence["id"]),
+                        crc,
+                        str(otu.id),
+                        sequence["sequence"],
+                    ),
+                )
+
+        # Perform batch insert
+        self.con.executemany(
+            """
+            INSERT OR REPLACE INTO sequences (id, crc, otu_id, sequence)
+            VALUES (?, ?, ?, ?)
+            """,
+            batch,
+        )
+
+        # Update only if CRC has changed
+        self.con.executemany(
+            """
+            UPDATE sequences
+            SET crc = ?, otu_id = ?, sequence = ?
+            WHERE id = ? AND crc != ?
+            """,
+            [(crc, otu_id, seq, seq_id, crc) for seq_id, crc, otu_id, seq in batch],
+        )
+
         self.con.execute(
             """
-            INSERT OR REPLACE INTO otus (id, acronym, at_index, legacy_id, name, taxid, snapshot)
+            INSERT OR REPLACE INTO otus (id, acronym, at_event, legacy_id, name, otu, taxid)
             VALUES (?, ?,?, ?, ?, ?, ?)
             """,
             (
                 str(otu.id),
                 otu.acronym,
-                at_index,
+                at_event,
                 otu.legacy_id,
                 otu.name,
+                orjson.dumps(otu_dict, default=default_json),
                 otu.taxid,
-                otu.model_dump_json(),
             ),
         )
 

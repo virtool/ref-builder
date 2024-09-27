@@ -1,13 +1,11 @@
 """Tests for the Snapshotter class."""
 
 from pathlib import Path
-from uuid import UUID
 
-import orjson
 import pytest
 
 from ref_builder.resources import RepoOTU
-from ref_builder.snapshotter.snapshotter import OTUKeys, Snapshotter
+from ref_builder.snapshotter.snapshotter import Snapshotter
 
 SNAPSHOT_AT_EVENTS = (
     31,
@@ -40,23 +38,10 @@ def test_load(snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
     for otu, at_event in zip(snapshotter_otus, SNAPSHOT_AT_EVENTS, strict=True):
         snapshot = snapshotter.load_by_id(otu.id)
 
+        print(snapshot)
+
         assert snapshot.at_event == at_event
         assert snapshot.otu == otu
-
-
-def test_index_integrity(snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
-    """Test that the snapshotter index contains all OTUs on creation"""
-    assert (snapshotter.path / "index.json").exists()
-
-    with open(snapshotter.path / "index.json", "rb") as f:
-        loaded_index = orjson.loads(f.read())
-
-    for otu in snapshotter_otus:
-        index_item = loaded_index[str(otu.id)]
-
-        item_keys = OTUKeys(**index_item)
-
-        assert item_keys == OTUKeys.from_otu(otu)
 
 
 def test_iter_otus(snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
@@ -96,7 +81,10 @@ class TestGetIDByName:
     def test_ok(self, snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
         """Test that the correct OTU ID is retrieved by name."""
         for otu in snapshotter_otus:
-            assert snapshotter.get_id_by_name(otu.name) == otu.id
+            otu_id = snapshotter.get_id_by_name(otu.name)
+
+            assert otu_id is not None
+            assert otu_id == otu.id
 
     def test_not_found(self, snapshotter: Snapshotter):
         """Test that `None` is returned when the name is not found."""

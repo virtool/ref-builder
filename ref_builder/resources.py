@@ -98,7 +98,8 @@ class IsolateSnapshot(BaseModel):
     @field_validator("name", mode="before")
     @classmethod
     def convert_name(
-        cls: "RepoIsolate", value: dict | IsolateName | None,
+        cls: "RepoIsolate",
+        value: dict | IsolateName | None,
     ) -> IsolateName | None:
         """Convert the name to an IsolateName object."""
         if value is None:
@@ -125,11 +126,10 @@ class RepoIsolate(IsolateSnapshot):
         super().__init__(**data)
 
         self._sequences_by_accession = {
-            sequence.accession.key: sequence for sequence in data.get("sequences", [])
+            sequence.accession.key: sequence for sequence in self.sequences
         }
-        self._sequences_by_id = {
-            sequence.id: sequence for sequence in (self.sequences or [])
-        }
+
+        self._sequences_by_id = {sequence.id: sequence for sequence in self.sequences}
 
     @property
     def accessions(self) -> set[str]:
@@ -201,8 +201,8 @@ class RepoIsolate(IsolateSnapshot):
         return None
 
 
-class OTUSnapshot(BaseModel):
-    """Represents the metadata of an OTU as would exist in snapshot file data."""
+class RepoOTU(BaseModel):
+    """Represents an OTU in a Virtool reference repository."""
 
     id: UUID4
     """The OTU id."""
@@ -227,10 +227,6 @@ class OTUSnapshot(BaseModel):
 
     taxid: int
     """The NCBI Taxonomy id for this OTU."""
-
-
-class RepoOTU(OTUSnapshot):
-    """Represents an OTU in a Virtool reference repository."""
 
     isolates: list[RepoIsolate]
     """Isolates contained in this OTU."""

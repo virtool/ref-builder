@@ -1,6 +1,8 @@
 """Command-line interface for reference builder."""
 
+import cProfile
 import glob
+import pstats
 import sys
 from pathlib import Path
 from uuid import UUID
@@ -17,14 +19,13 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.options import debug_option, ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
+    add_and_name_isolate,
     add_genbank_isolate,
     add_unnamed_isolate,
-    add_and_name_isolate,
     auto_update_otu,
     exclude_accessions_from_otu,
     promote_otu_accessions,
     set_representative_isolate,
-    update_isolate_from_accessions,
 )
 from ref_builder.otu.utils import RefSeqConflictError
 from ref_builder.repo import Repo
@@ -150,11 +151,11 @@ def update(ctx, path: Path, taxid: int):
     """Update the specified OTU with new data."""
     ctx.ensure_object(dict)
 
-    ctx.obj['TAXID'] = taxid
+    ctx.obj["TAXID"] = taxid
 
     repo = Repo(path)
 
-    ctx.obj['REPO'] = repo
+    ctx.obj["REPO"] = repo
 
     otu_id = repo.get_otu_id_by_taxid(taxid)
     if otu_id is None:
@@ -173,9 +174,9 @@ def otu_autoupdate(ctx, debug: bool, ignore_cache: bool) -> None:
     """Automatically update an OTU with the latest data from NCBI."""
     configure_logger(debug)
 
-    taxid = ctx.obj['TAXID']
+    taxid = ctx.obj["TAXID"]
 
-    repo = ctx.obj['REPO']
+    repo = ctx.obj["REPO"]
 
     otu_ = repo.get_otu_by_taxid(taxid)
 
@@ -199,9 +200,9 @@ def otu_promote_accessions(
     """Promote all RefSeq accessions within this OTU."""
     configure_logger(debug)
 
-    taxid = ctx.obj['TAXID']
+    taxid = ctx.obj["TAXID"]
 
-    repo = ctx.obj['REPO']
+    repo = ctx.obj["REPO"]
 
     otu_ = repo.get_otu_by_taxid(taxid)
 
@@ -241,9 +242,9 @@ def isolate_create(
     """Create a new isolate using the given accessions."""
     configure_logger(debug)
 
-    repo = ctx.obj['REPO']
+    repo = ctx.obj["REPO"]
 
-    taxid = ctx.obj['TAXID']
+    taxid = ctx.obj["TAXID"]
 
     otu_ = repo.get_otu_by_taxid(taxid)
     if otu_ is None:
@@ -313,9 +314,9 @@ def accession_exclude(
     """Exclude the given accessions from this OTU."""
     configure_logger(debug)
 
-    repo = ctx.obj['REPO']
+    repo = ctx.obj["REPO"]
 
-    taxid = ctx.obj['TAXID']
+    taxid = ctx.obj["TAXID"]
 
     otu_ = repo.get_otu_by_taxid(taxid)
     if otu_ is None:
@@ -337,9 +338,9 @@ def otu_set_representative_isolate(
     """Update the OTU with a new representative isolate."""
     configure_logger(debug)
 
-    taxid = ctx.obj['TAXID']
+    taxid = ctx.obj["TAXID"]
 
-    repo = ctx.obj['REPO']
+    repo = ctx.obj["REPO"]
 
     otu_ = repo.get_otu_by_taxid(taxid)
 
@@ -364,7 +365,6 @@ def otu_set_representative_isolate(
         sys.exit(1)
 
     set_representative_isolate(repo, otu_, isolate_id)
-
 
 
 @entry.group()
@@ -393,7 +393,19 @@ def legacy() -> None:
 )
 def convert(name: str, path: Path, target_path: Path) -> None:
     """Convert a legacy reference repository to a new event-sourced repository."""
-    convert_legacy_repo(name, path, target_path)
+    profiler = cProfile.Profile()
+    profiler.enable()
+
+    try:
+        convert_legacy_repo(name, path, target_path)
+    finally:
+        profiler.disable()
+
+        # Print the results
+        ps = pstats.Stats(profiler).sort_stats("cumulative")
+
+        # Optionally, save results to a file
+        ps.dump_stats("profile_results.prof")
 
 
 @legacy.command()

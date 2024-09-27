@@ -97,7 +97,7 @@ class Repo:
             self.snapshot()
 
     @classmethod
-    def new(cls, data_type: DataType, name: str, path: Path, organism: str):
+    def new(cls, data_type: DataType, name: str, path: Path, organism: str) -> "Repo":
         """Create a new reference repository."""
         if path.is_file():
             raise ValueError("The target path is a file")
@@ -226,9 +226,8 @@ class Repo:
         """
         otu = self.get_otu(otu_id)
 
-        if name is not None:
-            if otu.get_isolate_id_by_name(name):
-                raise ValueError(f"Isolate name already exists: {name}")
+        if name is not None and otu.get_isolate_id_by_name(name):
+            raise ValueError(f"Isolate name already exists: {name}")
 
         isolate_id = uuid.uuid4()
 
@@ -523,7 +522,11 @@ class Repo:
                     event.query.isolate_id,
                 )
 
-        otu.isolates.sort(key=lambda i: f"{i.name.type} {i.name.value}" if type(i.name) is IsolateName else "")
+        otu.isolates.sort(
+            key=lambda i: f"{i.name.type} {i.name.value}"
+            if type(i.name) is IsolateName
+            else "",
+        )
 
         for isolate in otu.isolates:
             isolate.sequences.sort(key=lambda s: s.accession)
