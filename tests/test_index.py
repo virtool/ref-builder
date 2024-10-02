@@ -5,8 +5,6 @@ from pathlib import Path
 
 import pytest
 
-from ref_builder.index import EventIndex, EventIndexItem
-
 
 @pytest.mark.parametrize(
     "event_ids",
@@ -39,3 +37,109 @@ def test_index_not_found(tmp_path: Path):
     path = Path(tmp_path / "index")
 
     assert EventIndex(path).get(uuid.uuid4()) is None
+
+
+"""Tests for the Snapshotter class."""
+
+from pathlib import Path
+
+import pytest
+
+from ref_builder.index.snapshotter import Snapshotter
+from ref_builder.resources import RepoOTU
+
+SNAPSHOT_AT_EVENTS = (
+    31,
+    22,
+    21,
+    24,
+    11,
+    32,
+    32,
+    30,
+)
+"""Hardcoded at_event values for the snapshotter_otus fixture."""
+
+
+@pytest.fixture()
+def snapshotter(snapshotter_otus: list[RepoOTU], tmp_path: Path) -> Snapshotter:
+    """A index with eight OTUs already cached."""
+    _snapshotter = Snapshotter(tmp_path / "index")
+
+    for otu, at_event in zip(snapshotter_otus, SNAPSHOT_AT_EVENTS, strict=True):
+        _snapshotter.cache_otu(otu, at_event)
+
+    return _snapshotter
+
+
+def test_load(snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
+    """Test that the index loads snapshots containing the correct OTUs and
+    at_event values.
+    """
+    for otu, at_event in zip(snapshotter_otus, SNAPSHOT_AT_EVENTS, strict=True):
+        snapshot = snapshotter.load_by_id(otu.id)
+
+        print(snapshot)
+
+        assert snapshot.at_event == at_event
+        assert snapshot.otu == otu
+
+
+def test_iter_otus(snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
+    """Test that the index iterates over all OTUs."""
+    assert sorted(snapshotter.iter_otus(), key=lambda otu: otu.id) == sorted(
+        snapshotter_otus,
+        key=lambda otu: otu.id,
+    )
+
+
+def test_otu_ids(snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
+    """Test that the index has the correct OTU IDs."""
+    assert set(snapshotter.otu_ids) == {otu.id for otu in snapshotter_otus}
+
+
+class TestGetIDByLegacyID:
+    """Test the `get_id_by_legacy_id` method of the Snapshotter class."""
+
+    def test_ok(self, snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
+        """Test that the correct OTU ID is retrieved by legacy ID."""
+        for otu in snapshotter_otus:
+            if otu.legacy_id is not None:
+                assert snapshotter.get_id_by_legacy_id(otu.legacy_id) == otu.id
+
+    def test_not_found(self, snapshotter: Snapshotter):
+        """Test that `None` is returned when the legacy ID is not found."""
+        assert snapshotter.get_id_by_legacy_id("not found") is None
+
+    def test_none(self, snapshotter: Snapshotter):
+        """Test that `None` is returned when the legacy ID is `None`."""
+        assert snapshotter.get_id_by_legacy_id(None) is None
+
+
+class TestGetIDByName:
+    """Test the `get_id_by_name` method of the Snapshotter class."""
+
+    def test_ok(self, snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
+        """Test that the correct OTU ID is retrieved by name."""
+        for otu in snapshotter_otus:
+            otu_id = snapshotter.get_id_by_name(otu.name)
+
+            assert otu_id is not None
+            assert otu_id == otu.id
+
+    def test_not_found(self, snapshotter: Snapshotter):
+        """Test that `None` is returned when the name is not found."""
+        assert snapshotter.get_id_by_name("not found") is None
+
+
+class TestGetIDByTaxid:
+    """Test the `get_id_by_taxid` method of the Snapshotter class."""
+
+    def test_ok(self, snapshotter: Snapshotter, snapshotter_otus: list[RepoOTU]):
+        """Test that the correct OTU ID is retrieved by taxid."""
+        for otu in snapshotter_otus:
+            assert snapshotter.get_id_by_taxid(otu.taxid) == otu.id
+
+    def test_not_found(self, snapshotter: Snapshotter):
+        """Test that `None` is returned when the taxid is not found."""
+        assert snapshotter.get_id_by_taxid(999999999999999) is None

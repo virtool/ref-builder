@@ -50,7 +50,7 @@ from ref_builder.events import (
     SetReprIsolate,
     SetReprIsolateData,
 )
-from ref_builder.index import EventIndex, EventIndexError
+from ref_builder.index import Index
 from ref_builder.models import Molecule
 from ref_builder.resources import (
     RepoIsolate,
@@ -59,7 +59,6 @@ from ref_builder.resources import (
     RepoSequence,
 )
 from ref_builder.schema import OTUSchema, Segment
-from ref_builder.snapshotter.snapshotter import Snapshotter
 from ref_builder.utils import (
     Accession,
     DataType,
@@ -74,6 +73,7 @@ class Repo:
     """An event-sourced repository."""
 
     def __init__(self, path: Path) -> None:
+        """Create a new instance of the repository."""
         self.path = path
         """The path to the repo directory."""
 
@@ -83,16 +83,17 @@ class Repo:
         self._event_store = EventStore(self.path / "src")
         """The event store of the event sourced repository."""
 
-        self._event_index = EventIndex(self.cache_path / "index")
-        """The event index cache of the event sourced repository."""
-
-        self._snapshotter = Snapshotter(self.cache_path / "snapshot")
-        """The snapshot index. Maintains and caches the read model of the Repo."""
+        self._index = Index(self.cache_path / "index.db")
+        """An index for fast lookups.
+        
+        It allows fast lookup of OTUs be key fields, fetching of complete OTU state,
+        and the events associated with a given OTU ID.
+        """
 
         # Take a new snapshot if no existing data is found.
-        if not self._snapshotter.otu_ids:
-            logger.debug("No snapshot data found. Building new snapshot...")
-            self.snapshot()
+        if not self._index.otu_ids:
+            for otu in self.iter_otus(ignore_cache=True):
+                self._index.upsert_otu(otu, self.last_id)
 
     @classmethod
     def new(cls, data_type: DataType, name: str, path: Path, organism: str) -> "Repo":
@@ -132,26 +133,18 @@ class Repo:
         return Repo(path)
 
     @property
-    def last_id(self):
+    def last_id(self) -> int:
         """The id of the most recently added event in the event store."""
         return self._event_store.last_id
 
     @property
-    def meta(self):
+    def meta(self) -> RepoMeta:
         """The metadata for the repository."""
         for event in self._event_store.iter_events():
             if isinstance(event, CreateRepo):
-                repo = event.data.model_dump()
-                return RepoMeta(**repo, created_at=event.timestamp)
+                return RepoMeta(**event.data.model_dump(), created_at=event.timestamp)
 
         raise ValueError("No repository creation event found")
-
-    def snapshot(self):
-        """Create a snapshot using all the OTUs in the event store."""
-        self._snapshotter.snapshot(
-            self.iter_otus(ignore_cache=True),
-            self.last_id,
-        )
 
     def iter_otus(self, ignore_cache: bool = False) -> Generator[RepoOTU, None, None]:
         """Iterate over the OTUs in the snapshot."""
@@ -164,7 +157,7 @@ class Repo:
                 if otu_id is not None:
                     event_index[otu_id].append(event.id)
         else:
-            event_index = self._event_index.load()
+            event_index = self._event_index.load_snapshot()
 
         for otu_id in event_index:
             yield self.get_otu(otu_id)
@@ -184,10 +177,10 @@ class Repo:
                 f"OTU already exists as {otu}",
             )
 
-        if self._snapshotter.get_id_by_name(name):
+        if self._index.get_id_by_name(name):
             raise ValueError(f"An OTU with the name '{name}' already exists")
 
-        if self._snapshotter.get_id_by_legacy_id(legacy_id):
+        if self._index.get_id_by_legacy_id(legacy_id):
             raise ValueError(f"An OTU with the legacy ID '{legacy_id}' already exists")
 
         otu_logger = logger.bind(taxid=taxid, name=name, legacy_id=legacy_id)
@@ -195,7 +188,7 @@ class Repo:
 
         otu_id = uuid.uuid4()
 
-        event = self._event_store.write_event(
+        event = self.write_event(
             CreateOTU,
             CreateOTUData(
                 id=otu_id,
@@ -229,7 +222,7 @@ class Repo:
 
         isolate_id = uuid.uuid4()
 
-        event = self._event_store.write_event(
+        event = self.write_event(
             CreateIsolate,
             CreateIsolateData(id=isolate_id, legacy_id=legacy_id, name=name),
             IsolateQuery(isolate_id=isolate_id, otu_id=otu_id),
@@ -251,7 +244,7 @@ class Repo:
         rationale: str,
     ) -> None:
         """Delete an existing isolate from a given OTU."""
-        self._event_store.write_event(
+        self.write_event(
             DeleteIsolate,
             DeleteIsolateData(rationale=rationale),
             IsolateQuery(otu_id=otu_id, isolate_id=isolate_id),
@@ -286,11 +279,14 @@ class Repo:
                     )
                     return None
 
-                logger.warning(f"New version of {versioned_accession.key} found.")
+                logger.warning(
+                    "New version of accession found.",
+                    accession=versioned_accession.key,
+                )
 
         sequence_id = uuid.uuid4()
 
-        event = self._event_store.write_event(
+        event = self.write_event(
             CreateSequence,
             CreateSequenceData(
                 id=sequence_id,
@@ -348,7 +344,7 @@ class Repo:
         if new_sequence is None:
             return None
 
-        self._event_store.write_event(
+        self.write_event(
             DeleteSequence,
             DeleteSequenceData(
                 replacement=new_sequence.id,
@@ -374,7 +370,7 @@ class Repo:
 
         schema_data = {"molecule": molecule, "segments": segments}
 
-        self._event_store.write_event(
+        self.write_event(
             CreateSchema,
             CreateSchemaData(**schema_data),
             OTUQuery(otu_id=otu.id),
@@ -383,10 +379,10 @@ class Repo:
         return self.get_otu(otu_id).schema
 
     def set_repr_isolate(self, otu_id: uuid.UUID, isolate_id: uuid.UUID) -> uuid.UUID:
-        """Set the representative isolate for an OTU"""
+        """Set the representative isolate for an OTU."""
         otu = self.get_otu(otu_id)
 
-        self._event_store.write_event(
+        self.write_event(
             SetReprIsolate,
             SetReprIsolateData(isolate_id=isolate_id),
             OTUQuery(otu_id=otu.id),
@@ -406,9 +402,9 @@ class Repo:
         otu = self.get_otu(otu_id)
 
         if accession in otu.excluded_accessions:
-            logger.debug(f"{accession} is already excluded.")
+            logger.debug("Accession is already excluded.", accession=accession)
         else:
-            self._event_store.write_event(
+            self.write_event(
                 ExcludeAccession,
                 ExcludeAccessionData(accession=accession),
                 OTUQuery(otu_id=otu_id),
@@ -418,9 +414,9 @@ class Repo:
 
     def get_otu(self, otu_id: uuid.UUID) -> RepoOTU | None:
         """Return an OTU corresponding with a given OTU ID if it exists, else None."""
-        event_ids = self._get_otu_event_ids(otu_id)
+        event_ids = self._event_index.get(otu_id).event_ids
 
-        if not event_ids:
+        if event_ids is None:
             return None
 
         event = self._event_store.read_event(event_ids[0])
@@ -500,7 +496,7 @@ class Repo:
         for isolate in otu.isolates:
             isolate.sequences.sort(key=lambda s: s.accession)
 
-        self._snapshotter.cache_otu(otu, at_event=self.last_id)
+        self._index.upsert_otu(otu, self.last_id)
 
         return otu
 
@@ -527,42 +523,15 @@ class Repo:
         :return: the UUID of the OTU or ``None``
 
         """
-        return self._snapshotter.get_id_by_taxid(taxid)
+        return self._index.get_id_by_taxid(taxid)
 
-    def _get_otu_event_ids(self, otu_id: uuid.UUID) -> list[int]:
-        """Get a list of all event IDs associated with ``otu_id``."""
-        event_ids = []
+    def write_event(self, cls, data, query):
+        event = self._event_store.write_event(cls, data, query)
 
-        # Start at zero if no events are indexed.
-        at_event = 0
+        if hasattr(query, "otu_id"):
+            self._event_index.add(event.id, query.otu_id)
 
-        if indexed := self._event_index.get(otu_id):
-            if indexed.at_event == self.last_id:
-                return indexed.event_ids
-
-            if indexed.at_event > self.last_id:
-                raise EventIndexError("Event index is ahead of the event store.")
-
-            at_event = indexed.at_event
-            event_ids = indexed.event_ids
-
-        for event in self._event_store.iter_events(start=at_event + 1):
-            if (
-                issubclass(type(event.query), OTUQuery)
-                and event.query.model_dump().get("otu_id") == otu_id
-            ):
-                if event.id in event_ids:
-                    raise ValueError("Event ID already in event list.")
-
-                event_ids.append(event.id)
-
-        self._event_index.set(
-            otu_id,
-            event_ids,
-            self.last_id,
-        )
-
-        return event_ids
+        return event
 
 
 class EventStore:
