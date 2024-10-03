@@ -1,8 +1,6 @@
 """Command-line interface for reference builder."""
 
-import cProfile
 import glob
-import pstats
 import sys
 from pathlib import Path
 from uuid import UUID
@@ -393,19 +391,7 @@ def legacy() -> None:
 )
 def convert(name: str, path: Path, target_path: Path) -> None:
     """Convert a legacy reference repository to a new event-sourced repository."""
-    profiler = cProfile.Profile()
-    profiler.enable()
-
-    try:
-        convert_legacy_repo(name, path, target_path)
-    finally:
-        profiler.disable()
-
-        # Print the results
-        ps = pstats.Stats(profiler).sort_stats("cumulative")
-
-        # Optionally, save results to a file
-        ps.dump_stats("profile_results.prof")
+    convert_legacy_repo(name, path, target_path)
 
 
 @legacy.command()
