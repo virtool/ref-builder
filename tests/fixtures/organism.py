@@ -56,7 +56,8 @@ ORGANISM_DESCRIPTOR_ADJECTIVES = [
     "cryptic",
     "latent",
     "necrotic",
-    "rusty," "yellow",
+    "rusty",
+    "yellow",
     "severe",
 ]
 
