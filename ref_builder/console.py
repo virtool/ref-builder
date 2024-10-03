@@ -70,7 +70,9 @@ def print_otu(otu: RepoOTU) -> None:
 
     for isolate in otu.isolates:
         console.line()
-        console.print(str(isolate.name)) if isolate.name is not None else console.print("[UNNAMED]")
+        console.print(str(isolate.name)) if isolate.name is not None else console.print(
+            "[UNNAMED]"
+        )
         console.line()
 
         isolate_table = Table(
@@ -111,7 +113,7 @@ def print_otu_list(otus: Iterable[RepoOTU]) -> None:
             otu.name,
             otu.acronym,
             str(otu.taxid),
-            str(otu.id)
+            str(otu.id),
         )
 
     console.print(table)

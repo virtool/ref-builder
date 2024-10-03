@@ -206,7 +206,7 @@ otu_contents_list_adapter = TypeAdapter(list[OTUContents])
 
 
 @pytest.fixture()
-def snapshotter_otus() -> list[RepoOTU]:
+def indexable_otus() -> list[RepoOTU]:
     """A list of eight OTUs for use in Snapshotter testing."""
 
     class OTUFactory(ModelFactory[RepoOTU]):

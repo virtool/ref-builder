@@ -1,6 +1,19 @@
+from dataclasses import dataclass
 from enum import StrEnum
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
+
+
+@dataclass
+class OTUMinimal:
+    """A minimal representation of an OTU."""
+
+    id: UUID
+    acronym: str
+    legacy_id: str | None
+    name: str
+    taxid: int
 
 
 class MolType(StrEnum):

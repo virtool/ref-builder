@@ -17,14 +17,13 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.options import debug_option, ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
+    add_and_name_isolate,
     add_genbank_isolate,
     add_unnamed_isolate,
-    add_and_name_isolate,
     auto_update_otu,
     exclude_accessions_from_otu,
     promote_otu_accessions,
     set_representative_isolate,
-    update_isolate_from_accessions,
 )
 from ref_builder.otu.utils import RefSeqConflictError
 from ref_builder.repo import Repo
@@ -139,7 +138,7 @@ def otu_get(identifier: str, path: Path) -> int:
 @path_option
 def otu_list(path: Path) -> None:
     """List all OTUs in the repository."""
-    print_otu_list(Repo(path).iter_otus())
+    print_otu_list(Repo(path).iter_minimal_otus())
 
 
 @otu.group(invoke_without_command=True)
@@ -150,11 +149,11 @@ def update(ctx, path: Path, taxid: int):
     """Update the specified OTU with new data."""
     ctx.ensure_object(dict)
 
-    ctx.obj['TAXID'] = taxid
+    ctx.obj["TAXID"] = taxid
 
     repo = Repo(path)
 
-    ctx.obj['REPO'] = repo
+    ctx.obj["REPO"] = repo
 
     otu_id = repo.get_otu_id_by_taxid(taxid)
     if otu_id is None:
@@ -173,9 +172,9 @@ def otu_autoupdate(ctx, debug: bool, ignore_cache: bool) -> None:
     """Automatically update an OTU with the latest data from NCBI."""
     configure_logger(debug)
 
-    taxid = ctx.obj['TAXID']
+    taxid = ctx.obj["TAXID"]
 
-    repo = ctx.obj['REPO']
+    repo = ctx.obj["REPO"]
 
     otu_ = repo.get_otu_by_taxid(taxid)
 
@@ -199,9 +198,9 @@ def otu_promote_accessions(
     """Promote all RefSeq accessions within this OTU."""
     configure_logger(debug)
 
-    taxid = ctx.obj['TAXID']
+    taxid = ctx.obj["TAXID"]
 
-    repo = ctx.obj['REPO']
+    repo = ctx.obj["REPO"]
 
     otu_ = repo.get_otu_by_taxid(taxid)
 
@@ -241,9 +240,9 @@ def isolate_create(
     """Create a new isolate using the given accessions."""
     configure_logger(debug)
 
-    repo = ctx.obj['REPO']
+    repo = ctx.obj["REPO"]
 
-    taxid = ctx.obj['TAXID']
+    taxid = ctx.obj["TAXID"]
 
     otu_ = repo.get_otu_by_taxid(taxid)
     if otu_ is None:
@@ -313,9 +312,9 @@ def accession_exclude(
     """Exclude the given accessions from this OTU."""
     configure_logger(debug)
 
-    repo = ctx.obj['REPO']
+    repo = ctx.obj["REPO"]
 
-    taxid = ctx.obj['TAXID']
+    taxid = ctx.obj["TAXID"]
 
     otu_ = repo.get_otu_by_taxid(taxid)
     if otu_ is None:
@@ -337,9 +336,9 @@ def otu_set_representative_isolate(
     """Update the OTU with a new representative isolate."""
     configure_logger(debug)
 
-    taxid = ctx.obj['TAXID']
+    taxid = ctx.obj["TAXID"]
 
-    repo = ctx.obj['REPO']
+    repo = ctx.obj["REPO"]
 
     otu_ = repo.get_otu_by_taxid(taxid)
 
@@ -364,7 +363,6 @@ def otu_set_representative_isolate(
         sys.exit(1)
 
     set_representative_isolate(repo, otu_, isolate_id)
-
 
 
 @entry.group()
