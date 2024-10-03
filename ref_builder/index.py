@@ -308,7 +308,7 @@ class Index:
             str(seq.id) for isolate in otu.isolates for seq in isolate.sequences
         }
 
-        otu_dict = otu.model_dump()
+        otu_dict = otu.model_dump(mode="json")
 
         placeholders = ",".join("?" for _ in sequence_ids)
 
@@ -365,7 +365,7 @@ class Index:
                 at_event,
                 otu.legacy_id,
                 otu.name,
-                orjson.dumps(otu_dict, default=_default_json),
+                orjson.dumps(otu_dict),
                 otu.taxid,
             ),
         )
