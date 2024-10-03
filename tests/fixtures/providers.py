@@ -1,8 +1,10 @@
+"""Custom data providers for generating dummy data."""
+
 from collections import OrderedDict
 
 from faker.providers import BaseProvider
 
-from tests.fixtures.data.organism import (
+from tests.fixtures.organism import (
     ORGANISM_DESCRIPTOR_ADJECTIVES,
     ORGANISM_DESCRIPTOR_NOUNS,
     ORGANISM_HOSTS,
@@ -12,26 +14,35 @@ from tests.fixtures.data.organism import (
     ORGANISM_VIRUSES,
 )
 
-UNCOMMON_PROBABILITY = 0.01
-SEQUENCE_DICTIONARY = OrderedDict([
-    ("A", 0.245),
-    ("T", 0.245),
-    ("C", 0.245),
-    ("G", 0.245),
-    ("R", UNCOMMON_PROBABILITY),
-    ("Y", UNCOMMON_PROBABILITY),
-    ("K", UNCOMMON_PROBABILITY),
-    ("M", UNCOMMON_PROBABILITY),
-    ("S", UNCOMMON_PROBABILITY),
-    ("W", UNCOMMON_PROBABILITY),
-    ("B", UNCOMMON_PROBABILITY),
-    ("D", UNCOMMON_PROBABILITY),
-    ("H", UNCOMMON_PROBABILITY),
-    ("V", UNCOMMON_PROBABILITY),
-    ("N", UNCOMMON_PROBABILITY),
-])
-SEQUENCE_MIN = 100
-SEQUENCE_MAX = 1500
+UNCOMMON_NUCLEOTIDE_PROBABILITY = 0.01
+"""Probability of an uncommon nucleotide appearing in a sequence."""
+
+NUCLEOTIDE_PROBABILITIES = OrderedDict(
+    [
+        ("A", 0.245),
+        ("T", 0.245),
+        ("C", 0.245),
+        ("G", 0.245),
+        ("R", UNCOMMON_NUCLEOTIDE_PROBABILITY),
+        ("Y", UNCOMMON_NUCLEOTIDE_PROBABILITY),
+        ("K", UNCOMMON_NUCLEOTIDE_PROBABILITY),
+        ("M", UNCOMMON_NUCLEOTIDE_PROBABILITY),
+        ("S", UNCOMMON_NUCLEOTIDE_PROBABILITY),
+        ("W", UNCOMMON_NUCLEOTIDE_PROBABILITY),
+        ("B", UNCOMMON_NUCLEOTIDE_PROBABILITY),
+        ("D", UNCOMMON_NUCLEOTIDE_PROBABILITY),
+        ("H", UNCOMMON_NUCLEOTIDE_PROBABILITY),
+        ("V", UNCOMMON_NUCLEOTIDE_PROBABILITY),
+        ("N", UNCOMMON_NUCLEOTIDE_PROBABILITY),
+    ],
+)
+"""Probabilities of each nucleotide appearing in a sequence."""
+
+MIN_SEQUENCE_LENGTH = 100
+"""Minimum length of a sequence the should be generated."""
+
+MAX_SEQUENCE_LENGTH = 1500
+"""Maximum length of a sequence the should be generated."""
 
 
 class AccessionProvider(BaseProvider):
@@ -69,10 +80,11 @@ class SequenceProvider(BaseProvider):
         """
         return "".join(
             self.random_elements(
-                SEQUENCE_DICTIONARY,
-                self.random_int(SEQUENCE_MIN, SEQUENCE_MAX),
+                NUCLEOTIDE_PROBABILITIES,
+                self.random_int(MIN_SEQUENCE_LENGTH, MAX_SEQUENCE_LENGTH),
                 use_weighting=True,
-        ))
+            ),
+        )
 
 
 class OrganismProvider(BaseProvider):
@@ -111,7 +123,7 @@ class OrganismProvider(BaseProvider):
                 self.host(),
                 self.random_element(ORGANISM_PART_AND_DESCRIPTORS),
                 self.virus_type(),
-            ]
+            ],
         ).capitalize()
 
     def host_adjective_virus_organism(self) -> str:
@@ -129,7 +141,8 @@ class OrganismProvider(BaseProvider):
     def host_adjective_noun_virus_organism(self):
         """Return an organism name consisting of HOST ADJECTIVE NOUN VIRUS."""
         return (
-            f"{self.host()} {self.condition_adjective()} {self.condition_noun()} {self.virus_type()}"
+            f"{self.host()} {self.condition_adjective()} {self.condition_noun()} "
+            f"{self.virus_type()}"
         ).capitalize()
 
     def organism(self):
