@@ -126,7 +126,7 @@ class Index:
         return {UUID(row[0]) for row in self.con.execute("SELECT id FROM otus")}
 
     def add_event_id(self, event_id: int, otu_id: UUID) -> None:
-        """Associate a new event ID with a given OTU ID.
+        """Add a new event ID and associated it with a given OTU ID.
 
         This allows fast lookup of event IDs for a given OTU ID.
 
