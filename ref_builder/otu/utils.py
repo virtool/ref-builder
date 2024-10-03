@@ -7,7 +7,7 @@ import structlog
 
 from ref_builder.models import Molecule
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.schema import OTUSchema, Segment
+from ref_builder.schema import OTUSchema, Segment, get_multipartite_segment_name
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
 logger = structlog.get_logger("otu.utils")
@@ -15,12 +15,14 @@ logger = structlog.get_logger("otu.utils")
 
 class DeleteRationale(StrEnum):
     """Default strings delineating reasons for resource deletion."""
+
     USER = "Requested by user"
     REFSEQ = "Superceded by RefSeq"
 
 
 class RefSeqConflictError(ValueError):
     """Raised when a potential RefSeq replacement is found."""
+
     def __init__(
         self, message, isolate_id: UUID, isolate_name: IsolateName, accessions: list[str]
     ):
@@ -37,6 +39,7 @@ def create_schema_from_records(
     records: list[NCBIGenbank],
     segments: list[Segment] | None = None,
 ) -> OTUSchema | None:
+    """Return a complete schema from a list of records."""
     molecule = _get_molecule_from_records(records)
 
     binned_records = group_genbank_records_by_isolate(records)
@@ -58,7 +61,7 @@ def create_schema_from_records(
 def group_genbank_records_by_isolate(
     records: list[NCBIGenbank],
 ) -> dict[IsolateName, dict[Accession, NCBIGenbank]]:
-    """Indexes Genbank records by isolate name"""
+    """Indexes Genbank records by isolate name."""
     isolates = defaultdict(dict)
 
     for record in records:
@@ -67,8 +70,8 @@ def group_genbank_records_by_isolate(
 
             if isolate_name is None:
                 logger.debug(
-                    "RefSeq record does not contain sufficient source data for automatic inclusion."
-                    + "Add this record manually.",
+                    "RefSeq record does not contain sufficient source data "
+                    " for automatic inclusion. Add this record manually.",
                     accession=record.accession,
                     definition=record.definition,
                     source_data=record.source,
@@ -97,7 +100,7 @@ def parse_refseq_comment(comment: str) -> tuple[str, str]:
 
 
 def _get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
-    """Return relevant molecule metadata from one or more records"""
+    """Return relevant molecule metadata from one or more records."""
     if not records:
         raise IndexError("No records given")
 
@@ -119,7 +122,7 @@ def _get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
 
 
 def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
-    """Get the isolate name from a Genbank record"""
+    """Get the isolate name from a Genbank record."""
     if record.source.model_fields_set.intersection(
         {IsolateNameType.ISOLATE, IsolateNameType.STRAIN, IsolateNameType.CLONE},
     ):
@@ -159,7 +162,7 @@ def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
             segments.append(
                 Segment(
                     id=segment_id,
-                    name=record.source.segment,
+                    name=str(get_multipartite_segment_name(record)),
                     required=True,
                     length=len(record.sequence),
                 ),

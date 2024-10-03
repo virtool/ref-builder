@@ -16,12 +16,12 @@
       'segments': list([
         dict({
           'length': 2575,
-          'name': 'DNA-A',
+          'name': 'DNA A',
           'required': True,
         }),
         dict({
           'length': 2494,
-          'name': 'DNA-B',
+          'name': 'DNA B',
           'required': True,
         }),
       ]),
@@ -50,12 +50,12 @@
     'segments': list([
       dict({
         'length': 2575,
-        'name': 'DNA-A',
+        'name': 'DNA A',
         'required': True,
       }),
       dict({
         'length': 2494,
-        'name': 'DNA-B',
+        'name': 'DNA B',
         'required': True,
       }),
     ]),
@@ -104,12 +104,12 @@
       'segments': list([
         dict({
           'length': 2575,
-          'name': 'DNA-A',
+          'name': 'DNA A',
           'required': True,
         }),
         dict({
           'length': 2494,
-          'name': 'DNA-B',
+          'name': 'DNA B',
           'required': True,
         }),
       ]),
