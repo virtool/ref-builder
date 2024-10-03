@@ -68,9 +68,8 @@ jobs:
   release:
     if: github.event_name == 'push'
     needs:
-      - commitlint
-      - test
       - ruff-format
+      - test
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
