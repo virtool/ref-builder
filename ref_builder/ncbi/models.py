@@ -1,3 +1,5 @@
+"""Models for NCBI Genbank and Taxonomy data."""
+
 from enum import StrEnum
 from typing import Annotated, Any
 
@@ -14,26 +16,23 @@ from pydantic import (
 from ref_builder.models import MolType, Strandedness, Topology
 
 
-def to_upper(v: str) -> str:
-    return v.upper()
-
-
 class NCBIDatabase(StrEnum):
-    """NCBI Databases used by NCBIClient"""
+    """NCBI databases used in ref-builder."""
 
     NUCCORE = "nuccore"
     TAXONOMY = "taxonomy"
 
 
 class NCBIRank(StrEnum):
-    """Relevant OTU rank types"""
+    """NCBI ranks used in ref-builder."""
 
     SPECIES = "species"
     ISOLATE = "isolate"
 
 
 class NCBISourceMolType(StrEnum):
-    """The in vivo molecule type of a sequence
+    """In vivo molecule types.
+
     Based on the INSDC controlled vocabulary list for the /mol_type qualifier
 
     Reference:
@@ -43,7 +42,6 @@ class NCBISourceMolType(StrEnum):
     GENOMIC_DNA = "genomic DNA"
     OTHER_DNA = "other DNA"
     UNASSIGNED_DNA = "unassigned DNA"
-
     GENOMIC_RNA = "genomic RNA"
     MRNA = "mRNA"
     TRNA = "tRNA"
@@ -53,6 +51,8 @@ class NCBISourceMolType(StrEnum):
 
 
 class NCBISource(BaseModel):
+    """An NCBI source table."""
+
     taxid: int
     organism: str
     mol_type: NCBISourceMolType
@@ -86,6 +86,8 @@ class NCBISource(BaseModel):
 
 
 class NCBIGenbank(BaseModel):
+    """An NCBI Genbank record."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     accession: Annotated[str, Field(validation_alias="GBSeq_primary-accession")]
@@ -110,48 +112,51 @@ class NCBIGenbank(BaseModel):
 
     @computed_field()
     def refseq(self) -> bool:
-        return self.accession.startswith("NC_")
+        """Whether this is a RefSeq record.
 
+        RefSeq records have accessions that start with "NC_".
+        """
+        return self.accession.startswith("NC_")
 
     @field_validator("sequence", mode="after")
     @classmethod
-    def to_uppercase(cls, raw: str) -> str:
+    def uppercase_sequence(cls, raw: str) -> str:
+        """Force the sequence field to uppercase."""
         return raw.upper()
 
     @field_validator("source", mode="before")
     @classmethod
-    def format_source(cls, raw: NCBISource | list[dict[str: Any]]) -> NCBISource:
-        """If source is not already set to a premade NCBISource,
-        create a source object from the feature table."""
-        if type(raw) is NCBISource:
+    def convert_source(cls, raw: NCBISource | list[dict[str:Any]]) -> NCBISource:
+        """If the source field isn't a ``NCBISource`` object, convert it."""
+        if isinstance(raw, NCBISource):
             return raw
 
         for feature in raw:
             if feature["GBFeature_key"] == "source":
-                source_dict = {}
+                data = {}
 
                 for qualifier in feature["GBFeature_quals"]:
-                    key = qualifier["GBQualifier_name"]
+                    data[qualifier["GBQualifier_name"]] = qualifier.get(
+                        "GBQualifier_value",
+                        True,
+                    )
 
-                    if "GBQualifier_value" in qualifier:
-                        source_dict[key] = qualifier["GBQualifier_value"]
-                    else:
-                        source_dict[key] = True
-
-                return NCBISource(**source_dict)
+                return NCBISource(**data)
 
         raise ValueError("Feature table contains no ``source`` table.")
 
     @model_validator(mode="after")
-    def check_source(self):
+    def check_source(self) -> "NCBIGenbank":
         """Check that the source organism matches the record organism."""
-        if self.source.organism != self.organism:
-            raise ValueError("Non-matching organism fields on record and source")
+        if self.source.organism == self.organism:
+            return self
 
-        return self
+        raise ValueError("Non-matching organism fields on record and source")
 
 
 class NCBILineage(BaseModel):
+    """An NCBI lineage record."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     id: Annotated[int, Field(validation_alias="TaxId")]
@@ -160,6 +165,8 @@ class NCBILineage(BaseModel):
 
 
 class NCBITaxonomyOtherNames(BaseModel):
+    """An NCBI taxonomy record's other names."""
+
     acronym: Annotated[list[str], Field(validation_alias="Acronym")] = []
     genbank_acronym: Annotated[list[str], Field(validation_alias="GenbankAcronym")] = []
     equivalent_name: Annotated[list[str], Field(validation_alias="EquivalentName")] = []
@@ -168,6 +175,8 @@ class NCBITaxonomyOtherNames(BaseModel):
 
 
 class NCBITaxonomy(BaseModel):
+    """An NCBI taxonomy record."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     id: Annotated[int, Field(validation_alias="TaxId")]
@@ -181,6 +190,7 @@ class NCBITaxonomy(BaseModel):
 
     @computed_field
     def species(self) -> NCBILineage:
+        """Return the species level taxon in the lineage."""
         if self.rank is NCBIRank.SPECIES:
             return NCBILineage(id=self.id, name=self.name, rank=self.rank)
 

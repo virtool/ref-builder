@@ -1,6 +1,9 @@
+"""A client for fetching data from NCBI databases."""
+
 import os
 from contextlib import contextmanager
 from enum import StrEnum
+from http import HTTPStatus
 from urllib.error import HTTPError
 from urllib.parse import quote_plus
 
@@ -14,20 +17,23 @@ from ref_builder.utils import Accession
 
 if email := os.environ.get("NCBI_EMAIL"):
     Entrez.email = email
+
 if api_key := os.environ.get("NCBI_API_KEY"):
     Entrez.api_key = os.environ.get("NCBI_API_KEY")
 
 base_logger = get_logger()
 
 
-class GBSeq(StrEnum):
-    ACCESSION_UNVERSIONED = "GBSeq_primary-accession"
-    ACCESSION_VERSIONED = "GBSeq_accession-version"
-    DEFINITION = "GBSeq_definition"
-    SEQUENCE = "GBSeq_sequence"
-    LENGTH = "GBSeq_length"
+class GenbankRecordKey(StrEnum):
+    """Genbank record keys."""
+
+    ACCESSION_VERSION = "GBSeq_accession-version"
     COMMENT = "GBSeq_comment"
+    DEFINITION = "GBSeq_definition"
     FEATURE_TABLE = "GBSeq_feature-table"
+    LENGTH = "GBSeq_length"
+    PRIMARY_ACCESSION = "GBSeq_primary-accession"
+    SEQUENCE = "GBSeq_sequence"
 
 
 class NCBIClient:
@@ -66,7 +72,7 @@ class NCBIClient:
 
         fetch_list = list(
             set(accessions)
-            - {record.get(GBSeq.ACCESSION_UNVERSIONED) for record in records},
+            - {record.get(GenbankRecordKey.PRIMARY_ACCESSION) for record in records},
         )
 
         if fetch_list:
@@ -74,17 +80,14 @@ class NCBIClient:
             new_records = NCBIClient.fetch_unvalidated_genbank_records(fetch_list)
 
             for record in new_records:
-                try:
-                    versioned_accession = Accession.from_string(
-                        record[GBSeq.ACCESSION_VERSIONED]
-                    )
-                    self.cache.cache_genbank_record(
-                        record,
-                        versioned_accession.key,
-                        versioned_accession.version,
-                    )
-                except FileNotFoundError:
-                    logger.error("Failed to cache record")
+                versioned_accession = Accession.from_string(
+                    record[GenbankRecordKey.ACCESSION_VERSION],
+                )
+                self.cache.cache_genbank_record(
+                    record,
+                    versioned_accession.key,
+                    versioned_accession.version,
+                )
 
             if new_records:
                 records.extend(new_records)
@@ -99,8 +102,7 @@ class NCBIClient:
 
     @staticmethod
     def fetch_unvalidated_genbank_records(accessions: list[str]) -> list[dict]:
-        """Take a list of accession numbers, parse the corresponding XML records
-        from GenBank using Entrez.Parser and return
+        """Fetch a list of Genbank records given a list of accessions.
 
         :param accessions: List of accession numbers to fetch from GenBank
         :return: A list of deserialized XML records from NCBI Nucleotide
@@ -117,21 +119,21 @@ class NCBIClient:
                         retmode="xml",
                     )
                 except RuntimeError as e:
-                    logger.warning(f"Bad ID. (RunTime Error: {e})")
+                    logger.warning("Bad ID.", exception=e)
                     return []
 
         except HTTPError as e:
-            if e.code == 400:
-                logger.error(f"Accessions not found ({e})")
+            if e.code == HTTPStatus.BAD_REQUEST:
+                logger.exception("Accessions not found")
             else:
-                logger.error(e)
+                logger.exception()
 
             return []
 
         try:
             records = Entrez.read(handle)
-        except RuntimeError as e:
-            logger.error(f"NCBI returned unparseable data ({e})")
+        except RuntimeError:
+            logger.exception("NCBI returned unparseable data")
             return []
 
         if records:
@@ -155,7 +157,6 @@ class NCBIClient:
 
         logger = base_logger.bind(taxid=taxid, linked_accessions=accessions)
 
-        logger.debug("Fetching accessions...")
         records = NCBIClient.fetch_unvalidated_genbank_records(accessions)
 
         if not records:
@@ -164,16 +165,13 @@ class NCBIClient:
 
         for record in records:
             versioned_accession = Accession.from_string(
-                record[GBSeq.ACCESSION_VERSIONED]
+                record[GenbankRecordKey.ACCESSION_VERSION],
             )
-            try:
-                self.cache.cache_genbank_record(
-                    record,
-                    versioned_accession.key,
-                    versioned_accession.version,
-                )
-            except FileNotFoundError:
-                logger.error("Failed to cache record")
+            self.cache.cache_genbank_record(
+                record,
+                versioned_accession.key,
+                versioned_accession.version,
+            )
 
         if records:
             return NCBIClient.validate_genbank_records(records)
@@ -181,9 +179,8 @@ class NCBIClient:
         return []
 
     @staticmethod
-    def link_accessions_from_taxid(taxid: int) -> list:
-        """Requests a cross-reference for NCBI Taxonomy and Nucleotide via ELink
-        and returns the results as a list.
+    def link_accessions_from_taxid(taxid: int) -> list[str]:
+        """Fetch all accessions associated with the given ``taxid``.
 
         :param taxid: A NCBI Taxonomy id
         :return: A list of Genbank accessions linked to the Taxonomy UID
@@ -197,15 +194,13 @@ class NCBIClient:
                     id=str(taxid),
                     idtype="acc",
                 )
-        except HTTPError as e:
-            logger.error(f"{e.code}: {e.reason}")
-            logger.error("Your request was likely refused by NCBI.")
+        except HTTPError:
             return []
 
         try:
             elink_results = Entrez.read(handle)
-        except RuntimeError as e:
-            logger.error(f"NCBI returned unparseable data ({e})")
+        except RuntimeError:
+            logger.exception("NCBI returned unparseable data.")
             return []
 
         if elink_results:
@@ -230,29 +225,21 @@ class NCBIClient:
         clean_records = []
 
         for record in records:
-            accession = record.get(GBSeq.ACCESSION_UNVERSIONED, "?")
+            accession = record.get(GenbankRecordKey.PRIMARY_ACCESSION, "?")
 
             try:
-                clean_records.append(NCBIClient.validate_genbank_record(record))
+                clean_records.append(NCBIGenbank.model_validate(record))
 
             except ValidationError as exc:
                 base_logger.debug(
-                    f"Encountered {exc.error_count()} validation errors",
+                    "Encountered validation errors",
                     accession=accession,
+                    count=exc.error_count(),
                     errors=exc.errors(),
                 )
                 continue
 
         return clean_records
-
-    @staticmethod
-    def validate_genbank_record(raw: dict) -> NCBIGenbank:
-        """Parses an NCBI Genbank record from a Genbank dict to a validated NCBIGenbank.
-
-        :param raw: A NCBI Nucleotide dict record, parsed by Bio.Entrez.Parser
-        :return: A validated subset of Genbank record data
-        """
-        return NCBIGenbank.model_validate(raw)
 
     def fetch_taxonomy_record(self, taxid: int) -> NCBITaxonomy | None:
         """Fetch and validate a taxonomy record from NCBI Taxonomy.
@@ -266,13 +253,7 @@ class NCBIClient:
         """
         logger = base_logger.bind(taxid=taxid)
 
-        record = None
-        if not self.ignore_cache:
-            record = self.cache.load_taxonomy(taxid)
-            if record:
-                logger.debug("Cached record found")
-            else:
-                logger.debug("Cached record not found")
+        record = None if self.ignore_cache else self.cache.load_taxonomy(taxid)
 
         if record is None:
             with log_http_error():
@@ -282,60 +263,26 @@ class NCBIClient:
                         id=taxid,
                         rettype="null",
                     )
-                except HTTPError as e:
-                    logger.error(f"{e.code}: {e.reason}")
-                    logger.error("Your request was likely refused by NCBI.")
+                except HTTPError:
                     return None
 
             try:
                 records = Entrez.read(handle)
-            except RuntimeError as e:
-                logger.error(f"NCBI returned unparseable data ({e})")
+            except RuntimeError:
+                logger.exception("NCBI returned unparseable data.")
                 return None
 
             if records:
                 record = records[0]
-                logger.debug("Caching data...")
                 self.cache.cache_taxonomy_record(record, taxid)
             else:
-                logger.error("ID not found in NCBI Taxonomy database.")
                 return None
 
-        if record is None:
-            return None
-
-        try:
-            return NCBIClient.validate_taxonomy_record(record)
-        except ValidationError as exc:
-            for error in exc.errors():
-                if error["loc"][0] == "Rank":
-                    logger.warning(
-                        "Rank data not found in record",
-                        input=error["input"],
-                        loc=error["loc"][0],
-                        msg=error["msg"],
-                    )
-                else:
-                    logger.error(
-                        "Taxonomy record failed validation",
-                        errors=exc.errors(),
-                    )
-                    return None
-
-        logger.info("Running additional docsum fetch...")
-
-        try:
-            rank = self._fetch_taxonomy_rank(taxid)
-        except HTTPError as e:
-            logger.error(f"{e.code}: {e.reason}")
-            logger.error("Your request was likely refused by NCBI.")
-            return None
-
-        if rank:
+        if rank := self._fetch_taxonomy_rank(taxid):
             try:
-                return NCBIClient.validate_taxonomy_record(record, rank)
-            except ValidationError as exc:
-                logger.error("Failed to find a valid rank.", error=exc)
+                return NCBITaxonomy(**record, rank=rank)
+            except ValidationError:
+                logger.exception("Failed to find a valid rank.")
 
         return None
 
@@ -358,47 +305,24 @@ class NCBIClient:
                     rettype="docsum",
                     retmode="xml",
                 )
-        except HTTPError as e:
-            logger.error(f"{e.code}: {e.reason}")
-            logger.error("Your request was likely refused by NCBI.")
+        except HTTPError:
             return None
 
         try:
             docsum_record = Entrez.read(handle)
-        except RuntimeError as e:
-            logger.error(f"NCBI returned unparseable data ({e})")
+        except RuntimeError:
+            logger.exception("NCBI returned unparseable data")
             return None
 
         try:
             rank = NCBIRank(docsum_record[0]["Rank"])
         except ValueError:
-            logger.debug("Found rank for this taxid, but it did not pass validation")
+            logger.debug("Found rank for this taxid, but it did not pass validation.")
             return None
 
-        logger.debug("Valid rank found", rank=rank)
+        logger.debug("Found valid rank", rank=rank)
+
         return rank
-
-    @staticmethod
-    def validate_taxonomy_record(
-        record: dict,
-        rank: NCBIRank | None = None,
-    ) -> NCBITaxonomy:
-        """Attempt to validate a raw record from NCBI Taxonomy.
-
-        If the ``rank`` parameter is set, it will override the inline rank data.
-
-        Throws a ValidationError if valid rank data is not found in the record.
-
-        :param record: Unvalidated taxonomy record data
-        :param rank: Overrides inline rank data if set.
-            Use to insert a valid rank from a docsum fetch
-            on a second validation attempt.
-        :return: A validated NCBITaxonomy record
-        """
-        if rank is None:
-            return NCBITaxonomy(**record)
-
-        return NCBITaxonomy(rank=rank, **record)
 
     @staticmethod
     def fetch_taxonomy_id_by_name(name: str) -> int | None:
@@ -416,15 +340,13 @@ class NCBIClient:
         try:
             with log_http_error():
                 handle = Entrez.esearch(db="taxonomy", term=name)
-        except HTTPError as e:
-            logger.error(f"{e.code}: {e.reason}")
-            logger.error("Your request was likely refused by NCBI.")
+        except HTTPError:
             return None
 
         try:
             record = Entrez.read(handle)
-        except RuntimeError as e:
-            logger.error(f"NCBI returned unparseable data ({e})")
+        except RuntimeError:
+            logger.exception("NCBI returned unparseable data.")
             return None
 
         try:
@@ -444,24 +366,24 @@ class NCBIClient:
         :return: String containing NCBI-suggested spelling changes, None if HTTPError
         """
         logger = base_logger.bind(query=name)
+
         try:
             with log_http_error():
                 handle = Entrez.espell(db=db, term=quote_plus(name))
-        except HTTPError as e:
-            logger.error(f"{e.code}: {e.reason}")
-            logger.error("Your request was likely refused by NCBI.")
+        except HTTPError:
             return None
 
         try:
             record = Entrez.read(handle)
-        except RuntimeError as e:
-            logger.error(f"NCBI returned unparseable data ({e})")
+        except RuntimeError:
+            logger.exception("NCBI returned unparseable data.")
             return None
 
         if "CorrectedQuery" in record:
             return record["CorrectedQuery"]
 
         logger.warning("Suggested spelling not found.")
+
         return None
 
 
@@ -470,13 +392,11 @@ def log_http_error() -> None:
     """Log detailed HTTPError info for debugging before throwing the HTTPError."""
     try:
         yield
-
     except HTTPError as e:
-        base_logger.error(
+        base_logger.exception(
             "HTTPError raised",
+            body=e.read(),
             code=e.code,
             reason=e.reason,
-            body=e.read(),
         )
-        base_logger.exception(e)
-        raise e
+        raise
