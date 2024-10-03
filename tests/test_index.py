@@ -5,37 +5,148 @@ from pathlib import Path
 
 import pytest
 
-from ref_builder.index import EventIndex, EventIndexItem
+from ref_builder.index import EventIndexItem, Index
+from ref_builder.models import OTUMinimal
+from ref_builder.resources import RepoOTU
 
-
-@pytest.mark.parametrize(
-    "event_ids",
-    ([1, 5, 20, 99, 110], [5, 20, 1, 99, 110]),
-    ids=["sorted", "unsorted"],
+SNAPSHOT_AT_EVENT = (
+    31,
+    22,
+    21,
+    24,
+    11,
+    32,
+    32,
+    30,
 )
-def test_index(event_ids: list[int], tmp_path: Path):
-    """Test that we can set, get, and load cached events for an OTU."""
-    path = Path(tmp_path / "index")
+"""Hardcoded at_event values for the snapshotter_otus fixture."""
 
-    index = EventIndex(path)
 
-    otu_id = uuid.uuid4()
+@pytest.fixture()
+def index(indexable_otus: list[RepoOTU], tmp_path: Path) -> Index:
+    """An index with eight OTUs already cached."""
+    _index = Index(tmp_path / "index.db")
 
-    index.set(otu_id, event_ids, 112)
+    for otu, at_event in zip(indexable_otus, SNAPSHOT_AT_EVENT, strict=True):
+        _index.upsert_otu(otu, at_event)
 
-    assert (
-        index.get(otu_id)
-        == EventIndex(path).get(otu_id)
-        == EventIndexItem(
-            112,
-            [1, 5, 20, 99, 110],
-            otu_id,
-        )
+    return _index
+
+
+class TestDeleteOTU:
+    """Test the `delete_otu` method of the Snapshotter class."""
+
+    def test_ok(self, index: Index, indexable_otus: list[RepoOTU]):
+        """Test that an OTU can be deleted from the index."""
+        otu = indexable_otus[2]
+
+        index.delete_otu(otu.id)
+
+        assert index.get_event_ids_by_otu_id(otu.id) is None
+        assert index.get_id_by_name(otu.name) is None
+        assert index.get_id_by_taxid(otu.taxid) is None
+
+    def test_not_found(self, index: Index, indexable_otus: list[RepoOTU]):
+        """Test that nothing happens when the OTU ID is not found."""
+        index.delete_otu(uuid.uuid4())
+        assert index.otu_ids == {otu.id for otu in indexable_otus}
+
+
+def test_iter_otus(index: Index, indexable_otus: list[RepoOTU]):
+    """Test that the index iterates over all OTUs ordered by name."""
+    assert list(index.iter_minimal_otus()) == sorted(
+        [
+            OTUMinimal(
+                acronym=otu.acronym,
+                id=otu.id,
+                legacy_id=otu.legacy_id,
+                name=otu.name,
+                taxid=otu.taxid,
+            )
+            for otu in indexable_otus
+        ],
+        key=lambda otu: otu.name,
     )
 
 
-def test_index_not_found(tmp_path: Path):
-    """Test that we get ``None`` when an OTU ID is not found."""
-    path = Path(tmp_path / "index")
+class TestLoadSnapshot:
+    """Test the `load_snapshot` method of the Snapshotter class."""
 
-    assert EventIndex(path).get(uuid.uuid4()) is None
+    def test_ok(self, index: Index, indexable_otus: list[RepoOTU]):
+        """Test that we can load a snapshot from the index."""
+        for at_event, otu in zip(SNAPSHOT_AT_EVENT, indexable_otus, strict=False):
+            snapshot = index.load_snapshot(otu.id)
+
+            assert snapshot.at_event == at_event
+            assert snapshot.otu == otu
+
+    def test_not_found(self, index: Index):
+        """Test that `None` is returned when the OTU ID is not found."""
+        assert index.load_snapshot(uuid.uuid4()) is None
+
+
+def test_otu_ids(index: Index, indexable_otus: list[RepoOTU]):
+    """Test that stored OTU IDs are correct."""
+    assert index.otu_ids == {otu.id for otu in indexable_otus}
+
+
+class TestGetIDByLegacyID:
+    """Test the `get_id_by_legacy_id` method of the Snapshotter class."""
+
+    def test_ok(self, index: Index, indexable_otus: list[RepoOTU]):
+        """Test that the correct OTU ID is retrieved by legacy ID."""
+        for otu in indexable_otus:
+            if otu.legacy_id is not None:
+                assert index.get_id_by_legacy_id(otu.legacy_id) == otu.id
+
+    def test_not_found(self, index: Index):
+        """Test that `None` is returned when the legacy ID is not found."""
+        assert index.get_id_by_legacy_id("not found") is None
+
+
+class TestEvents:
+    """Test the event index functionality of the repository Index."""
+
+    def test_ok(self, index: Index, indexable_otus: list[RepoOTU]):
+        """Test that we can set and get events IDs for an OTU."""
+        otu = indexable_otus[1]
+
+        index.add_event_id(100, otu.id)
+        index.add_event_id(101, otu.id)
+        index.add_event_id(104, otu.id)
+
+        assert index.get_event_ids_by_otu_id(otu.id) == EventIndexItem(
+            at_event=104,
+            event_ids=[100, 101, 104],
+            otu_id=otu.id,
+        )
+
+    def test_otu_id_not_found(self, index: Index):
+        """Test that we get ``None`` when an OTU ID is not found."""
+        assert index.get_event_ids_by_otu_id(uuid.uuid4()) is None
+
+
+class TestGetIDByName:
+    """Test the `get_id_by_name` method of the Snapshotter class."""
+
+    def test_ok(self, index: Index, indexable_otus: list[RepoOTU]):
+        """Test that the correct OTU ID is retrieved by name."""
+        for otu in indexable_otus:
+            assert otu.id == index.get_id_by_name(otu.name)
+
+    def test_not_found(self, index: Index):
+        """Test that `None` is returned when the name is not found."""
+        assert index.get_id_by_name("not found") is None
+
+
+class TestGetIDByTaxid:
+    """Test the `get_id_by_taxid` method of the Snapshotter class."""
+
+    def test_ok(self, index: Index, indexable_otus: list[RepoOTU]):
+        """Test that the correct OTU ID is retrieved by taxid."""
+        for otu in indexable_otus:
+            assert index.get_id_by_taxid(otu.taxid) == otu.id
+
+    def test_not_found(self, index: Index):
+        """Test that `None` is returned when the taxid is not found."""
+        assert index.get_id_by_taxid(999999999999999) is None
