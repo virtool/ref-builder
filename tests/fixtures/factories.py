@@ -1,3 +1,5 @@
+"""Factories for generating quasi-realistic NCBISource and NCBIGenbank data."""
+
 from faker import Faker
 from polyfactory.decorators import post_generated
 from polyfactory.factories.pydantic_factory import ModelFactory
@@ -46,14 +48,18 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
         """Raw isolate name faker."""
         if cls.__faker__.boolean(80):
             delimiter = cls.__faker__.random_element(["", "-", "_"])
-            components = cls.__faker__.random_elements([
-                cls.__faker__.country().replace(" ", ""),
-                cls.__faker__.last_name(),
-                cls.__faker__.country_code(),
-                str(cls.__faker__.random_int(0, 9)),
-                str(cls.__faker__.random_int(10, 99)),
-                str(cls.__faker__.random_int(100, 9999)),
-            ], 2, unique=True)
+            components = cls.__faker__.random_elements(
+                [
+                    cls.__faker__.country().replace(" ", ""),
+                    cls.__faker__.last_name(),
+                    cls.__faker__.country_code(),
+                    str(cls.__faker__.random_int(0, 9)),
+                    str(cls.__faker__.random_int(10, 99)),
+                    str(cls.__faker__.random_int(100, 9999)),
+                ],
+                2,
+                unique=True,
+            )
 
             return delimiter.join(components)
 
@@ -100,6 +106,7 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
         """Pseudorandom macronuclear flag for DNA records only."""
         if mol_type in DNA_MOLTYPES:
             return cls.__faker__.boolean(5)
+
         return False
 
     @post_generated
@@ -110,6 +117,7 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
         """
         if mol_type in DNA_MOLTYPES:
             return cls.__faker__.boolean(5)
+
         return False
 
     @post_generated
@@ -118,6 +126,7 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
         """Transgenic flag set to False if focus is True."""
         if focus and cls.__faker__.boolean(5):
             return not focus
+
         return False
 
 
@@ -165,18 +174,16 @@ class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
         if source.mol_type in DNA_MOLTYPES:
             return MolType.DNA
 
-        match source.mol_type:
-            case NCBISourceMolType.GENOMIC_RNA:
-                return MolType.RNA
-            case NCBISourceMolType.MRNA:
-                return MolType.MRNA
-            case NCBISourceMolType.TRANSCRIBED_RNA:
-                return MolType.RNA
-            case NCBISourceMolType.VIRAL_CRNA:
-                return MolType.CRNA
-            case NCBISourceMolType.TRNA:
-                return MolType.TRNA
-            case NCBISourceMolType.OTHER_RNA:
-                return MolType.RNA
-
-        raise ValueError(f"Source moltype {source.mol_type} cannot be matched to MolType")
+        try:
+            return {
+                NCBISourceMolType.GENOMIC_RNA: MolType.RNA,
+                NCBISourceMolType.MRNA: MolType.MRNA,
+                NCBISourceMolType.TRANSCRIBED_RNA: MolType.RNA,
+                NCBISourceMolType.VIRAL_CRNA: MolType.CRNA,
+                NCBISourceMolType.TRNA: MolType.TRNA,
+                NCBISourceMolType.OTHER_RNA: MolType.RNA,
+            }[source.mol_type]
+        except KeyError as err:
+            raise ValueError(
+                f"Source moltype {source.mol_type} cannot be matched to MolType",
+            ) from err

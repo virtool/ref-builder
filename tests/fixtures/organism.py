@@ -1,3 +1,5 @@
+"""Organism constants for fake data generation."""
+
 ORGANISM_HOSTS = [
     "apple",
     "blueberry",
@@ -54,7 +56,7 @@ ORGANISM_DESCRIPTOR_ADJECTIVES = [
     "cryptic",
     "latent",
     "necrotic",
-    "rusty,"
+    "rusty",
     "yellow",
     "severe",
 ]
