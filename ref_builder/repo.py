@@ -16,7 +16,7 @@ TODO: Check for accession conflicts.
 import shutil
 import uuid
 from collections import defaultdict
-from collections.abc import Generator
+from collections.abc import Generator, Iterator
 from pathlib import Path
 
 import arrow
@@ -51,7 +51,7 @@ from ref_builder.events import (
     SetReprIsolateData,
 )
 from ref_builder.index import Index
-from ref_builder.models import Molecule
+from ref_builder.models import Molecule, OTUMinimal
 from ref_builder.resources import (
     RepoIsolate,
     RepoMeta,
@@ -77,23 +77,29 @@ class Repo:
         self.path = path
         """The path to the repo directory."""
 
-        self.cache_path = self.path / ".cache"
-        """The path to the cache subdirectory."""
-
         self._event_store = EventStore(self.path / "src")
         """The event store of the event sourced repository."""
 
-        self._index = Index(self.cache_path / "index.db")
+        self._index = Index(self.path / ".cache" / "index.db")
         """An index for fast lookups.
-        
+
         It allows fast lookup of OTUs be key fields, fetching of complete OTU state,
         and the events associated with a given OTU ID.
         """
 
-        # Take a new snapshot if no existing data is found.
+        # Populate the index if it is empty.
         if not self._index.otu_ids:
-            for otu in self.iter_otus(ignore_cache=True):
+            logger.info("No index found. Rebuilding...")
+            for otu in self.iter_otus_from_events():
                 self._index.upsert_otu(otu, self.last_id)
+
+            for event in self._event_store.iter_events():
+                try:
+                    otu_id = event.query.model_dump()["otu_id"]
+                except KeyError:
+                    continue
+
+                self._index.add_event_id(event.id, otu_id)
 
     @classmethod
     def new(cls, data_type: DataType, name: str, path: Path, organism: str) -> "Repo":
@@ -146,21 +152,31 @@ class Repo:
 
         raise ValueError("No repository creation event found")
 
-    def iter_otus(self, ignore_cache: bool = False) -> Generator[RepoOTU, None, None]:
-        """Iterate over the OTUs in the snapshot."""
-        if ignore_cache:
-            event_index = defaultdict(list)
+    def iter_minimal_otus(self) -> Iterator[OTUMinimal]:
+        """Iterate over minimal representations of the OTUs in the repository.
 
-            for event in self._event_store.iter_events():
-                otu_id = event.query.model_dump().get("otu_id")
+        This is more performant than iterating over full OTUs.
 
-                if otu_id is not None:
-                    event_index[otu_id].append(event.id)
-        else:
-            event_index = self._event_index.load_snapshot()
+        """
+        return self._index.iter_minimal_otus()
 
-        for otu_id in event_index:
+    def iter_otus(self) -> Iterator[RepoOTU]:
+        """Iterate over the OTUs in the repository."""
+        for otu_id in self._index.otu_ids:
             yield self.get_otu(otu_id)
+
+    def iter_otus_from_events(self) -> Iterator[RepoOTU]:
+        """Iterate over the OTUs, bypassing the index."""
+        events_by_otu = defaultdict(list)
+
+        for event in self._event_store.iter_events():
+            otu_id = event.query.model_dump().get("otu_id")
+
+            if otu_id is not None:
+                events_by_otu[otu_id].append(event.id)
+
+        for otu_id in events_by_otu:
+            yield self._rehydrate_otu(events_by_otu[otu_id])
 
     def create_otu(
         self,
@@ -180,7 +196,7 @@ class Repo:
         if self._index.get_id_by_name(name):
             raise ValueError(f"An OTU with the name '{name}' already exists")
 
-        if self._index.get_id_by_legacy_id(legacy_id):
+        if legacy_id and self._index.get_id_by_legacy_id(legacy_id):
             raise ValueError(f"An OTU with the legacy ID '{legacy_id}' already exists")
 
         otu_logger = logger.bind(taxid=taxid, name=name, legacy_id=legacy_id)
@@ -188,7 +204,7 @@ class Repo:
 
         otu_id = uuid.uuid4()
 
-        event = self.write_event(
+        event = self._write_event(
             CreateOTU,
             CreateOTUData(
                 id=otu_id,
@@ -222,7 +238,7 @@ class Repo:
 
         isolate_id = uuid.uuid4()
 
-        event = self.write_event(
+        event = self._write_event(
             CreateIsolate,
             CreateIsolateData(id=isolate_id, legacy_id=legacy_id, name=name),
             IsolateQuery(isolate_id=isolate_id, otu_id=otu_id),
@@ -244,7 +260,7 @@ class Repo:
         rationale: str,
     ) -> None:
         """Delete an existing isolate from a given OTU."""
-        self.write_event(
+        self._write_event(
             DeleteIsolate,
             DeleteIsolateData(rationale=rationale),
             IsolateQuery(otu_id=otu_id, isolate_id=isolate_id),
@@ -286,7 +302,7 @@ class Repo:
 
         sequence_id = uuid.uuid4()
 
-        event = self.write_event(
+        event = self._write_event(
             CreateSequence,
             CreateSequenceData(
                 id=sequence_id,
@@ -344,7 +360,7 @@ class Repo:
         if new_sequence is None:
             return None
 
-        self.write_event(
+        self._write_event(
             DeleteSequence,
             DeleteSequenceData(
                 replacement=new_sequence.id,
@@ -370,7 +386,7 @@ class Repo:
 
         schema_data = {"molecule": molecule, "segments": segments}
 
-        self.write_event(
+        self._write_event(
             CreateSchema,
             CreateSchemaData(**schema_data),
             OTUQuery(otu_id=otu.id),
@@ -382,7 +398,7 @@ class Repo:
         """Set the representative isolate for an OTU."""
         otu = self.get_otu(otu_id)
 
-        self.write_event(
+        self._write_event(
             SetReprIsolate,
             SetReprIsolateData(isolate_id=isolate_id),
             OTUQuery(otu_id=otu.id),
@@ -404,7 +420,7 @@ class Repo:
         if accession in otu.excluded_accessions:
             logger.debug("Accession is already excluded.", accession=accession)
         else:
-            self.write_event(
+            self._write_event(
                 ExcludeAccession,
                 ExcludeAccessionData(accession=accession),
                 OTUQuery(otu_id=otu_id),
@@ -413,12 +429,51 @@ class Repo:
         return self.get_otu(otu_id).excluded_accessions
 
     def get_otu(self, otu_id: uuid.UUID) -> RepoOTU | None:
-        """Return an OTU corresponding with a given OTU ID if it exists, else None."""
-        event_ids = self._event_index.get(otu_id).event_ids
+        """Get the OTU with the given ``otu_id``.
 
-        if event_ids is None:
+        If the OTU does not exist, ``None`` is returned.
+
+        :param otu_id: the id of the OTU
+        :return: the OTU or ``None``
+
+        """
+        event_index_item = self._index.get_event_ids_by_otu_id(otu_id)
+
+        if event_index_item is None:
             return None
 
+        otu = self._rehydrate_otu(event_index_item.event_ids)
+
+        self._index.upsert_otu(otu, self.last_id)
+
+        return otu
+
+    def get_otu_by_taxid(self, taxid: int) -> RepoOTU | None:
+        """Return the OTU with the given ``taxid``.
+
+        If no OTU is found, return None.
+
+        :param taxid: the taxonomy ID of the OTU
+        :return: the matching OTU or ``None``
+
+        """
+        if (otu_id := self.get_otu_id_by_taxid(taxid)) is not None:
+            return self.get_otu(otu_id)
+
+        return None
+
+    def get_otu_id_by_taxid(self, taxid: int) -> uuid.UUID | None:
+        """Return the UUID of the OTU with the given ``taxid``.
+
+        If no OTU is found, return None.
+
+        :param taxid: the taxonomy ID of the OTU
+        :return: the UUID of the OTU or ``None``
+
+        """
+        return self._index.get_id_by_taxid(taxid)
+
+    def _rehydrate_otu(self, event_ids: list[int]) -> RepoOTU:
         event = self._event_store.read_event(event_ids[0])
 
         if not isinstance(event, CreateOTU):
@@ -496,40 +551,13 @@ class Repo:
         for isolate in otu.isolates:
             isolate.sequences.sort(key=lambda s: s.accession)
 
-        self._index.upsert_otu(otu, self.last_id)
-
         return otu
 
-    def get_otu_by_taxid(self, taxid: int) -> RepoOTU | None:
-        """Return the OTU with the given ``taxid``.
-
-        If no OTU is found, return None.
-
-        :param taxid: the taxonomy ID of the OTU
-        :return: the matching OTU or ``None``
-
-        """
-        if (otu_id := self.get_otu_id_by_taxid(taxid)) is not None:
-            return self.get_otu(otu_id)
-
-        return None
-
-    def get_otu_id_by_taxid(self, taxid: int) -> uuid.UUID | None:
-        """Return the UUID of the OTU with the given ``taxid``.
-
-        If no OTU is found, return None.
-
-        :param taxid: the taxonomy ID of the OTU
-        :return: the UUID of the OTU or ``None``
-
-        """
-        return self._index.get_id_by_taxid(taxid)
-
-    def write_event(self, cls, data, query):
+    def _write_event(self, cls, data, query):
         event = self._event_store.write_event(cls, data, query)
 
         if hasattr(query, "otu_id"):
-            self._event_index.add(event.id, query.otu_id)
+            self._index.add_event_id(event.id, query.otu_id)
 
         return event
 

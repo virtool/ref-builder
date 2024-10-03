@@ -2,6 +2,7 @@
 
 import binascii
 import sqlite3
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -9,6 +10,7 @@ from uuid import UUID
 
 import orjson
 
+from ref_builder.models import OTUMinimal
 from ref_builder.resources import RepoOTU
 
 
@@ -68,7 +70,7 @@ class Index:
 
         self.con.execute(
             """
-            CREATE TABLE IF NOT EXISTS event_index (
+            CREATE TABLE IF NOT EXISTS events (
                 at_event INTEGER,
                 event_id INTEGER PRIMARY KEY,
                 otu_id TEXT
@@ -118,6 +120,11 @@ class Index:
 
         self.con.commit()
 
+    @property
+    def otu_ids(self) -> set[UUID]:
+        """A list of all OTUs tracked in the index."""
+        return {UUID(row[0]) for row in self.con.execute("SELECT id FROM otus")}
+
     def add_event_id(self, event_id: int, otu_id: UUID) -> None:
         """Associate a new event ID with a given OTU ID.
 
@@ -128,7 +135,7 @@ class Index:
         """
         self.con.execute(
             """
-            INSERT INTO event_index (event_id, otu_id)
+            INSERT INTO events (event_id, otu_id)
             VALUES (?, ?)
             """,
             (
@@ -142,16 +149,16 @@ class Index:
         res = self.con.execute(
             """
             SELECT event_id
-            FROM event_index
+            FROM events
             WHERE otu_id = ?
             ORDER BY event_id
             """,
             (str(otu_id),),
         )
 
-        if res:
-            event_ids = [row[0] for row in res]
+        event_ids = [row[0] for row in res]
 
+        if event_ids:
             return EventIndexItem(
                 event_ids[-1],
                 event_ids,
@@ -196,7 +203,7 @@ class Index:
 
         return None
 
-    def delete(self, otu_id: UUID) -> None:
+    def delete_otu(self, otu_id: UUID) -> None:
         """Remove an OTU from the index.
 
         This happens rarely, so we just rewrite the whole index.
@@ -204,11 +211,36 @@ class Index:
         :param otu_id: the ID of the OTU to remove.
         """
         self.con.execute(
+            "DELETE FROM events WHERE otu_id = ?",
+            (str(otu_id),),
+        )
+
+        self.con.execute(
             "DELETE FROM otus WHERE id = ?",
             (str(otu_id),),
         )
 
+        self.con.execute(
+            "DELETE FROM sequences WHERE otu_id = ?",
+            (str(otu_id),),
+        )
+
         self.con.commit()
+
+    def iter_minimal_otus(self) -> Iterator[OTUMinimal]:
+        """Iterate over minimal representations of all OTUs in the index."""
+        cursor = self.con.execute(
+            "SELECT acronym, id, legacy_id, name, taxid FROM otus ORDER BY name",
+        )
+
+        for row in cursor:
+            yield OTUMinimal(
+                acronym=row[0],
+                id=UUID(row[1]),
+                legacy_id=row[2],
+                name=row[3],
+                taxid=row[4],
+            )
 
     def load_snapshot(self, otu_id: UUID) -> Snapshot | None:
         """Load an OTU snapshot."""
@@ -262,11 +294,6 @@ class Index:
             at_event=at_event,
             otu=RepoOTU.model_validate(otu),
         )
-
-    @property
-    def otu_ids(self) -> set[UUID]:
-        """A list of OTU ids of snapshots."""
-        return {UUID(row[0]) for row in self.con.execute("SELECT id FROM otus")}
 
     def upsert_otu(self, otu: RepoOTU, at_event: int) -> None:
         """Update the index based on a list of OTUs.

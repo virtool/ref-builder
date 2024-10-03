@@ -140,7 +140,7 @@ def otu_get(identifier: str, path: Path) -> int:
 @path_option
 def otu_list(path: Path) -> None:
     """List all OTUs in the repository."""
-    print_otu_list(Repo(path).iter_otus())
+    print_otu_list(Repo(path).iter_minimal_otus())
 
 
 @otu.group(invoke_without_command=True)
