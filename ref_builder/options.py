@@ -4,9 +4,6 @@ from pathlib import Path
 
 import click
 
-debug_option = click.option("--debug", is_flag=True, help="Show debug logs")
-"""A click option for enabling debug logging."""
-
 ignore_cache_option = click.option(
     "--ignore-cache",
     is_flag=True,

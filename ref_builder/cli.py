@@ -14,7 +14,7 @@ from ref_builder.legacy.utils import iter_legacy_otus
 from ref_builder.legacy.validate import validate_legacy_repo
 from ref_builder.logs import configure_logger
 from ref_builder.ncbi.client import NCBIClient
-from ref_builder.options import debug_option, ignore_cache_option, path_option
+from ref_builder.options import ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
     add_and_name_isolate,
@@ -31,8 +31,10 @@ from ref_builder.utils import DataType, IsolateName, IsolateNameType, format_jso
 
 
 @click.group()
-def entry() -> None:
+@click.option("--debug", is_flag=True, help="Show debug logs")
+def entry(debug: bool) -> None:
     """Build and maintain reference sets of pathogen genome sequences."""
+    configure_logger(debug)
 
 
 @entry.command()
@@ -82,10 +84,8 @@ def otu() -> None:
 @click.option("--acronym", type=str, default="")
 @click.option("--autofill/--no-fill", default=False)
 @ignore_cache_option
-@debug_option
 @path_option
 def otu_create(
-    debug: bool,
     ignore_cache: bool,
     path: Path,
     taxid: int,
@@ -94,8 +94,6 @@ def otu_create(
     acronym: str,
 ) -> None:
     """Create a new OTU for the given Taxonomy ID and accessions."""
-    configure_logger(debug)
-
     repo = Repo(path)
 
     try:
@@ -165,13 +163,10 @@ def update(ctx, path: Path, taxid: int):
 
 
 @update.command(name="automatic")
-@debug_option
 @ignore_cache_option
 @click.pass_context
-def otu_autoupdate(ctx, debug: bool, ignore_cache: bool) -> None:
+def otu_autoupdate(ctx, ignore_cache: bool) -> None:
     """Automatically update an OTU with the latest data from NCBI."""
-    configure_logger(debug)
-
     taxid = ctx.obj["TAXID"]
 
     repo = ctx.obj["REPO"]
@@ -187,17 +182,13 @@ def otu_autoupdate(ctx, debug: bool, ignore_cache: bool) -> None:
 
 
 @update.command(name="promote")
-@debug_option
 @ignore_cache_option
 @click.pass_context
 def otu_promote_accessions(
     ctx,
-    debug: bool = False,
     ignore_cache: bool = False,
 ):
     """Promote all RefSeq accessions within this OTU."""
-    configure_logger(debug)
-
     taxid = ctx.obj["TAXID"]
 
     repo = ctx.obj["REPO"]
@@ -227,19 +218,15 @@ def otu_promote_accessions(
     help='an overriding name for the isolate, e.g. "isolate ARWV1"',
 )
 @ignore_cache_option
-@debug_option
 @click.pass_context
 def isolate_create(
     ctx,
-    debug: bool,
     ignore_cache: bool,
     accessions_: list[str],
     unnamed: bool,
     name: tuple[IsolateNameType, str] | None,
 ) -> None:
     """Create a new isolate using the given accessions."""
-    configure_logger(debug)
-
     repo = ctx.obj["REPO"]
 
     taxid = ctx.obj["TAXID"]
@@ -255,7 +242,6 @@ def isolate_create(
             otu_,
             accessions_,
             ignore_cache=ignore_cache,
-            ignore_name=unnamed,
         )
 
     if name is not None:
@@ -302,16 +288,12 @@ def isolate_create(
     type=str,
     required=True,
 )
-@debug_option
 @click.pass_context
 def accession_exclude(
     ctx,
-    debug: bool,
     accessions_: list[str],
 ) -> None:
     """Exclude the given accessions from this OTU."""
-    configure_logger(debug)
-
     repo = ctx.obj["REPO"]
 
     taxid = ctx.obj["TAXID"]
@@ -326,16 +308,12 @@ def accession_exclude(
 
 @update.command(name="default")
 @click.argument("ISOLATE_KEY", type=str)
-@debug_option
 @click.pass_context
 def otu_set_representative_isolate(
     ctx,
-    debug: bool,
     isolate_key: str,
 ):
     """Update the OTU with a new representative isolate."""
-    configure_logger(debug)
-
     taxid = ctx.obj["TAXID"]
 
     repo = ctx.obj["REPO"]
@@ -440,7 +418,6 @@ def reformat(path: Path) -> None:
 
 
 @legacy.command()
-@debug_option
 @click.option(
     "--fix",
     is_flag=True,
@@ -462,10 +439,8 @@ def reformat(path: Path) -> None:
     type=click.Path(exists=True, file_okay=False, path_type=Path),
     help="the path to a legacy reference directory",
 )
-def validate(debug: bool, fix: bool, limit: int, no_ok: bool, path: Path) -> None:
+def validate(fix: bool, limit: int, no_ok: bool, path: Path) -> None:
     """Validate a legacy reference repository."""
-    configure_logger(debug)
-
     validate_legacy_repo(fix, limit, no_ok, path)
 
 
