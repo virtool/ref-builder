@@ -54,10 +54,10 @@ class SequencePlan(BaseModel):
 class SegmentPlan(SequencePlan):
     """Metadata and expected properties for an included segment."""
 
-    name: str
+    name: SegmentName
     """The name of the segment"""
 
-    required: bool
+    required: SegmentRule
     """Whether this segment must be present in all additions."""
 
 class MonopartitePlan(SequencePlan):
