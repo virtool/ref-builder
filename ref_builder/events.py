@@ -96,7 +96,7 @@ class CreateOTUData(EventData):
     molecule: Molecule
     name: str
     taxid: int
-    plan: IsolatePlan
+    plan: MonopartitePlan | MultipartitePlan
 
 
 class CreateOTU(Event):
@@ -189,8 +189,7 @@ class ExcludeAccession(Event):
 class CreatePlanData(EventData):
     """The data for a :class:`CreatePlan` event."""
 
-    molecule: Molecule
-    parameters: MonopartitePlan | MultipartitePlan
+    plan: MonopartitePlan | MultipartitePlan
 
 
 class CreatePlan(Event):

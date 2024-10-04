@@ -27,14 +27,7 @@ def initialized_repo(empty_repo: Repo):
             topology=Topology.LINEAR,
         ),
         name="Tobacco mosaic virus",
-        plan=IsolatePlan(
-            molecule=Molecule(
-                strandedness=Strandedness.SINGLE,
-                type=MolType.RNA,
-                topology=Topology.LINEAR,
-            ),
-            parameters=MonopartitePlan(id=uuid4(), length=150),
-        ),
+        plan=MonopartitePlan(id=uuid4(), length=150),
         taxid=12242,
     )
 
@@ -66,14 +59,7 @@ def init_otu(empty_repo: Repo) -> RepoOTU:
             topology=Topology.LINEAR,
         ),
         name="Tobacco mosaic virus",
-        plan=IsolatePlan(
-            molecule=Molecule(
-                strandedness=Strandedness.SINGLE,
-                type=MolType.RNA,
-                topology=Topology.LINEAR,
-            ),
-            parameters=MonopartitePlan(id=uuid4(), length=150),
-        ),
+        plan=MonopartitePlan(id=uuid4(), length=150),
         taxid=12242,
     )
 
@@ -106,14 +92,7 @@ class TestCreateOTU:
                 topology=Topology.LINEAR,
             ),
             name="Tobacco mosaic virus",
-            plan=IsolatePlan(
-                molecule=Molecule(
-                    strandedness=Strandedness.SINGLE,
-                    type=MolType.RNA,
-                    topology=Topology.LINEAR,
-                ),
-                parameters=monopartite_plan,
-            ),
+            plan=monopartite_plan,
             taxid=12242,
         )
 
@@ -129,14 +108,7 @@ class TestCreateOTU:
             ),
             name="Tobacco mosaic virus",
             repr_isolate=None,
-            plan=IsolatePlan(
-                molecule=Molecule(
-                    strandedness=Strandedness.SINGLE,
-                    type=MolType.RNA,
-                    topology=Topology.LINEAR,
-                ),
-                parameters=MonopartitePlan(id=monopartite_plan.id, length=150),
-            ),
+            plan=MonopartitePlan(id=monopartite_plan.id, length=150),
             taxid=12242,
             isolates=[],
         )
@@ -158,17 +130,9 @@ class TestCreateOTU:
                 "legacy_id": "abcd1234",
                 "name": "Tobacco mosaic virus",
                 "plan": {
-                    "molecule": {
-                        "strandedness": "single",
-                        "type": "RNA",
-                        "topology": "linear",
-                    },
-                    "parameters": {
-                        "id": str(monopartite_plan.id),
-                        "length": 150,
-                        "name": None,
-                    },
-                    "multipartite": False,
+                    "id": str(monopartite_plan.id),
+                    "length": 150,
+                    "name": None,
                 },
                 "taxid": 12242,
             },
@@ -194,14 +158,7 @@ class TestCreateOTU:
                 topology=Topology.LINEAR,
             ),
             name="Tobacco mosaic virus",
-            plan=IsolatePlan(
-                molecule=Molecule(
-                    strandedness=Strandedness.SINGLE,
-                    type=MolType.RNA,
-                    topology=Topology.LINEAR,
-                ),
-                parameters=MonopartitePlan(id=uuid4(), length=150),
-            ),
+            plan=MonopartitePlan(id=uuid4(), length=150),
             taxid=12242,
         )
 
@@ -218,14 +175,7 @@ class TestCreateOTU:
                     topology=Topology.LINEAR,
                 ),
                 name="Tobacco mosaic virus",
-                plan=IsolatePlan(
-                    molecule=Molecule(
-                        strandedness=Strandedness.SINGLE,
-                        type=MolType.RNA,
-                        topology=Topology.LINEAR,
-                    ),
-                    parameters=MonopartitePlan(id=uuid4(), length=150),
-                ),
+                plan=MonopartitePlan(id=uuid4(), length=150),
                 taxid=438782,
             )
 
@@ -242,14 +192,7 @@ class TestCreateOTU:
                 topology=Topology.LINEAR,
             ),
             name="Tobacco mosaic virus",
-            plan=IsolatePlan(
-                molecule=Molecule(
-                    strandedness=Strandedness.SINGLE,
-                    type=MolType.RNA,
-                    topology=Topology.LINEAR,
-                ),
-                parameters=MonopartitePlan(id=uuid4(), length=150),
-            ),
+            plan=MonopartitePlan(id=uuid4(), length=150),
             taxid=12242,
         )
 
@@ -266,14 +209,7 @@ class TestCreateOTU:
                 ),
                 legacy_id="abcd1234",
                 name="Abaca bunchy top virus",
-                plan=IsolatePlan(
-                    molecule=Molecule(
-                        strandedness=Strandedness.SINGLE,
-                        type=MolType.RNA,
-                        topology=Topology.LINEAR,
-                    ),
-                    parameters=MonopartitePlan(id=uuid4(), length=150),
-                ),
+                plan=MonopartitePlan(id=uuid4(), length=150),
                 taxid=438782,
             )
 
@@ -434,14 +370,7 @@ class TestGetOTU:
             ),
             name="Tobacco mosaic virus",
             taxid=12242,
-            plan=IsolatePlan(
-                molecule=Molecule(
-                    strandedness=Strandedness.SINGLE,
-                    type=MolType.RNA,
-                    topology=Topology.LINEAR,
-                ),
-                parameters=monopartite_plan,
-            ),
+            plan=monopartite_plan,
         )
 
         isolate_a = empty_repo.create_isolate(
@@ -522,14 +451,7 @@ class TestGetOTU:
             ),
             name="Tobacco mosaic virus",
             repr_isolate=None,
-            plan=IsolatePlan(
-                molecule=Molecule(
-                    strandedness=Strandedness.SINGLE,
-                    type=MolType.RNA,
-                    topology=Topology.LINEAR,
-                ),
-                parameters=MonopartitePlan(id=monopartite_plan.id, length=150),
-            ),
+            plan=MonopartitePlan(id=monopartite_plan.id, length=150),
             taxid=12242,
             isolates=otu_contents,
         )

@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import UUID4, BaseModel, field_serializer, field_validator
 
 from ref_builder.models import Molecule
-from ref_builder.plan import IsolatePlan
+from ref_builder.plan import MonopartitePlan, MultipartitePlan
 from ref_builder.utils import Accession, DataType, IsolateName
 
 
@@ -226,7 +226,7 @@ class RepoOTU(BaseModel):
     molecule: Molecule
     """The type of molecular information contained in this OTU."""
 
-    plan: IsolatePlan
+    plan: MonopartitePlan | MultipartitePlan
     """The schema of the OTU"""
 
     taxid: int

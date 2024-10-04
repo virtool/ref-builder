@@ -49,18 +49,10 @@ class RefSeqConflictError(ValueError):
 def create_isolate_plan_from_records(
     records: list[NCBIGenbank],
     segments: list[SegmentPlan] | None = None,
-) -> IsolatePlan | None:
+) -> MonopartitePlan | MultipartitePlan | None:
     """Return a plan from a list of records representing an isolate."""
-    molecule = get_molecule_from_records(records)
-
     if len(records) == 1:
-        return IsolatePlan(
-            molecule=molecule,
-            parameters=MonopartitePlan(
-                id=uuid4(),
-                length=len(records[0].sequence),
-            ),
-        )
+        return MonopartitePlan(id=uuid4(), length=len(records[0].sequence))
 
     binned_records = group_genbank_records_by_isolate(records)
     if len(binned_records) > 1:
@@ -71,10 +63,7 @@ def create_isolate_plan_from_records(
         return None
 
     if segments is not None:
-        return IsolatePlan(
-            molecule=molecule,
-            parameters=MultipartitePlan(id=uuid4(), segments=segments),
-        )
+        return MultipartitePlan(id=uuid4(), segments=segments)
 
     segments = []
     for record in sorted(records, key=lambda record: record.accession):
@@ -91,13 +80,7 @@ def create_isolate_plan_from_records(
         )
 
     if segments:
-        return IsolatePlan(
-            molecule=molecule,
-            parameters=MultipartitePlan(
-                id=uuid4(),
-                segments=segments,
-            ),
-        )
+        return MultipartitePlan(id=uuid4(), segments=segments)
 
     return None
 

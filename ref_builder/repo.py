@@ -184,7 +184,7 @@ class Repo:
         legacy_id: str | None,
         molecule: Molecule,
         name: str,
-        plan: IsolatePlan,
+        plan: MonopartitePlan | MultipartitePlan,
         taxid: int,
     ) -> RepoOTU | None:
         """Create an OTU."""
@@ -499,10 +499,7 @@ class Repo:
             event = self._event_store.read_event(event_id)
 
             if isinstance(event, CreatePlan):
-                otu.plan = IsolatePlan(
-                    molecule=event.data.molecule,
-                    parameters=event.data.parameters,
-                )
+                otu.plan = event.data.plan
 
             elif isinstance(event, SetReprIsolate):
                 otu.repr_isolate = event.data.isolate_id
