@@ -6,13 +6,80 @@ from syrupy.filters import props
 
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBISourceMolType
+from ref_builder.otu.utils import create_isolate_plan_from_records
 from ref_builder.plan import (
     IsolatePlan,
+    MonopartitePlan,
+    MultipartitePlan,
     SegmentName,
     get_multipartite_segment_name,
     parse_segment_name,
 )
 from tests.fixtures.factories import NCBIGenbankFactory, NCBISourceFactory
+
+
+@pytest.mark.parametrize(
+        ("accessions", "is_multipartite"),
+        [
+            (["NC_024301"], False),
+            ([
+                "NC_010314",
+                "NC_010315",
+                "NC_010316",
+                "NC_010317",
+                "NC_010318",
+                "NC_010319",
+            ], True),
+        ],
+    )
+class TestIsolatePlan:
+    """Test differentiated isolate plans."""
+
+    def test_create_plan_from_records(
+        self,
+        accessions: list[str],
+        is_multipartite: bool,
+        scratch_ncbi_client: NCBIClient,
+    ):
+        """Test the creation of a schema from a set of records
+        that make up an implied isolate.
+        """
+        records = scratch_ncbi_client.fetch_genbank_records(accessions)
+        auto_plan = create_isolate_plan_from_records(records)
+
+        assert type(auto_plan) is IsolatePlan
+
+        assert auto_plan.multipartite == is_multipartite
+
+        if is_multipartite:
+            assert type(auto_plan.parameters) is MultipartitePlan
+
+    def test_serialize_plan(
+        self,
+        accessions: list[str],
+        is_multipartite: bool,
+        scratch_ncbi_client: NCBIClient,
+        snapshot: SnapshotAssertion,
+    ):
+        """Test that plans correctly validate from json as
+        MultipartitePlan or MonopartitePlan.
+        """
+        expected_class = MultipartitePlan if is_multipartite else MonopartitePlan
+
+        records = scratch_ncbi_client.fetch_genbank_records(accessions)
+
+        auto_plan = create_isolate_plan_from_records(records)
+        auto_plan_json = auto_plan.model_dump_json()
+
+        assert type(auto_plan_json) is str
+
+        reconstituted_plan = IsolatePlan.model_validate_json(auto_plan_json)
+
+        assert reconstituted_plan.multipartite == is_multipartite
+
+        assert type(reconstituted_plan.parameters) is expected_class
+
+        assert auto_plan.model_dump() == snapshot(exclude=props("id"))
 
 
 class TestSegmentNameParser:

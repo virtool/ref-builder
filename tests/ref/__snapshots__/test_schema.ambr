@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: test_create_schema_from_records[accessions0]
+# name: TestIsolatePlan.test_serialize_plan[accessions0-False]
   dict({
     'molecule': dict({
       'strandedness': 'double',
@@ -7,16 +7,12 @@
       'type': 'DNA',
     }),
     'multipartite': False,
-    'segments': list([
-      dict({
-        'length': 7424,
-        'name': 'genomic DNA',
-        'required': True,
-      }),
-    ]),
+    'parameters': dict({
+      'length': 7424,
+    }),
   })
 # ---
-# name: test_create_schema_from_records[accessions1]
+# name: TestIsolatePlan.test_serialize_plan[accessions1-True]
   dict({
     'molecule': dict({
       'strandedness': 'single',
@@ -24,37 +20,107 @@
       'type': 'DNA',
     }),
     'multipartite': True,
-    'segments': list([
-      dict({
-        'length': 1090,
-        'name': 'DNA N',
-        'required': True,
-      }),
-      dict({
-        'length': 1057,
-        'name': 'DNA U3',
-        'required': True,
-      }),
-      dict({
-        'length': 1087,
-        'name': 'DNA S',
-        'required': True,
-      }),
-      dict({
-        'length': 1074,
-        'name': 'DNA M',
-        'required': True,
-      }),
-      dict({
-        'length': 1015,
-        'name': 'DNA C',
-        'required': True,
-      }),
-      dict({
-        'length': 1099,
-        'name': 'DNA R',
-        'required': True,
-      }),
-    ]),
+    'parameters': dict({
+      'required_segments': list([
+        dict({
+          'length': 1090,
+          'name': dict({
+            'key': 'N',
+            'prefix': 'DNA',
+          }),
+          'required': <SegmentRule.REQUIRED: 'required'>,
+        }),
+        dict({
+          'length': 1057,
+          'name': dict({
+            'key': 'U3',
+            'prefix': 'DNA',
+          }),
+          'required': <SegmentRule.REQUIRED: 'required'>,
+        }),
+        dict({
+          'length': 1087,
+          'name': dict({
+            'key': 'S',
+            'prefix': 'DNA',
+          }),
+          'required': <SegmentRule.REQUIRED: 'required'>,
+        }),
+        dict({
+          'length': 1074,
+          'name': dict({
+            'key': 'M',
+            'prefix': 'DNA',
+          }),
+          'required': <SegmentRule.REQUIRED: 'required'>,
+        }),
+        dict({
+          'length': 1015,
+          'name': dict({
+            'key': 'C',
+            'prefix': 'DNA',
+          }),
+          'required': <SegmentRule.REQUIRED: 'required'>,
+        }),
+        dict({
+          'length': 1099,
+          'name': dict({
+            'key': 'R',
+            'prefix': 'DNA',
+          }),
+          'required': <SegmentRule.REQUIRED: 'required'>,
+        }),
+      ]),
+      'segments': list([
+        dict({
+          'length': 1090,
+          'name': dict({
+            'key': 'N',
+            'prefix': 'DNA',
+          }),
+          'required': <SegmentRule.REQUIRED: 'required'>,
+        }),
+        dict({
+          'length': 1057,
+          'name': dict({
+            'key': 'U3',
+            'prefix': 'DNA',
+          }),
+          'required': <SegmentRule.REQUIRED: 'required'>,
+        }),
+        dict({
+          'length': 1087,
+          'name': dict({
+            'key': 'S',
+            'prefix': 'DNA',
+          }),
+          'required': <SegmentRule.REQUIRED: 'required'>,
+        }),
+        dict({
+          'length': 1074,
+          'name': dict({
+            'key': 'M',
+            'prefix': 'DNA',
+          }),
+          'required': <SegmentRule.REQUIRED: 'required'>,
+        }),
+        dict({
+          'length': 1015,
+          'name': dict({
+            'key': 'C',
+            'prefix': 'DNA',
+          }),
+          'required': <SegmentRule.REQUIRED: 'required'>,
+        }),
+        dict({
+          'length': 1099,
+          'name': dict({
+            'key': 'R',
+            'prefix': 'DNA',
+          }),
+          'required': <SegmentRule.REQUIRED: 'required'>,
+        }),
+      ]),
+    }),
   })
 # ---
