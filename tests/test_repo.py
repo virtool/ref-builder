@@ -141,6 +141,7 @@ class TestCreateOTU:
                     "parameters": {
                         "id": str(monopartite_plan.id),
                         "length": 150,
+                        "name": None,
                     },
                     "multipartite": False,
                 },

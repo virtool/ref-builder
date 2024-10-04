@@ -9,6 +9,7 @@
     'multipartite': False,
     'parameters': dict({
       'length': 7424,
+      'name': None,
     }),
   })
 # ---

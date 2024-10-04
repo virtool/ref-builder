@@ -20,7 +20,7 @@ class SegmentRule(StrEnum):
     REQUIRED = "required"
     """Segment is always required."""
 
-    RECOMMENDED = "reccomended"
+    RECOMMENDED = "recommended"
     """Risk has to be acknowledged to add violating isolate."""
 
     OPTIONAL = "optional"
@@ -66,6 +66,9 @@ class SegmentPlan(SequencePlan):
 
 class MonopartitePlan(SequencePlan):
     """Expected properties for an acceptable monopartite isolate."""
+
+    name: SegmentName | None = None
+    """The name of the monopartite plan."""
 
 
 class MultipartitePlan(BaseModel):

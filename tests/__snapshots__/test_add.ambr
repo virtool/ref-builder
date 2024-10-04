@@ -82,6 +82,7 @@
       'multipartite': False,
       'parameters': dict({
         'length': 342,
+        'name': None,
       }),
     }),
     'taxid': 1278205,
