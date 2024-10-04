@@ -1,7 +1,7 @@
 [
     {
         "taxid": 96892,
-        "otu_schema": [
+        "plan": [
             "NC_005954"
         ],
         "contents": [
@@ -10,12 +10,12 @@
     },
     {
         "taxid": 1441799,
-        "otu_schema": ["NC_023881"],
+        "plan": ["NC_023881"],
         "contents": ["NC_023881"]
     },
     {
         "taxid": 3158377,
-        "otu_schema": [
+        "plan": [
             "NC_010314",
             "NC_010318",
             "NC_010316",
@@ -40,7 +40,7 @@
     },
     {
         "taxid": 1169032,
-        "otu_schema": [
+        "plan": [
             "NC_003355"
         ],
         "contents": [
@@ -53,7 +53,7 @@
     },
     {
         "taxid": 270478,
-        "otu_schema": [
+        "plan": [
             "NC_011560"
         ],
         "contents": [
@@ -62,7 +62,7 @@
     },
     {
         "taxid": 223262,
-        "otu_schema": [
+        "plan": [
             "NC_004630",
             "NC_004625"
         ],
@@ -73,7 +73,7 @@
     },
     {
         "taxid": 345184,
-        "otu_schema": [
+        "plan": [
             "DQ178610",
             "DQ178611"
         ],
@@ -85,7 +85,7 @@
         ]
     },
     {   "taxid": 430059,
-        "otu_schema": ["NC_043170"],
+        "plan": ["NC_043170"],
         "contents": ["NC_043170"]
     }
 ]

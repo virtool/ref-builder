@@ -170,7 +170,7 @@ def scratch_event_store_data(
             otu = create_otu(
                 temp_scratch_repo,
                 otu_contents.taxid,
-                otu_contents.otu_schema,
+                otu_contents.plan,
                 "",
             )
 
@@ -194,7 +194,7 @@ class OTUContents(BaseModel):
     taxid: int
     """The Taxonomy ID of the OTU."""
 
-    otu_schema: list[str]
+    plan: list[str]
     """A list of accessions that determine the OTU's schema."""
 
     contents: list[str]
