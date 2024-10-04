@@ -186,14 +186,14 @@ class ExcludeAccession(Event):
 
 
 class CreatePlanData(EventData):
-    """The data for the creation of OTU schema data."""
+    """The data for a :class:`CreatePlan` event."""
 
     molecule: Molecule
     parameters: MonopartitePlan | MultipartitePlan
 
 
 class CreatePlan(Event):
-    """An OTU schema creation event."""
+    """An event that sets the isolate plan for an OTU."""
 
     data: CreatePlanData
     query: OTUQuery
