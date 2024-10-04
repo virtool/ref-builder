@@ -102,7 +102,7 @@ class TestCreateOTU:
         )
 
         assert list(precached_repo.iter_otus())
-        assert otu.schema is not None
+        assert otu.plan is not None
         assert otu.repr_isolate is not None
 
     def test_otu_create_refseq_autoexclude(

@@ -5,13 +5,13 @@ import orjson
 import pytest
 
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
+from ref_builder.plan import IsolatePlan, MonopartitePlan
 from ref_builder.repo import Repo
 from ref_builder.resources import (
     RepoIsolate,
     RepoOTU,
     RepoSequence,
 )
-from ref_builder.plan import IsolatePlan, MonopartitePlan
 from ref_builder.utils import Accession, DataType, IsolateName, IsolateNameType
 
 
@@ -138,7 +138,7 @@ class TestCreateOTU:
                         "type": "RNA",
                         "topology": "linear",
                     },
-                    "plan": {
+                    "parameters": {
                         "id": str(monopartite_plan.id),
                         "length": 150,
                     },

@@ -3,15 +3,15 @@ from uuid import uuid4
 import pytest
 
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
+from ref_builder.plan import IsolatePlan, MonopartitePlan
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU
-from ref_builder.plan import IsolatePlan, SegmentPlan
 from ref_builder.utils import IsolateName, IsolateNameType
 
 
 class TestSequence:
     @pytest.mark.parametrize(
-        "taxid,accessions",
+        ("taxid", "accessions"),
         [
             (
                 345184,
@@ -19,7 +19,7 @@ class TestSequence:
             ),
         ],
     )
-    def test_equivalence(self, taxid, accessions, scratch_repo):
+    def test_equivalence(self, taxid: int, accessions: list["str"], scratch_repo: Repo):
         """Test that the == operator works correctly."""
         otu = scratch_repo.get_otu_by_taxid(taxid)
 
@@ -42,7 +42,7 @@ class TestIsolate:
         assert isolate.sequences == []
 
     @pytest.mark.parametrize("taxid", [345184])
-    def test_equivalence(self, taxid, scratch_repo):
+    def test_equivalence(self, taxid: int, scratch_repo: Repo):
         """Test that the == operator works correctly."""
         otu = scratch_repo.get_otu_by_taxid(taxid)
 
@@ -61,15 +61,13 @@ class TestOTU:
             legacy_id=None,
             name="Tobacco mosaic virus",
             repr_isolate=None,
-            schema=IsolatePlan(
+            plan=IsolatePlan(
                 molecule=Molecule(
                     strandedness=Strandedness.SINGLE,
                     type=MolType.RNA,
                     topology=Topology.LINEAR,
                 ),
-                segments=[
-                    SegmentPlan(id=uuid4(), name="genomic RNA", length=6395, required=True),
-                ],
+                parameters=MonopartitePlan(id=uuid4(), length=6395),
             ),
             taxid=12242,
         )
