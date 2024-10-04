@@ -47,9 +47,8 @@ def create_otu(
         otu_logger.fatal(f"Could not retrieve {taxid} from NCBI Taxonomy")
         return None
 
-    if not acronym:
-        if taxonomy.other_names.acronym:
-            acronym = taxonomy.other_names.acronym[0]
+    if not acronym and taxonomy.other_names.acronym:
+        acronym = taxonomy.other_names.acronym[0]
 
     records = client.fetch_genbank_records(accessions)
 
@@ -79,7 +78,6 @@ def create_otu(
             schema=schema,
             taxid=taxid,
         )
-
     except ValueError as e:
         otu_logger.fatal(e)
         sys.exit(1)
@@ -91,7 +89,6 @@ def create_otu(
     )
 
     otu.add_isolate(isolate)
-
     otu.repr_isolate = repo.set_repr_isolate(otu_id=otu.id, isolate_id=isolate.id)
 
     for record in records:
@@ -106,7 +103,7 @@ def create_otu(
         )
 
         if record.refseq:
-            refseq_status, old_accession = parse_refseq_comment(record.comment)
+            _, old_accession = parse_refseq_comment(record.comment)
             repo.exclude_accession(
                 otu.id,
                 old_accession,

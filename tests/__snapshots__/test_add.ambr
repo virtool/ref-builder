@@ -39,28 +39,6 @@
     'EF546813',
   })
 # ---
-# name: TestCreateOTUCommands.test_autofill_ok
-  dict({
-    'molecule': dict({
-      'strandedness': 'double',
-      'topology': 'circular',
-      'type': 'DNA',
-    }),
-    'multipartite': True,
-    'segments': list([
-      dict({
-        'length': 2575,
-        'name': 'DNA A',
-        'required': True,
-      }),
-      dict({
-        'length': 2494,
-        'name': 'DNA B',
-        'required': True,
-      }),
-    ]),
-  })
-# ---
 # name: TestCreateOTUCommands.test_ok[1278205-accessions0]
   dict({
     'acronym': '',
