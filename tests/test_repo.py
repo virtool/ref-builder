@@ -11,7 +11,7 @@ from ref_builder.resources import (
     RepoOTU,
     RepoSequence,
 )
-from ref_builder.plan import IsolatePlan, Segment
+from ref_builder.plan import IsolatePlan, SegmentPlan
 from ref_builder.utils import Accession, DataType, IsolateName, IsolateNameType
 
 
@@ -27,7 +27,7 @@ def initialized_repo(empty_repo: Repo):
                 type=MolType.RNA,
                 topology=Topology.LINEAR,
             ),
-            segments=[Segment(id=uuid4(), name="A", length=150, required=True)],
+            segments=[SegmentPlan(id=uuid4(), name="A", length=150, required=True)],
         ),
         12242,
     )
@@ -61,7 +61,7 @@ def init_otu(empty_repo: Repo) -> RepoOTU:
                 type=MolType.RNA,
                 topology=Topology.LINEAR,
             ),
-            segments=[Segment(id=uuid4(), name="A", required=True, length=100)],
+            segments=[SegmentPlan(id=uuid4(), name="A", required=True, length=100)],
         ),
         taxid=12242,
     )
@@ -95,7 +95,7 @@ class TestCreateOTU:
                     topology=Topology.LINEAR,
                 ),
                 segments=[
-                    Segment(
+                    SegmentPlan(
                         id=uuid4(),
                         name="A",
                         required=True,
@@ -120,7 +120,7 @@ class TestCreateOTU:
                     topology=Topology.LINEAR,
                 ),
                 segments=[
-                    Segment(
+                    SegmentPlan(
                         id=otu.schema.segments[0].id,
                         name="A",
                         required=True,
@@ -185,7 +185,7 @@ class TestCreateOTU:
                     topology=Topology.LINEAR,
                 ),
                 segments=[
-                    Segment(id=uuid4(), name="A", required=True),
+                    SegmentPlan(id=uuid4(), name="A", required=True),
                 ],
             ),
             taxid=12242,
@@ -206,7 +206,7 @@ class TestCreateOTU:
                         topology=Topology.LINEAR,
                     ),
                     segments=[
-                        Segment(id=otu.schema.segments[0].id, name="A", required=True),
+                        SegmentPlan(id=otu.schema.segments[0].id, name="A", required=True),
                     ],
                 ),
                 taxid=438782,
@@ -226,7 +226,7 @@ class TestCreateOTU:
                     type=MolType.RNA,
                     topology=Topology.LINEAR,
                 ),
-                segments=[Segment(id=uuid4(), name="A", required=True)],
+                segments=[SegmentPlan(id=uuid4(), name="A", required=True)],
             ),
             taxid=12242,
         )
@@ -246,7 +246,7 @@ class TestCreateOTU:
                         topology=Topology.LINEAR,
                     ),
                     segments=[
-                        Segment(id=otu.schema.segments[0].id, name="A", required=True),
+                        SegmentPlan(id=otu.schema.segments[0].id, name="A", required=True),
                     ],
                 ),
                 taxid=438782,
@@ -404,7 +404,7 @@ class TestRetrieveOTU:
                     type=MolType.RNA,
                     topology=Topology.LINEAR,
                 ),
-                segments=[Segment(id=uuid4(), name="A", required=True)],
+                segments=[SegmentPlan(id=uuid4(), name="A", required=True)],
             ),
         )
 
@@ -488,7 +488,7 @@ class TestRetrieveOTU:
                     topology=Topology.LINEAR,
                 ),
                 segments=[
-                    Segment(id=otu.schema.segments[0].id, name="A", required=True),
+                    SegmentPlan(id=otu.schema.segments[0].id, name="A", required=True),
                 ],
             ),
             taxid=12242,

@@ -58,7 +58,7 @@ from ref_builder.resources import (
     RepoOTU,
     RepoSequence,
 )
-from ref_builder.plan import IsolatePlan, Segment
+from ref_builder.plan import IsolatePlan, SegmentPlan
 from ref_builder.utils import (
     Accession,
     DataType,
@@ -379,7 +379,7 @@ class Repo:
         self,
         otu_id: uuid.UUID,
         molecule: Molecule,
-        segments: list[Segment],
+        segments: list[SegmentPlan],
     ) -> IsolatePlan:
         """Create a new schema for an OTU."""
         otu = self.get_otu(otu_id)

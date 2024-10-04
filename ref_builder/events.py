@@ -5,7 +5,7 @@ import datetime
 from pydantic import UUID4, BaseModel, Field, computed_field
 
 from ref_builder.models import Molecule
-from ref_builder.plan import IsolatePlan, Segment
+from ref_builder.plan import IsolatePlan, SegmentPlan
 from ref_builder.utils import Accession, IsolateName
 
 
@@ -189,7 +189,7 @@ class CreateSchemaData(EventData):
     """The data for a :class:`CreateSchema` event."""
 
     molecule: Molecule
-    segments: list[Segment]
+    segments: list[SegmentPlan]
 
 
 class CreateSchema(Event):

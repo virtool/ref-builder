@@ -7,7 +7,7 @@ import structlog
 
 from ref_builder.models import Molecule
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.plan import IsolatePlan, Segment, get_multipartite_segment_name
+from ref_builder.plan import IsolatePlan, SegmentPlan, get_multipartite_segment_name
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
 logger = structlog.get_logger("otu.utils")
@@ -37,7 +37,7 @@ class RefSeqConflictError(ValueError):
 
 def create_schema_from_records(
     records: list[NCBIGenbank],
-    segments: list[Segment] | None = None,
+    segments: list[SegmentPlan] | None = None,
 ) -> IsolatePlan | None:
     """Return a complete schema from a list of records."""
     molecule = _get_molecule_from_records(records)
@@ -139,7 +139,7 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
     raise ValueError("Record does not contain sufficient source data for inclusion.")
 
 
-def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
+def _get_segments_from_records(records: list[NCBIGenbank]) -> list[SegmentPlan]:
     if len(records) == 1:
         record = records[0]
 
@@ -150,7 +150,7 @@ def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
 
         segment_id = uuid4()
         return [
-            Segment(
+            SegmentPlan(
                 id=segment_id, name=segment_name, required=True, length=len(record.sequence)
             )
         ]
@@ -160,7 +160,7 @@ def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
         if record.source.segment:
             segment_id = uuid4()
             segments.append(
-                Segment(
+                SegmentPlan(
                     id=segment_id,
                     name=str(get_multipartite_segment_name(record)),
                     required=True,

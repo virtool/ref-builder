@@ -5,7 +5,7 @@ import pytest
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU
-from ref_builder.plan import IsolatePlan, Segment
+from ref_builder.plan import IsolatePlan, SegmentPlan
 from ref_builder.utils import IsolateName, IsolateNameType
 
 
@@ -68,7 +68,7 @@ class TestOTU:
                     topology=Topology.LINEAR,
                 ),
                 segments=[
-                    Segment(id=uuid4(), name="genomic RNA", length=6395, required=True),
+                    SegmentPlan(id=uuid4(), name="genomic RNA", length=6395, required=True),
                 ],
             ),
             taxid=12242,
