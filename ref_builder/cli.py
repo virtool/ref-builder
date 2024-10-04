@@ -6,6 +6,7 @@ from pathlib import Path
 from uuid import UUID
 
 import click
+from click import Context
 
 from ref_builder.build import build_json
 from ref_builder.console import print_otu, print_otu_list
@@ -136,29 +137,25 @@ def otu_list(path: Path) -> None:
 @click.argument("TAXID", type=int)
 @path_option
 @click.pass_context
-def update(ctx, path: Path, taxid: int):
+def update(ctx: Context, path: Path, taxid: int) -> None:
     """Update the specified OTU with new data."""
-    ctx.ensure_object(dict)
-
-    ctx.obj["TAXID"] = taxid
-
     repo = Repo(path)
 
-    ctx.obj["REPO"] = repo
+    ctx.ensure_object(dict)
+    ctx.obj = {
+        "REPO": repo,
+        "TAXID": taxid,
+    }
 
-    otu_id = repo.get_otu_id_by_taxid(taxid)
-    if otu_id is None:
+    if not repo.get_otu_id_by_taxid(taxid):
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
-    if ctx.invoked_subcommand is None:
-        click.echo(ctx.get_help())
 
-
-@update.command(name="automatic")
+@update.command(name="automatic")  # type: ignore
 @ignore_cache_option
 @click.pass_context
-def otu_autoupdate(ctx, ignore_cache: bool) -> None:
+def otu_autoupdate(ctx: Context, ignore_cache: bool) -> None:
     """Automatically update an OTU with the latest data from NCBI."""
     taxid = ctx.obj["TAXID"]
 
@@ -174,13 +171,13 @@ def otu_autoupdate(ctx, ignore_cache: bool) -> None:
     auto_update_otu(repo, otu_, ignore_cache=ignore_cache)
 
 
-@update.command(name="promote")
+@update.command(name="promote")  # type: ignore
 @ignore_cache_option
 @click.pass_context
 def otu_promote_accessions(
-    ctx,
-    ignore_cache: bool = False,
-):
+    ctx: Context,
+    ignore_cache: bool,
+) -> None:
     """Promote all RefSeq accessions within this OTU."""
     taxid = ctx.obj["TAXID"]
 
@@ -191,7 +188,7 @@ def otu_promote_accessions(
     promote_otu_accessions(repo, otu_, ignore_cache)
 
 
-@update.command(name="isolate")
+@update.command(name="isolate")  # type: ignore
 @click.argument(
     "accessions_",
     metavar="ACCESSIONS",
@@ -213,15 +210,14 @@ def otu_promote_accessions(
 @ignore_cache_option
 @click.pass_context
 def isolate_create(
-    ctx,
-    ignore_cache: bool,
+    ctx: Context,
     accessions_: list[str],
-    unnamed: bool,
+    ignore_cache: bool,
     name: tuple[IsolateNameType, str] | None,
+    unnamed: bool,
 ) -> None:
     """Create a new isolate using the given accessions."""
     repo = ctx.obj["REPO"]
-
     taxid = ctx.obj["TAXID"]
 
     otu_ = repo.get_otu_by_taxid(taxid)
@@ -251,7 +247,8 @@ def isolate_create(
             )
         except RefSeqConflictError as err:
             click.echo(
-                f"{err.isolate_name} already exists, but RefSeq items may be promotable,",
+                f"{err.isolate_name} already exists, but RefSeq items may be "
+                "promotable.",
             )
             sys.exit(1)
 
@@ -273,7 +270,7 @@ def isolate_create(
         sys.exit(1)
 
 
-@update.command(name="exclude")
+@update.command(name="exclude")  # type: ignore
 @click.argument(
     "accessions_",
     metavar="ACCESSIONS",
@@ -283,7 +280,7 @@ def isolate_create(
 )
 @click.pass_context
 def accession_exclude(
-    ctx,
+    ctx: Context,
     accessions_: list[str],
 ) -> None:
     """Exclude the given accessions from this OTU."""
@@ -299,13 +296,13 @@ def accession_exclude(
     exclude_accessions_from_otu(repo, otu_, accessions_)
 
 
-@update.command(name="default")
+@update.command(name="default")  # type: ignore
 @click.argument("ISOLATE_KEY", type=str)
 @click.pass_context
 def otu_set_representative_isolate(
-    ctx,
+    ctx: Context,
     isolate_key: str,
-):
+) -> None:
     """Update the OTU with a new representative isolate."""
     taxid = ctx.obj["TAXID"]
 
