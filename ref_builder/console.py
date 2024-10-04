@@ -1,8 +1,9 @@
-from collections.abc import Iterable
+from collections.abc import Iterator
 
 import rich.console
 from rich.table import Table
 
+from ref_builder.models import OTUMinimal
 from ref_builder.resources import RepoOTU
 
 
@@ -71,7 +72,7 @@ def print_otu(otu: RepoOTU) -> None:
     for isolate in otu.isolates:
         console.line()
         console.print(str(isolate.name)) if isolate.name is not None else console.print(
-            "[UNNAMED]"
+            "[UNNAMED]",
         )
         console.line()
 
@@ -93,7 +94,7 @@ def print_otu(otu: RepoOTU) -> None:
         console.print(isolate_table)
 
 
-def print_otu_list(otus: Iterable[RepoOTU]) -> None:
+def print_otu_list(otus: Iterator[OTUMinimal]) -> None:
     """Print a list of OTUs to the console.
 
     :param otus: The OTUs to print.
