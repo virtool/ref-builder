@@ -93,6 +93,7 @@ class CreateOTUData(EventData):
     id: UUID4
     acronym: str
     legacy_id: str | None
+    molecule: Molecule
     name: str
     taxid: int
     plan: IsolatePlan

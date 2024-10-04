@@ -58,6 +58,7 @@ def convert_legacy_repo(name: str, path: Path, target_path: Path) -> None:
             repo_otu = repo.create_otu(
                 otu["abbreviation"],
                 otu["_id"],
+                molecule,
                 otu["name"],
                 IsolatePlan(
                     molecule=molecule,
