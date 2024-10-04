@@ -1,5 +1,7 @@
 import subprocess
 
+import pytest
+
 from ref_builder.repo import Repo
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
@@ -100,6 +102,7 @@ class TestUpdateRepresentativeIsolateCommand:
 
 
 class TestPromoteAccessions:
+    @pytest.mark.ncbi()
     def test_ok(self, empty_repo: Repo):
         """Test that RefSeq accessions can be promoted automatically."""
         otu = create_otu(
