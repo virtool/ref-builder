@@ -5,6 +5,11 @@
     'excluded_accessions': set({
     }),
     'legacy_id': None,
+    'molecule': dict({
+      'strandedness': 'double',
+      'topology': 'circular',
+      'type': 'DNA',
+    }),
     'name': 'Cabbage leaf curl Jamaica virus',
     'plan': dict({
       'molecule': dict({
@@ -72,6 +77,11 @@
       'JX263426',
     }),
     'legacy_id': None,
+    'molecule': dict({
+      'strandedness': 'single',
+      'topology': 'linear',
+      'type': 'RNA',
+    }),
     'name': 'Dahlia latent viroid',
     'plan': dict({
       'molecule': dict({
@@ -94,6 +104,11 @@
     'excluded_accessions': set({
     }),
     'legacy_id': None,
+    'molecule': dict({
+      'strandedness': 'double',
+      'topology': 'circular',
+      'type': 'DNA',
+    }),
     'name': 'Cabbage leaf curl Jamaica virus',
     'plan': dict({
       'molecule': dict({

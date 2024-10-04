@@ -65,6 +65,11 @@ class TestOTU:
             excluded_accessions=set(),
             isolates=[],
             legacy_id=None,
+            molecule=Molecule(
+                strandedness=Strandedness.SINGLE,
+                type=MolType.RNA,
+                topology=Topology.LINEAR,
+            ),
             name="Tobacco mosaic virus",
             repr_isolate=None,
             plan=IsolatePlan(
