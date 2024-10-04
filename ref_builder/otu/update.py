@@ -326,7 +326,9 @@ def update_isolate_from_records(
                 isolate_logger.error("Isolate could not be refilled.")
                 return None
 
-            logger.debug(f"{old_sequence.accession} replaced by {new_sequence.accession}")
+            logger.debug(
+                f"{old_sequence.accession} replaced by {new_sequence.accession}"
+            )
 
             repo.exclude_accession(otu.id, old_sequence.accession.key)
 
@@ -336,15 +338,15 @@ def update_isolate_from_records(
     isolate = otu.get_isolate(isolate_id)
 
     isolate_logger.info(
-        f"{sorted(isolate.accessions)} added to {isolate.name}, " +
-        f"replacing {sorted([str(sequence.accession) for sequence in sequences])}",
+        f"{sorted(isolate.accessions)} added to {isolate.name}, "
+        + f"replacing {sorted([str(sequence.accession) for sequence in sequences])}",
         isolate_id=str(isolate.id),
         sequences=sorted([str(record.accession) for record in records]),
     )
 
     logger.debug(
         f"Excluded accessions updated",
-        excluded_accessions=sorted(otu.excluded_accessions)
+        excluded_accessions=sorted(otu.excluded_accessions),
     )
 
     return isolate
@@ -436,9 +438,7 @@ def file_records_into_otu(
             otu_logger.warning(
                 e,
                 isolate_name=str(isolate_name),
-                isolate_records=[
-                    str(accession) for accession in isolate_records
-                ],
+                isolate_records=[str(accession) for accession in isolate_records],
             )
             continue
 
@@ -534,7 +534,10 @@ def replace_sequence_in_otu(
     """Replace a sequence in an OTU."""
     ncbi = NCBIClient(ignore_cache)
 
-    isolate_id, sequence_id, = otu.get_sequence_id_hierarchy_from_accession(replaced_accession)
+    (
+        isolate_id,
+        sequence_id,
+    ) = otu.get_sequence_id_hierarchy_from_accession(replaced_accession)
     if sequence_id is None:
         logger.error("This sequence does not exist in this OTU.")
         return
@@ -553,13 +556,13 @@ def replace_sequence_in_otu(
         segment=record.source.segment,
         sequence=record.sequence,
         replaced_sequence_id=sequence_id,
-        rationale="Requested by user"
+        rationale="Requested by user",
     )
 
     if new_sequence is not None:
         logger.info(
             f"{replaced_accession} replaced by {new_sequence.accession}.",
-            new_sequence_id=new_sequence.id
+            new_sequence_id=new_sequence.id,
         )
         return new_sequence
 
@@ -601,24 +604,31 @@ def promote_otu_accessions_from_records(
             logger.debug(
                 "Replaceable accession found",
                 predecessor_accession=predecessor_accession,
-                promoted_accession=record.accession
+                promoted_accession=record.accession,
             )
 
-            isolate_id, sequence_id, = otu.get_sequence_id_hierarchy_from_accession(predecessor_accession)
+            (
+                isolate_id,
+                sequence_id,
+            ) = otu.get_sequence_id_hierarchy_from_accession(predecessor_accession)
 
             promoted_isolates[isolate_id].append((predecessor_accession, record))
 
     for isolate_id in promoted_isolates:
-        records = [record for predecession_accession, record in promoted_isolates[isolate_id]]
+        records = [
+            record for predecession_accession, record in promoted_isolates[isolate_id]
+        ]
         isolate = otu.get_isolate(isolate_id)
 
-        logger.debug(f"Promoting {isolate.name}", predecessor_accessions=isolate.accessions)
+        logger.debug(
+            f"Promoting {isolate.name}", predecessor_accessions=isolate.accessions
+        )
 
         promoted_isolate = update_isolate_from_records(repo, otu, isolate_id, records)
 
         logger.debug(
             f"{isolate.name} sequences promoted using RefSeq data",
-            accessions=promoted_isolate.accessions
+            accessions=promoted_isolate.accessions,
         )
 
         promoted_accessions.update(promoted_isolate.accessions)
@@ -627,8 +637,8 @@ def promote_otu_accessions_from_records(
 
 
 def _bin_refseq_records(
-    records: list[NCBIGenbank]) -> tuple[list[NCBIGenbank], list[NCBIGenbank]
-]:
+    records: list[NCBIGenbank],
+) -> tuple[list[NCBIGenbank], list[NCBIGenbank]]:
     """Returns a list of GenBank records as two lists, RefSeq and non-RefSeq."""
     refseq_records = []
     non_refseq_records = []
@@ -656,6 +666,7 @@ def _create_fetch_list(
         return fetch_list
 
     raise ValueError("None of the requested accessions were eligible for inclusion")
+
 
 def _check_isolate_size(
     plan: IsolatePlan,

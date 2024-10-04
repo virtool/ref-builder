@@ -56,8 +56,7 @@ def test_indent(scratch_path: Path, tmp_path: Path):
     build_json(False, output_path, scratch_path, "2.1.0")
     build_json(True, output_indented_path, scratch_path, "2.1.0")
 
-    assert (
-        {**orjson.loads(output_path.open("rb").read()), "created_at": ""}
-        == {**orjson.loads(output_indented_path.open("rb").read()), "created_at": ""}
-    )
-
+    assert {**orjson.loads(output_path.open("rb").read()), "created_at": ""} == {
+        **orjson.loads(output_indented_path.open("rb").read()),
+        "created_at": "",
+    }

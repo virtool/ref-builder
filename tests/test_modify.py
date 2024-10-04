@@ -50,8 +50,8 @@ class TestUpdateRepresentativeIsolateCommand:
             ]
             + ["--path", str(scratch_repo.path)]
             + [str(taxid)]
-            + ["default"] +
-            [str(repr_isolate_after)],
+            + ["default"]
+            + [str(repr_isolate_after)],
             check=False,
         )
 
@@ -83,8 +83,8 @@ class TestUpdateRepresentativeIsolateCommand:
             ]
             + ["--path", str(scratch_repo.path)]
             + [str(taxid)]
-            + ["default"] +
-            [str(repr_isolate_name_after)],
+            + ["default"]
+            + [str(repr_isolate_name_after)],
             check=False,
         )
 
@@ -94,28 +94,37 @@ class TestUpdateRepresentativeIsolateCommand:
 
         assert otu_after.repr_isolate != otu_before.repr_isolate
 
-        assert otu_after.repr_isolate == otu_before.get_isolate_id_by_name(repr_isolate_name_after)
+        assert otu_after.repr_isolate == otu_before.get_isolate_id_by_name(
+            repr_isolate_name_after
+        )
 
 
 class TestPromoteAccessions:
     def test_ok(self, empty_repo: Repo):
         """Test that RefSeq accessions can be promoted automatically."""
         otu = create_otu(
-            empty_repo,
-            2164102,
-            ["MF062136", "MF062137", "MF062138"],
-            acronym=""
+            empty_repo, 2164102, ["MF062136", "MF062137", "MF062138"], acronym=""
         )
-        isolate = add_genbank_isolate(empty_repo, otu, ["MF062125", "MF062126", "MF062127"])
+        isolate = add_genbank_isolate(
+            empty_repo, otu, ["MF062125", "MF062126", "MF062127"]
+        )
 
         otu_before = empty_repo.get_otu(otu.id)
 
         assert otu_before.accessions == {
-            "MF062125", "MF062126", "MF062127",
-            "MF062136", "MF062137", "MF062138"
+            "MF062125",
+            "MF062126",
+            "MF062127",
+            "MF062136",
+            "MF062137",
+            "MF062138",
         }
 
-        assert otu_before.get_isolate(isolate.id).accessions == {"MF062125", "MF062126", "MF062127"}
+        assert otu_before.get_isolate(isolate.id).accessions == {
+            "MF062125",
+            "MF062126",
+            "MF062127",
+        }
 
         promoted_accessions = promote_otu_accessions(empty_repo, otu_before)
 
@@ -126,20 +135,25 @@ class TestPromoteAccessions:
         assert otu_after.isolate_ids == otu_before.isolate_ids
 
         assert otu_after.accessions == {
-            "NC_055390", "NC_055391", "NC_055392",
-            "MF062136", "MF062137", "MF062138",
+            "NC_055390",
+            "NC_055391",
+            "NC_055392",
+            "MF062136",
+            "MF062137",
+            "MF062138",
         }
 
-        assert otu_after.get_isolate(isolate.id).accessions == {"NC_055390", "NC_055391", "NC_055392"}
+        assert otu_after.get_isolate(isolate.id).accessions == {
+            "NC_055390",
+            "NC_055391",
+            "NC_055392",
+        }
 
         assert otu_after.excluded_accessions == {"MF062125", "MF062126", "MF062127"}
 
     def test_command_ok(self, empty_repo: Repo):
         otu = create_otu(
-            empty_repo,
-            2164102,
-            ["MF062125", "MF062126", "MF062127"],
-            acronym=""
+            empty_repo, 2164102, ["MF062125", "MF062126", "MF062127"], acronym=""
         )
 
         otu_before = empty_repo.get_otu(otu.id)

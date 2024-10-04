@@ -73,10 +73,7 @@ def create_isolate_plan_from_records(
     if segments is not None:
         return IsolatePlan(
             molecule=molecule,
-            parameters=MultipartitePlan(
-                id=uuid4(),
-                segments=segments
-            )
+            parameters=MultipartitePlan(id=uuid4(), segments=segments),
         )
 
     segments = []

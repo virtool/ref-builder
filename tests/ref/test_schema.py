@@ -19,19 +19,22 @@ from tests.fixtures.factories import NCBIGenbankFactory, NCBISourceFactory
 
 
 @pytest.mark.parametrize(
-        ("accessions", "is_multipartite"),
-        [
-            (["NC_024301"], False),
-            ([
+    ("accessions", "is_multipartite"),
+    [
+        (["NC_024301"], False),
+        (
+            [
                 "NC_010314",
                 "NC_010315",
                 "NC_010316",
                 "NC_010317",
                 "NC_010318",
                 "NC_010319",
-            ], True),
-        ],
-    )
+            ],
+            True,
+        ),
+    ],
+)
 class TestIsolatePlan:
     """Test differentiated isolate plans."""
 
@@ -97,12 +100,9 @@ class TestSegmentNameParser:
         """Test that parse_segment_name() correctly parses prefix-key segment names."""
         assert (
             parse_segment_name(test_strings[0])
-            ==
-            parse_segment_name(test_strings[1])
-            ==
-            parse_segment_name(test_strings[2])
-            ==
-            expected_result
+            == parse_segment_name(test_strings[1])
+            == parse_segment_name(test_strings[2])
+            == expected_result
         )
 
     @pytest.mark.parametrize(
@@ -112,7 +112,8 @@ class TestSegmentNameParser:
     def test_fail(self, fail_case: str):
         """Test that parse_segment_name() returns expected ValueError for bad input."""
         with pytest.raises(
-            ValueError, match=r"\s* is not a valid segment name$",
+            ValueError,
+            match=r"\s* is not a valid segment name$",
         ):
             parse_segment_name(fail_case)
 
@@ -135,7 +136,8 @@ class TestSegmentNameParser:
         """
         dummy_record = NCBIGenbankFactory.build(
             source=NCBISourceFactory.build(
-                mol_type=test_moltype, segment=test_name,
+                mol_type=test_moltype,
+                segment=test_name,
             ),
         )
 
@@ -146,17 +148,21 @@ class TestSegmentNameParser:
         [
             ("", NCBISourceMolType.GENOMIC_DNA),
             ("V#", NCBISourceMolType.GENOMIC_RNA),
-            ("51f9a0bc-7b3b-434f-bf4c-f7abaa015b8d", NCBISourceMolType.GENOMIC_DNA)],
+            ("51f9a0bc-7b3b-434f-bf4c-f7abaa015b8d", NCBISourceMolType.GENOMIC_DNA),
+        ],
     )
     def test_parse_from_record_fail(
-        self, test_name: str, test_moltype: NCBISourceMolType,
+        self,
+        test_name: str,
+        test_moltype: NCBISourceMolType,
     ):
         """Test that get_multipartite_segment_name()
         does not return an invalid segment name.
         """
         dummy_record = NCBIGenbankFactory.build(
             source=NCBISourceFactory.build(
-                mol_type=test_moltype, segment=test_name,
+                mol_type=test_moltype,
+                segment=test_name,
             ),
         )
 

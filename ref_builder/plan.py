@@ -26,6 +26,7 @@ class SegmentRule(StrEnum):
     OPTIONAL = "optional"
     """Segment is entirely optional."""
 
+
 @dataclass(frozen=True)
 class SegmentName:
     """A normalized segment name. Can be used as a key."""
@@ -61,6 +62,7 @@ class SegmentPlan(SequencePlan):
 
     required: SegmentRule
     """Whether this segment must be present in all additions."""
+
 
 class MonopartitePlan(SequencePlan):
     """Expected properties for an acceptable monopartite isolate."""
@@ -155,7 +157,8 @@ def get_multipartite_segment_name(record: NCBIGenbank) -> SegmentName:
     """Get a multipartite segment name from the record."""
     if SIMPLE_NAME_PATTERN.fullmatch(record.source.segment):
         return SegmentName(
-            prefix=record.moltype, key=record.source.segment,
+            prefix=record.moltype,
+            key=record.source.segment,
         )
 
     return parse_segment_name(record.source.segment)
