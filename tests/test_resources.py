@@ -5,7 +5,7 @@ import pytest
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU
-from ref_builder.schema import OTUSchema, Segment
+from ref_builder.plan import OTUSchema, Segment
 from ref_builder.utils import IsolateName, IsolateNameType
 
 

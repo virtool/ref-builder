@@ -58,7 +58,7 @@ from ref_builder.resources import (
     RepoOTU,
     RepoSequence,
 )
-from ref_builder.schema import OTUSchema, Segment
+from ref_builder.plan import OTUSchema, Segment
 from ref_builder.utils import (
     Accession,
     DataType,

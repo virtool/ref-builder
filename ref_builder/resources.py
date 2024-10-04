@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import UUID4, BaseModel, field_serializer, field_validator
 
-from ref_builder.schema import OTUSchema
+from ref_builder.plan import OTUSchema
 from ref_builder.utils import Accession, DataType, IsolateName
 
 

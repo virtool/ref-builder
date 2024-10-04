@@ -7,7 +7,7 @@ from syrupy.filters import props
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBISourceMolType
 from ref_builder.otu.update import create_schema_from_records
-from ref_builder.schema import (
+from ref_builder.plan import (
     OTUSchema,
     SegmentName,
     get_multipartite_segment_name,

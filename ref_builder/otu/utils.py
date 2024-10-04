@@ -7,7 +7,7 @@ import structlog
 
 from ref_builder.models import Molecule
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.schema import OTUSchema, Segment, get_multipartite_segment_name
+from ref_builder.plan import OTUSchema, Segment, get_multipartite_segment_name
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
 logger = structlog.get_logger("otu.utils")

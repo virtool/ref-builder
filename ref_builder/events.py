@@ -5,7 +5,7 @@ import datetime
 from pydantic import UUID4, BaseModel, Field, computed_field
 
 from ref_builder.models import Molecule
-from ref_builder.schema import OTUSchema, Segment
+from ref_builder.plan import OTUSchema, Segment
 from ref_builder.utils import Accession, IsolateName
 
 
