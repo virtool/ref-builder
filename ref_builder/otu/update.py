@@ -12,9 +12,9 @@ from ref_builder.otu.utils import (
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
+from ref_builder.plan import IsolatePlan
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
-from ref_builder.plan import IsolatePlan
 from ref_builder.utils import IsolateName
 
 logger = get_logger("otu.update")
@@ -452,7 +452,10 @@ def file_records_into_otu(
             new_isolate_names.append(isolate_name)
 
     if new_isolate_names:
-        otu_logger.info("New isolates added", new_isolates=new_isolate_names)
+        otu_logger.info(
+            "New isolates added",
+            new_isolates=[str(isolate_name) for isolate_name in new_isolate_names],
+        )
 
         return new_isolate_names
 
@@ -464,7 +467,7 @@ def exclude_accessions_from_otu(
     repo: Repo,
     otu: RepoOTU,
     accessions: list[str],
-):
+) -> None:
     """Take a list of accessions and add them to an OTU's excluded accessions list."""
     excluded_accessions = set()
     for accession in accessions:
@@ -478,42 +481,7 @@ def exclude_accessions_from_otu(
     )
 
 
-def add_schema_from_accessions(
-    repo: Repo,
-    taxid: int,
-    accessions: list[str],
-    ignore_cache: bool = False,
-):
-    """Take a list of accessions, create an OTU schema based on
-    the corresponding Genbank data and add the new schema to the OTU.
-    """
-    if (otu := repo.get_otu_by_taxid(taxid)) is None:
-        logger.fatal(f"OTU not found for {taxid}. Create first.")
-        return
-
-    otu_logger = logger.bind(otu_id=otu.id, taxid=taxid)
-
-    if otu.plan is not None:
-        logger.warning("OTU already has a schema attached.", schema=otu.plan)
-
-    ncbi = NCBIClient(ignore_cache)
-
-    records = ncbi.fetch_genbank_records(accessions)
-    if not records:
-        logger.fatal("Records could not be retrieved. Schema cannot be created.")
-        return
-
-    schema = create_isolate_plan_from_records(records)
-    if schema is not None:
-        otu_logger.info("Adding schema to OTU", schema=schema)
-        repo.create_schema(
-            otu_id=otu.id,
-            molecule=schema.molecule,
-            segments=schema.segments,
-        )
-
-
-def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID):
+def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
     """Remove an isolate from a specified OTU."""
     if (isolate := otu.get_isolate(isolate_id)) is None:
         logger.error("This isolate does not exist in this OTU.")
@@ -540,7 +508,7 @@ def replace_sequence_in_otu(
     ) = otu.get_sequence_id_hierarchy_from_accession(replaced_accession)
     if sequence_id is None:
         logger.error("This sequence does not exist in this OTU.")
-        return
+        return None
 
     isolate = otu.get_isolate(isolate_id)
 
@@ -639,7 +607,7 @@ def promote_otu_accessions_from_records(
 def _bin_refseq_records(
     records: list[NCBIGenbank],
 ) -> tuple[list[NCBIGenbank], list[NCBIGenbank]]:
-    """Returns a list of GenBank records as two lists, RefSeq and non-RefSeq."""
+    """Return a list of GenBank records as two lists, RefSeq and non-RefSeq."""
     refseq_records = []
     non_refseq_records = []
 
@@ -659,8 +627,10 @@ def _create_fetch_list(
     requested_accessions: list | set,
     blocked_accessions: set,
 ) -> list[str]:
-    """Return the difference between a set of requested accessions and a set of blocked accessions.
-    Raise a ValueError if the intersection is complete."""
+    """Return the difference between a set of requested accessions
+    and a set of blocked accessions.
+    Raise a ValueError if the intersection is complete.
+    """
     fetch_list = list(set(requested_accessions).difference(blocked_accessions))
     if fetch_list:
         return fetch_list
