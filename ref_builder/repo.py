@@ -58,7 +58,7 @@ from ref_builder.resources import (
     RepoOTU,
     RepoSequence,
 )
-from ref_builder.plan import OTUSchema, Segment
+from ref_builder.plan import IsolatePlan, Segment
 from ref_builder.utils import (
     Accession,
     DataType,
@@ -380,7 +380,7 @@ class Repo:
         otu_id: uuid.UUID,
         molecule: Molecule,
         segments: list[Segment],
-    ) -> OTUSchema:
+    ) -> IsolatePlan:
         """Create a new schema for an OTU."""
         otu = self.get_otu(otu_id)
 
@@ -498,7 +498,7 @@ class Repo:
             event = self._event_store.read_event(event_id)
 
             if isinstance(event, CreateSchema):
-                otu.schema = OTUSchema(
+                otu.schema = IsolatePlan(
                     molecule=event.data.molecule,
                     segments=event.data.segments,
                 )

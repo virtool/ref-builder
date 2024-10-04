@@ -11,7 +11,7 @@ from ref_builder.resources import (
     RepoOTU,
     RepoSequence,
 )
-from ref_builder.plan import OTUSchema, Segment
+from ref_builder.plan import IsolatePlan, Segment
 from ref_builder.utils import Accession, DataType, IsolateName, IsolateNameType
 
 
@@ -21,7 +21,7 @@ def initialized_repo(empty_repo: Repo):
         "TMV",
         None,
         "Tobacco mosaic virus",
-        OTUSchema(
+        IsolatePlan(
             molecule=Molecule(
                 strandedness=Strandedness.SINGLE,
                 type=MolType.RNA,
@@ -55,7 +55,7 @@ def init_otu(empty_repo: Repo) -> RepoOTU:
         acronym="TMV",
         legacy_id="abcd1234",
         name="Tobacco mosaic virus",
-        schema=OTUSchema(
+        schema=IsolatePlan(
             molecule=Molecule(
                 strandedness=Strandedness.SINGLE,
                 type=MolType.RNA,
@@ -88,7 +88,7 @@ class TestCreateOTU:
             acronym="TMV",
             legacy_id="abcd1234",
             name="Tobacco mosaic virus",
-            schema=OTUSchema(
+            schema=IsolatePlan(
                 molecule=Molecule(
                     strandedness=Strandedness.SINGLE,
                     type=MolType.RNA,
@@ -113,7 +113,7 @@ class TestCreateOTU:
             legacy_id="abcd1234",
             name="Tobacco mosaic virus",
             repr_isolate=None,
-            schema=OTUSchema(
+            schema=IsolatePlan(
                 molecule=Molecule(
                     strandedness=Strandedness.SINGLE,
                     type=MolType.RNA,
@@ -178,7 +178,7 @@ class TestCreateOTU:
             acronym="TMV",
             legacy_id=None,
             name="Tobacco mosaic virus",
-            schema=OTUSchema(
+            schema=IsolatePlan(
                 molecule=Molecule(
                     strandedness=Strandedness.SINGLE,
                     type=MolType.RNA,
@@ -199,7 +199,7 @@ class TestCreateOTU:
                 acronym="TMV",
                 legacy_id=None,
                 name="Tobacco mosaic virus",
-                schema=OTUSchema(
+                schema=IsolatePlan(
                     molecule=Molecule(
                         strandedness=Strandedness.SINGLE,
                         type=MolType.RNA,
@@ -220,7 +220,7 @@ class TestCreateOTU:
             acronym="TMV",
             legacy_id="abcd1234",
             name="Tobacco mosaic virus",
-            schema=OTUSchema(
+            schema=IsolatePlan(
                 molecule=Molecule(
                     strandedness=Strandedness.SINGLE,
                     type=MolType.RNA,
@@ -239,7 +239,7 @@ class TestCreateOTU:
                 acronym="",
                 legacy_id="abcd1234",
                 name="Abaca bunchy top virus",
-                schema=OTUSchema(
+                schema=IsolatePlan(
                     molecule=Molecule(
                         strandedness=Strandedness.SINGLE,
                         type=MolType.RNA,
@@ -398,7 +398,7 @@ class TestRetrieveOTU:
             legacy_id=None,
             name="Tobacco mosaic virus",
             taxid=12242,
-            schema=OTUSchema(
+            schema=IsolatePlan(
                 molecule=Molecule(
                     strandedness=Strandedness.SINGLE,
                     type=MolType.RNA,
@@ -481,7 +481,7 @@ class TestRetrieveOTU:
             legacy_id=None,
             name="Tobacco mosaic virus",
             repr_isolate=None,
-            schema=OTUSchema(
+            schema=IsolatePlan(
                 molecule=Molecule(
                     strandedness=Strandedness.SINGLE,
                     type=MolType.RNA,

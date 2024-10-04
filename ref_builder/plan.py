@@ -43,7 +43,7 @@ class Segment(BaseModel):
     length: int | None = None
 
 
-class OTUSchema(BaseModel):
+class IsolatePlan(BaseModel):
     """A schema for the intended data."""
 
     molecule: Molecule

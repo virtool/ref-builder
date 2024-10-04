@@ -8,7 +8,7 @@ from ref_builder.logs import configure_logger
 from ref_builder.models import Molecule
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.repo import Repo
-from ref_builder.plan import OTUSchema
+from ref_builder.plan import IsolatePlan
 from ref_builder.utils import DataType, IsolateName, IsolateNameType
 
 
@@ -59,7 +59,7 @@ def convert_legacy_repo(name: str, path: Path, target_path: Path) -> None:
                 otu["abbreviation"],
                 otu["_id"],
                 otu["name"],
-                OTUSchema(
+                IsolatePlan(
                     molecule=molecule,
                     segments=segments,
                 ),

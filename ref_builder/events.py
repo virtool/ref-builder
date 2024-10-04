@@ -5,7 +5,7 @@ import datetime
 from pydantic import UUID4, BaseModel, Field, computed_field
 
 from ref_builder.models import Molecule
-from ref_builder.plan import OTUSchema, Segment
+from ref_builder.plan import IsolatePlan, Segment
 from ref_builder.utils import Accession, IsolateName
 
 
@@ -95,7 +95,7 @@ class CreateOTUData(EventData):
     legacy_id: str | None
     name: str
     taxid: int
-    otu_schema: OTUSchema | None = Field(None, alias="schema")
+    otu_schema: IsolatePlan | None = Field(None, alias="schema")
 
 
 class CreateOTU(Event):

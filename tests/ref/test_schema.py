@@ -8,7 +8,7 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBISourceMolType
 from ref_builder.otu.update import create_schema_from_records
 from ref_builder.plan import (
-    OTUSchema,
+    IsolatePlan,
     SegmentName,
     get_multipartite_segment_name,
     parse_segment_name,
@@ -41,7 +41,7 @@ def test_create_schema_from_records(
     records = scratch_ncbi_client.fetch_genbank_records(accessions)
     auto_schema = create_schema_from_records(records)
 
-    assert type(auto_schema) is OTUSchema
+    assert type(auto_schema) is IsolatePlan
 
     assert auto_schema.model_dump() == snapshot(exclude=props("id"))
 

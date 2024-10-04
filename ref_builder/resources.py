@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import UUID4, BaseModel, field_serializer, field_validator
 
-from ref_builder.plan import OTUSchema
+from ref_builder.plan import IsolatePlan
 from ref_builder.utils import Accession, DataType, IsolateName
 
 
@@ -222,7 +222,7 @@ class RepoOTU(BaseModel):
     repr_isolate: UUID4 | None
     """The UUID of the representative isolate of this OTU"""
 
-    schema: OTUSchema
+    schema: IsolatePlan
     """The schema of the OTU"""
 
     taxid: int

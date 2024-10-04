@@ -5,7 +5,7 @@ import pytest
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU
-from ref_builder.plan import OTUSchema, Segment
+from ref_builder.plan import IsolatePlan, Segment
 from ref_builder.utils import IsolateName, IsolateNameType
 
 
@@ -61,7 +61,7 @@ class TestOTU:
             legacy_id=None,
             name="Tobacco mosaic virus",
             repr_isolate=None,
-            schema=OTUSchema(
+            schema=IsolatePlan(
                 molecule=Molecule(
                     strandedness=Strandedness.SINGLE,
                     type=MolType.RNA,

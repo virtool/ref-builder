@@ -7,7 +7,7 @@ import structlog
 
 from ref_builder.models import Molecule
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.plan import OTUSchema, Segment, get_multipartite_segment_name
+from ref_builder.plan import IsolatePlan, Segment, get_multipartite_segment_name
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
 logger = structlog.get_logger("otu.utils")
@@ -38,7 +38,7 @@ class RefSeqConflictError(ValueError):
 def create_schema_from_records(
     records: list[NCBIGenbank],
     segments: list[Segment] | None = None,
-) -> OTUSchema | None:
+) -> IsolatePlan | None:
     """Return a complete schema from a list of records."""
     molecule = _get_molecule_from_records(records)
 
@@ -53,7 +53,7 @@ def create_schema_from_records(
     if segments is None:
         segments = _get_segments_from_records(records)
         if segments:
-            return OTUSchema(molecule=molecule, segments=segments)
+            return IsolatePlan(molecule=molecule, segments=segments)
 
     return None
 
