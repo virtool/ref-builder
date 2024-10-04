@@ -28,7 +28,7 @@
             'key': 'N',
             'prefix': 'DNA',
           }),
-          'required': <SegmentRule.REQUIRED: 'required'>,
+          'required': 'required',
         }),
         dict({
           'length': 1057,
@@ -36,7 +36,7 @@
             'key': 'U3',
             'prefix': 'DNA',
           }),
-          'required': <SegmentRule.REQUIRED: 'required'>,
+          'required': 'required',
         }),
         dict({
           'length': 1087,
@@ -44,7 +44,7 @@
             'key': 'S',
             'prefix': 'DNA',
           }),
-          'required': <SegmentRule.REQUIRED: 'required'>,
+          'required': 'required',
         }),
         dict({
           'length': 1074,
@@ -52,7 +52,7 @@
             'key': 'M',
             'prefix': 'DNA',
           }),
-          'required': <SegmentRule.REQUIRED: 'required'>,
+          'required': 'required',
         }),
         dict({
           'length': 1015,
@@ -60,7 +60,7 @@
             'key': 'C',
             'prefix': 'DNA',
           }),
-          'required': <SegmentRule.REQUIRED: 'required'>,
+          'required': 'required',
         }),
         dict({
           'length': 1099,
@@ -68,7 +68,7 @@
             'key': 'R',
             'prefix': 'DNA',
           }),
-          'required': <SegmentRule.REQUIRED: 'required'>,
+          'required': 'required',
         }),
       ]),
       'segments': list([
@@ -78,7 +78,7 @@
             'key': 'N',
             'prefix': 'DNA',
           }),
-          'required': <SegmentRule.REQUIRED: 'required'>,
+          'required': 'required',
         }),
         dict({
           'length': 1057,
@@ -86,7 +86,7 @@
             'key': 'U3',
             'prefix': 'DNA',
           }),
-          'required': <SegmentRule.REQUIRED: 'required'>,
+          'required': 'required',
         }),
         dict({
           'length': 1087,
@@ -94,7 +94,7 @@
             'key': 'S',
             'prefix': 'DNA',
           }),
-          'required': <SegmentRule.REQUIRED: 'required'>,
+          'required': 'required',
         }),
         dict({
           'length': 1074,
@@ -102,7 +102,7 @@
             'key': 'M',
             'prefix': 'DNA',
           }),
-          'required': <SegmentRule.REQUIRED: 'required'>,
+          'required': 'required',
         }),
         dict({
           'length': 1015,
@@ -110,7 +110,7 @@
             'key': 'C',
             'prefix': 'DNA',
           }),
-          'required': <SegmentRule.REQUIRED: 'required'>,
+          'required': 'required',
         }),
         dict({
           'length': 1099,
@@ -118,7 +118,7 @@
             'key': 'R',
             'prefix': 'DNA',
           }),
-          'required': <SegmentRule.REQUIRED: 'required'>,
+          'required': 'required',
         }),
       ]),
     }),

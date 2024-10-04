@@ -1,7 +1,7 @@
 import re
 from enum import StrEnum
 
-from pydantic import UUID4, BaseModel, computed_field
+from pydantic import UUID4, BaseModel, ConfigDict, computed_field
 from pydantic.dataclasses import dataclass
 
 from ref_builder.models import Molecule
@@ -54,6 +54,8 @@ class SequencePlan(BaseModel):
 class SegmentPlan(SequencePlan):
     """Metadata and expected properties for an included segment."""
 
+    model_config = ConfigDict(use_enum_values=True)
+
     name: SegmentName
     """The name of the segment"""
 
@@ -102,6 +104,7 @@ class IsolatePlan(BaseModel):
             return self.parameters.segments
 
         return [self.parameters]
+
 
 def determine_segment_prefix(moltype: NCBISourceMolType) -> str:
     """Return an acceptable SegmentName prefix corresponding to

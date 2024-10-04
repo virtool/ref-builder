@@ -6,25 +6,51 @@
     }),
     'legacy_id': None,
     'name': 'Cabbage leaf curl Jamaica virus',
-    'schema': dict({
+    'plan': dict({
       'molecule': dict({
         'strandedness': 'double',
         'topology': 'circular',
         'type': 'DNA',
       }),
       'multipartite': True,
-      'segments': list([
-        dict({
-          'length': 2575,
-          'name': 'DNA A',
-          'required': True,
-        }),
-        dict({
-          'length': 2494,
-          'name': 'DNA B',
-          'required': True,
-        }),
-      ]),
+      'parameters': dict({
+        'required_segments': list([
+          dict({
+            'length': 2575,
+            'name': dict({
+              'key': 'A',
+              'prefix': 'DNA',
+            }),
+            'required': 'required',
+          }),
+          dict({
+            'length': 2494,
+            'name': dict({
+              'key': 'B',
+              'prefix': 'DNA',
+            }),
+            'required': 'required',
+          }),
+        ]),
+        'segments': list([
+          dict({
+            'length': 2575,
+            'name': dict({
+              'key': 'A',
+              'prefix': 'DNA',
+            }),
+            'required': 'required',
+          }),
+          dict({
+            'length': 2494,
+            'name': dict({
+              'key': 'B',
+              'prefix': 'DNA',
+            }),
+            'required': 'required',
+          }),
+        ]),
+      }),
     }),
     'taxid': 345184,
   })
@@ -47,20 +73,16 @@
     }),
     'legacy_id': None,
     'name': 'Dahlia latent viroid',
-    'schema': dict({
+    'plan': dict({
       'molecule': dict({
         'strandedness': 'single',
         'topology': 'linear',
         'type': 'RNA',
       }),
       'multipartite': False,
-      'segments': list([
-        dict({
-          'length': 342,
-          'name': 'genomic RNA',
-          'required': True,
-        }),
-      ]),
+      'parameters': dict({
+        'length': 342,
+      }),
     }),
     'taxid': 1278205,
   })
@@ -72,25 +94,51 @@
     }),
     'legacy_id': None,
     'name': 'Cabbage leaf curl Jamaica virus',
-    'schema': dict({
+    'plan': dict({
       'molecule': dict({
         'strandedness': 'double',
         'topology': 'circular',
         'type': 'DNA',
       }),
       'multipartite': True,
-      'segments': list([
-        dict({
-          'length': 2575,
-          'name': 'DNA A',
-          'required': True,
-        }),
-        dict({
-          'length': 2494,
-          'name': 'DNA B',
-          'required': True,
-        }),
-      ]),
+      'parameters': dict({
+        'required_segments': list([
+          dict({
+            'length': 2575,
+            'name': dict({
+              'key': 'A',
+              'prefix': 'DNA',
+            }),
+            'required': 'required',
+          }),
+          dict({
+            'length': 2494,
+            'name': dict({
+              'key': 'B',
+              'prefix': 'DNA',
+            }),
+            'required': 'required',
+          }),
+        ]),
+        'segments': list([
+          dict({
+            'length': 2575,
+            'name': dict({
+              'key': 'A',
+              'prefix': 'DNA',
+            }),
+            'required': 'required',
+          }),
+          dict({
+            'length': 2494,
+            'name': dict({
+              'key': 'B',
+              'prefix': 'DNA',
+            }),
+            'required': 'required',
+          }),
+        ]),
+      }),
     }),
     'taxid': 345184,
   })
