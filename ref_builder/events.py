@@ -1,3 +1,5 @@
+"""Events that are emitted to the repository event log."""
+
 import datetime
 
 from pydantic import UUID4, BaseModel, Field, computed_field
@@ -8,13 +10,11 @@ from ref_builder.utils import Accession, IsolateName
 
 
 class EventQuery(BaseModel):
-    """A base class for representing the query targeting an event at a specific
-    resource.
-    """
+    """A base class for a query that targets an event at a specific resource."""
 
 
 class RepoQuery(EventQuery):
-    """An event query that targets an event at a repository."""
+    """An event query that targets an event at the repository."""
 
     repository_id: UUID4
 
@@ -40,10 +40,7 @@ class SequenceQuery(IsolateQuery):
 
 
 class EventData(BaseModel):
-    """Represents the data for an event.
-
-    Different event data classes are used
-    """
+    """Represents the data for an event."""
 
 
 class Event(BaseModel):
@@ -67,11 +64,12 @@ class Event(BaseModel):
     @computed_field
     @property
     def type(self) -> str:
+        """The type of the event as a string."""
         return self.__class__.__name__
 
 
 class CreateRepoData(EventData):
-    """The data for a repository creation event (`CreateRepo`)."""
+    """The data for a :class:`CreateRepo` event."""
 
     id: UUID4
     data_type: str
@@ -80,14 +78,17 @@ class CreateRepoData(EventData):
 
 
 class CreateRepo(Event):
-    """A repo creation event."""
+    """An event that creates a new repository.
+
+    This event is always the first event in a repository's event log.
+    """
 
     data: CreateRepoData
     query: RepoQuery
 
 
 class CreateOTUData(EventData):
-    """The data for the creation of a new OTU ('CreateOTU')."""
+    """The data for a :class:`CreateOTU` event."""
 
     id: UUID4
     acronym: str
@@ -98,14 +99,14 @@ class CreateOTUData(EventData):
 
 
 class CreateOTU(Event):
-    """An OTU creation event."""
+    """An event that creates a new OTU."""
 
     data: CreateOTUData
     query: OTUQuery
 
 
 class CreateIsolateData(EventData):
-    """The data for the creation of a new isolate."""
+    """The data for a :class:`CreateIsolate` event."""
 
     id: UUID4
     legacy_id: str | None
@@ -113,23 +114,27 @@ class CreateIsolateData(EventData):
 
 
 class CreateIsolate(Event):
-    """An isolate creation event."""
+    """An event that creates an isolate for a specific OTU."""
 
     data: CreateIsolateData
     query: IsolateQuery
 
 
 class DeleteIsolateData(EventData):
+    """The data for a :class:`DeleteIsolate` event."""
+
     rationale: str
 
 
 class DeleteIsolate(Event):
+    """An isolate deletion event."""
+
     data: DeleteIsolateData
     query: IsolateQuery
 
 
 class CreateSequenceData(EventData):
-    """The data for the creation of a new sequence."""
+    """The data for a :class:`CreateSequence` event."""
 
     id: UUID4
     accession: Accession
@@ -140,26 +145,31 @@ class CreateSequenceData(EventData):
 
 
 class CreateSequence(Event):
-    """A sequence creation event."""
+    """An event that creates a sequence for a specific isolate and OTU."""
 
     data: CreateSequenceData
     query: SequenceQuery
 
 
 class DeleteSequenceData(EventData):
-    """The data for the deletion of a sequence."""
+    """The data for a :class:`DeleteSequence` event."""
+
     replacement: UUID4
     rationale: str
 
 
 class DeleteSequence(Event):
-    """A sequence deletion event. The second part of a sequence replacement."""
+    """An event that deletes a sequence.
+
+    The second part of a sequence replacement.
+    """
+
     data: DeleteSequenceData
     query: SequenceQuery
 
 
 class ExcludeAccessionData(EventData):
-    """The data for the exclusion of an accession."""
+    """The data for a :class:`ExcludeAccession` event."""
 
     accession: str
 
@@ -176,25 +186,27 @@ class ExcludeAccession(Event):
 
 
 class CreateSchemaData(EventData):
-    """The data for the creation of OTU schema data."""
+    """The data for a :class:`CreateSchema` event."""
 
     molecule: Molecule
     segments: list[Segment]
 
 
 class CreateSchema(Event):
-    """An OTU schema creation event."""
+    """An event that creates a schema for an OTU."""
 
     data: CreateSchemaData
     query: OTUQuery
 
 
 class SetReprIsolateData(EventData):
+    """The data for a :class:`SetReprIsolate` event."""
+
     isolate_id: UUID4
 
 
 class SetReprIsolate(Event):
-    """A representative isolate setting event."""
+    """An event that sets the representative isolate for an OTU."""
 
     data: SetReprIsolateData
     query: OTUQuery
