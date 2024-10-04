@@ -11,6 +11,16 @@ ignore_cache_option = click.option(
 )
 """A click option for disabling cached results in fetch operations."""
 
+
+legacy_repo_path_option = click.option(
+    "--path",
+    help="The path to the legacy reference repository",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+"""A click option for the path to the legacy reference repository."""
+
+
 path_option = click.option(
     "--path",
     default=".",
