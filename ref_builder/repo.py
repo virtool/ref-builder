@@ -646,7 +646,7 @@ class EventStore:
                     "CreateSequence": CreateSequence,
                     "DeleteIsolate": DeleteIsolate,
                     "DeleteSequence": DeleteSequence,
-                    "CreateSchema": CreatePlan,
+                    "CreatePlan": CreatePlan,
                     "SetReprIsolate": SetReprIsolate,
                     "ExcludeAccession": ExcludeAccession,
                 }[loaded["type"]]
