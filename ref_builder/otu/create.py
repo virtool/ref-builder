@@ -6,6 +6,7 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.utils import (
     create_isolate_plan_from_records,
     group_genbank_records_by_isolate,
+    get_molecule_from_records,
     parse_refseq_comment,
 )
 from ref_builder.repo import Repo
@@ -64,6 +65,8 @@ def create_otu(
         )
         return None
 
+    molecule = get_molecule_from_records(records)
+
     plan = create_isolate_plan_from_records(records)
 
     if plan is None:
@@ -74,6 +77,7 @@ def create_otu(
         otu = repo.create_otu(
             acronym=acronym,
             legacy_id=None,
+            molecule=molecule,
             name=taxonomy.name,
             plan=plan,
             taxid=taxid,

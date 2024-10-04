@@ -51,7 +51,7 @@ def create_isolate_plan_from_records(
     segments: list[SegmentPlan] | None = None,
 ) -> IsolatePlan | None:
     """Return a plan from a list of records representing an isolate."""
-    molecule = _get_molecule_from_records(records)
+    molecule = get_molecule_from_records(records)
 
     if len(records) == 1:
         return IsolatePlan(
@@ -143,7 +143,7 @@ def parse_refseq_comment(comment: str) -> tuple[str, str]:
     return match.group(1), match.group(2)
 
 
-def _get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
+def get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
     """Return relevant molecule metadata from one or more records."""
     if not records:
         raise IndexError("No records given")
