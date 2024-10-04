@@ -667,10 +667,10 @@ def _check_isolate_size(
             raise ValueError("Too many segments in monopartite isolate.")
         return True
 
-    if isolate_n == len(plan.plan.required_segments):
+    if isolate_n == len(plan.parameters.required_segments):
         return True
 
     raise ValueError(
-        f"The plan requires {len(plan.plan.required_segments)} segments: "
-        + f"{[str(segment.name) for segment in plan.plan.segments]}"
+        f"The plan requires {len(plan.parameters.required_segments)} segments: "
+        + f"{[str(segment.name) for segment in plan.parameters.segments]}"
     )
