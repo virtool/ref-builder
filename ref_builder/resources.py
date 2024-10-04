@@ -222,7 +222,7 @@ class RepoOTU(BaseModel):
     repr_isolate: UUID4 | None
     """The UUID of the representative isolate of this OTU"""
 
-    schema: IsolatePlan
+    plan: IsolatePlan
     """The schema of the OTU"""
 
     taxid: int

@@ -8,12 +8,13 @@ from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.utils import (
     DeleteRationale,
     RefSeqConflictError,
-    create_schema_from_records,
+    create_isolate_plan_from_records,
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
+from ref_builder.plan import IsolatePlan
 from ref_builder.utils import IsolateName
 
 logger = get_logger("otu.update")
@@ -61,10 +62,13 @@ def add_genbank_isolate(
 
     isolate_name, isolate_records = list(record_bins.items())[0]
 
-    if len(isolate_records) != len(otu.schema.segments):
-        otu_logger.error(
-            f"The schema requires {len(otu.schema.segments)} segments: "
-            + f"{[segment.name for segment in otu.schema.segments]}",
+    try:
+        _check_isolate_size(plan=otu.plan, isolate_n=len(isolate_records))
+    except ValueError as e:
+        otu_logger.warning(
+            e,
+            isolate_name=str(isolate_name),
+            isolate_records=sorted(isolate_records.keys()),
         )
         return None
 
@@ -350,7 +354,7 @@ def auto_update_otu(
     repo: Repo,
     otu: RepoOTU,
     ignore_cache: bool = False,
-):
+) -> None:
     """Fetch a full list of Nucleotide accessions associated with the OTU
     and pass the list to the add method.
     """
@@ -373,7 +377,7 @@ def update_otu_with_accessions(
     otu: RepoOTU,
     accessions: list,
     ignore_cache: bool = False,
-):
+) -> None:
     """Take a list of accessions, filter for eligible accessions and
     add new sequences to the OTU.
     """
@@ -383,8 +387,8 @@ def update_otu_with_accessions(
 
     otu_logger.info(
         "Fetching accessions",
-        count={len(accessions)},
-        fetch_list=accessions,
+        count=len(accessions),
+        fetch_list=sorted(accessions),
     )
 
     records = ncbi.fetch_genbank_records(accessions)
@@ -425,13 +429,17 @@ def file_records_into_otu(
 
     for isolate_name in record_bins:
         isolate_records = record_bins[isolate_name]
-        if len(isolate_records) != len(otu.schema.segments):
-            otu_logger.debug(
-                f"The schema requires {len(otu.schema.segments)} segments: "
-                + f"{[segment.name for segment in otu.schema.segments]}",
-                isolate_accessions=[accession.key for accession in isolate_records],
+
+        try:
+            _check_isolate_size(plan=otu.plan, isolate_n=len(isolate_records))
+        except ValueError as e:
+            otu_logger.warning(
+                e,
+                isolate_name=str(isolate_name),
+                isolate_records=[
+                    str(accession) for accession in isolate_records
+                ],
             )
-            otu_logger.debug(f"Skipping {isolate_name}")
             continue
 
         isolate = create_isolate_from_records(
@@ -485,8 +493,8 @@ def add_schema_from_accessions(
 
     otu_logger = logger.bind(otu_id=otu.id, taxid=taxid)
 
-    if otu.schema is not None:
-        logger.warning("OTU already has a schema attached.", schema=otu.schema)
+    if otu.plan is not None:
+        logger.warning("OTU already has a schema attached.", schema=otu.plan)
 
     ncbi = NCBIClient(ignore_cache)
 
@@ -495,7 +503,7 @@ def add_schema_from_accessions(
         logger.fatal("Records could not be retrieved. Schema cannot be created.")
         return
 
-    schema = create_schema_from_records(records)
+    schema = create_isolate_plan_from_records(records)
     if schema is not None:
         otu_logger.info("Adding schema to OTU", schema=schema)
         repo.create_schema(
@@ -648,3 +656,21 @@ def _create_fetch_list(
         return fetch_list
 
     raise ValueError("None of the requested accessions were eligible for inclusion")
+
+def _check_isolate_size(
+    plan: IsolatePlan,
+    isolate_n: int,
+) -> bool:
+    """Return True if the size of the proposed isolate matches the isolate plan."""
+    if not plan.multipartite:
+        if isolate_n > 1:
+            raise ValueError("Too many segments in monopartite isolate.")
+        return True
+
+    if isolate_n == len(plan.plan.required_segments):
+        return True
+
+    raise ValueError(
+        f"The plan requires {len(plan.plan.required_segments)} segments: "
+        + f"{[str(segment.name) for segment in plan.plan.segments]}"
+    )

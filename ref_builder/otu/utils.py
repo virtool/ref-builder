@@ -7,7 +7,14 @@ import structlog
 
 from ref_builder.models import Molecule
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.plan import IsolatePlan, SegmentPlan, get_multipartite_segment_name
+from ref_builder.plan import (
+    IsolatePlan,
+    MonopartitePlan,
+    MultipartitePlan,
+    SegmentPlan,
+    SegmentRule,
+    get_multipartite_segment_name,
+)
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
 logger = structlog.get_logger("otu.utils")
@@ -24,7 +31,11 @@ class RefSeqConflictError(ValueError):
     """Raised when a potential RefSeq replacement is found."""
 
     def __init__(
-        self, message, isolate_id: UUID, isolate_name: IsolateName, accessions: list[str]
+        self,
+        message: str,
+        isolate_id: UUID,
+        isolate_name: IsolateName,
+        accessions: list[str],
     ):
         super().__init__(message)
 
@@ -35,12 +46,21 @@ class RefSeqConflictError(ValueError):
         self.accessions = accessions
 
 
-def create_schema_from_records(
+def create_isolate_plan_from_records(
     records: list[NCBIGenbank],
     segments: list[SegmentPlan] | None = None,
 ) -> IsolatePlan | None:
-    """Return a complete schema from a list of records."""
+    """Return a plan from a list of records representing an isolate."""
     molecule = _get_molecule_from_records(records)
+
+    if len(records) == 1:
+        return IsolatePlan(
+            molecule=molecule,
+            plan=MonopartitePlan(
+                id=uuid4(),
+                length=len(records[0].sequence),
+            ),
+        )
 
     binned_records = group_genbank_records_by_isolate(records)
     if len(binned_records) > 1:
@@ -50,10 +70,37 @@ def create_schema_from_records(
         )
         return None
 
-    if segments is None:
-        segments = _get_segments_from_records(records)
-        if segments:
-            return IsolatePlan(molecule=molecule, segments=segments)
+    if segments is not None:
+        return IsolatePlan(
+            molecule=molecule,
+            plan=MultipartitePlan(
+                id=uuid4(),
+                segments=segments
+            )
+        )
+
+    segments = []
+    for record in sorted(records, key=lambda record: record.accession):
+        if not record.source.segment:
+            raise ValueError("No segment name found for multipartite OTU segment.")
+
+        segments.append(
+            SegmentPlan(
+                id=uuid4(),
+                name=get_multipartite_segment_name(record),
+                required=SegmentRule.REQUIRED,
+                length=len(record.sequence),
+            ),
+        )
+
+    if segments:
+        return IsolatePlan(
+            molecule=molecule,
+            plan=MultipartitePlan(
+                id=uuid4(),
+                segments=segments,
+            ),
+        )
 
     return None
 
@@ -139,7 +186,7 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
     raise ValueError("Record does not contain sufficient source data for inclusion.")
 
 
-def _get_segments_from_records(records: list[NCBIGenbank]) -> list[SegmentPlan]:
+def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
     if len(records) == 1:
         record = records[0]
 
@@ -150,9 +197,12 @@ def _get_segments_from_records(records: list[NCBIGenbank]) -> list[SegmentPlan]:
 
         segment_id = uuid4()
         return [
-            SegmentPlan(
-                id=segment_id, name=segment_name, required=True, length=len(record.sequence)
-            )
+            Segment(
+                id=segment_id,
+                name=segment_name,
+                required=True,
+                length=len(record.sequence),
+            ),
         ]
 
     segments = []
@@ -160,7 +210,7 @@ def _get_segments_from_records(records: list[NCBIGenbank]) -> list[SegmentPlan]:
         if record.source.segment:
             segment_id = uuid4()
             segments.append(
-                SegmentPlan(
+                Segment(
                     id=segment_id,
                     name=str(get_multipartite_segment_name(record)),
                     required=True,

@@ -4,7 +4,7 @@ import structlog
 
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.utils import (
-    create_schema_from_records,
+    create_isolate_plan_from_records,
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
@@ -64,10 +64,10 @@ def create_otu(
         )
         return None
 
-    schema = create_schema_from_records(records)
+    plan = create_isolate_plan_from_records(records)
 
-    if schema is None:
-        otu_logger.fatal("Could not create schema.")
+    if plan is None:
+        otu_logger.fatal("Could not create plan from records.")
         return None
 
     try:
@@ -75,7 +75,7 @@ def create_otu(
             acronym=acronym,
             legacy_id=None,
             name=taxonomy.name,
-            schema=schema,
+            plan=plan,
             taxid=taxid,
         )
     except ValueError as e:
@@ -85,7 +85,7 @@ def create_otu(
     isolate = repo.create_isolate(
         otu_id=otu.id,
         legacy_id=None,
-        name=list(binned_records.keys())[0] if binned_records else None,
+        name=next(iter(binned_records.keys())) if binned_records else None,
     )
 
     otu.add_isolate(isolate)

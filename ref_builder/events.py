@@ -2,10 +2,10 @@
 
 import datetime
 
-from pydantic import UUID4, BaseModel, Field, computed_field
+from pydantic import UUID4, AliasChoices, BaseModel, Field, computed_field
 
 from ref_builder.models import Molecule
-from ref_builder.plan import IsolatePlan, SegmentPlan
+from ref_builder.plan import IsolatePlan, MonopartitePlan, MultipartitePlan
 from ref_builder.utils import Accession, IsolateName
 
 
@@ -95,7 +95,7 @@ class CreateOTUData(EventData):
     legacy_id: str | None
     name: str
     taxid: int
-    otu_schema: IsolatePlan | None = Field(None, alias="schema")
+    plan: IsolatePlan
 
 
 class CreateOTU(Event):
@@ -185,17 +185,17 @@ class ExcludeAccession(Event):
     query: OTUQuery
 
 
-class CreateSchemaData(EventData):
-    """The data for a :class:`CreateSchema` event."""
+class CreatePlanData(EventData):
+    """The data for the creation of OTU schema data."""
 
     molecule: Molecule
-    segments: list[SegmentPlan]
+    parameters: MonopartitePlan | MultipartitePlan
 
 
-class CreateSchema(Event):
-    """An event that creates a schema for an OTU."""
+class CreatePlan(Event):
+    """An OTU schema creation event."""
 
-    data: CreateSchemaData
+    data: CreatePlanData
     query: OTUQuery
 
 
