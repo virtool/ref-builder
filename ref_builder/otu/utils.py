@@ -56,7 +56,7 @@ def create_isolate_plan_from_records(
     if len(records) == 1:
         return IsolatePlan(
             molecule=molecule,
-            plan=MonopartitePlan(
+            parameters=MonopartitePlan(
                 id=uuid4(),
                 length=len(records[0].sequence),
             ),
@@ -73,7 +73,7 @@ def create_isolate_plan_from_records(
     if segments is not None:
         return IsolatePlan(
             molecule=molecule,
-            plan=MultipartitePlan(
+            parameters=MultipartitePlan(
                 id=uuid4(),
                 segments=segments
             )
@@ -96,7 +96,7 @@ def create_isolate_plan_from_records(
     if segments:
         return IsolatePlan(
             molecule=molecule,
-            plan=MultipartitePlan(
+            parameters=MultipartitePlan(
                 id=uuid4(),
                 segments=segments,
             ),
@@ -184,40 +184,3 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
         return None
 
     raise ValueError("Record does not contain sufficient source data for inclusion.")
-
-
-def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
-    if len(records) == 1:
-        record = records[0]
-
-        if record.source.segment != "":
-            segment_name = record.source.segment
-        else:
-            segment_name = record.source.mol_type
-
-        segment_id = uuid4()
-        return [
-            Segment(
-                id=segment_id,
-                name=segment_name,
-                required=True,
-                length=len(record.sequence),
-            ),
-        ]
-
-    segments = []
-    for record in sorted(records, key=lambda record: record.accession):
-        if record.source.segment:
-            segment_id = uuid4()
-            segments.append(
-                Segment(
-                    id=segment_id,
-                    name=str(get_multipartite_segment_name(record)),
-                    required=True,
-                    length=len(record.sequence),
-                ),
-            )
-        else:
-            raise ValueError("No segment name found for multipartite OTU segment.")
-
-    return segments
