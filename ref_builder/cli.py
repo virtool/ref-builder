@@ -82,22 +82,20 @@ def otu() -> None:
     required=True,
 )
 @click.option("--acronym", type=str, default="")
-@click.option("--autofill/--no-fill", default=False)
 @ignore_cache_option
 @path_option
 def otu_create(
+    accessions_: list[str],
+    acronym: str,
     ignore_cache: bool,
     path: Path,
     taxid: int,
-    accessions_: list[str],
-    autofill: bool,
-    acronym: str,
 ) -> None:
     """Create a new OTU for the given Taxonomy ID and accessions."""
     repo = Repo(path)
 
     try:
-        new_otu = create_otu(
+        create_otu(
             repo,
             taxid,
             accessions_,
@@ -108,14 +106,11 @@ def otu_create(
         click.echo(e, err=True)
         sys.exit(1)
 
-    if autofill:
-        auto_update_otu(repo, new_otu, ignore_cache=ignore_cache)
-
 
 @otu.command(name="get")
 @click.argument("IDENTIFIER", type=str)
 @path_option
-def otu_get(identifier: str, path: Path) -> int:
+def otu_get(identifier: str, path: Path) -> None:
     """Get an OTU by its Taxonomy ID."""
     try:
         identifier = int(identifier)
@@ -124,12 +119,10 @@ def otu_get(identifier: str, path: Path) -> int:
         otu_ = Repo(path).get_otu(UUID(identifier))
 
     if otu_ is None:
-        click.echo("No OTU found.", err=True)
-        return 1
+        click.echo("OTU not found.", err=True)
+        sys.exit(1)
 
     print_otu(otu_)
-
-    return 0
 
 
 @otu.command(name="list")
