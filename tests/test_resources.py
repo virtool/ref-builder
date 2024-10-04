@@ -10,6 +10,8 @@ from ref_builder.utils import IsolateName, IsolateNameType
 
 
 class TestSequence:
+    """Test properties of RepoSequence."""
+
     @pytest.mark.parametrize(
         ("taxid", "accessions"),
         [
@@ -30,6 +32,8 @@ class TestSequence:
 
 
 class TestIsolate:
+    """Test properties of RepoIsolate."""
+
     def test_no_sequences(self):
         """Test that an isolate intializes correctly with no sequences."""
         isolate = RepoIsolate(
@@ -51,6 +55,8 @@ class TestIsolate:
 
 
 class TestOTU:
+    """Test properties of RepoOTU."""
+
     def test_no_isolates(self):
         """Test that an isolate initializes correctly with no isolates."""
         otu = RepoOTU(
@@ -83,6 +89,7 @@ class TestOTU:
         )
 
     def test_get_sequence_id_hierarchy(self, scratch_repo: Repo):
+        """Test that the isolate ID can be found from a sequence ID."""
         otu = scratch_repo.get_otu_by_taxid(345184)
 
         isolate_id, sequence_id = otu.get_sequence_id_hierarchy_from_accession(
