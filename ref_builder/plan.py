@@ -60,14 +60,8 @@ class SegmentPlan(SequencePlan):
     required: bool
     """Whether this segment must be present in all additions."""
 
-class MonopartitePlan(BaseModel):
+class MonopartitePlan(SequencePlan):
     """Expected properties for an acceptable monopartite isolate."""
-
-    id: UUID4
-    """The unique id number of the monopartite plan"""
-
-    length: int
-    """The expected length of the sequence"""
 
 
 class MultipartitePlan(BaseModel):
@@ -90,14 +84,24 @@ class IsolatePlan(BaseModel):
     molecule: Molecule
     """The molecular metadata for this OTU."""
 
-    segments: list[SegmentPlan]
-    """The segments contained in this OTU."""
+    parameters: MonopartitePlan | MultipartitePlan
+    """The expected parameters of an acceptable isolate."""
 
     @computed_field
     def multipartite(self) -> bool:
         """Is true if multiple sequences are required to form a complete isolate."""
-        return len(self.segments) > 1
+        return type(self.parameters) is MultipartitePlan
 
+    @property
+    def segments(self) -> list[SegmentPlan | MonopartitePlan]:
+        """The segments contained in this OTU.
+
+        This property is a stopgap and will be removed in a future release.
+        """
+        if self.multipartite:
+            return self.parameters.segments
+
+        return [self.parameters]
 
 def determine_segment_prefix(moltype: NCBISourceMolType) -> str:
     """Return an acceptable SegmentName prefix corresponding to
