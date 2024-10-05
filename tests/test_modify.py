@@ -100,6 +100,7 @@ class TestUpdateRepresentativeIsolateCommand:
             repr_isolate_name_after
         )
 
+
 @pytest.mark.ncbi()
 class TestPromoteAccessions:
     def test_ok(self, empty_repo: Repo):

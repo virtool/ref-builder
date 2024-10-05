@@ -72,7 +72,9 @@ class TestIsolatePlan:
         records = scratch_ncbi_client.fetch_genbank_records(accessions)
 
         auto_plan = create_isolate_plan_from_records(records)
-        plan_structure = IsolatePlan(parameters=create_isolate_plan_from_records(records))
+        plan_structure = IsolatePlan(
+            parameters=create_isolate_plan_from_records(records)
+        )
         mock_plan_json = plan_structure.model_dump_json()
 
         assert type(mock_plan_json) is str
