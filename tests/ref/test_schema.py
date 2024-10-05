@@ -1,6 +1,7 @@
 from uuid import UUID
 
 import pytest
+from pydantic import BaseModel
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
@@ -8,7 +9,6 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBISourceMolType
 from ref_builder.otu.utils import create_isolate_plan_from_records
 from ref_builder.plan import (
-    IsolatePlan,
     MonopartitePlan,
     MultipartitePlan,
     SegmentName,
@@ -18,10 +18,17 @@ from ref_builder.plan import (
 from tests.fixtures.factories import NCBIGenbankFactory, NCBISourceFactory
 
 
+class IsolatePlan(BaseModel):
+    """A schema for the intended data."""
+
+    parameters: MonopartitePlan | MultipartitePlan
+    """The expected parameters of an acceptable isolate."""
+
+
 @pytest.mark.parametrize(
-    ("accessions", "is_multipartite"),
+    ("accessions", "plan_type"),
     [
-        (["NC_024301"], False),
+        (["NC_024301"], MonopartitePlan),
         (
             [
                 "NC_010314",
@@ -31,7 +38,7 @@ from tests.fixtures.factories import NCBIGenbankFactory, NCBISourceFactory
                 "NC_010318",
                 "NC_010319",
             ],
-            True,
+            MultipartitePlan,
         ),
     ],
 )
@@ -41,7 +48,7 @@ class TestIsolatePlan:
     def test_create_plan_from_records(
         self,
         accessions: list[str],
-        is_multipartite: bool,
+        plan_type,
         scratch_ncbi_client: NCBIClient,
     ):
         """Test the creation of a schema from a set of records
@@ -50,37 +57,29 @@ class TestIsolatePlan:
         records = scratch_ncbi_client.fetch_genbank_records(accessions)
         auto_plan = create_isolate_plan_from_records(records)
 
-        assert type(auto_plan) is IsolatePlan
-
-        assert auto_plan.multipartite == is_multipartite
-
-        if is_multipartite:
-            assert type(auto_plan.parameters) is MultipartitePlan
+        assert type(auto_plan) is plan_type
 
     def test_serialize_plan(
         self,
         accessions: list[str],
-        is_multipartite: bool,
+        plan_type: MonopartitePlan | MultipartitePlan,
         scratch_ncbi_client: NCBIClient,
         snapshot: SnapshotAssertion,
     ):
-        """Test that plans correctly validate from json as
-        MultipartitePlan or MonopartitePlan.
+        """Test that plans can correctly validate from json as
+        MultipartitePlan or MonopartitePlan when included in a BaseModel.
         """
-        expected_class = MultipartitePlan if is_multipartite else MonopartitePlan
-
         records = scratch_ncbi_client.fetch_genbank_records(accessions)
 
         auto_plan = create_isolate_plan_from_records(records)
-        auto_plan_json = auto_plan.model_dump_json()
+        plan_structure = IsolatePlan(parameters=create_isolate_plan_from_records(records))
+        mock_plan_json = plan_structure.model_dump_json()
 
-        assert type(auto_plan_json) is str
+        assert type(mock_plan_json) is str
 
-        reconstituted_plan = IsolatePlan.model_validate_json(auto_plan_json)
+        reconstituted_plan = IsolatePlan.model_validate_json(mock_plan_json)
 
-        assert reconstituted_plan.multipartite == is_multipartite
-
-        assert type(reconstituted_plan.parameters) is expected_class
+        assert type(reconstituted_plan.parameters) is plan_type
 
         assert auto_plan.model_dump() == snapshot(exclude=props("id"))
 

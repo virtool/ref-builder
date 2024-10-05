@@ -12,7 +12,7 @@ from ref_builder.otu.utils import (
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
-from ref_builder.plan import IsolatePlan
+from ref_builder.plan import MonopartitePlan, MultipartitePlan
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
 from ref_builder.utils import IsolateName
@@ -639,19 +639,19 @@ def _create_fetch_list(
 
 
 def _check_isolate_size(
-    plan: IsolatePlan,
+    plan: MonopartitePlan | MultipartitePlan,
     isolate_n: int,
 ) -> bool:
     """Return True if the size of the proposed isolate matches the isolate plan."""
-    if not plan.multipartite:
+    if type(plan) is MonopartitePlan:
         if isolate_n > 1:
             raise ValueError("Too many segments in monopartite isolate.")
         return True
 
-    if isolate_n == len(plan.parameters.required_segments):
+    if isolate_n == len(plan.required_segments):
         return True
 
     raise ValueError(
-        f"The plan requires {len(plan.parameters.required_segments)} segments: "
-        + f"{[str(segment.name) for segment in plan.parameters.segments]}"
+        f"The plan requires {len(plan.required_segments)} segments: "
+        + f"{[str(segment.name) for segment in plan.segments]}"
     )

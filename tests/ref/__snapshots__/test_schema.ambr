@@ -1,127 +1,111 @@
 # serializer version: 1
-# name: TestIsolatePlan.test_serialize_plan[accessions0-False]
+# name: TestIsolatePlan.test_serialize_plan[accessions0-MonopartitePlan]
   dict({
-    'molecule': dict({
-      'strandedness': 'double',
-      'topology': 'circular',
-      'type': 'DNA',
-    }),
-    'multipartite': False,
-    'parameters': dict({
-      'length': 7424,
-      'name': None,
-    }),
+    'length': 7424,
+    'name': None,
   })
 # ---
-# name: TestIsolatePlan.test_serialize_plan[accessions1-True]
+# name: TestIsolatePlan.test_serialize_plan[accessions1-MultipartitePlan]
   dict({
-    'molecule': dict({
-      'strandedness': 'single',
-      'topology': 'circular',
-      'type': 'DNA',
-    }),
-    'multipartite': True,
-    'parameters': dict({
-      'required_segments': list([
-        dict({
-          'length': 1090,
-          'name': dict({
-            'key': 'N',
-            'prefix': 'DNA',
-          }),
-          'required': 'required',
+    'required_segments': list([
+      dict({
+        'length': 1090,
+        'name': dict({
+          'key': 'N',
+          'prefix': 'DNA',
         }),
-        dict({
-          'length': 1057,
-          'name': dict({
-            'key': 'U3',
-            'prefix': 'DNA',
-          }),
-          'required': 'required',
+        'required': 'required',
+      }),
+      dict({
+        'length': 1057,
+        'name': dict({
+          'key': 'U3',
+          'prefix': 'DNA',
         }),
-        dict({
-          'length': 1087,
-          'name': dict({
-            'key': 'S',
-            'prefix': 'DNA',
-          }),
-          'required': 'required',
+        'required': 'required',
+      }),
+      dict({
+        'length': 1087,
+        'name': dict({
+          'key': 'S',
+          'prefix': 'DNA',
         }),
-        dict({
-          'length': 1074,
-          'name': dict({
-            'key': 'M',
-            'prefix': 'DNA',
-          }),
-          'required': 'required',
+        'required': 'required',
+      }),
+      dict({
+        'length': 1074,
+        'name': dict({
+          'key': 'M',
+          'prefix': 'DNA',
         }),
-        dict({
-          'length': 1015,
-          'name': dict({
-            'key': 'C',
-            'prefix': 'DNA',
-          }),
-          'required': 'required',
+        'required': 'required',
+      }),
+      dict({
+        'length': 1015,
+        'name': dict({
+          'key': 'C',
+          'prefix': 'DNA',
         }),
-        dict({
-          'length': 1099,
-          'name': dict({
-            'key': 'R',
-            'prefix': 'DNA',
-          }),
-          'required': 'required',
+        'required': 'required',
+      }),
+      dict({
+        'length': 1099,
+        'name': dict({
+          'key': 'R',
+          'prefix': 'DNA',
         }),
-      ]),
-      'segments': list([
-        dict({
-          'length': 1090,
-          'name': dict({
-            'key': 'N',
-            'prefix': 'DNA',
-          }),
-          'required': 'required',
+        'required': 'required',
+      }),
+    ]),
+    'segments': list([
+      dict({
+        'length': 1090,
+        'name': dict({
+          'key': 'N',
+          'prefix': 'DNA',
         }),
-        dict({
-          'length': 1057,
-          'name': dict({
-            'key': 'U3',
-            'prefix': 'DNA',
-          }),
-          'required': 'required',
+        'required': 'required',
+      }),
+      dict({
+        'length': 1057,
+        'name': dict({
+          'key': 'U3',
+          'prefix': 'DNA',
         }),
-        dict({
-          'length': 1087,
-          'name': dict({
-            'key': 'S',
-            'prefix': 'DNA',
-          }),
-          'required': 'required',
+        'required': 'required',
+      }),
+      dict({
+        'length': 1087,
+        'name': dict({
+          'key': 'S',
+          'prefix': 'DNA',
         }),
-        dict({
-          'length': 1074,
-          'name': dict({
-            'key': 'M',
-            'prefix': 'DNA',
-          }),
-          'required': 'required',
+        'required': 'required',
+      }),
+      dict({
+        'length': 1074,
+        'name': dict({
+          'key': 'M',
+          'prefix': 'DNA',
         }),
-        dict({
-          'length': 1015,
-          'name': dict({
-            'key': 'C',
-            'prefix': 'DNA',
-          }),
-          'required': 'required',
+        'required': 'required',
+      }),
+      dict({
+        'length': 1015,
+        'name': dict({
+          'key': 'C',
+          'prefix': 'DNA',
         }),
-        dict({
-          'length': 1099,
-          'name': dict({
-            'key': 'R',
-            'prefix': 'DNA',
-          }),
-          'required': 'required',
+        'required': 'required',
+      }),
+      dict({
+        'length': 1099,
+        'name': dict({
+          'key': 'R',
+          'prefix': 'DNA',
         }),
-      ]),
-    }),
+        'required': 'required',
+      }),
+    ]),
   })
 # ---
