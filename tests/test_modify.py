@@ -100,9 +100,8 @@ class TestUpdateRepresentativeIsolateCommand:
             repr_isolate_name_after
         )
 
-
+@pytest.mark.ncbi()
 class TestPromoteAccessions:
-    @pytest.mark.ncbi()
     def test_ok(self, empty_repo: Repo):
         """Test that RefSeq accessions can be promoted automatically."""
         otu = create_otu(

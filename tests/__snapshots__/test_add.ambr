@@ -12,50 +12,42 @@
     }),
     'name': 'Cabbage leaf curl Jamaica virus',
     'plan': dict({
-      'molecule': dict({
-        'strandedness': 'double',
-        'topology': 'circular',
-        'type': 'DNA',
-      }),
-      'multipartite': True,
-      'parameters': dict({
-        'required_segments': list([
-          dict({
-            'length': 2575,
-            'name': dict({
-              'key': 'A',
-              'prefix': 'DNA',
-            }),
-            'required': 'required',
+      'required_segments': list([
+        dict({
+          'length': 2575,
+          'name': dict({
+            'key': 'A',
+            'prefix': 'DNA',
           }),
-          dict({
-            'length': 2494,
-            'name': dict({
-              'key': 'B',
-              'prefix': 'DNA',
-            }),
-            'required': 'required',
+          'required': 'required',
+        }),
+        dict({
+          'length': 2494,
+          'name': dict({
+            'key': 'B',
+            'prefix': 'DNA',
           }),
-        ]),
-        'segments': list([
-          dict({
-            'length': 2575,
-            'name': dict({
-              'key': 'A',
-              'prefix': 'DNA',
-            }),
-            'required': 'required',
+          'required': 'required',
+        }),
+      ]),
+      'segments': list([
+        dict({
+          'length': 2575,
+          'name': dict({
+            'key': 'A',
+            'prefix': 'DNA',
           }),
-          dict({
-            'length': 2494,
-            'name': dict({
-              'key': 'B',
-              'prefix': 'DNA',
-            }),
-            'required': 'required',
+          'required': 'required',
+        }),
+        dict({
+          'length': 2494,
+          'name': dict({
+            'key': 'B',
+            'prefix': 'DNA',
           }),
-        ]),
-      }),
+          'required': 'required',
+        }),
+      ]),
     }),
     'taxid': 345184,
   })
@@ -84,16 +76,8 @@
     }),
     'name': 'Dahlia latent viroid',
     'plan': dict({
-      'molecule': dict({
-        'strandedness': 'single',
-        'topology': 'linear',
-        'type': 'RNA',
-      }),
-      'multipartite': False,
-      'parameters': dict({
-        'length': 342,
-        'name': None,
-      }),
+      'length': 342,
+      'name': None,
     }),
     'taxid': 1278205,
   })
@@ -111,50 +95,42 @@
     }),
     'name': 'Cabbage leaf curl Jamaica virus',
     'plan': dict({
-      'molecule': dict({
-        'strandedness': 'double',
-        'topology': 'circular',
-        'type': 'DNA',
-      }),
-      'multipartite': True,
-      'parameters': dict({
-        'required_segments': list([
-          dict({
-            'length': 2575,
-            'name': dict({
-              'key': 'A',
-              'prefix': 'DNA',
-            }),
-            'required': 'required',
+      'required_segments': list([
+        dict({
+          'length': 2575,
+          'name': dict({
+            'key': 'A',
+            'prefix': 'DNA',
           }),
-          dict({
-            'length': 2494,
-            'name': dict({
-              'key': 'B',
-              'prefix': 'DNA',
-            }),
-            'required': 'required',
+          'required': 'required',
+        }),
+        dict({
+          'length': 2494,
+          'name': dict({
+            'key': 'B',
+            'prefix': 'DNA',
           }),
-        ]),
-        'segments': list([
-          dict({
-            'length': 2575,
-            'name': dict({
-              'key': 'A',
-              'prefix': 'DNA',
-            }),
-            'required': 'required',
+          'required': 'required',
+        }),
+      ]),
+      'segments': list([
+        dict({
+          'length': 2575,
+          'name': dict({
+            'key': 'A',
+            'prefix': 'DNA',
           }),
-          dict({
-            'length': 2494,
-            'name': dict({
-              'key': 'B',
-              'prefix': 'DNA',
-            }),
-            'required': 'required',
+          'required': 'required',
+        }),
+        dict({
+          'length': 2494,
+          'name': dict({
+            'key': 'B',
+            'prefix': 'DNA',
           }),
-        ]),
-      }),
+          'required': 'required',
+        }),
+      ]),
     }),
     'taxid': 345184,
   })
