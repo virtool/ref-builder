@@ -1,4 +1,5 @@
 import subprocess
+from uuid import uuid4
 
 import pytest
 
@@ -7,8 +8,10 @@ from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
     add_genbank_isolate,
     promote_otu_accessions,
+    set_isolate_plan,
     set_representative_isolate,
 )
+from ref_builder.plan import MultipartitePlan, SegmentName, SegmentRule, SegmentPlan
 
 
 def test_update_representative_isolate(scratch_repo: Repo):
@@ -29,6 +32,47 @@ def test_update_representative_isolate(scratch_repo: Repo):
     assert otu_after.repr_isolate != otu_before.repr_isolate
 
     assert otu_after.repr_isolate == repr_isolate_after
+
+
+class TestSetIsolatePlan:
+    def test_set_isolate_plan(self, scratch_repo: Repo):
+        otu_before = scratch_repo.get_otu_by_taxid(223262)
+
+        original_plan = otu_before.plan
+
+        assert type(original_plan) is MultipartitePlan
+
+        new_isolate_plan = MultipartitePlan(
+            id=uuid4(), segments=original_plan.segments
+        )
+
+        new_isolate_plan.segments.append(
+            SegmentPlan(
+                id=uuid4(),
+                length=2000,
+                name=SegmentName(prefix="DNA", key="C"),
+                required=SegmentRule.RECOMMENDED,
+            ),
+        )
+
+        new_isolate_plan.segments.append(
+            SegmentPlan(
+                id=uuid4(),
+                length=1000,
+                name=SegmentName(prefix="DNA", key="Z"),
+                required=SegmentRule.OPTIONAL,
+            ),
+        )
+
+        set_isolate_plan(scratch_repo, otu_before, new_isolate_plan)
+
+        assert type(new_isolate_plan) is MultipartitePlan
+
+        otu_after = scratch_repo.get_otu(otu_before.id)
+
+        assert len(otu_after.plan.segments) == len(otu_before.plan.segments) + 2
+
+        assert otu_after.plan == new_isolate_plan
 
 
 class TestUpdateRepresentativeIsolateCommand:
