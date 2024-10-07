@@ -232,6 +232,23 @@ def create_isolate_from_records(
     return isolate
 
 
+def set_isolate_plan(
+    repo: Repo,
+    otu: RepoOTU,
+    plan: MonopartitePlan | MultipartitePlan,
+) -> MonopartitePlan | MultipartitePlan | None:
+    """Sets an OTU's isolate plan to a new plan."""
+    otu_logger = logger.bind(name=otu.name, taxid=otu.taxid, plan=plan.model_dump())
+
+    try:
+        repo.set_isolate_plan(otu.id, plan)
+    except ValueError as e:
+        otu_logger.error(e)
+        return None
+
+    return repo.get_otu(otu.id).plan
+
+
 def set_representative_isolate(
     repo: Repo,
     otu: RepoOTU,
