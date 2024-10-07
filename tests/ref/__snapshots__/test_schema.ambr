@@ -7,56 +7,6 @@
 # ---
 # name: TestIsolatePlan.test_serialize_plan[accessions1-MultipartitePlan]
   dict({
-    'required_segments': list([
-      dict({
-        'length': 1090,
-        'name': dict({
-          'key': 'N',
-          'prefix': 'DNA',
-        }),
-        'required': 'required',
-      }),
-      dict({
-        'length': 1057,
-        'name': dict({
-          'key': 'U3',
-          'prefix': 'DNA',
-        }),
-        'required': 'required',
-      }),
-      dict({
-        'length': 1087,
-        'name': dict({
-          'key': 'S',
-          'prefix': 'DNA',
-        }),
-        'required': 'required',
-      }),
-      dict({
-        'length': 1074,
-        'name': dict({
-          'key': 'M',
-          'prefix': 'DNA',
-        }),
-        'required': 'required',
-      }),
-      dict({
-        'length': 1015,
-        'name': dict({
-          'key': 'C',
-          'prefix': 'DNA',
-        }),
-        'required': 'required',
-      }),
-      dict({
-        'length': 1099,
-        'name': dict({
-          'key': 'R',
-          'prefix': 'DNA',
-        }),
-        'required': 'required',
-      }),
-    ]),
     'segments': list([
       dict({
         'length': 1090,

@@ -12,24 +12,6 @@
     }),
     'name': 'Cabbage leaf curl Jamaica virus',
     'plan': dict({
-      'required_segments': list([
-        dict({
-          'length': 2575,
-          'name': dict({
-            'key': 'A',
-            'prefix': 'DNA',
-          }),
-          'required': 'required',
-        }),
-        dict({
-          'length': 2494,
-          'name': dict({
-            'key': 'B',
-            'prefix': 'DNA',
-          }),
-          'required': 'required',
-        }),
-      ]),
       'segments': list([
         dict({
           'length': 2575,
@@ -95,24 +77,6 @@
     }),
     'name': 'Cabbage leaf curl Jamaica virus',
     'plan': dict({
-      'required_segments': list([
-        dict({
-          'length': 2575,
-          'name': dict({
-            'key': 'A',
-            'prefix': 'DNA',
-          }),
-          'required': 'required',
-        }),
-        dict({
-          'length': 2494,
-          'name': dict({
-            'key': 'B',
-            'prefix': 'DNA',
-          }),
-          'required': 'required',
-        }),
-      ]),
       'segments': list([
         dict({
           'length': 2575,
