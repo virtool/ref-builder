@@ -42,17 +42,17 @@ class SegmentName:
         return f"{self.prefix} {self.key}"
 
 
-class SequencePlan(BaseModel):
+class SegmentMetadata(BaseModel):
     """Metadata and expected properties for an included sequence."""
 
     id: UUID4
-    """The unique id number of the sequence plan"""
+    """The unique ID of the segment or monopartite plan."""
 
     length: int
     """The expected length of the sequence"""
 
 
-class SegmentPlan(SequencePlan):
+class SegmentPlan(SegmentMetadata):
     """Metadata and expected properties for an included segment."""
 
     model_config = ConfigDict(use_enum_values=True)
@@ -64,11 +64,19 @@ class SegmentPlan(SequencePlan):
     """Whether this segment must be present in all additions."""
 
 
-class MonopartitePlan(SequencePlan):
+class MonopartitePlan(SegmentMetadata):
     """Expected properties for an acceptable monopartite isolate."""
 
     name: SegmentName | None = None
     """The name of the monopartite plan."""
+
+    @property
+    def segments(self) -> list["MonopartitePlan"]:
+        return [self]
+
+    @property
+    def required_segments(self) -> list["MonopartitePlan"]:
+        return [self]
 
 
 class MultipartitePlan(BaseModel):
@@ -79,7 +87,7 @@ class MultipartitePlan(BaseModel):
 
     segments: list[SegmentPlan]
 
-    @computed_field
+    @property
     def required_segments(self) -> list[SegmentPlan]:
         """Return a list of segments that are required by all additions."""
         return [segment for segment in self.segments if segment.required]
