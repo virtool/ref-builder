@@ -53,7 +53,7 @@ class SegmentMetadata(BaseModel):
 
 
 class SegmentPlan(SegmentMetadata):
-    """Metadata and expected properties for an included segment."""
+    """A segment in a multipartite plan."""
 
     model_config = ConfigDict(use_enum_values=True)
 
