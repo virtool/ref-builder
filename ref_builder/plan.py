@@ -64,11 +64,17 @@ class SegmentPlan(SegmentMetadata):
     """Whether this segment must be present in all additions."""
 
 
-class MonopartitePlan(SegmentMetadata):
+class MonopartitePlan(BaseModel):
     """Expected properties for an acceptable monopartite isolate."""
 
+    id: UUID4
+    """The unique ID of the monopartite plan."""
+
+    length: int
+    """The expected length of the sequence"""
+
     name: SegmentName | None = None
-    """The name of the monopartite plan."""
+    """The name of the monopartite plan"""
 
     @property
     def segments(self) -> list["MonopartitePlan"]:
