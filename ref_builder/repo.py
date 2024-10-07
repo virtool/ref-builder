@@ -405,10 +405,10 @@ class Repo:
 
         return new_sequence
 
-    def set_isolate_plan(self, otu_id: uuid.UUID, plan: MonopartitePlan | MultipartitePlan) -> MonopartitePlan | MultipartitePlan:
+    def set_isolate_plan(
+        self, otu_id: uuid.UUID, plan: MonopartitePlan | MultipartitePlan
+    ) -> MonopartitePlan | MultipartitePlan:
         """Set the isolate plan for an OTU."""
-        otu = self.get_otu(otu_id)
-
         self._write_event(
             CreatePlan,
             CreatePlanData(plan=plan),
@@ -416,7 +416,6 @@ class Repo:
         )
 
         return self.get_otu(otu_id).plan
-
 
     def set_repr_isolate(self, otu_id: uuid.UUID, isolate_id: uuid.UUID) -> uuid.UUID:
         """Set the representative isolate for an OTU."""
