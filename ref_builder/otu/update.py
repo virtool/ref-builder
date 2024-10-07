@@ -8,10 +8,10 @@ from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.utils import (
     DeleteRationale,
     RefSeqConflictError,
-    create_schema_from_records,
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
+from ref_builder.plan import MonopartitePlan, MultipartitePlan
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
 from ref_builder.utils import IsolateName
@@ -61,10 +61,13 @@ def add_genbank_isolate(
 
     isolate_name, isolate_records = list(record_bins.items())[0]
 
-    if len(isolate_records) != len(otu.schema.segments):
-        otu_logger.error(
-            f"The schema requires {len(otu.schema.segments)} segments: "
-            + f"{[segment.name for segment in otu.schema.segments]}",
+    try:
+        _check_isolate_size(plan=otu.plan, isolate_n=len(isolate_records))
+    except ValueError as e:
+        otu_logger.warning(
+            e,
+            isolate_name=str(isolate_name),
+            isolate_records=sorted(isolate_records.keys()),
         )
         return None
 
@@ -322,7 +325,9 @@ def update_isolate_from_records(
                 isolate_logger.error("Isolate could not be refilled.")
                 return None
 
-            logger.debug(f"{old_sequence.accession} replaced by {new_sequence.accession}")
+            logger.debug(
+                f"{old_sequence.accession} replaced by {new_sequence.accession}"
+            )
 
             repo.exclude_accession(otu.id, old_sequence.accession.key)
 
@@ -332,15 +337,15 @@ def update_isolate_from_records(
     isolate = otu.get_isolate(isolate_id)
 
     isolate_logger.info(
-        f"{sorted(isolate.accessions)} added to {isolate.name}, " +
-        f"replacing {sorted([str(sequence.accession) for sequence in sequences])}",
+        f"{sorted(isolate.accessions)} added to {isolate.name}, "
+        + f"replacing {sorted([str(sequence.accession) for sequence in sequences])}",
         isolate_id=str(isolate.id),
         sequences=sorted([str(record.accession) for record in records]),
     )
 
     logger.debug(
         f"Excluded accessions updated",
-        excluded_accessions=sorted(otu.excluded_accessions)
+        excluded_accessions=sorted(otu.excluded_accessions),
     )
 
     return isolate
@@ -350,7 +355,7 @@ def auto_update_otu(
     repo: Repo,
     otu: RepoOTU,
     ignore_cache: bool = False,
-):
+) -> None:
     """Fetch a full list of Nucleotide accessions associated with the OTU
     and pass the list to the add method.
     """
@@ -373,7 +378,7 @@ def update_otu_with_accessions(
     otu: RepoOTU,
     accessions: list,
     ignore_cache: bool = False,
-):
+) -> None:
     """Take a list of accessions, filter for eligible accessions and
     add new sequences to the OTU.
     """
@@ -383,8 +388,8 @@ def update_otu_with_accessions(
 
     otu_logger.info(
         "Fetching accessions",
-        count={len(accessions)},
-        fetch_list=accessions,
+        count=len(accessions),
+        fetch_list=sorted(accessions),
     )
 
     records = ncbi.fetch_genbank_records(accessions)
@@ -425,13 +430,15 @@ def file_records_into_otu(
 
     for isolate_name in record_bins:
         isolate_records = record_bins[isolate_name]
-        if len(isolate_records) != len(otu.schema.segments):
-            otu_logger.debug(
-                f"The schema requires {len(otu.schema.segments)} segments: "
-                + f"{[segment.name for segment in otu.schema.segments]}",
-                isolate_accessions=[accession.key for accession in isolate_records],
+
+        try:
+            _check_isolate_size(plan=otu.plan, isolate_n=len(isolate_records))
+        except ValueError as e:
+            otu_logger.warning(
+                e,
+                isolate_name=str(isolate_name),
+                isolate_records=[str(accession) for accession in isolate_records],
             )
-            otu_logger.debug(f"Skipping {isolate_name}")
             continue
 
         isolate = create_isolate_from_records(
@@ -444,7 +451,10 @@ def file_records_into_otu(
             new_isolate_names.append(isolate_name)
 
     if new_isolate_names:
-        otu_logger.info("New isolates added", new_isolates=new_isolate_names)
+        otu_logger.info(
+            "New isolates added",
+            new_isolates=[str(isolate_name) for isolate_name in new_isolate_names],
+        )
 
         return new_isolate_names
 
@@ -456,7 +466,7 @@ def exclude_accessions_from_otu(
     repo: Repo,
     otu: RepoOTU,
     accessions: list[str],
-):
+) -> None:
     """Take a list of accessions and add them to an OTU's excluded accessions list."""
     excluded_accessions = set()
     for accession in accessions:
@@ -470,42 +480,7 @@ def exclude_accessions_from_otu(
     )
 
 
-def add_schema_from_accessions(
-    repo: Repo,
-    taxid: int,
-    accessions: list[str],
-    ignore_cache: bool = False,
-):
-    """Take a list of accessions, create an OTU schema based on
-    the corresponding Genbank data and add the new schema to the OTU.
-    """
-    if (otu := repo.get_otu_by_taxid(taxid)) is None:
-        logger.fatal(f"OTU not found for {taxid}. Create first.")
-        return
-
-    otu_logger = logger.bind(otu_id=otu.id, taxid=taxid)
-
-    if otu.schema is not None:
-        logger.warning("OTU already has a schema attached.", schema=otu.schema)
-
-    ncbi = NCBIClient(ignore_cache)
-
-    records = ncbi.fetch_genbank_records(accessions)
-    if not records:
-        logger.fatal("Records could not be retrieved. Schema cannot be created.")
-        return
-
-    schema = create_schema_from_records(records)
-    if schema is not None:
-        otu_logger.info("Adding schema to OTU", schema=schema)
-        repo.create_schema(
-            otu_id=otu.id,
-            molecule=schema.molecule,
-            segments=schema.segments,
-        )
-
-
-def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID):
+def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
     """Remove an isolate from a specified OTU."""
     if (isolate := otu.get_isolate(isolate_id)) is None:
         logger.error("This isolate does not exist in this OTU.")
@@ -526,10 +501,13 @@ def replace_sequence_in_otu(
     """Replace a sequence in an OTU."""
     ncbi = NCBIClient(ignore_cache)
 
-    isolate_id, sequence_id, = otu.get_sequence_id_hierarchy_from_accession(replaced_accession)
+    (
+        isolate_id,
+        sequence_id,
+    ) = otu.get_sequence_id_hierarchy_from_accession(replaced_accession)
     if sequence_id is None:
         logger.error("This sequence does not exist in this OTU.")
-        return
+        return None
 
     isolate = otu.get_isolate(isolate_id)
 
@@ -545,13 +523,13 @@ def replace_sequence_in_otu(
         segment=record.source.segment,
         sequence=record.sequence,
         replaced_sequence_id=sequence_id,
-        rationale="Requested by user"
+        rationale="Requested by user",
     )
 
     if new_sequence is not None:
         logger.info(
             f"{replaced_accession} replaced by {new_sequence.accession}.",
-            new_sequence_id=new_sequence.id
+            new_sequence_id=new_sequence.id,
         )
         return new_sequence
 
@@ -593,24 +571,31 @@ def promote_otu_accessions_from_records(
             logger.debug(
                 "Replaceable accession found",
                 predecessor_accession=predecessor_accession,
-                promoted_accession=record.accession
+                promoted_accession=record.accession,
             )
 
-            isolate_id, sequence_id, = otu.get_sequence_id_hierarchy_from_accession(predecessor_accession)
+            (
+                isolate_id,
+                sequence_id,
+            ) = otu.get_sequence_id_hierarchy_from_accession(predecessor_accession)
 
             promoted_isolates[isolate_id].append((predecessor_accession, record))
 
     for isolate_id in promoted_isolates:
-        records = [record for predecession_accession, record in promoted_isolates[isolate_id]]
+        records = [
+            record for predecession_accession, record in promoted_isolates[isolate_id]
+        ]
         isolate = otu.get_isolate(isolate_id)
 
-        logger.debug(f"Promoting {isolate.name}", predecessor_accessions=isolate.accessions)
+        logger.debug(
+            f"Promoting {isolate.name}", predecessor_accessions=isolate.accessions
+        )
 
         promoted_isolate = update_isolate_from_records(repo, otu, isolate_id, records)
 
         logger.debug(
             f"{isolate.name} sequences promoted using RefSeq data",
-            accessions=promoted_isolate.accessions
+            accessions=promoted_isolate.accessions,
         )
 
         promoted_accessions.update(promoted_isolate.accessions)
@@ -619,9 +604,9 @@ def promote_otu_accessions_from_records(
 
 
 def _bin_refseq_records(
-    records: list[NCBIGenbank]) -> tuple[list[NCBIGenbank], list[NCBIGenbank]
-]:
-    """Returns a list of GenBank records as two lists, RefSeq and non-RefSeq."""
+    records: list[NCBIGenbank],
+) -> tuple[list[NCBIGenbank], list[NCBIGenbank]]:
+    """Return a list of GenBank records as two lists, RefSeq and non-RefSeq."""
     refseq_records = []
     non_refseq_records = []
 
@@ -641,10 +626,31 @@ def _create_fetch_list(
     requested_accessions: list | set,
     blocked_accessions: set,
 ) -> list[str]:
-    """Return the difference between a set of requested accessions and a set of blocked accessions.
-    Raise a ValueError if the intersection is complete."""
+    """Return the difference between a set of requested accessions
+    and a set of blocked accessions.
+    Raise a ValueError if the intersection is complete.
+    """
     fetch_list = list(set(requested_accessions).difference(blocked_accessions))
     if fetch_list:
         return fetch_list
 
     raise ValueError("None of the requested accessions were eligible for inclusion")
+
+
+def _check_isolate_size(
+    plan: MonopartitePlan | MultipartitePlan,
+    isolate_n: int,
+) -> bool:
+    """Return True if the size of the proposed isolate matches the isolate plan."""
+    if type(plan) is MonopartitePlan:
+        if isolate_n > 1:
+            raise ValueError("Too many segments in monopartite isolate.")
+        return True
+
+    if isolate_n == len(plan.required_segments):
+        return True
+
+    raise ValueError(
+        f"The plan requires {len(plan.required_segments)} segments: "
+        + f"{[str(segment.name) for segment in plan.segments]}"
+    )

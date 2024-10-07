@@ -1,6 +1,7 @@
 import re
+from enum import StrEnum
 
-from pydantic import UUID4, BaseModel, computed_field
+from pydantic import UUID4, BaseModel, ConfigDict, computed_field
 from pydantic.dataclasses import dataclass
 
 from ref_builder.models import Molecule
@@ -11,6 +12,19 @@ SIMPLE_NAME_PATTERN = re.compile(r"([A-Za-z0-9])+")
 
 COMPLEX_NAME_PATTERN = re.compile(r"([A-Za-z]+)[-_ ]+([A-Za-z0-9]+)")
 """Regex pattern for parsing segment name strings consisting of a prefix and a key."""
+
+
+class SegmentRule(StrEnum):
+    """Mark the importance of a particular segment."""
+
+    REQUIRED = "required"
+    """Segment is always required."""
+
+    RECOMMENDED = "recommended"
+    """Risk has to be acknowledged to add violating isolate."""
+
+    OPTIONAL = "optional"
+    """Segment is entirely optional."""
 
 
 @dataclass(frozen=True)
@@ -28,34 +42,61 @@ class SegmentName:
         return f"{self.prefix} {self.key}"
 
 
-class Segment(BaseModel):
-    """The metadata of the segment."""
+class SegmentMetadata(BaseModel):
+    """Metadata and expected properties for an included sequence."""
 
     id: UUID4
-    """The unique id number of this segment"""
+    """The unique ID of the segment or monopartite plan."""
 
-    name: str
+    length: int
+    """The expected length of the sequence"""
+
+
+class SegmentPlan(SegmentMetadata):
+    """A segment in a multipartite plan."""
+
+    model_config = ConfigDict(use_enum_values=True)
+
+    name: SegmentName
     """The name of the segment"""
 
-    required: bool
+    required: SegmentRule
     """Whether this segment must be present in all additions."""
 
-    length: int | None = None
+
+class MonopartitePlan(BaseModel):
+    """Expected properties for an acceptable monopartite isolate."""
+
+    id: UUID4
+    """The unique ID of the monopartite plan."""
+
+    length: int
+    """The expected length of the sequence"""
+
+    name: SegmentName | None = None
+    """The name of the monopartite plan"""
+
+    @property
+    def segments(self) -> list["MonopartitePlan"]:
+        return [self]
+
+    @property
+    def required_segments(self) -> list["MonopartitePlan"]:
+        return [self]
 
 
-class OTUSchema(BaseModel):
-    """A schema for the intended data."""
+class MultipartitePlan(BaseModel):
+    """Expected segments for an acceptable multipartite isolate."""
 
-    molecule: Molecule
-    """The molecular metadata for this OTU."""
+    id: UUID4
+    """The unique id number of the multipartite plan"""
 
-    segments: list[Segment]
-    """The segments contained in this OTU."""
+    segments: list[SegmentPlan]
 
-    @computed_field
-    def multipartite(self) -> bool:
-        """Is true if multiple sequences are required to form a complete isolate."""
-        return len(self.segments) > 1
+    @property
+    def required_segments(self) -> list[SegmentPlan]:
+        """Return a list of segments that are required by all additions."""
+        return [segment for segment in self.segments if segment.required]
 
 
 def determine_segment_prefix(moltype: NCBISourceMolType) -> str:
@@ -107,7 +148,8 @@ def get_multipartite_segment_name(record: NCBIGenbank) -> SegmentName:
     """Get a multipartite segment name from the record."""
     if SIMPLE_NAME_PATTERN.fullmatch(record.source.segment):
         return SegmentName(
-            prefix=record.moltype, key=record.source.segment,
+            prefix=record.moltype,
+            key=record.source.segment,
         )
 
     return parse_segment_name(record.source.segment)

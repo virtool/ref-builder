@@ -28,10 +28,10 @@ from ref_builder.events import (
     CreateIsolateData,
     CreateOTU,
     CreateOTUData,
+    CreatePlan,
+    CreatePlanData,
     CreateRepo,
     CreateRepoData,
-    CreateSchema,
-    CreateSchemaData,
     CreateSequence,
     CreateSequenceData,
     DeleteIsolate,
@@ -52,13 +52,13 @@ from ref_builder.events import (
 )
 from ref_builder.index import Index
 from ref_builder.models import Molecule, OTUMinimal
+from ref_builder.plan import MonopartitePlan, MultipartitePlan
 from ref_builder.resources import (
     RepoIsolate,
     RepoMeta,
     RepoOTU,
     RepoSequence,
 )
-from ref_builder.schema import OTUSchema, Segment
 from ref_builder.utils import (
     Accession,
     DataType,
@@ -182,10 +182,11 @@ class Repo:
         self,
         acronym: str,
         legacy_id: str | None,
+        molecule: Molecule,
         name: str,
-        schema: [],
+        plan: MonopartitePlan | MultipartitePlan,
         taxid: int,
-    ):
+    ) -> RepoOTU | None:
         """Create an OTU."""
         if (otu_id := self.get_otu_id_by_taxid(taxid)) is not None:
             otu = self.get_otu(otu_id)
@@ -210,8 +211,9 @@ class Repo:
                 id=otu_id,
                 acronym=acronym,
                 legacy_id=legacy_id,
+                molecule=molecule,
                 name=name,
-                schema=schema,
+                plan=plan,
                 taxid=taxid,
             ),
             OTUQuery(otu_id=otu_id),
@@ -375,25 +377,6 @@ class Repo:
 
         return new_sequence
 
-    def create_schema(
-        self,
-        otu_id: uuid.UUID,
-        molecule: Molecule,
-        segments: list[Segment],
-    ) -> OTUSchema:
-        """Create a new schema for an OTU."""
-        otu = self.get_otu(otu_id)
-
-        schema_data = {"molecule": molecule, "segments": segments}
-
-        self._write_event(
-            CreateSchema,
-            CreateSchemaData(**schema_data),
-            OTUQuery(otu_id=otu.id),
-        )
-
-        return self.get_otu(otu_id).schema
-
     def set_repr_isolate(self, otu_id: uuid.UUID, isolate_id: uuid.UUID) -> uuid.UUID:
         """Set the representative isolate for an OTU."""
         otu = self.get_otu(otu_id)
@@ -488,20 +471,18 @@ class Repo:
             excluded_accessions=set(),
             isolates=[],
             legacy_id=event.data.legacy_id,
+            molecule=event.data.molecule,
             name=event.data.name,
             repr_isolate=None,
-            schema=event.data.otu_schema,
+            plan=event.data.plan,
             taxid=event.data.taxid,
         )
 
         for event_id in event_ids[1:]:
             event = self._event_store.read_event(event_id)
 
-            if isinstance(event, CreateSchema):
-                otu.schema = OTUSchema(
-                    molecule=event.data.molecule,
-                    segments=event.data.segments,
-                )
+            if isinstance(event, CreatePlan):
+                otu.plan = event.data.plan
 
             elif isinstance(event, SetReprIsolate):
                 otu.repr_isolate = event.data.isolate_id
@@ -648,7 +629,7 @@ class EventStore:
                     "CreateSequence": CreateSequence,
                     "DeleteIsolate": DeleteIsolate,
                     "DeleteSequence": DeleteSequence,
-                    "CreateSchema": CreateSchema,
+                    "CreatePlan": CreatePlan,
                     "SetReprIsolate": SetReprIsolate,
                     "ExcludeAccession": ExcludeAccession,
                 }[loaded["type"]]

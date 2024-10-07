@@ -1,59 +1,60 @@
 # serializer version: 1
-# name: test_create_schema_from_records[accessions0]
+# name: TestIsolatePlan.test_serialize_plan[accessions0-MonopartitePlan]
   dict({
-    'molecule': dict({
-      'strandedness': 'double',
-      'topology': 'circular',
-      'type': 'DNA',
-    }),
-    'multipartite': False,
-    'segments': list([
-      dict({
-        'length': 7424,
-        'name': 'genomic DNA',
-        'required': True,
-      }),
-    ]),
+    'length': 7424,
+    'name': None,
   })
 # ---
-# name: test_create_schema_from_records[accessions1]
+# name: TestIsolatePlan.test_serialize_plan[accessions1-MultipartitePlan]
   dict({
-    'molecule': dict({
-      'strandedness': 'single',
-      'topology': 'circular',
-      'type': 'DNA',
-    }),
-    'multipartite': True,
     'segments': list([
       dict({
         'length': 1090,
-        'name': 'DNA N',
-        'required': True,
+        'name': dict({
+          'key': 'N',
+          'prefix': 'DNA',
+        }),
+        'required': 'required',
       }),
       dict({
         'length': 1057,
-        'name': 'DNA U3',
-        'required': True,
+        'name': dict({
+          'key': 'U3',
+          'prefix': 'DNA',
+        }),
+        'required': 'required',
       }),
       dict({
         'length': 1087,
-        'name': 'DNA S',
-        'required': True,
+        'name': dict({
+          'key': 'S',
+          'prefix': 'DNA',
+        }),
+        'required': 'required',
       }),
       dict({
         'length': 1074,
-        'name': 'DNA M',
-        'required': True,
+        'name': dict({
+          'key': 'M',
+          'prefix': 'DNA',
+        }),
+        'required': 'required',
       }),
       dict({
         'length': 1015,
-        'name': 'DNA C',
-        'required': True,
+        'name': dict({
+          'key': 'C',
+          'prefix': 'DNA',
+        }),
+        'required': 'required',
       }),
       dict({
         'length': 1099,
-        'name': 'DNA R',
-        'required': True,
+        'name': dict({
+          'key': 'R',
+          'prefix': 'DNA',
+        }),
+        'required': 'required',
       }),
     ]),
   })

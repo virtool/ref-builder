@@ -39,8 +39,12 @@ def build_json(indent: bool, output_path: Path, path: Path, version: str) -> Non
                     "id": isolate.legacy_id or isolate.id,
                     "default": isolate.id == otu.repr_isolate,
                     "sequences": sequences,
-                    "source_name": isolate.name.value if isolate.name is not None else None,
-                    "source_type": isolate.name.type if isolate.name is not None else None,
+                    "source_name": isolate.name.value
+                    if isolate.name is not None
+                    else None,
+                    "source_type": isolate.name.type
+                    if isolate.name is not None
+                    else None,
                 },
             )
 
@@ -52,7 +56,7 @@ def build_json(indent: bool, output_path: Path, path: Path, version: str) -> Non
                 "abbreviation": otu.acronym,
                 "isolates": isolates,
                 "name": otu.name,
-                "schema": otu.schema.model_dump(),
+                "schema": otu.plan.model_dump(),
                 "taxid": otu.taxid,
             },
         )

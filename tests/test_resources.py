@@ -3,15 +3,17 @@ from uuid import uuid4
 import pytest
 
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
+from ref_builder.plan import MonopartitePlan
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU
-from ref_builder.schema import OTUSchema, Segment
 from ref_builder.utils import IsolateName, IsolateNameType
 
 
 class TestSequence:
+    """Test properties of RepoSequence."""
+
     @pytest.mark.parametrize(
-        "taxid,accessions",
+        ("taxid", "accessions"),
         [
             (
                 345184,
@@ -19,7 +21,7 @@ class TestSequence:
             ),
         ],
     )
-    def test_equivalence(self, taxid, accessions, scratch_repo):
+    def test_equivalence(self, taxid: int, accessions: list["str"], scratch_repo: Repo):
         """Test that the == operator works correctly."""
         otu = scratch_repo.get_otu_by_taxid(taxid)
 
@@ -30,6 +32,8 @@ class TestSequence:
 
 
 class TestIsolate:
+    """Test properties of RepoIsolate."""
+
     def test_no_sequences(self):
         """Test that an isolate intializes correctly with no sequences."""
         isolate = RepoIsolate(
@@ -42,7 +46,7 @@ class TestIsolate:
         assert isolate.sequences == []
 
     @pytest.mark.parametrize("taxid", [345184])
-    def test_equivalence(self, taxid, scratch_repo):
+    def test_equivalence(self, taxid: int, scratch_repo: Repo):
         """Test that the == operator works correctly."""
         otu = scratch_repo.get_otu_by_taxid(taxid)
 
@@ -51,6 +55,8 @@ class TestIsolate:
 
 
 class TestOTU:
+    """Test properties of RepoOTU."""
+
     def test_no_isolates(self):
         """Test that an isolate initializes correctly with no isolates."""
         otu = RepoOTU(
@@ -59,18 +65,14 @@ class TestOTU:
             excluded_accessions=set(),
             isolates=[],
             legacy_id=None,
+            molecule=Molecule(
+                strandedness=Strandedness.SINGLE,
+                type=MolType.RNA,
+                topology=Topology.LINEAR,
+            ),
             name="Tobacco mosaic virus",
             repr_isolate=None,
-            schema=OTUSchema(
-                molecule=Molecule(
-                    strandedness=Strandedness.SINGLE,
-                    type=MolType.RNA,
-                    topology=Topology.LINEAR,
-                ),
-                segments=[
-                    Segment(id=uuid4(), name="genomic RNA", length=6395, required=True),
-                ],
-            ),
+            plan=MonopartitePlan(id=uuid4(), length=6395),
             taxid=12242,
         )
 
@@ -85,6 +87,7 @@ class TestOTU:
         )
 
     def test_get_sequence_id_hierarchy(self, scratch_repo: Repo):
+        """Test that the isolate ID can be found from a sequence ID."""
         otu = scratch_repo.get_otu_by_taxid(345184)
 
         isolate_id, sequence_id = otu.get_sequence_id_hierarchy_from_accession(

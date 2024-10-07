@@ -8,7 +8,7 @@ from ref_builder.logs import configure_logger
 from ref_builder.models import Molecule
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.repo import Repo
-from ref_builder.schema import OTUSchema
+from ref_builder.plan import MonopartitePlan, MultipartitePlan
 from ref_builder.utils import DataType, IsolateName, IsolateNameType
 
 
@@ -52,19 +52,39 @@ def convert_legacy_repo(name: str, path: Path, target_path: Path) -> None:
             type=record.moltype,
         )
 
-        try:
-            segments = [{**segment, "id": uuid.uuid4()} for segment in otu["schema"]]
-
-            repo_otu = repo.create_otu(
-                otu["abbreviation"],
-                otu["_id"],
-                otu["name"],
-                OTUSchema(
-                    molecule=molecule,
-                    segments=segments,
-                ),
-                otu["taxid"],
+        original_segments = [
+            {**segment, "id": uuid.uuid4()} for segment in otu["schema"]
+        ]
+        if len(original_segments) > 2:
+            isolate_plan = MultipartitePlan.model_validate(
+                {
+                    "id": uuid.uuid4(),
+                    "segments": original_segments,
+                }
             )
+        else:
+            isolate_plan = MonopartitePlan(
+                id=original_segments[0]["id"], length=len(record.sequence)
+            )
+
+        try:
+            try:
+                repo_otu = repo.create_otu(
+                    otu["abbreviation"],
+                    otu["_id"],
+                    molecule=molecule,
+                    name=otu["name"],
+                    plan=isolate_plan,
+                    taxid=otu["taxid"],
+                )
+            except ValueError as err:
+                if "OTU already exists" in str(err):
+                    console.print(
+                        f"[red]Error:[/red] Already exists: {otu['name']} ({otu['taxid']})",
+                    )
+                    continue
+
+                raise
         except ValueError as err:
             if "OTU already exists" in str(err):
                 console.print(

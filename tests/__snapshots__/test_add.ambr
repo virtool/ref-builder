@@ -5,24 +5,29 @@
     'excluded_accessions': set({
     }),
     'legacy_id': None,
+    'molecule': dict({
+      'strandedness': 'double',
+      'topology': 'circular',
+      'type': 'DNA',
+    }),
     'name': 'Cabbage leaf curl Jamaica virus',
-    'schema': dict({
-      'molecule': dict({
-        'strandedness': 'double',
-        'topology': 'circular',
-        'type': 'DNA',
-      }),
-      'multipartite': True,
+    'plan': dict({
       'segments': list([
         dict({
           'length': 2575,
-          'name': 'DNA A',
-          'required': True,
+          'name': dict({
+            'key': 'A',
+            'prefix': 'DNA',
+          }),
+          'required': 'required',
         }),
         dict({
           'length': 2494,
-          'name': 'DNA B',
-          'required': True,
+          'name': dict({
+            'key': 'B',
+            'prefix': 'DNA',
+          }),
+          'required': 'required',
         }),
       ]),
     }),
@@ -46,21 +51,15 @@
       'JX263426',
     }),
     'legacy_id': None,
+    'molecule': dict({
+      'strandedness': 'single',
+      'topology': 'linear',
+      'type': 'RNA',
+    }),
     'name': 'Dahlia latent viroid',
-    'schema': dict({
-      'molecule': dict({
-        'strandedness': 'single',
-        'topology': 'linear',
-        'type': 'RNA',
-      }),
-      'multipartite': False,
-      'segments': list([
-        dict({
-          'length': 342,
-          'name': 'genomic RNA',
-          'required': True,
-        }),
-      ]),
+    'plan': dict({
+      'length': 342,
+      'name': None,
     }),
     'taxid': 1278205,
   })
@@ -71,24 +70,29 @@
     'excluded_accessions': set({
     }),
     'legacy_id': None,
+    'molecule': dict({
+      'strandedness': 'double',
+      'topology': 'circular',
+      'type': 'DNA',
+    }),
     'name': 'Cabbage leaf curl Jamaica virus',
-    'schema': dict({
-      'molecule': dict({
-        'strandedness': 'double',
-        'topology': 'circular',
-        'type': 'DNA',
-      }),
-      'multipartite': True,
+    'plan': dict({
       'segments': list([
         dict({
           'length': 2575,
-          'name': 'DNA A',
-          'required': True,
+          'name': dict({
+            'key': 'A',
+            'prefix': 'DNA',
+          }),
+          'required': 'required',
         }),
         dict({
           'length': 2494,
-          'name': 'DNA B',
-          'required': True,
+          'name': dict({
+            'key': 'B',
+            'prefix': 'DNA',
+          }),
+          'required': 'required',
         }),
       ]),
     }),

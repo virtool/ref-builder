@@ -7,7 +7,13 @@ import structlog
 
 from ref_builder.models import Molecule
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.schema import OTUSchema, Segment, get_multipartite_segment_name
+from ref_builder.plan import (
+    MonopartitePlan,
+    MultipartitePlan,
+    SegmentPlan,
+    SegmentRule,
+    get_multipartite_segment_name,
+)
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
 logger = structlog.get_logger("otu.utils")
@@ -24,7 +30,11 @@ class RefSeqConflictError(ValueError):
     """Raised when a potential RefSeq replacement is found."""
 
     def __init__(
-        self, message, isolate_id: UUID, isolate_name: IsolateName, accessions: list[str]
+        self,
+        message: str,
+        isolate_id: UUID,
+        isolate_name: IsolateName,
+        accessions: list[str],
     ):
         super().__init__(message)
 
@@ -35,12 +45,13 @@ class RefSeqConflictError(ValueError):
         self.accessions = accessions
 
 
-def create_schema_from_records(
+def create_isolate_plan_from_records(
     records: list[NCBIGenbank],
-    segments: list[Segment] | None = None,
-) -> OTUSchema | None:
-    """Return a complete schema from a list of records."""
-    molecule = _get_molecule_from_records(records)
+    segments: list[SegmentPlan] | None = None,
+) -> MonopartitePlan | MultipartitePlan | None:
+    """Return a plan from a list of records representing an isolate."""
+    if len(records) == 1:
+        return MonopartitePlan(id=uuid4(), length=len(records[0].sequence))
 
     binned_records = group_genbank_records_by_isolate(records)
     if len(binned_records) > 1:
@@ -50,10 +61,25 @@ def create_schema_from_records(
         )
         return None
 
-    if segments is None:
-        segments = _get_segments_from_records(records)
-        if segments:
-            return OTUSchema(molecule=molecule, segments=segments)
+    if segments is not None:
+        return MultipartitePlan(id=uuid4(), segments=segments)
+
+    segments = []
+    for record in sorted(records, key=lambda record: record.accession):
+        if not record.source.segment:
+            raise ValueError("No segment name found for multipartite OTU segment.")
+
+        segments.append(
+            SegmentPlan(
+                id=uuid4(),
+                name=get_multipartite_segment_name(record),
+                required=SegmentRule.REQUIRED,
+                length=len(record.sequence),
+            ),
+        )
+
+    if segments:
+        return MultipartitePlan(id=uuid4(), segments=segments)
 
     return None
 
@@ -99,7 +125,7 @@ def parse_refseq_comment(comment: str) -> tuple[str, str]:
     return match.group(1), match.group(2)
 
 
-def _get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
+def get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
     """Return relevant molecule metadata from one or more records."""
     if not records:
         raise IndexError("No records given")
@@ -137,37 +163,3 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
         return None
 
     raise ValueError("Record does not contain sufficient source data for inclusion.")
-
-
-def _get_segments_from_records(records: list[NCBIGenbank]) -> list[Segment]:
-    if len(records) == 1:
-        record = records[0]
-
-        if record.source.segment != "":
-            segment_name = record.source.segment
-        else:
-            segment_name = record.source.mol_type
-
-        segment_id = uuid4()
-        return [
-            Segment(
-                id=segment_id, name=segment_name, required=True, length=len(record.sequence)
-            )
-        ]
-
-    segments = []
-    for record in sorted(records, key=lambda record: record.accession):
-        if record.source.segment:
-            segment_id = uuid4()
-            segments.append(
-                Segment(
-                    id=segment_id,
-                    name=str(get_multipartite_segment_name(record)),
-                    required=True,
-                    length=len(record.sequence),
-                ),
-            )
-        else:
-            raise ValueError("No segment name found for multipartite OTU segment.")
-
-    return segments

@@ -5,31 +5,30 @@ import orjson
 import pytest
 
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
+from ref_builder.plan import MonopartitePlan
 from ref_builder.repo import Repo
 from ref_builder.resources import (
     RepoIsolate,
     RepoOTU,
     RepoSequence,
 )
-from ref_builder.schema import OTUSchema, Segment
 from ref_builder.utils import Accession, DataType, IsolateName, IsolateNameType
 
 
 @pytest.fixture()
 def initialized_repo(empty_repo: Repo):
+    """Return a pre-initialized mock Repo."""
     otu = empty_repo.create_otu(
-        "TMV",
-        None,
-        "Tobacco mosaic virus",
-        OTUSchema(
-            molecule=Molecule(
-                strandedness=Strandedness.SINGLE,
-                type=MolType.RNA,
-                topology=Topology.LINEAR,
-            ),
-            segments=[Segment(id=uuid4(), name="A", length=150, required=True)],
+        acronym="TMV",
+        legacy_id=None,
+        molecule=Molecule(
+            strandedness=Strandedness.SINGLE,
+            type=MolType.RNA,
+            topology=Topology.LINEAR,
         ),
-        12242,
+        name="Tobacco mosaic virus",
+        plan=MonopartitePlan(id=uuid4(), length=150),
+        taxid=12242,
     )
 
     isolate_a = empty_repo.create_isolate(
@@ -54,15 +53,13 @@ def init_otu(empty_repo: Repo) -> RepoOTU:
     return empty_repo.create_otu(
         acronym="TMV",
         legacy_id="abcd1234",
-        name="Tobacco mosaic virus",
-        schema=OTUSchema(
-            molecule=Molecule(
-                strandedness=Strandedness.SINGLE,
-                type=MolType.RNA,
-                topology=Topology.LINEAR,
-            ),
-            segments=[Segment(id=uuid4(), name="A", required=True, length=100)],
+        molecule=Molecule(
+            strandedness=Strandedness.SINGLE,
+            type=MolType.RNA,
+            topology=Topology.LINEAR,
         ),
+        name="Tobacco mosaic virus",
+        plan=MonopartitePlan(id=uuid4(), length=150),
         taxid=12242,
     )
 
@@ -84,25 +81,18 @@ class TestCreateOTU:
         """Test that creating an OTU returns the expected ``RepoOTU`` object and creates
         the expected event file.
         """
+        monopartite_plan = MonopartitePlan(id=uuid4(), length=150)
+
         otu = empty_repo.create_otu(
             acronym="TMV",
             legacy_id="abcd1234",
-            name="Tobacco mosaic virus",
-            schema=OTUSchema(
-                molecule=Molecule(
-                    strandedness=Strandedness.SINGLE,
-                    type=MolType.RNA,
-                    topology=Topology.LINEAR,
-                ),
-                segments=[
-                    Segment(
-                        id=uuid4(),
-                        name="A",
-                        required=True,
-                        length=100,
-                    ),
-                ],
+            molecule=Molecule(
+                strandedness=Strandedness.SINGLE,
+                type=MolType.RNA,
+                topology=Topology.LINEAR,
             ),
+            name="Tobacco mosaic virus",
+            plan=monopartite_plan,
             taxid=12242,
         )
 
@@ -111,23 +101,14 @@ class TestCreateOTU:
             acronym="TMV",
             excluded_accessions=set(),
             legacy_id="abcd1234",
+            molecule=Molecule(
+                strandedness=Strandedness.SINGLE,
+                type=MolType.RNA,
+                topology=Topology.LINEAR,
+            ),
             name="Tobacco mosaic virus",
             repr_isolate=None,
-            schema=OTUSchema(
-                molecule=Molecule(
-                    strandedness=Strandedness.SINGLE,
-                    type=MolType.RNA,
-                    topology=Topology.LINEAR,
-                ),
-                segments=[
-                    Segment(
-                        id=otu.schema.segments[0].id,
-                        name="A",
-                        required=True,
-                        length=100,
-                    ),
-                ],
-            ),
+            plan=MonopartitePlan(id=monopartite_plan.id, length=150),
             taxid=12242,
             isolates=[],
         )
@@ -141,23 +122,17 @@ class TestCreateOTU:
             "data": {
                 "id": str(otu.id),
                 "acronym": "TMV",
+                "molecule": {
+                    "strandedness": "single",
+                    "type": "RNA",
+                    "topology": "linear",
+                },
                 "legacy_id": "abcd1234",
                 "name": "Tobacco mosaic virus",
-                "schema": {
-                    "molecule": {
-                        "strandedness": "single",
-                        "type": "RNA",
-                        "topology": "linear",
-                    },
-                    "segments": [
-                        {
-                            "id": str(otu.schema.segments[0].id),
-                            "length": 100,
-                            "name": "A",
-                            "required": True,
-                        },
-                    ],
-                    "multipartite": False,
+                "plan": {
+                    "id": str(monopartite_plan.id),
+                    "length": 150,
+                    "name": None,
                 },
                 "taxid": 12242,
             },
@@ -177,17 +152,13 @@ class TestCreateOTU:
         otu = empty_repo.create_otu(
             acronym="TMV",
             legacy_id=None,
-            name="Tobacco mosaic virus",
-            schema=OTUSchema(
-                molecule=Molecule(
-                    strandedness=Strandedness.SINGLE,
-                    type=MolType.RNA,
-                    topology=Topology.LINEAR,
-                ),
-                segments=[
-                    Segment(id=uuid4(), name="A", required=True),
-                ],
+            molecule=Molecule(
+                strandedness=Strandedness.SINGLE,
+                type=MolType.RNA,
+                topology=Topology.LINEAR,
             ),
+            name="Tobacco mosaic virus",
+            plan=MonopartitePlan(id=uuid4(), length=150),
             taxid=12242,
         )
 
@@ -198,17 +169,13 @@ class TestCreateOTU:
             empty_repo.create_otu(
                 acronym="TMV",
                 legacy_id=None,
-                name="Tobacco mosaic virus",
-                schema=OTUSchema(
-                    molecule=Molecule(
-                        strandedness=Strandedness.SINGLE,
-                        type=MolType.RNA,
-                        topology=Topology.LINEAR,
-                    ),
-                    segments=[
-                        Segment(id=otu.schema.segments[0].id, name="A", required=True),
-                    ],
+                molecule=Molecule(
+                    strandedness=Strandedness.SINGLE,
+                    type=MolType.RNA,
+                    topology=Topology.LINEAR,
                 ),
+                name="Tobacco mosaic virus",
+                plan=MonopartitePlan(id=uuid4(), length=150),
                 taxid=438782,
             )
 
@@ -219,15 +186,13 @@ class TestCreateOTU:
         otu = empty_repo.create_otu(
             acronym="TMV",
             legacy_id="abcd1234",
-            name="Tobacco mosaic virus",
-            schema=OTUSchema(
-                molecule=Molecule(
-                    strandedness=Strandedness.SINGLE,
-                    type=MolType.RNA,
-                    topology=Topology.LINEAR,
-                ),
-                segments=[Segment(id=uuid4(), name="A", required=True)],
+            molecule=Molecule(
+                strandedness=Strandedness.SINGLE,
+                type=MolType.RNA,
+                topology=Topology.LINEAR,
             ),
+            name="Tobacco mosaic virus",
+            plan=MonopartitePlan(id=uuid4(), length=150),
             taxid=12242,
         )
 
@@ -237,23 +202,21 @@ class TestCreateOTU:
         ):
             empty_repo.create_otu(
                 acronym="",
+                molecule=Molecule(
+                    strandedness=Strandedness.SINGLE,
+                    type=MolType.RNA,
+                    topology=Topology.LINEAR,
+                ),
                 legacy_id="abcd1234",
                 name="Abaca bunchy top virus",
-                schema=OTUSchema(
-                    molecule=Molecule(
-                        strandedness=Strandedness.SINGLE,
-                        type=MolType.RNA,
-                        topology=Topology.LINEAR,
-                    ),
-                    segments=[
-                        Segment(id=otu.schema.segments[0].id, name="A", required=True),
-                    ],
-                ),
+                plan=MonopartitePlan(id=uuid4(), length=150),
                 taxid=438782,
             )
 
 
 class TestCreateIsolate:
+    """Test the creation and addition of new isolates in Repo."""
+
     def test_ok(self, empty_repo: Repo):
         """Test that creating an isolate returns the expected ``RepoIsolate`` object and
         creates the expected event file.
@@ -388,24 +351,26 @@ def test_create_sequence(empty_repo: Repo):
     assert empty_repo.last_id == 4
 
 
-class TestRetrieveOTU:
+class TestGetOTU:
+    """Test the retrieval of OTU data."""
+
     def test_get_otu(self, empty_repo: Repo):
         """Test that getting an OTU returns the expected ``RepoOTU`` object including two
         isolates with one sequence each.
         """
+        monopartite_plan = MonopartitePlan(id=uuid4(), length=150)
+
         otu = empty_repo.create_otu(
             acronym="TMV",
             legacy_id=None,
+            molecule=Molecule(
+                strandedness=Strandedness.SINGLE,
+                type=MolType.RNA,
+                topology=Topology.LINEAR,
+            ),
             name="Tobacco mosaic virus",
             taxid=12242,
-            schema=OTUSchema(
-                molecule=Molecule(
-                    strandedness=Strandedness.SINGLE,
-                    type=MolType.RNA,
-                    topology=Topology.LINEAR,
-                ),
-                segments=[Segment(id=uuid4(), name="A", required=True)],
-            ),
+            plan=monopartite_plan,
         )
 
         isolate_a = empty_repo.create_isolate(
@@ -479,18 +444,14 @@ class TestRetrieveOTU:
             acronym="TMV",
             excluded_accessions=set(),
             legacy_id=None,
+            molecule=Molecule(
+                strandedness=Strandedness.SINGLE,
+                type=MolType.RNA,
+                topology=Topology.LINEAR,
+            ),
             name="Tobacco mosaic virus",
             repr_isolate=None,
-            schema=OTUSchema(
-                molecule=Molecule(
-                    strandedness=Strandedness.SINGLE,
-                    type=MolType.RNA,
-                    topology=Topology.LINEAR,
-                ),
-                segments=[
-                    Segment(id=otu.schema.segments[0].id, name="A", required=True),
-                ],
-            ),
+            plan=MonopartitePlan(id=monopartite_plan.id, length=150),
             taxid=12242,
             isolates=otu_contents,
         )
