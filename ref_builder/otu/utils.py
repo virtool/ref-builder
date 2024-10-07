@@ -8,7 +8,6 @@ import structlog
 from ref_builder.models import Molecule
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.plan import (
-    IsolatePlan,
     MonopartitePlan,
     MultipartitePlan,
     SegmentPlan,

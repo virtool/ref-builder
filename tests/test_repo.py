@@ -5,7 +5,7 @@ import orjson
 import pytest
 
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
-from ref_builder.plan import IsolatePlan, MonopartitePlan
+from ref_builder.plan import MonopartitePlan
 from ref_builder.repo import Repo
 from ref_builder.resources import (
     RepoIsolate,

@@ -5,7 +5,7 @@ import datetime
 from pydantic import UUID4, AliasChoices, BaseModel, Field, computed_field
 
 from ref_builder.models import Molecule
-from ref_builder.plan import IsolatePlan, MonopartitePlan, MultipartitePlan
+from ref_builder.plan import MonopartitePlan, MultipartitePlan
 from ref_builder.utils import Accession, IsolateName
 
 

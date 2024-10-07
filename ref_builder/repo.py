@@ -52,7 +52,7 @@ from ref_builder.events import (
 )
 from ref_builder.index import Index
 from ref_builder.models import Molecule, OTUMinimal
-from ref_builder.plan import IsolatePlan, MonopartitePlan, MultipartitePlan
+from ref_builder.plan import MonopartitePlan, MultipartitePlan
 from ref_builder.resources import (
     RepoIsolate,
     RepoMeta,
