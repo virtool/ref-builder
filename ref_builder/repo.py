@@ -377,23 +377,6 @@ class Repo:
 
         return new_sequence
 
-    def create_schema(
-        self,
-        otu_id: uuid.UUID,
-        molecule: Molecule,
-        parameters: MonopartitePlan | MultipartitePlan,
-    ) -> IsolatePlan:
-        """Create a new schema for an OTU."""
-        otu = self.get_otu(otu_id)
-
-        self._write_event(
-            CreatePlan,
-            CreatePlanData(molecule=molecule, parameters=parameters),
-            OTUQuery(otu_id=otu.id),
-        )
-
-        return self.get_otu(otu_id).plan
-
     def set_repr_isolate(self, otu_id: uuid.UUID, isolate_id: uuid.UUID) -> uuid.UUID:
         """Set the representative isolate for an OTU."""
         otu = self.get_otu(otu_id)

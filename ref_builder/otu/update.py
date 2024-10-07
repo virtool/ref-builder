@@ -8,7 +8,6 @@ from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.utils import (
     DeleteRationale,
     RefSeqConflictError,
-    create_isolate_plan_from_records,
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )

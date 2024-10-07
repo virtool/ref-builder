@@ -93,32 +93,6 @@ class MultipartitePlan(BaseModel):
         return [segment for segment in self.segments if segment.required]
 
 
-class IsolatePlan(BaseModel):
-    """A schema for the intended data."""
-
-    molecule: Molecule
-    """The molecular metadata for this OTU."""
-
-    parameters: MonopartitePlan | MultipartitePlan
-    """The expected parameters of an acceptable isolate."""
-
-    @computed_field
-    def multipartite(self) -> bool:
-        """Is true if multiple sequences are required to form a complete isolate."""
-        return type(self.parameters) is MultipartitePlan
-
-    @property
-    def segments(self) -> list[SegmentPlan | MonopartitePlan]:
-        """The segments contained in this OTU.
-
-        This property is a stopgap and will be removed in a future release.
-        """
-        if self.multipartite:
-            return self.parameters.segments
-
-        return [self.parameters]
-
-
 def determine_segment_prefix(moltype: NCBISourceMolType) -> str:
     """Return an acceptable SegmentName prefix corresponding to
     the given NCBISourceMolType.
