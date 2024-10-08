@@ -1,10 +1,10 @@
 import re
 from enum import StrEnum
+from typing import Union
 
-from pydantic import UUID4, BaseModel, ConfigDict, computed_field
+from pydantic import UUID4, BaseModel, ConfigDict, TypeAdapter
 from pydantic.dataclasses import dataclass
 
-from ref_builder.models import Molecule
 from ref_builder.ncbi.models import NCBIGenbank, NCBISourceMolType
 
 SIMPLE_NAME_PATTERN = re.compile(r"([A-Za-z0-9])+")
@@ -97,6 +97,11 @@ class MultipartitePlan(BaseModel):
     def required_segments(self) -> list[SegmentPlan]:
         """Return a list of segments that are required by all additions."""
         return [segment for segment in self.segments if segment.required]
+
+
+IsolatePlan = Union[MultipartitePlan, MonopartitePlan]
+
+plan_typer = TypeAdapter(IsolatePlan)
 
 
 def determine_segment_prefix(moltype: NCBISourceMolType) -> str:
