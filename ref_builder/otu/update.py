@@ -1,5 +1,5 @@
 from collections import defaultdict
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from structlog import get_logger
 
@@ -8,10 +8,11 @@ from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.utils import (
     DeleteRationale,
     RefSeqConflictError,
+    create_segments_from_records,
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
-from ref_builder.plan import MonopartitePlan, MultipartitePlan
+from ref_builder.plan import MonopartitePlan, MultipartitePlan, SegmentRule
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
 from ref_builder.utils import IsolateName
@@ -242,6 +243,41 @@ def set_isolate_plan(
 
     try:
         repo.set_isolate_plan(otu.id, plan)
+    except ValueError as e:
+        otu_logger.error(e)
+        return None
+
+    return repo.get_otu(otu.id).plan
+
+
+def add_segments_to_plan(
+    repo: Repo,
+    otu: RepoOTU,
+    rule: SegmentRule,
+    accessions: list[str],
+    ignore_cache: bool = False,
+):
+    otu_logger = logger.bind(name=otu.name, taxid=otu.taxid, original_plan=otu.plan)
+
+    client = NCBIClient(ignore_cache)
+
+    records = client.fetch_genbank_records(accessions)
+    if not records:
+        otu_logger.warning("Could not fetch records.")
+        return None
+
+    new_segments = create_segments_from_records(records, rule)
+    if not new_segments:
+        otu_logger.warning("No segments can be added.")
+        return None
+
+    new_plan = MultipartitePlan(
+        id=uuid4(),
+        segments=otu.plan.segments + new_segments,
+    )
+
+    try:
+        repo.set_isolate_plan(otu.id, new_plan)
     except ValueError as e:
         otu_logger.error(e)
         return None
