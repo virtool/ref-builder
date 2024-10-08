@@ -9,6 +9,7 @@ import click
 from click import Context
 
 from ref_builder.build import build_json
+from ref_builder.cli.validate import validate_no_duplicate_accessions
 from ref_builder.console import print_otu, print_otu_list
 from ref_builder.legacy.convert import convert_legacy_repo
 from ref_builder.legacy.utils import iter_legacy_otus
@@ -89,6 +90,7 @@ def otu() -> None:
 @click.argument("TAXID", type=int)
 @click.argument(
     "accessions_",
+    callback=validate_no_duplicate_accessions,
     metavar="ACCESSIONS",
     nargs=-1,
     type=str,
@@ -110,6 +112,10 @@ def otu_create(
     records are fetched and used to create the first isolate and a plan.
     """
     repo = Repo(path)
+
+    if len(accessions_) != len(set(accessions_)):
+        click.echo("Duplicate accessions were provided.", err=True)
+        sys.exit(1)
 
     try:
         create_otu(
@@ -171,11 +177,10 @@ def update(ctx: Context, path: Path, taxid: int) -> None:
 @update.command(name="automatic")  # type: ignore
 @ignore_cache_option
 @click.pass_context
-def otu_autoupdate(ctx: Context, ignore_cache: bool) -> None:
+def otu_auto_update(ctx: Context, ignore_cache: bool) -> None:
     """Automatically update an OTU with the latest data from NCBI."""
-    taxid = ctx.obj["TAXID"]
-
     repo = ctx.obj["REPO"]
+    taxid = ctx.obj["TAXID"]
 
     otu_ = repo.get_otu_by_taxid(taxid)
 
@@ -195,11 +200,9 @@ def otu_promote_accessions(
     ignore_cache: bool,
 ) -> None:
     """Promote all RefSeq accessions within this OTU."""
-    taxid = ctx.obj["TAXID"]
-
     repo = ctx.obj["REPO"]
 
-    otu_ = repo.get_otu_by_taxid(taxid)
+    otu_ = repo.get_otu_by_taxid(ctx.obj["TAXID"])
 
     promote_otu_accessions(repo, otu_, ignore_cache)
 
@@ -207,6 +210,7 @@ def otu_promote_accessions(
 @update.command(name="isolate")  # type: ignore
 @click.argument(
     "accessions_",
+    callback=validate_no_duplicate_accessions,
     metavar="ACCESSIONS",
     nargs=-1,
     type=str,
@@ -299,12 +303,16 @@ def accession_exclude(
     ctx: Context,
     accessions_: list[str],
 ) -> None:
-    """Exclude the given accessions from this OTU."""
-    repo = ctx.obj["REPO"]
+    """Exclude the given accessions from this OTU.
 
+    Any duplicate accessions will be ignored. Only one exclusion per unique accession
+    will be made.
+    """
+    repo = ctx.obj["REPO"]
     taxid = ctx.obj["TAXID"]
 
     otu_ = repo.get_otu_by_taxid(taxid)
+
     if otu_ is None:
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)

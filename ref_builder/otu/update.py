@@ -278,7 +278,7 @@ def update_isolate_from_accessions(
     """Fetch the records attached to a given list of accessions and rebuild the isolate with it."""
     if (isolate_id := otu.get_isolate_id_by_name(isolate_name)) is None:
         logger.error(f"OTU does not include {isolate_name}.")
-        return
+        return None
 
     ncbi = NCBIClient(ignore_cache)
 
@@ -294,7 +294,8 @@ def update_isolate_from_records(
     records: list[NCBIGenbank],
 ) -> RepoIsolate | None:
     """Take a list of GenBank records and replace the existing sequences,
-    adding the previous sequence accessions to the excluded accessions list."""
+    adding the previous sequence accessions to the excluded accessions list.
+    """
     isolate = otu.get_isolate(isolate_id)
 
     sequences = isolate.sequences
@@ -344,7 +345,7 @@ def update_isolate_from_records(
     )
 
     logger.debug(
-        f"Excluded accessions updated",
+        "Excluded accessions updated",
         excluded_accessions=sorted(otu.excluded_accessions),
     )
 
@@ -416,7 +417,8 @@ def file_records_into_otu(
 ) -> list[IsolateName]:
     """Take a list of GenBank records from NCBI Nucleotide and attempt to create new isolates.
     If an isolate candidate does not match the schema, the constituent records are not added
-    to the OTU."""
+    to the OTU.
+    """
     otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
     record_bins = group_genbank_records_by_isolate(records)
@@ -469,7 +471,9 @@ def exclude_accessions_from_otu(
 ) -> None:
     """Take a list of accessions and add them to an OTU's excluded accessions list."""
     excluded_accessions = set()
-    for accession in accessions:
+
+    # Using a set avoid duplicate accessions.
+    for accession in set(accessions):
         excluded_accessions = repo.exclude_accession(otu.id, accession)
 
     logger.debug(

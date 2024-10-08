@@ -3,9 +3,11 @@ from pathlib import Path
 from uuid import UUID
 
 import pytest
+from click.testing import CliRunner
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
+from ref_builder.cli.main import isolate_create, otu_create
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
     add_and_name_isolate,
@@ -52,6 +54,23 @@ def run_update_otu_command(taxid: int, path: Path):
 
 
 class TestCreateOTU:
+    def test_duplicate_accessions(self, precached_repo: Repo):
+        """Test that an error is raised when duplicate accessions are provided."""
+        runner = CliRunner()
+        result = runner.invoke(
+            otu_create,
+            [
+                "--path",
+                str(precached_repo.path),
+                "1169032",
+                "MK431779",
+                "MK431779",
+            ],
+        )
+
+        assert result.exit_code == 2
+        assert "Duplicate accessions are not allowed." in result.output
+
     def test_empty_success(
         self,
         precached_repo: Repo,
@@ -204,6 +223,21 @@ class TestCreateOTUCommands:
 
 
 class TestAddIsolate:
+    def test_duplicate_accessions(self, precached_repo: Repo):
+        """Test that an error is raised when duplicate accessions are provided."""
+        runner = CliRunner()
+        result = runner.invoke(
+            isolate_create,
+            [
+                "345184",
+                "DQ178610",
+                "DQ178610",
+            ],
+        )
+
+        assert result.exit_code == 2
+        assert "Duplicate accessions are not allowed." in result.output
+
     def test_genbank_ok(self, precached_repo: Repo):
         """Test that add_genbank_isolate() adds an isolate with a correctly parsed
         name.
