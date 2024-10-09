@@ -44,7 +44,9 @@ def print_otu(otu: RepoOTU) -> None:
         for sequence in isolate.sequences
     )
 
-    max_segment_name_length = max(len(str(segment.name)) for segment in otu.plan.segments)
+    max_segment_name_length = max(
+        len(str(segment.name)) for segment in otu.plan.segments
+    )
 
     console.print(table)
 
@@ -62,7 +64,9 @@ def print_otu(otu: RepoOTU) -> None:
         for segment in otu.plan.segments:
             schema_table.add_row(
                 str(segment.name),
-                "[red]Yes[/red]" if segment.required == SegmentRule.REQUIRED else "[grey]No[/grey]",
+                "[red]Yes[/red]"
+                if segment.required == SegmentRule.REQUIRED
+                else "[grey]No[/grey]",
                 str(segment.length),
             )
     else:
