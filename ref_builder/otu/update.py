@@ -1,4 +1,5 @@
 from collections import defaultdict
+from urllib.error import HTTPError
 from uuid import UUID, uuid4
 
 from structlog import get_logger
@@ -257,18 +258,22 @@ def add_segments_to_plan(
     accessions: list[str],
     ignore_cache: bool = False,
 ):
-    otu_logger = logger.bind(name=otu.name, taxid=otu.taxid, original_plan=otu.plan)
+    expand_logger = logger.bind(name=otu.name, taxid=otu.taxid, accessions=accessions, rule=rule)
 
     client = NCBIClient(ignore_cache)
 
+    expand_logger.info(
+        f"Adding {len(accessions)} sequences to plan as {rule} segments", current_plan=otu.plan.model_dump()
+    )
+
     records = client.fetch_genbank_records(accessions)
     if not records:
-        otu_logger.warning("Could not fetch records.")
+        expand_logger.warning("Could not fetch records.")
         return None
 
     new_segments = create_segments_from_records(records, rule)
     if not new_segments:
-        otu_logger.warning("No segments can be added.")
+        expand_logger.warning("No segments can be added.")
         return None
 
     new_plan = MultipartitePlan(
@@ -279,8 +284,13 @@ def add_segments_to_plan(
     try:
         repo.set_isolate_plan(otu.id, new_plan)
     except ValueError as e:
-        otu_logger.error(e)
+        expand_logger.error(e)
         return None
+
+    expand_logger.info(
+        f"Segments {[str(segment.name) for segment in new_segments]} added to plan",
+        expanded_plan=new_plan.model_dump(),
+    )
 
     return repo.get_otu(otu.id).plan
 

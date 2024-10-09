@@ -33,6 +33,7 @@ from ref_builder.otu.update import (
     set_representative_isolate,
 )
 from ref_builder.otu.utils import RefSeqConflictError
+from ref_builder.plan import SegmentRule
 from ref_builder.repo import Repo
 from ref_builder.utils import DataType, IsolateName, IsolateNameType, format_json
 
@@ -373,13 +374,15 @@ def plan(ctx: Context) -> None:
 )
 @click.option(
     '--rule',
-    default="required",
-    type=click.Choice(["required", 'recommended', 'optional'])
+    default=SegmentRule.REQUIRED,
+    type=click.Choice(
+        [SegmentRule.REQUIRED, SegmentRule.REQUIRED, SegmentRule.OPTIONAL]
+    )
 )
 @click.pass_context
 @ignore_cache_option
 def plan_expand_segment_list(
-    ctx: Context, accessions_: list[str], rule: str, ignore_cache: bool,
+    ctx: Context, accessions_: list[str], rule: SegmentRule, ignore_cache: bool,
 ) -> None:
     repo = ctx.obj["REPO"]
     taxid = ctx.obj["TAXID"]
@@ -389,7 +392,13 @@ def plan_expand_segment_list(
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
-    add_segments_to_plan(repo, otu_, accessions_, rule, ignore_cache)
+    add_segments_to_plan(
+        repo,
+        otu_,
+        rule=rule,
+        accessions=accessions_,
+        ignore_cache=ignore_cache
+    )
 
 
 @entry.group()
