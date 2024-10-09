@@ -365,33 +365,6 @@ def otu_set_representative_isolate(
 def plan(ctx: Context) -> None:
     """Add to and replace isolate plans for this OTU."""
 
-
-@plan.command(name="replace")
-@click.argument(
-    "accessions_",
-    metavar="ACCESSIONS",
-    nargs=-1,
-    type=str,
-    required=True,
-)
-@click.pass_context
-@ignore_cache_option
-def plan_replace(
-    ctx: Context,
-    accessions_: list[str],
-    ignore_cache: bool,
-) -> None:
-    repo = ctx.obj["REPO"]
-    taxid = ctx.obj["TAXID"]
-
-    otu_ = repo.get_otu_by_taxid(taxid)
-    if otu_ is None:
-        click.echo(f"OTU {taxid} not found.", err=True)
-        sys.exit(1)
-
-    replace_isolate_plan(repo, otu_, accessions=accessions_, ignore_cache=ignore_cache)
-
-
 @plan.command(name="extend")
 @click.argument(
     "accessions_",
@@ -401,20 +374,19 @@ def plan_replace(
     required=True,
 )
 @click.option(
-    "--rule",
-    default=SegmentRule.RECOMMENDED,
-    type=click.Choice(
-        [SegmentRule.RECOMMENDED, SegmentRule.OPTIONAL]
-    ),
+    "--optional",
+    is_flag=True,
+    help="Set additional segments as fully optional",
 )
 @click.pass_context
 @ignore_cache_option
 def plan_extend_segment_list(
     ctx: Context,
     accessions_: list[str],
-    rule: SegmentRule,
+    optional: bool,
     ignore_cache: bool,
 ) -> None:
+    """Add recommended or optional segments to the OTU plan."""
     repo = ctx.obj["REPO"]
     taxid = ctx.obj["TAXID"]
 
@@ -424,7 +396,11 @@ def plan_extend_segment_list(
         sys.exit(1)
 
     add_segments_to_plan(
-        repo, otu_, rule=rule, accessions=accessions_, ignore_cache=ignore_cache
+        repo,
+        otu_,
+        rule=SegmentRule.OPTIONAL if optional else SegmentRule.RECOMMENDED,
+        accessions=accessions_,
+        ignore_cache=ignore_cache
     )
 
 
