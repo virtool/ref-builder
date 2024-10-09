@@ -5,6 +5,7 @@ from rich.table import Table
 
 from ref_builder.models import OTUMinimal
 from ref_builder.resources import RepoOTU
+from ref_builder.plan import MultipartitePlan, SegmentRule
 
 
 def _render_taxonomy_id_link(taxid: int) -> str:
@@ -43,7 +44,9 @@ def print_otu(otu: RepoOTU) -> None:
         for sequence in isolate.sequences
     )
 
-    max_segment_name_length = max(len(segment.name) for segment in otu.plan.segments)
+    max_segment_name_length = max(
+        len(str(segment.name)) for segment in otu.plan.segments
+    )
 
     console.print(table)
 
@@ -57,11 +60,20 @@ def print_otu(otu: RepoOTU) -> None:
     schema_table.add_column("REQUIRED")
     schema_table.add_column("LENGTH")
 
-    for segment in otu.plan.segments:
+    if type(otu.plan) is MultipartitePlan:
+        for segment in otu.plan.segments:
+            schema_table.add_row(
+                str(segment.name),
+                "[red]Yes[/red]"
+                if segment.required == SegmentRule.REQUIRED
+                else "[grey]No[/grey]",
+                str(segment.length),
+            )
+    else:
         schema_table.add_row(
-            segment.name,
-            "[red]Yes[/red]" if segment.required else "[grey]No[/grey]",
-            str(segment.length),
+            otu.plan.name if otu.plan.name is not None else "N/A",
+            "[red]Yes[/red]",
+            str(otu.plan.length),
         )
 
     console.print(schema_table)
