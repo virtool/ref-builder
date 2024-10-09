@@ -25,6 +25,7 @@ from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
     add_and_name_isolate,
     add_genbank_isolate,
+    add_segments_to_plan,
     add_unnamed_isolate,
     auto_update_otu,
     exclude_accessions_from_otu,
@@ -355,6 +356,40 @@ def otu_set_representative_isolate(
         sys.exit(1)
 
     set_representative_isolate(repo, otu_, isolate_id)
+
+@update.group(invoke_without_command=True)
+@click.pass_context
+def plan(ctx: Context) -> None:
+    """Add to and replace isolate plans for this OTU."""
+
+
+@plan.command(name="expand")
+@click.argument(
+    "accessions_",
+    metavar="ACCESSIONS",
+    nargs=-1,
+    type=str,
+    required=True,
+)
+@click.option(
+    '--rule',
+    default="required",
+    type=click.Choice(["required", 'recommended', 'optional'])
+)
+@click.pass_context
+@ignore_cache_option
+def plan_expand_segment_list(
+    ctx: Context, accessions_: list[str], rule: str, ignore_cache: bool,
+) -> None:
+    repo = ctx.obj["REPO"]
+    taxid = ctx.obj["TAXID"]
+
+    otu_ = repo.get_otu_by_taxid(taxid)
+    if otu_ is None:
+        click.echo(f"OTU {taxid} not found.", err=True)
+        sys.exit(1)
+
+    add_segments_to_plan(repo, otu_, accessions_, rule, ignore_cache)
 
 
 @entry.group()
