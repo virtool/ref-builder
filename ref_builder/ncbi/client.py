@@ -10,6 +10,7 @@ from urllib.parse import quote_plus
 from Bio import Entrez
 from pydantic import ValidationError
 from structlog import get_logger
+from tenacity import Retrying, stop_after_attempt, wait_random
 
 from ref_builder.ncbi.cache import NCBICache
 from ref_builder.ncbi.models import NCBIDatabase, NCBIGenbank, NCBIRank, NCBITaxonomy
@@ -185,27 +186,21 @@ class NCBIClient:
         :param taxid: A NCBI Taxonomy id
         :return: A list of Genbank accessions linked to the Taxonomy UID
         """
-        logger = base_logger.bind(taxid=taxid)
-        try:
-            with log_http_error():
-                handle = Entrez.elink(
-                    dbfrom="taxonomy",
-                    db=NCBIDatabase.NUCCORE,
-                    id=str(taxid),
-                    idtype="acc",
-                )
-        except HTTPError:
-            return []
+        for attempt in Retrying(stop=(stop_after_attempt(5)), wait=wait_random(0, 1)):
+            with attempt:
+                with log_http_error():
+                    handle = Entrez.elink(
+                        dbfrom="taxonomy",
+                        db=NCBIDatabase.NUCCORE,
+                        id=str(taxid),
+                        idtype="acc",
+                    )
 
-        try:
-            elink_results = Entrez.read(handle)
-        except RuntimeError:
-            logger.exception("NCBI returned unparseable data.")
-            return []
+                results = Entrez.read(handle)
 
-        if elink_results:
+        if results:
             # Discards unneeded tables and formats needed table as a list
-            for link_set_db in elink_results[0]["LinkSetDb"]:
+            for link_set_db in results[0]["LinkSetDb"]:
                 if link_set_db["LinkName"] == "taxonomy_nuccore":
                     id_table = link_set_db["Link"]
 
