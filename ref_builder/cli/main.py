@@ -359,6 +359,7 @@ def otu_set_representative_isolate(
 
     set_representative_isolate(repo, otu_, isolate_id)
 
+
 @update.group()
 @click.pass_context
 def plan(ctx: Context) -> None:
@@ -376,7 +377,9 @@ def plan(ctx: Context) -> None:
 @click.pass_context
 @ignore_cache_option
 def plan_replace(
-    ctx: Context, accessions_: list[str], ignore_cache: bool,
+    ctx: Context,
+    accessions_: list[str],
+    ignore_cache: bool,
 ) -> None:
     repo = ctx.obj["REPO"]
     taxid = ctx.obj["TAXID"]
@@ -386,12 +389,7 @@ def plan_replace(
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
-    replace_isolate_plan(
-        repo,
-        otu_,
-        accessions=accessions_,
-        ignore_cache=ignore_cache
-    )
+    replace_isolate_plan(repo, otu_, accessions=accessions_, ignore_cache=ignore_cache)
 
 
 @plan.command(name="expand")
@@ -403,16 +401,19 @@ def plan_replace(
     required=True,
 )
 @click.option(
-    '--rule',
+    "--rule",
     default=SegmentRule.REQUIRED,
     type=click.Choice(
         [SegmentRule.REQUIRED, SegmentRule.REQUIRED, SegmentRule.OPTIONAL]
-    )
+    ),
 )
 @click.pass_context
 @ignore_cache_option
 def plan_expand_segment_list(
-    ctx: Context, accessions_: list[str], rule: SegmentRule, ignore_cache: bool,
+    ctx: Context,
+    accessions_: list[str],
+    rule: SegmentRule,
+    ignore_cache: bool,
 ) -> None:
     repo = ctx.obj["REPO"]
     taxid = ctx.obj["TAXID"]
@@ -423,11 +424,7 @@ def plan_expand_segment_list(
         sys.exit(1)
 
     add_segments_to_plan(
-        repo,
-        otu_,
-        rule=rule,
-        accessions=accessions_,
-        ignore_cache=ignore_cache
+        repo, otu_, rule=rule, accessions=accessions_, ignore_cache=ignore_cache
     )
 
 
