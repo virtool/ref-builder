@@ -29,6 +29,7 @@ from ref_builder.otu.update import (
     add_unnamed_isolate,
     auto_update_otu,
     exclude_accessions_from_otu,
+    replace_isolate_plan,
     promote_otu_accessions,
     set_representative_isolate,
 )
@@ -358,10 +359,39 @@ def otu_set_representative_isolate(
 
     set_representative_isolate(repo, otu_, isolate_id)
 
-@update.group(invoke_without_command=True)
+@update.group()
 @click.pass_context
 def plan(ctx: Context) -> None:
     """Add to and replace isolate plans for this OTU."""
+
+
+@plan.command(name="replace")
+@click.argument(
+    "accessions_",
+    metavar="ACCESSIONS",
+    nargs=-1,
+    type=str,
+    required=True,
+)
+@click.pass_context
+@ignore_cache_option
+def plan_replace(
+    ctx: Context, accessions_: list[str], ignore_cache: bool,
+) -> None:
+    repo = ctx.obj["REPO"]
+    taxid = ctx.obj["TAXID"]
+
+    otu_ = repo.get_otu_by_taxid(taxid)
+    if otu_ is None:
+        click.echo(f"OTU {taxid} not found.", err=True)
+        sys.exit(1)
+
+    replace_isolate_plan(
+        repo,
+        otu_,
+        accessions=accessions_,
+        ignore_cache=ignore_cache
+    )
 
 
 @plan.command(name="expand")
