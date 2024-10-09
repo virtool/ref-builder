@@ -79,9 +79,19 @@ class TestSetIsolatePlan:
         assert otu_after.plan == new_isolate_plan
 
     def test_replace_isolate_plan(self, scratch_repo: Repo):
-        otu_before = scratch_repo.get_otu_by_taxid(3158377)
+        otu_before = scratch_repo.get_otu_by_taxid(2164102)
 
-        replace_isolate_plan(scratch_repo, otu_before, [])
+        new_plan = replace_isolate_plan(
+            scratch_repo,
+            otu_before,
+            ["NC_055390", "NC_055391", "NC_055392"]
+        )
+
+        otu_after = scratch_repo.get_otu(otu_before.id)
+
+        assert otu_after.plan == new_plan
+
+        assert otu_after.plan != otu_before.plan
 
     def test_add_segments_to_plan(
         self,
