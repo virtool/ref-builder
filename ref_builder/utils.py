@@ -101,7 +101,6 @@ class IsolateName:
         return f"{self.type.capitalize()} {self.value}"
 
 
-
 def format_json(path: Path) -> None:
     """Format the JSON file at ``path`` in place.
 

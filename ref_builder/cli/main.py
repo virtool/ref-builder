@@ -364,6 +364,7 @@ def otu_set_representative_isolate(
 def plan(ctx: Context) -> None:
     """Add to and replace isolate plans for this OTU."""
 
+
 @plan.command(name="extend")
 @click.argument(
     "accessions_",
@@ -399,7 +400,7 @@ def plan_extend_segment_list(
         otu_,
         rule=SegmentRule.OPTIONAL if optional else SegmentRule.RECOMMENDED,
         accessions=accessions_,
-        ignore_cache=ignore_cache
+        ignore_cache=ignore_cache,
     )
 
 
