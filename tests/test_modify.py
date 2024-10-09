@@ -11,7 +11,6 @@ from ref_builder.otu.update import (
     add_genbank_isolate,
     add_segments_to_plan,
     promote_otu_accessions,
-    replace_isolate_plan,
     set_isolate_plan,
     set_representative_isolate,
 )
@@ -75,21 +74,6 @@ class TestSetIsolatePlan:
         assert len(otu_after.plan.segments) == len(otu_before.plan.segments) + 2
 
         assert otu_after.plan == new_isolate_plan
-
-    def test_replace_isolate_plan(self, scratch_repo: Repo):
-        otu_before = scratch_repo.get_otu_by_taxid(345184)
-
-        assert otu_before
-
-        new_plan = replace_isolate_plan(
-            scratch_repo, otu_before, ["NC_038792", "NC_038793"]
-        )
-
-        otu_after = scratch_repo.get_otu(otu_before.id)
-
-        assert otu_after.plan == new_plan
-
-        assert otu_after.plan != otu_before.plan
 
     def test_add_segments_to_plan(
         self,
