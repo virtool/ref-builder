@@ -12,7 +12,13 @@ from ref_builder.otu.utils import (
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
-from ref_builder.plan import MonopartitePlan, MultipartitePlan, SegmentRule
+from ref_builder.plan import (
+    MonopartitePlan,
+    MultipartitePlan,
+    SegmentName,
+    SegmentPlan,
+    SegmentRule,
+)
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
 from ref_builder.utils import IsolateName
@@ -256,17 +262,14 @@ def add_segments_to_plan(
     rule: SegmentRule,
     accessions: list[str],
     ignore_cache: bool = False,
-) -> MonopartitePlan | MultipartitePlan | None:
+) -> MultipartitePlan | None:
+    """Add new segments to a multipartite plan."""
     expand_logger = logger.bind(
         name=otu.name, taxid=otu.taxid, accessions=accessions, rule=rule
     )
 
     if type(otu.plan) is MonopartitePlan:
-        expand_logger.error(
-            "Cannot add segments to a monopartite plan.",
-            current_plan=otu.plan.model_dump(),
-        )
-        return otu.plan
+        raise ValueError("Cannot add segments to a monopartite plan.")
 
     client = NCBIClient(ignore_cache)
 
@@ -288,6 +291,62 @@ def add_segments_to_plan(
     new_plan = MultipartitePlan(
         id=uuid4(),
         segments=otu.plan.segments + new_segments,
+    )
+
+    try:
+        repo.set_isolate_plan(otu.id, new_plan)
+    except ValueError as e:
+        expand_logger.error(e)
+        return None
+
+    expand_logger.info(
+        f"Segments {[str(segment.name) for segment in new_segments]} added to plan",
+        expanded_plan=new_plan.model_dump(),
+    )
+
+    return repo.get_otu(otu.id).plan
+
+
+def resize_monopartite_plan(
+    repo: Repo,
+    otu: RepoOTU,
+    name: SegmentName,
+    rule: SegmentRule,
+    accessions: list[str],
+    ignore_cache: bool = False,
+) -> MultipartitePlan | None:
+    """Convert a monopartite plan to a multipartite plan and add segments."""
+    expand_logger = logger.bind(
+        name=otu.name, taxid=otu.taxid, accessions=accessions, rule=rule
+    )
+
+    if type(otu.plan) is MultipartitePlan:
+        expand_logger.warning("OTU plan is already a multipartite plan.")
+        return None
+
+    client = NCBIClient(ignore_cache)
+
+    records = client.fetch_genbank_records(accessions)
+    if not records:
+        expand_logger.warning("Could not fetch records.")
+        return None
+
+    new_segments = create_segments_from_records(records, rule)
+    if not new_segments:
+        expand_logger.warning("No segments can be added.")
+        return None
+
+    new_plan = MultipartitePlan(
+        id=uuid4(),
+        segments=[
+            SegmentPlan(
+                id=uuid4(),
+                length=otu.plan.length,
+                name=name,
+                required=SegmentRule.REQUIRED,
+            )
+        ]
+        + new_segments,
     )
 
     try:
