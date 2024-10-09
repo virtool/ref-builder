@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 @dataclass
@@ -51,3 +51,7 @@ class Molecule(BaseModel):
     strandedness: Strandedness
     topology: Topology
     type: MolType
+
+
+class RepoSettings(BaseModel):
+    default_segment_length_tolerance: float = Field(0.03, gt=0.0, lt=1.0)
