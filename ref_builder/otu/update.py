@@ -256,10 +256,17 @@ def add_segments_to_plan(
     rule: SegmentRule,
     accessions: list[str],
     ignore_cache: bool = False,
-):
+) -> MonopartitePlan | MultipartitePlan | None:
     expand_logger = logger.bind(
         name=otu.name, taxid=otu.taxid, accessions=accessions, rule=rule
     )
+
+    if type(otu.plan) is MonopartitePlan:
+        expand_logger.error(
+            "Cannot add segments to a monopartite plan.",
+            current_plan=otu.plan.model_dump(),
+        )
+        return otu.plan
 
     client = NCBIClient(ignore_cache)
 
