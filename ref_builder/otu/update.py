@@ -1,5 +1,4 @@
 from collections import defaultdict
-from urllib.error import HTTPError
 from uuid import UUID, uuid4
 
 from structlog import get_logger
@@ -10,6 +9,7 @@ from ref_builder.otu.utils import (
     DeleteRationale,
     RefSeqConflictError,
     create_segments_from_records,
+    create_isolate_plan_from_records,
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
@@ -247,6 +247,42 @@ def set_isolate_plan(
     except ValueError as e:
         otu_logger.error(e)
         return None
+
+    return repo.get_otu(otu.id).plan
+
+
+def replace_isolate_plan(
+    repo: Repo,
+    otu: RepoOTU,
+    accessions: list[str],
+    ignore_cache: bool = False,
+) -> MonopartitePlan | MultipartitePlan | None:
+    """Create a new isolate plan based on the given accessions
+    and replace the former plan."""
+    replace_logger = logger.bind(name=otu.name, taxid=otu.taxid, accessions=accessions)
+
+    replace_logger.info(
+        "Replacing isolate plan using new accessions",
+        current_plan=otu.plan.model_dump(),
+    )
+
+    client = NCBIClient(ignore_cache)
+    records = client.fetch_genbank_records(accessions)
+    if not records:
+        replace_logger.warning("Could not fetch records.")
+        return None
+
+    new_plan = create_isolate_plan_from_records(records)
+    if new_plan is None:
+        replace_logger.error("Isolate plan could not be created.")
+        return None
+
+    repo.set_isolate_plan(otu.id, new_plan)
+
+    replace_logger.info(
+        f"New plan created: {[str(segment.name) for segment in new_plan.segments]}.",
+        expanded_plan=new_plan.model_dump(),
+    )
 
     return repo.get_otu(otu.id).plan
 
