@@ -14,7 +14,13 @@ from ref_builder.otu.update import (
     set_isolate_plan,
     set_representative_isolate,
 )
-from ref_builder.plan import MultipartitePlan, SegmentName, SegmentRule, SegmentPlan
+from ref_builder.plan import (
+    MonopartitePlan,
+    MultipartitePlan,
+    SegmentName,
+    SegmentRule,
+    SegmentPlan,
+)
 
 
 def test_update_representative_isolate(scratch_repo: Repo):
@@ -105,6 +111,25 @@ class TestSetIsolatePlan:
         assert otu_after.plan != otu_before.plan
 
         assert otu_after.plan.model_dump() == snapshot(exclude=props("id"))
+
+    def test_extend_plan_monopartite_fail(
+        self,
+        scratch_repo: Repo,
+    ):
+        """Test that add_segments_to_plan() fails out
+        when the original plan is a MonopartitePlan.
+        """
+        otu_before = scratch_repo.get_otu_by_taxid(96892)
+
+        assert type(otu_before.plan) is MonopartitePlan
+
+        with pytest.raises(ValueError):
+            add_segments_to_plan(
+                scratch_repo,
+                otu_before,
+                rule=SegmentRule.OPTIONAL,
+                accessions=["NC_010620"],
+            )
 
 
 class TestUpdateRepresentativeIsolateCommand:
