@@ -395,13 +395,16 @@ def plan_extend_segment_list(
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
-    add_segments_to_plan(
-        repo,
-        otu_,
-        rule=SegmentRule.OPTIONAL if optional else SegmentRule.RECOMMENDED,
-        accessions=accessions_,
-        ignore_cache=ignore_cache,
-    )
+    try:
+        add_segments_to_plan(
+            repo,
+            otu_,
+            rule=SegmentRule.OPTIONAL if optional else SegmentRule.RECOMMENDED,
+            accessions=accessions_,
+            ignore_cache=ignore_cache,
+        )
+    except ValueError as e:
+        click.echo(e, err=True)
 
 
 @entry.group()
