@@ -11,6 +11,7 @@ from ref_builder.otu.update import (
     add_genbank_isolate,
     add_segments_to_plan,
     promote_otu_accessions,
+    resize_monopartite_plan,
     set_isolate_plan,
     set_representative_isolate,
 )
@@ -109,6 +110,36 @@ class TestSetIsolatePlan:
         otu_after = precached_repo.get_otu(otu_before.id)
 
         assert otu_after.plan != otu_before.plan
+
+        assert otu_after.plan.model_dump() == snapshot(exclude=props("id"))
+
+    def test_resize_monopartite_plan(
+        self,
+        precached_repo: Repo,
+        snapshot: SnapshotAssertion,
+    ):
+        otu_before = create_otu(
+            precached_repo,
+            2164102,
+            ["MF062136"],
+            acronym="",
+        )
+
+        assert type(otu_before.plan) is MonopartitePlan
+
+        resize_monopartite_plan(
+            precached_repo,
+            otu_before,
+            name=SegmentName(prefix="RNA", key="L"),
+            rule=SegmentRule.RECOMMENDED,
+            accessions=["MF062137", "MF062138"],
+        )
+
+        otu_after = precached_repo.get_otu(otu_before.id)
+
+        assert type(otu_after.plan) is MultipartitePlan
+
+        assert otu_after.plan.required_segments[0].length == otu_before.plan.length
 
         assert otu_after.plan.model_dump() == snapshot(exclude=props("id"))
 
