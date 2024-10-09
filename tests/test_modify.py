@@ -2,12 +2,16 @@ import subprocess
 from uuid import uuid4
 
 import pytest
+from syrupy import SnapshotAssertion
+from syrupy.filters import props
 
 from ref_builder.repo import Repo
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
     add_genbank_isolate,
+    add_segments_to_plan,
     promote_otu_accessions,
+    replace_isolate_plan,
     set_isolate_plan,
     set_representative_isolate,
 )
@@ -73,6 +77,42 @@ class TestSetIsolatePlan:
         assert len(otu_after.plan.segments) == len(otu_before.plan.segments) + 2
 
         assert otu_after.plan == new_isolate_plan
+
+    def test_replace_isolate_plan(self, scratch_repo: Repo):
+        otu_before = scratch_repo.get_otu_by_taxid(3158377)
+
+        replace_isolate_plan(scratch_repo, otu_before, [])
+
+    def test_add_segments_to_plan(
+        self,
+        precached_repo: Repo,
+        snapshot: SnapshotAssertion,
+    ):
+        otu_before = create_otu(
+            precached_repo,
+            2164102,
+            ["MF062136", "MF062137"],
+            acronym="",
+        )
+
+        original_plan = otu_before.plan
+
+        assert type(original_plan) is MultipartitePlan
+
+        expanded_plan = add_segments_to_plan(
+            precached_repo,
+            otu_before,
+            rule=SegmentRule.OPTIONAL,
+            accessions=["MF062138"]
+        )
+
+        assert len(expanded_plan.segments) == len(original_plan.segments) + 1
+
+        otu_after = precached_repo.get_otu(otu_before.id)
+
+        assert otu_after.plan != otu_before.plan
+
+        assert otu_after.plan.model_dump() == snapshot(exclude=props("id"))
 
 
 class TestUpdateRepresentativeIsolateCommand:
