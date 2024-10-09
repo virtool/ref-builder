@@ -46,9 +46,7 @@ class TestSetIsolatePlan:
 
         assert type(original_plan) is MultipartitePlan
 
-        new_isolate_plan = MultipartitePlan(
-            id=uuid4(), segments=original_plan.segments
-        )
+        new_isolate_plan = MultipartitePlan(id=uuid4(), segments=original_plan.segments)
 
         new_isolate_plan.segments.append(
             SegmentPlan(
@@ -82,9 +80,7 @@ class TestSetIsolatePlan:
         otu_before = scratch_repo.get_otu_by_taxid(2164102)
 
         new_plan = replace_isolate_plan(
-            scratch_repo,
-            otu_before,
-            ["NC_055390", "NC_055391", "NC_055392"]
+            scratch_repo, otu_before, ["NC_055390", "NC_055391", "NC_055392"]
         )
 
         otu_after = scratch_repo.get_otu(otu_before.id)
@@ -113,7 +109,7 @@ class TestSetIsolatePlan:
             precached_repo,
             otu_before,
             rule=SegmentRule.OPTIONAL,
-            accessions=["MF062138"]
+            accessions=["MF062138"],
         )
 
         assert len(expanded_plan.segments) == len(original_plan.segments) + 1

@@ -294,12 +294,15 @@ def add_segments_to_plan(
     accessions: list[str],
     ignore_cache: bool = False,
 ):
-    expand_logger = logger.bind(name=otu.name, taxid=otu.taxid, accessions=accessions, rule=rule)
+    expand_logger = logger.bind(
+        name=otu.name, taxid=otu.taxid, accessions=accessions, rule=rule
+    )
 
     client = NCBIClient(ignore_cache)
 
     expand_logger.info(
-        f"Adding {len(accessions)} sequences to plan as {rule} segments", current_plan=otu.plan.model_dump()
+        f"Adding {len(accessions)} sequences to plan as {rule} segments",
+        current_plan=otu.plan.model_dump(),
     )
 
     records = client.fetch_genbank_records(accessions)
