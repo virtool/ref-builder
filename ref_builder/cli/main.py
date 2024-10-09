@@ -30,10 +30,11 @@ from ref_builder.otu.update import (
     auto_update_otu,
     exclude_accessions_from_otu,
     promote_otu_accessions,
+    resize_monopartite_plan,
     set_representative_isolate,
 )
 from ref_builder.otu.utils import RefSeqConflictError
-from ref_builder.plan import SegmentRule
+from ref_builder.plan import SegmentName, SegmentRule
 from ref_builder.repo import Repo
 from ref_builder.utils import DataType, IsolateName, IsolateNameType, format_json
 
@@ -399,6 +400,57 @@ def plan_extend_segment_list(
         add_segments_to_plan(
             repo,
             otu_,
+            rule=SegmentRule.OPTIONAL if optional else SegmentRule.RECOMMENDED,
+            accessions=accessions_,
+            ignore_cache=ignore_cache,
+        )
+    except ValueError as e:
+        click.echo(e, err=True)
+
+
+@plan.command(name="multipartite")
+@click.argument(
+    "accessions_",
+    metavar="ACCESSIONS",
+    nargs=-1,
+    type=str,
+    required=True,
+)
+@click.option(
+    "--name",
+    type=(str, str),
+    help='a name for the originalsegment, e.g. "RNA A"',
+)
+@click.option(
+    "--optional",
+    is_flag=True,
+    help="Set additional segments as fully optional",
+)
+@click.pass_context
+@ignore_cache_option
+def plan_resize_monopartite(
+    ctx: Context,
+    name: tuple[str, str],
+    accessions_: list[str],
+    optional: bool,
+    ignore_cache: bool,
+) -> None:
+    """Change a monopartite OTU plan to a multipartite plan."""
+    repo = ctx.obj["REPO"]
+    taxid = ctx.obj["TAXID"]
+
+    prefix, key = name
+
+    otu_ = repo.get_otu_by_taxid(taxid)
+    if otu_ is None:
+        click.echo(f"OTU {taxid} not found.", err=True)
+        sys.exit(1)
+
+    try:
+        resize_monopartite_plan(
+            repo,
+            otu_,
+            name=SegmentName(prefix=prefix, key=key),
             rule=SegmentRule.OPTIONAL if optional else SegmentRule.RECOMMENDED,
             accessions=accessions_,
             ignore_cache=ignore_cache,
