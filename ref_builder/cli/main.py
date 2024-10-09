@@ -29,7 +29,6 @@ from ref_builder.otu.update import (
     add_unnamed_isolate,
     auto_update_otu,
     exclude_accessions_from_otu,
-    replace_isolate_plan,
     promote_otu_accessions,
     set_representative_isolate,
 )
