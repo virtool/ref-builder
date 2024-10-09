@@ -392,7 +392,7 @@ def plan_replace(
     replace_isolate_plan(repo, otu_, accessions=accessions_, ignore_cache=ignore_cache)
 
 
-@plan.command(name="expand")
+@plan.command(name="extend")
 @click.argument(
     "accessions_",
     metavar="ACCESSIONS",
@@ -402,14 +402,14 @@ def plan_replace(
 )
 @click.option(
     "--rule",
-    default=SegmentRule.REQUIRED,
+    default=SegmentRule.RECOMMENDED,
     type=click.Choice(
-        [SegmentRule.REQUIRED, SegmentRule.REQUIRED, SegmentRule.OPTIONAL]
+        [SegmentRule.RECOMMENDED, SegmentRule.OPTIONAL]
     ),
 )
 @click.pass_context
 @ignore_cache_option
-def plan_expand_segment_list(
+def plan_extend_segment_list(
     ctx: Context,
     accessions_: list[str],
     rule: SegmentRule,
