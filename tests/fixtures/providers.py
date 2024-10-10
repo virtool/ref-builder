@@ -82,14 +82,16 @@ class BusinessProvider(BaseProvider):
 class SequenceProvider(BaseProvider):
     """Dummy sequence data provider."""
 
-    def sequence(self) -> str:
+    def sequence(
+        self, min: int = 100, max: int = 10000,
+    ) -> str:
         """Return a pseudorandom string consisting of
         acceptable genetic sequence letters.
         """
         return "".join(
             self.random_elements(
                 NUCLEOTIDE_PROBABILITIES,
-                self.random_int(MIN_SEQUENCE_LENGTH, MAX_SEQUENCE_LENGTH),
+                self.random_int(min, max),
                 use_weighting=True,
             ),
         )
