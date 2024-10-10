@@ -66,6 +66,7 @@ from ref_builder.resources import (
     RepoMeta,
     RepoOTU,
     RepoSequence,
+    RepoSettings,
 )
 from ref_builder.utils import (
     Accession,
@@ -110,7 +111,15 @@ class Repo:
                 self._index.add_event_id(event.id, otu_id)
 
     @classmethod
-    def new(cls, data_type: DataType, name: str, path: Path, organism: str) -> "Repo":
+    def new(
+        cls,
+        data_type:
+        DataType,
+        name: str,
+        path: Path,
+        organism: str,
+        default_segment_length_tolerance: float = 0.03
+    ) -> "Repo":
         """Create a new reference repository."""
         if path.is_file():
             raise ValueError("The target path is a file")
@@ -140,6 +149,9 @@ class Repo:
                 data_type=data_type,
                 name=name,
                 organism=organism,
+                settings=RepoSettings(
+                    default_segment_length_tolerance=default_segment_length_tolerance
+                )
             ),
             RepoQuery(repository_id=repo_id),
         )
