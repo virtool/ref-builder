@@ -64,16 +64,23 @@ def init_otu(empty_repo: Repo) -> RepoOTU:
     )
 
 
-def test_new(empty_repo: Repo, tmp_path: Path):
-    """Test that creating a new ``Repo`` object returns the expected object and creates
-    the expected directory structure.
-    """
-    assert empty_repo.path == tmp_path / "test_repo"
-    assert empty_repo.last_id == 1
+class TestNew:
+    def test_meta(self, empty_repo: Repo, tmp_path: Path):
+        """Test that creating a new ``Repo`` object returns the expected object and creates
+        the expected directory structure.
+        """
+        assert empty_repo.path == tmp_path / "test_repo"
+        assert empty_repo.last_id == 1
 
-    assert empty_repo.meta.data_type == DataType.GENOME
-    assert empty_repo.meta.name == "Generic Viruses"
-    assert empty_repo.meta.organism == "virus"
+        assert empty_repo.meta.data_type == DataType.GENOME
+        assert empty_repo.meta.name == "Generic Viruses"
+        assert empty_repo.meta.organism == "virus"
+
+    def test_settings(self, empty_repo: Repo, tmp_path: Path):
+        """Test that creating a new ``Repo`` object returns
+        the default settings this repository abides by.
+        """
+        assert empty_repo.settings.default_segment_length_tolerance == 0.03
 
 
 class TestCreateOTU:
