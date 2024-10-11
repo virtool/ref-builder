@@ -23,32 +23,40 @@ import arrow
 from orjson import orjson
 from structlog import get_logger
 
-from ref_builder.events import (
-    CreateIsolate,
-    CreateIsolateData,
+from ref_builder.events.base import (
+    Event,
+    EventData,
+    EventQuery,
+    RepoQuery,
+    OTUQuery,
+    IsolateQuery,
+    SequenceQuery,
+)
+from ref_builder.events.repo import (
+    CreateRepo,
+    CreateRepoData,
+)
+from ref_builder.events.otu import (
     CreateOTU,
     CreateOTUData,
     CreatePlan,
     CreatePlanData,
-    CreateRepo,
-    CreateRepoData,
-    CreateSequence,
-    CreateSequenceData,
-    DeleteIsolate,
-    DeleteIsolateData,
-    DeleteSequence,
-    DeleteSequenceData,
-    Event,
-    EventData,
-    EventQuery,
     ExcludeAccession,
     ExcludeAccessionData,
-    IsolateQuery,
-    OTUQuery,
-    RepoQuery,
-    SequenceQuery,
     SetReprIsolate,
     SetReprIsolateData,
+)
+from ref_builder.events.isolate import (
+    CreateIsolate,
+    CreateIsolateData,
+    DeleteIsolate,
+    DeleteIsolateData,
+)
+from ref_builder.events.sequence import (
+    CreateSequence,
+    CreateSequenceData,
+    DeleteSequence,
+    DeleteSequenceData,
 )
 from ref_builder.index import Index
 from ref_builder.models import Molecule, OTUMinimal
