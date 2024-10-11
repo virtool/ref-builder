@@ -109,20 +109,19 @@ class TestClientFetchRawGenbank:
         assert not records
 
 
-@pytest.mark.ncbi()
-def test_fetch_records_by_taxid(
-    uncached_ncbi_client: NCBIClient,
-    snapshot: SnapshotAssertion,
-):
-    """Test that the client can fetch records by taxid and that they are cached."""
-    records = uncached_ncbi_client.link_from_taxid_and_fetch(1198450)
+class TestFetchAccessionsByTaxid:
+    def test_ok(self):
+        """Test that the client can fetch accessions by taxid."""
+        assert NCBIClient.fetch_accessions_by_taxid(1198450) == [
+            "NC_038797.1",
+            "NC_038796.1",
+            "JQ821387.1",
+            "JQ821386.1",
+        ]
 
-    assert records == snapshot
-
-    assert all(
-        uncached_ncbi_client.cache.load_genbank_record(record.accession)
-        for record in records
-    )
+    def test_non_existent(self):
+        """Test that the client returns an empty list when the taxid does not exist."""
+        assert NCBIClient.fetch_accessions_by_taxid(99999999) == []
 
 
 class TestFetchTaxonomy:

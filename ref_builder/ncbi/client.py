@@ -10,7 +10,6 @@ from urllib.parse import quote_plus
 from Bio import Entrez
 from pydantic import ValidationError
 from structlog import get_logger
-from tenacity import Retrying, stop_after_attempt, wait_random
 
 from ref_builder.ncbi.cache import NCBICache
 from ref_builder.ncbi.models import NCBIDatabase, NCBIGenbank, NCBIRank, NCBITaxonomy
@@ -23,6 +22,9 @@ if api_key := os.environ.get("NCBI_API_KEY"):
     Entrez.api_key = os.environ.get("NCBI_API_KEY")
 
 base_logger = get_logger()
+
+ESEARCH_PAGE_SIZE = 1000
+"""The number of results to fetch per page in an Entrez esearch query."""
 
 
 class GenbankRecordKey(StrEnum):
@@ -146,67 +148,47 @@ class NCBIClient:
 
         return []
 
-    def link_from_taxid_and_fetch(self, taxid: int) -> list[NCBIGenbank]:
-        """Fetch all Genbank records linked to a taxonomy record.
-
-        Usable without preexisting OTU data.
-
-        :param taxid: A NCBI Taxonomy id
-        :return: A list of Entrez-parsed Genbank records
-        """
-        accessions = NCBIClient.link_accessions_from_taxid(taxid)
-
-        logger = base_logger.bind(taxid=taxid, linked_accessions=accessions)
-
-        records = NCBIClient.fetch_unvalidated_genbank_records(accessions)
-
-        if not records:
-            logger.info("No accessions found for this Taxon ID")
-            return []
-
-        for record in records:
-            versioned_accession = Accession.from_string(
-                record[GenbankRecordKey.ACCESSION_VERSION],
-            )
-            self.cache.cache_genbank_record(
-                record,
-                versioned_accession.key,
-                versioned_accession.version,
-            )
-
-        if records:
-            return NCBIClient.validate_genbank_records(records)
-
-        return []
-
     @staticmethod
-    def link_accessions_from_taxid(taxid: int) -> list[str]:
+    def fetch_accessions_by_taxid(taxid: int) -> list[str]:
         """Fetch all accessions associated with the given ``taxid``.
 
-        :param taxid: A NCBI Taxonomy id
-        :return: A list of Genbank accessions linked to the Taxonomy UID
+        :param taxid: A Taxonomy ID
+        :return: A list of Genbank accessions
         """
-        for attempt in Retrying(stop=(stop_after_attempt(5)), wait=wait_random(0, 1)):
-            with attempt:
-                with log_http_error():
-                    handle = Entrez.elink(
-                        dbfrom="taxonomy",
-                        db=NCBIDatabase.NUCCORE,
-                        id=str(taxid),
-                        idtype="acc",
-                    )
+        page = 1
 
-                results = Entrez.read(handle)
+        accessions = []
 
-        if results:
-            # Discards unneeded tables and formats needed table as a list
-            for link_set_db in results[0]["LinkSetDb"]:
-                if link_set_db["LinkName"] == "taxonomy_nuccore":
-                    id_table = link_set_db["Link"]
+        # If there are more than 1000 accessions, we need to paginate.
+        while True:
+            with log_http_error():
+                handle = Entrez.esearch(
+                    db=NCBIDatabase.NUCCORE,
+                    term=f"txid{taxid}[orgn]",
+                    idtype="acc",
+                    retstart=page * ESEARCH_PAGE_SIZE,
+                    retmax=ESEARCH_PAGE_SIZE,
+                )
 
-                    return [keypair["Id"].split(".")[0] for keypair in id_table]
+            result = Entrez.read(handle)
 
-        return []
+            accessions.extend(result["IdList"])
+
+            if int(result["Count"]) < ESEARCH_PAGE_SIZE:
+                break
+
+            page += 1
+
+        with log_http_error():
+            handle = Entrez.esearch(
+                db=NCBIDatabase.NUCCORE,
+                term=f"txid{taxid}[orgn]",
+                idtype="acc",
+                retstart=0,
+                retmax=1000,
+            )
+
+        return Entrez.read(handle)["IdList"]
 
     @staticmethod
     def validate_genbank_records(records: list[dict]) -> list[NCBIGenbank]:
