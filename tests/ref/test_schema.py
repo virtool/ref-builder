@@ -7,7 +7,7 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBISourceMolType
 from ref_builder.otu.utils import create_isolate_plan_from_records
 from ref_builder.plan import (
-    IsolatePlan,
+    Plan,
     MonopartitePlan,
     MultipartitePlan,
     SegmentName,
@@ -17,7 +17,7 @@ from ref_builder.plan import (
 from tests.fixtures.factories import NCBIGenbankFactory, NCBISourceFactory
 
 
-plan_typer = TypeAdapter(IsolatePlan)
+plan_typer = TypeAdapter(Plan)
 
 
 class TestPlan:
