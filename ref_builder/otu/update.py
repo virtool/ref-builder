@@ -364,14 +364,12 @@ def auto_update_otu(
 
     otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
-    linked_accessions = ncbi.link_accessions_from_taxid(otu.taxid)
+    accessions = ncbi.fetch_accessions_by_taxid(otu.taxid)
 
-    fetch_list = list(set(linked_accessions).difference(otu.blocked_accessions))
-    if not fetch_list:
+    if fetch_list := list(set(accessions) - otu.blocked_accessions):
+        update_otu_with_accessions(repo, otu, fetch_list)
+    else:
         otu_logger.info("OTU is up to date.")
-        return
-
-    update_otu_with_accessions(repo, otu, fetch_list)
 
 
 def update_otu_with_accessions(
@@ -548,7 +546,7 @@ def promote_otu_accessions(
     """
     ncbi = NCBIClient(ignore_cache)
 
-    accessions = ncbi.link_accessions_from_taxid(otu.taxid)
+    accessions = ncbi.fetch_accessions_by_taxid(otu.taxid)
     fetch_list = set(accessions) - otu.blocked_accessions
 
     records = ncbi.fetch_genbank_records(list(fetch_list))
