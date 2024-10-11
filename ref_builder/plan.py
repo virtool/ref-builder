@@ -3,7 +3,7 @@ from enum import StrEnum
 from typing import Annotated, Literal, Union
 from uuid import uuid4
 
-from pydantic import UUID4, BaseModel, ConfigDict, Field, TypeAdapter
+from pydantic import UUID4, BaseModel, ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
 from ref_builder.ncbi.models import NCBIGenbank, NCBISourceMolType
@@ -126,8 +126,6 @@ class MultipartitePlan(BaseModel):
 
 
 IsolatePlan = Annotated[Union[MultipartitePlan, MonopartitePlan], Field(discriminator="plan_type")]
-
-plan_typer = TypeAdapter(IsolatePlan)
 
 
 def determine_segment_prefix(moltype: NCBISourceMolType) -> str:

@@ -1,4 +1,5 @@
 import pytest
+from pydantic import TypeAdapter
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
@@ -6,14 +7,17 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBISourceMolType
 from ref_builder.otu.utils import create_isolate_plan_from_records
 from ref_builder.plan import (
+    IsolatePlan,
     MonopartitePlan,
     MultipartitePlan,
-    plan_typer,
     SegmentName,
     get_multipartite_segment_name,
     parse_segment_name,
 )
 from tests.fixtures.factories import NCBIGenbankFactory, NCBISourceFactory
+
+
+plan_typer = TypeAdapter(IsolatePlan)
 
 
 @pytest.mark.parametrize(
