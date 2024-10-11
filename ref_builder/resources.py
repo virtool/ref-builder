@@ -30,10 +30,8 @@ class RepoMeta(BaseModel):
 class RepoSettings(BaseModel):
     """The default settings of a Virtool reference repository."""
 
-    default_segment_length_tolerance: float = Field(0.03, gt=0.0, lt=1.0)
-    """The allowable deviance from a sequence or segment's described length
-     in an OTU's isolate plan.
-     """
+    default_segment_length_tolerance: float = Field(0.03, ge=0.0, le=1.0)
+    """The deviation a sequence is allowed from its plan segment's length before it fails validation."""
 
 
 class RepoSequence(BaseModel):

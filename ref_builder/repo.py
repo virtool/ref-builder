@@ -173,6 +173,7 @@ class Repo:
 
     @property
     def settings(self) -> RepoSettings:
+        """The settings for the repository."""
         for event in self._event_store.iter_events():
             if isinstance(event, CreateRepo):
                 return event.data.settings
