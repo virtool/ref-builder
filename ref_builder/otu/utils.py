@@ -10,7 +10,7 @@ from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.plan import (
     MonopartitePlan,
     MultipartitePlan,
-    SegmentPlan,
+    Segment,
     SegmentRule,
     get_multipartite_segment_name,
 )
@@ -48,7 +48,7 @@ class RefSeqConflictError(ValueError):
 def create_segments_from_records(
     records: list[NCBIGenbank],
     rule: SegmentRule,
-) -> list[SegmentPlan]:
+) -> list[Segment]:
     """Return a list of SegmentPlans."""
     segments = []
 
@@ -57,7 +57,7 @@ def create_segments_from_records(
             raise ValueError("No segment name found for multipartite OTU segment.")
 
         segments.append(
-            SegmentPlan(
+            Segment(
                 id=uuid4(),
                 name=get_multipartite_segment_name(record),
                 required=rule,
@@ -70,7 +70,7 @@ def create_segments_from_records(
 
 def create_isolate_plan_from_records(
     records: list[NCBIGenbank],
-    segments: list[SegmentPlan] | None = None,
+    segments: list[Segment] | None = None,
 ) -> MonopartitePlan | MultipartitePlan | None:
     """Return a plan from a list of records representing an isolate."""
     if len(records) == 1:

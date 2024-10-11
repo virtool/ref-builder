@@ -20,7 +20,7 @@ from ref_builder.plan import (
     MultipartitePlan,
     SegmentName,
     SegmentRule,
-    SegmentPlan,
+    Segment,
 )
 
 
@@ -59,7 +59,7 @@ class TestSetIsolatePlan:
         )
 
         new_isolate_plan.segments.append(
-            SegmentPlan(
+            Segment(
                 id=uuid4(),
                 length=2000,
                 name=SegmentName(prefix="DNA", key="C"),
@@ -68,7 +68,7 @@ class TestSetIsolatePlan:
         )
 
         new_isolate_plan.segments.append(
-            SegmentPlan(
+            Segment(
                 id=uuid4(),
                 length=1000,
                 name=SegmentName(prefix="DNA", key="Z"),

@@ -53,7 +53,7 @@ class SegmentMetadata(BaseModel):
     """The expected length of the sequence"""
 
 
-class SegmentPlan(SegmentMetadata):
+class Segment(SegmentMetadata):
     """A segment in a multipartite plan."""
 
     model_config = ConfigDict(use_enum_values=True)
@@ -108,15 +108,15 @@ class MultipartitePlan(BaseModel):
     id: UUID4
     """The unique id number of the multipartite plan"""
 
-    segments: list[SegmentPlan]
+    segments: list[Segment]
 
     @property
-    def required_segments(self) -> list[SegmentPlan]:
+    def required_segments(self) -> list[Segment]:
         """Return a list of segments that are required by all additions."""
         return [segment for segment in self.segments if segment.required]
 
     @classmethod
-    def new(cls, segments: list["SegmentPlan"]) -> "MultipartitePlan":
+    def new(cls, segments: list["Segment"]) -> "MultipartitePlan":
         """Initialize a MultipartitePlan from a list of segments."""
         return MultipartitePlan(
             id=uuid4(),

@@ -16,7 +16,7 @@ from ref_builder.plan import (
     MonopartitePlan,
     MultipartitePlan,
     SegmentName,
-    SegmentPlan,
+    Segment,
     SegmentRule,
 )
 from ref_builder.repo import Repo
@@ -337,7 +337,7 @@ def resize_monopartite_plan(
 
     new_plan = MultipartitePlan.new(
         segments=[
-            SegmentPlan(
+            Segment(
                 id=uuid4(),
                 length=otu.plan.length,
                 name=name,
