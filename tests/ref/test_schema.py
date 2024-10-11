@@ -20,11 +20,31 @@ from tests.fixtures.factories import NCBIGenbankFactory, NCBISourceFactory
 plan_typer = TypeAdapter(IsolatePlan)
 
 
-@pytest.mark.parametrize(
-    ("accessions", "plan_type"),
-    [
-        (["NC_024301"], MonopartitePlan),
-        (
+class TestPlan:
+    """Test differentiated isolate plans."""
+
+    def test_create_monopartite_plan_from_records(
+        self,
+        scratch_ncbi_client: NCBIClient,
+        snapshot: SnapshotAssertion,
+    ):
+        """Test the creation of a monopartite plan from a given record."""
+        records = scratch_ncbi_client.fetch_genbank_records(["NC_024301"])
+        auto_plan = create_isolate_plan_from_records(records)
+
+        assert type(auto_plan) is MonopartitePlan
+
+        assert auto_plan.model_dump() == snapshot(exclude=props("id"))
+
+    def test_create_multipartite_plan_from_records(
+        self,
+        scratch_ncbi_client: NCBIClient,
+        snapshot: SnapshotAssertion,
+    ):
+        """Test the creation of a multipartite plan from a set of records
+        representing segments.
+        """
+        records = scratch_ncbi_client.fetch_genbank_records(
             [
                 "NC_010314",
                 "NC_010315",
@@ -32,28 +52,31 @@ plan_typer = TypeAdapter(IsolatePlan)
                 "NC_010317",
                 "NC_010318",
                 "NC_010319",
-            ],
-            MultipartitePlan,
-        ),
-    ],
-)
-class TestIsolatePlan:
-    """Test differentiated isolate plans."""
-
-    def test_create_plan_from_records(
-        self,
-        accessions: list[str],
-        plan_type: MonopartitePlan | MultipartitePlan,
-        scratch_ncbi_client: NCBIClient,
-    ):
-        """Test the creation of a schema from a set of records
-        that make up an implied isolate.
-        """
-        records = scratch_ncbi_client.fetch_genbank_records(accessions)
+            ]
+        )
         auto_plan = create_isolate_plan_from_records(records)
 
-        assert type(auto_plan) is plan_type
+        assert type(auto_plan) is MultipartitePlan
 
+        assert auto_plan.model_dump() == snapshot(exclude=props("id"))
+
+    @pytest.mark.parametrize(
+        ("accessions", "plan_type"),
+        [
+            (["NC_024301"], MonopartitePlan),
+            (
+                [
+                    "NC_010314",
+                    "NC_010315",
+                    "NC_010316",
+                    "NC_010317",
+                    "NC_010318",
+                    "NC_010319",
+                ],
+                MultipartitePlan,
+            ),
+        ],
+    )
     def test_serialize_plan(
         self,
         accessions: list[str],
