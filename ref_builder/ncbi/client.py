@@ -23,6 +23,9 @@ if api_key := os.environ.get("NCBI_API_KEY"):
 
 base_logger = get_logger()
 
+ESEARCH_PAGE_SIZE = 1000
+"""The number of results to fetch per page in an Entrez esearch query."""
+
 
 class GenbankRecordKey(StrEnum):
     """Genbank record keys."""
@@ -152,9 +155,37 @@ class NCBIClient:
         :param taxid: A Taxonomy ID
         :return: A list of Genbank accessions
         """
+        page = 1
+
+        accessions = []
+
+        # If there are more than 1000 accessions, we need to paginate.
+        while True:
+            with log_http_error():
+                handle = Entrez.esearch(
+                    db=NCBIDatabase.NUCCORE,
+                    term=f"txid{taxid}[orgn]",
+                    idtype="acc",
+                    retstart=page * ESEARCH_PAGE_SIZE,
+                    retmax=ESEARCH_PAGE_SIZE,
+                )
+
+            result = Entrez.read(handle)
+
+            accessions.extend(result["IdList"])
+
+            if int(result["Count"]) < ESEARCH_PAGE_SIZE:
+                break
+
+            page += 1
+
         with log_http_error():
             handle = Entrez.esearch(
-                db=NCBIDatabase.NUCCORE, term=f"txid{taxid}[orgn]", idtype="acc"
+                db=NCBIDatabase.NUCCORE,
+                term=f"txid{taxid}[orgn]",
+                idtype="acc",
+                retstart=0,
+                retmax=1000,
             )
 
         return Entrez.read(handle)["IdList"]
