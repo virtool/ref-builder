@@ -65,7 +65,7 @@ def init_otu(empty_repo: Repo) -> RepoOTU:
 
 
 class TestNew:
-    def test_meta(self, empty_repo: Repo, tmp_path: Path):
+    def test_ok(self, empty_repo: Repo, tmp_path: Path):
         """Test that creating a new ``Repo`` object returns the expected object and creates
         the expected directory structure.
         """
@@ -76,15 +76,11 @@ class TestNew:
         assert empty_repo.meta.name == "Generic Viruses"
         assert empty_repo.meta.organism == "virus"
 
-    def test_default_settings(self, empty_repo: Repo, tmp_path: Path):
-        """Test that creating a new ``Repo`` object returns
-        the default settings this repository abides by.
-        """
         assert empty_repo.settings.default_segment_length_tolerance == 0.03
 
     def test_alternate_settings(self, tmp_path: Path):
         """Test retrieval of non-default settings."""
-        alt_repo = Repo.new(
+        repo = Repo.new(
             DataType.GENOME,
             "Generic Viruses",
             tmp_path / "alt_setting_repo",
@@ -92,7 +88,7 @@ class TestNew:
             default_segment_length_tolerance=0.05,
         )
 
-        assert alt_repo.settings.default_segment_length_tolerance == 0.05
+        assert repo.settings.default_segment_length_tolerance == 0.05
 
 
 class TestCreateOTU:
