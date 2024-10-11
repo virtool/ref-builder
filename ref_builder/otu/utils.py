@@ -74,7 +74,9 @@ def create_isolate_plan_from_records(
 ) -> MonopartitePlan | MultipartitePlan | None:
     """Return a plan from a list of records representing an isolate."""
     if len(records) == 1:
-        return MonopartitePlan(id=uuid4(), length=len(records[0].sequence))
+        return MonopartitePlan(
+            plan_type="monopartite", id=uuid4(), length=len(records[0].sequence)
+        )
 
     binned_records = group_genbank_records_by_isolate(records)
     if len(binned_records) > 1:
@@ -90,7 +92,9 @@ def create_isolate_plan_from_records(
     segments = create_segments_from_records(records, rule=SegmentRule.REQUIRED)
 
     if segments:
-        return MultipartitePlan(id=uuid4(), segments=segments)
+        return MultipartitePlan(
+            plan_type="multipartite", id=uuid4(), segments=segments
+        )
 
     return None
 

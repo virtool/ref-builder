@@ -1,8 +1,8 @@
 import re
 from enum import StrEnum
-from typing import Union
+from typing import Annotated, Literal, Union
 
-from pydantic import UUID4, BaseModel, ConfigDict, TypeAdapter
+from pydantic import UUID4, BaseModel, ConfigDict, Field, TypeAdapter
 from pydantic.dataclasses import dataclass
 
 from ref_builder.ncbi.models import NCBIGenbank, NCBISourceMolType
@@ -67,6 +67,9 @@ class SegmentPlan(SegmentMetadata):
 class MonopartitePlan(BaseModel):
     """Expected properties for an acceptable monopartite isolate."""
 
+    plan_type: Literal["monopartite"]
+    """The plan type identifier."""
+
     id: UUID4
     """The unique ID of the monopartite plan."""
 
@@ -88,6 +91,9 @@ class MonopartitePlan(BaseModel):
 class MultipartitePlan(BaseModel):
     """Expected segments for an acceptable multipartite isolate."""
 
+    plan_type: Literal["multipartite"]
+    """The plan type identifier."""
+
     id: UUID4
     """The unique id number of the multipartite plan"""
 
@@ -99,7 +105,7 @@ class MultipartitePlan(BaseModel):
         return [segment for segment in self.segments if segment.required]
 
 
-IsolatePlan = Union[MultipartitePlan, MonopartitePlan]
+IsolatePlan = Annotated[Union[MultipartitePlan, MonopartitePlan], Field(discriminator="plan_type")]
 
 plan_typer = TypeAdapter(IsolatePlan)
 
