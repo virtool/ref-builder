@@ -27,7 +27,7 @@ def initialized_repo(empty_repo: Repo):
             topology=Topology.LINEAR,
         ),
         name="Tobacco mosaic virus",
-        plan=MonopartitePlan(id=uuid4(), length=150),
+        plan=MonopartitePlan.new(length=150),
         taxid=12242,
     )
 
@@ -59,7 +59,7 @@ def init_otu(empty_repo: Repo) -> RepoOTU:
             topology=Topology.LINEAR,
         ),
         name="Tobacco mosaic virus",
-        plan=MonopartitePlan(id=uuid4(), length=150),
+        plan=MonopartitePlan.new(length=150),
         taxid=12242,
     )
 
@@ -96,7 +96,7 @@ class TestCreateOTU:
         """Test that creating an OTU returns the expected ``RepoOTU`` object and creates
         the expected event file.
         """
-        monopartite_plan = MonopartitePlan(id=uuid4(), length=150)
+        monopartite_plan = MonopartitePlan.new(length=150)
 
         otu = empty_repo.create_otu(
             acronym="TMV",
@@ -123,7 +123,11 @@ class TestCreateOTU:
             ),
             name="Tobacco mosaic virus",
             repr_isolate=None,
-            plan=MonopartitePlan(id=monopartite_plan.id, length=150),
+            plan=MonopartitePlan(
+                id=monopartite_plan.id,
+                plan_type="monopartite",
+                length=150,
+            ),
             taxid=12242,
             isolates=[],
         )
@@ -148,6 +152,7 @@ class TestCreateOTU:
                     "id": str(monopartite_plan.id),
                     "length": 150,
                     "name": None,
+                    "plan_type": "monopartite",
                 },
                 "taxid": 12242,
             },
@@ -173,7 +178,7 @@ class TestCreateOTU:
                 topology=Topology.LINEAR,
             ),
             name="Tobacco mosaic virus",
-            plan=MonopartitePlan(id=uuid4(), length=150),
+            plan=MonopartitePlan.new(length=150),
             taxid=12242,
         )
 
@@ -190,7 +195,7 @@ class TestCreateOTU:
                     topology=Topology.LINEAR,
                 ),
                 name="Tobacco mosaic virus",
-                plan=MonopartitePlan(id=uuid4(), length=150),
+                plan=MonopartitePlan.new(length=150),
                 taxid=438782,
             )
 
@@ -207,7 +212,7 @@ class TestCreateOTU:
                 topology=Topology.LINEAR,
             ),
             name="Tobacco mosaic virus",
-            plan=MonopartitePlan(id=uuid4(), length=150),
+            plan=MonopartitePlan.new(length=150),
             taxid=12242,
         )
 
@@ -224,7 +229,7 @@ class TestCreateOTU:
                 ),
                 legacy_id="abcd1234",
                 name="Abaca bunchy top virus",
-                plan=MonopartitePlan(id=uuid4(), length=150),
+                plan=MonopartitePlan.new(length=150),
                 taxid=438782,
             )
 
@@ -373,7 +378,7 @@ class TestGetOTU:
         """Test that getting an OTU returns the expected ``RepoOTU`` object including two
         isolates with one sequence each.
         """
-        monopartite_plan = MonopartitePlan(id=uuid4(), length=150)
+        monopartite_plan = MonopartitePlan.new(length=150)
 
         otu = empty_repo.create_otu(
             acronym="TMV",
@@ -466,7 +471,7 @@ class TestGetOTU:
             ),
             name="Tobacco mosaic virus",
             repr_isolate=None,
-            plan=MonopartitePlan(id=monopartite_plan.id, length=150),
+            plan=MonopartitePlan(id=monopartite_plan.id, plan_type="monopartite", length=150),
             taxid=12242,
             isolates=otu_contents,
         )

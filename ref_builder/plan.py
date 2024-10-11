@@ -1,6 +1,7 @@
 import re
 from enum import StrEnum
 from typing import Annotated, Literal, Union
+from uuid import uuid4
 
 from pydantic import UUID4, BaseModel, ConfigDict, Field, TypeAdapter
 from pydantic.dataclasses import dataclass
@@ -87,6 +88,16 @@ class MonopartitePlan(BaseModel):
     def required_segments(self) -> list["MonopartitePlan"]:
         return [self]
 
+    @classmethod
+    def new(cls, length: int, name: SegmentName | None = None) -> "MonopartitePlan":
+        """Initialize a MonopartitePlan from a list of segments."""
+        return MonopartitePlan(
+            id=uuid4(),
+            plan_type="monopartite",
+            length=length,
+            name=name,
+        )
+
 
 class MultipartitePlan(BaseModel):
     """Expected segments for an acceptable multipartite isolate."""
@@ -103,6 +114,15 @@ class MultipartitePlan(BaseModel):
     def required_segments(self) -> list[SegmentPlan]:
         """Return a list of segments that are required by all additions."""
         return [segment for segment in self.segments if segment.required]
+
+    @classmethod
+    def new(cls, segments: list["SegmentPlan"]) -> "MultipartitePlan":
+        """Initialize a MultipartitePlan from a list of segments."""
+        return MultipartitePlan(
+            id=uuid4(),
+            plan_type="multipartite",
+            segments=segments,
+        )
 
 
 IsolatePlan = Annotated[Union[MultipartitePlan, MonopartitePlan], Field(discriminator="plan_type")]

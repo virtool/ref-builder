@@ -3,10 +3,12 @@
   dict({
     'length': 7424,
     'name': None,
+    'plan_type': 'monopartite',
   })
 # ---
 # name: TestIsolatePlan.test_serialize_plan[accessions1-MultipartitePlan]
   dict({
+    'plan_type': 'multipartite',
     'segments': list([
       dict({
         'length': 1090,

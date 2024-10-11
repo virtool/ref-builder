@@ -52,7 +52,11 @@ class TestSetIsolatePlan:
 
         assert type(original_plan) is MultipartitePlan
 
-        new_isolate_plan = MultipartitePlan(id=uuid4(), segments=original_plan.segments)
+        new_isolate_plan = MultipartitePlan(
+            plan_type="multipartite",
+            id=uuid4(),
+            segments=original_plan.segments,
+        )
 
         new_isolate_plan.segments.append(
             SegmentPlan(

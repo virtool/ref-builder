@@ -288,8 +288,7 @@ def add_segments_to_plan(
         expand_logger.warning("No segments can be added.")
         return None
 
-    new_plan = MultipartitePlan(
-        id=uuid4(),
+    new_plan = MultipartitePlan.new(
         segments=otu.plan.segments + new_segments,
     )
 
@@ -336,8 +335,7 @@ def resize_monopartite_plan(
         expand_logger.warning("No segments can be added.")
         return None
 
-    new_plan = MultipartitePlan(
-        id=uuid4(),
+    new_plan = MultipartitePlan.new(
         segments=[
             SegmentPlan(
                 id=uuid4(),
