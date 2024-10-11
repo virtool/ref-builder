@@ -125,7 +125,9 @@ class MultipartitePlan(BaseModel):
         )
 
 
-IsolatePlan = Annotated[Union[MultipartitePlan, MonopartitePlan], Field(discriminator="plan_type")]
+IsolatePlan = Annotated[
+    Union[MultipartitePlan, MonopartitePlan], Field(discriminator="plan_type")
+]
 
 
 def determine_segment_prefix(moltype: NCBISourceMolType) -> str:

@@ -471,7 +471,9 @@ class TestGetOTU:
             ),
             name="Tobacco mosaic virus",
             repr_isolate=None,
-            plan=MonopartitePlan(id=monopartite_plan.id, plan_type="monopartite", length=150),
+            plan=MonopartitePlan(
+                id=monopartite_plan.id, plan_type="monopartite", length=150
+            ),
             taxid=12242,
             isolates=otu_contents,
         )
