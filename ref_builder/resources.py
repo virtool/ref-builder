@@ -1,7 +1,7 @@
 import datetime
 from uuid import UUID
 
-from pydantic import UUID4, BaseModel, field_serializer, field_validator
+from pydantic import UUID4, BaseModel, Field, field_serializer, field_validator
 
 from ref_builder.models import Molecule
 from ref_builder.plan import MonopartitePlan, MultipartitePlan
@@ -25,6 +25,13 @@ class RepoMeta(BaseModel):
 
     organism: str
     """The repository organism."""
+
+
+class RepoSettings(BaseModel):
+    """The default settings of a Virtool reference repository."""
+
+    default_segment_length_tolerance: float = Field(0.03, ge=0.0, le=1.0)
+    """The deviation a sequence is allowed from its plan segment's length before it fails validation."""
 
 
 class RepoSequence(BaseModel):
