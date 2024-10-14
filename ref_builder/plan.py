@@ -58,7 +58,7 @@ class Segment(SegmentMetadata):
 
     model_config = ConfigDict(use_enum_values=True)
 
-    name: SegmentName
+    name: SegmentName | None
     """The name of the segment"""
 
     required: SegmentRule
@@ -81,12 +81,21 @@ class MonopartitePlan(BaseModel):
     """The name of the monopartite plan"""
 
     @property
-    def segments(self) -> list["MonopartitePlan"]:
-        return [self]
+    def segments(self) -> list[Segment]:
+        """Return a simulated single-segment list of segments."""
+        return [
+            Segment(
+                id=self.id,
+                length=self.length,
+                name=self.name,
+                required=SegmentRule.REQUIRED,
+            )
+        ]
 
     @property
-    def required_segments(self) -> list["MonopartitePlan"]:
-        return [self]
+    def required_segments(self) -> list[Segment]:
+        """Return a simulated single-segment list of segments."""
+        return self.segments
 
     @classmethod
     def new(cls, length: int, name: SegmentName | None = None) -> "MonopartitePlan":
