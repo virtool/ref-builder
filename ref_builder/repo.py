@@ -302,7 +302,6 @@ class Repo:
     def create_sequence(
         self,
         otu_id: uuid.UUID,
-        isolate_id: uuid.UUID,
         accession: str,
         definition: str,
         legacy_id: str | None,
@@ -347,7 +346,6 @@ class Repo:
             ),
             SequenceQuery(
                 otu_id=otu_id,
-                isolate_id=isolate_id,
                 sequence_id=sequence_id,
             ),
         )
@@ -573,12 +571,6 @@ class Repo:
                         sequence=event.data.sequence,
                     ),
                 )
-
-                for isolate in otu.isolates:
-                    if isolate.id == event.query.isolate_id:
-                        isolate.add_sequence(
-                            otu.get_sequence_by_id(event.query.sequence_id),
-                        )
 
             elif isinstance(event, DeleteSequence):
                 otu.delete_sequence(
