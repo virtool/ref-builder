@@ -359,6 +359,24 @@ class Repo:
             accession=str(versioned_accession),
         )
 
+        link_event = self._write_event(
+            LinkSequence,
+            LinkSequenceData(),
+            LinkSequenceQuery(
+                otu_id=otu_id,
+                isolate_id=isolate_id,
+                sequence_id=sequence_id,
+            ),
+        )
+
+        logger.debug(
+            "Sequence linked to isolate",
+            event_id=link_event.id,
+            sequence_id=str(sequence_id),
+            isolate_id=str(link_event.query.isolate_id),
+            accession=str(versioned_accession),
+        )
+
         return (
             self.get_otu(otu_id)
             .get_isolate(isolate_id)
