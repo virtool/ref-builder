@@ -288,9 +288,12 @@ class RepoOTU(BaseModel):
         self.isolates.append(isolate)
         self._isolates_by_id[isolate.id] = isolate
 
-    def add_sequence(self, sequence: RepoSequence, isolate_id: UUID4) -> None:
+    def add_sequence(self, sequence: RepoSequence) -> None:
         """Add a sequence to a given isolate."""
-        self.get_isolate(isolate_id).add_sequence(sequence)
+        self._sequences_by_id[sequence.id] = sequence
+
+    def get_sequence_by_id(self, sequence_id: UUID) -> RepoSequence | None:
+        return self._sequences_by_id.get(sequence_id)
 
     def delete_isolate(self, isolate_id: UUID4) -> None:
         """Remove an isolate from the OTU."""
