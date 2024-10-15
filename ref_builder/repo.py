@@ -521,11 +521,28 @@ class Repo:
         for event_id in event_ids[1:]:
             event = self._event_store.read_event(event_id)
 
-            if isinstance(event, CreatePlan):
-                otu.plan = event.data.plan
+            if isinstance(event, CreateSequence):
+                otu.add_sequence(
+                    RepoSequence(
+                        id=event.data.id,
+                        accession=event.data.accession,
+                        definition=event.data.definition,
+                        legacy_id=event.data.legacy_id,
+                        segment=event.data.segment,
+                        sequence=event.data.sequence,
+                    ),
+                )
+                for isolate in otu.isolates:
+                    if isolate.id == event.query.isolate_id:
+                        isolate.add_sequence(
+                            otu.get_sequence_by_id(event.query.sequence_id),
+                        )
 
-            elif isinstance(event, SetReprIsolate):
-                otu.repr_isolate = event.data.isolate_id
+            elif isinstance(event, DeleteSequence):
+                otu.delete_sequence(
+                    event.query.sequence_id,
+                    event.query.isolate_id,
+                )
 
             elif isinstance(event, CreateIsolate):
                 otu.add_isolate(
@@ -540,28 +557,14 @@ class Repo:
             elif isinstance(event, DeleteIsolate):
                 otu.delete_isolate(event.query.isolate_id)
 
+            elif isinstance(event, CreatePlan):
+                otu.plan = event.data.plan
+
+            elif isinstance(event, SetReprIsolate):
+                otu.repr_isolate = event.data.isolate_id
+
             elif isinstance(event, ExcludeAccession):
                 otu.excluded_accessions.add(event.data.accession)
-
-            elif isinstance(event, CreateSequence):
-                for isolate in otu.isolates:
-                    if isolate.id == event.query.isolate_id:
-                        isolate.add_sequence(
-                            RepoSequence(
-                                id=event.data.id,
-                                accession=event.data.accession,
-                                definition=event.data.definition,
-                                legacy_id=event.data.legacy_id,
-                                segment=event.data.segment,
-                                sequence=event.data.sequence,
-                            ),
-                        )
-
-            elif isinstance(event, DeleteSequence):
-                otu.delete_sequence(
-                    event.query.sequence_id,
-                    event.query.isolate_id,
-                )
 
         otu.isolates.sort(
             key=lambda i: f"{i.name.type} {i.name.value}"
