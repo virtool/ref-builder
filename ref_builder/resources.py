@@ -245,9 +245,19 @@ class RepoOTU(BaseModel):
     _isolates_by_id: dict[UUID4:RepoIsolate]
     """A dictionary of isolates indexed by isolate UUID"""
 
+    _sequences_by_id: dict[UUID4:RepoSequence]
+    """A dictionary of sequences indexed by sequence UUID"""
+
     def __init__(self, **data) -> None:
         super().__init__(**data)
-        self._isolates_by_id = {isolate.id: isolate for isolate in self.isolates}
+
+        self._sequences_by_id = {}
+        self._isolates_by_id = {}
+        for isolate in self.isolates:
+            self._isolates_by_id[isolate.id] = isolate
+            for sequence in isolate.sequences:
+                self._sequences_by_id[sequence.id] = sequence
+
 
     @property
     def accessions(self) -> set[str]:
