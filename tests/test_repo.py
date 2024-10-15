@@ -459,7 +459,7 @@ class TestGetOTU:
             ),
         ]
 
-        assert otu == RepoOTU(
+        assert otu.model_dump() == RepoOTU(
             id=otu.id,
             acronym="TMV",
             excluded_accessions=set(),
@@ -476,8 +476,7 @@ class TestGetOTU:
             ),
             taxid=12242,
             isolates=otu_contents,
-        )
-
+        ).model_dump()
         assert empty_repo.last_id == 6
 
     def test_retrieve_nonexistent_otu(self, initialized_repo: Repo):
