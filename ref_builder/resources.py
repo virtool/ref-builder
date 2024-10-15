@@ -363,6 +363,12 @@ class RepoOTU(BaseModel):
 
         raise ValueError(f"Accession {accession} found in index, but not in data")
 
+    def link_sequence(self, isolate_id: UUID4, sequence_id: UUID4) -> RepoSequence | None:
+        """Link the given sequence to the given isolate."""
+        self.get_isolate(isolate_id).add_sequence(self.get_sequence_by_id(sequence_id))
+
+        return self.get_isolate(isolate_id).get_sequence_by_id(sequence_id)
+
     def replace_sequence(
         self,
         sequence: RepoSequence,
