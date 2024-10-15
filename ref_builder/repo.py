@@ -27,6 +27,7 @@ from ref_builder.events.base import (
     Event,
     EventData,
     EventQuery,
+    LinkSequenceQuery,
     RepoQuery,
     OTUQuery,
     IsolateQuery,
@@ -51,6 +52,8 @@ from ref_builder.events.isolate import (
     CreateIsolateData,
     DeleteIsolate,
     DeleteIsolateData,
+    LinkSequence,
+    LinkSequenceData,
 )
 from ref_builder.events.sequence import (
     CreateSequence,
@@ -670,6 +673,7 @@ class EventStore:
                     "CreateOTU": CreateOTU,
                     "CreateIsolate": CreateIsolate,
                     "CreateSequence": CreateSequence,
+                    "LinkSequence": LinkSequence,
                     "DeleteIsolate": DeleteIsolate,
                     "DeleteSequence": DeleteSequence,
                     "CreatePlan": CreatePlan,
