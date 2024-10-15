@@ -376,7 +376,6 @@ class Repo:
         """
         new_sequence = self.create_sequence(
             otu_id=otu_id,
-            isolate_id=isolate_id,
             accession=accession,
             definition=definition,
             legacy_id=legacy_id,
@@ -395,9 +394,18 @@ class Repo:
             ),
             SequenceQuery(
                 otu_id=otu_id,
-                isolate_id=isolate_id,
                 sequence_id=replaced_sequence_id,
             ),
+        )
+
+        self._write_event(
+            LinkSequence,
+            LinkSequenceData(),
+            LinkSequenceQuery(
+                otu_id=otu_id,
+                isolate_id=isolate_id,
+                sequence_id=replaced_sequence_id,
+            )
         )
 
         return new_sequence
