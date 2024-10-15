@@ -392,8 +392,9 @@ class Repo:
                 replacement=new_sequence.id,
                 rationale=rationale,
             ),
-            SequenceQuery(
+            LinkSequenceQuery(
                 otu_id=otu_id,
+                isolate_id=isolate_id,
                 sequence_id=replaced_sequence_id,
             ),
         )
