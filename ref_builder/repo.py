@@ -359,29 +359,7 @@ class Repo:
             accession=str(versioned_accession),
         )
 
-        link_event = self._write_event(
-            LinkSequence,
-            LinkSequenceData(),
-            LinkSequenceQuery(
-                otu_id=otu_id,
-                isolate_id=isolate_id,
-                sequence_id=sequence_id,
-            ),
-        )
-
-        logger.debug(
-            "Sequence linked to isolate",
-            event_id=link_event.id,
-            sequence_id=str(sequence_id),
-            isolate_id=str(link_event.query.isolate_id),
-            accession=str(versioned_accession),
-        )
-
-        return (
-            self.get_otu(otu_id)
-            .get_isolate(isolate_id)
-            .get_sequence_by_accession(versioned_accession.key)
-        )
+        return self.get_otu(otu_id).get_sequence_by_id(sequence_id)
 
     def replace_sequence(
         self,
@@ -437,6 +415,48 @@ class Repo:
         )
 
         return self.get_otu(otu_id).plan
+
+    def link_sequence(
+        self, otu_id: uuid.UUID, isolate_id: uuid.UUID, sequence_id: uuid.UUID
+    ) -> RepoSequence | None:
+        """Link an existing sequence to an existing isolate."""
+        otu = self.get_otu(otu_id)
+
+        otu_logger = logger.bind(otu_id=str(otu_id))
+
+        isolate = otu.get_isolate(isolate_id)
+        if isolate is None:
+            otu_logger.error("Isolate not found in OTU.", sequence_id=str(isolate_id))
+            return None
+
+        sequence = otu.get_sequence_by_id(sequence_id)
+        if sequence is None:
+            otu_logger.error("Sequence not found in OTU.", sequence_id=str(sequence_id))
+            return None
+
+        event = self._write_event(
+            LinkSequence,
+            LinkSequenceData(),
+            LinkSequenceQuery(
+                otu_id=otu_id,
+                isolate_id=isolate_id,
+                sequence_id=sequence_id,
+            ),
+        )
+
+        otu_logger.debug(
+            f"Sequence linked to isolate {isolate.name}",
+            event_id=event.id,
+            sequence_id=str(sequence_id),
+            isolate_id=str(isolate_id),
+            accession=str(sequence.accession),
+        )
+
+        return (
+            self.get_otu(otu_id)
+            .get_isolate(isolate_id)
+            .get_sequence_by_id(sequence_id)
+        )
 
     def set_repr_isolate(self, otu_id: uuid.UUID, isolate_id: uuid.UUID) -> uuid.UUID:
         """Set the representative isolate for an OTU."""
@@ -553,6 +573,7 @@ class Repo:
                         sequence=event.data.sequence,
                     ),
                 )
+
                 for isolate in otu.isolates:
                     if isolate.id == event.query.isolate_id:
                         isolate.add_sequence(
@@ -577,6 +598,12 @@ class Repo:
 
             elif isinstance(event, DeleteIsolate):
                 otu.delete_isolate(event.query.isolate_id)
+
+            elif isinstance(event, LinkSequence):
+                otu.link_sequence(
+                    isolate_id=event.query.isolate_id,
+                    sequence_id=event.query.sequence_id
+                )
 
             elif isinstance(event, CreatePlan):
                 otu.plan = event.data.plan
