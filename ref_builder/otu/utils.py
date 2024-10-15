@@ -10,7 +10,7 @@ from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.plan import (
     MonopartitePlan,
     MultipartitePlan,
-    SegmentPlan,
+    Segment,
     SegmentRule,
     get_multipartite_segment_name,
 )
@@ -45,13 +45,36 @@ class RefSeqConflictError(ValueError):
         self.accessions = accessions
 
 
+def create_segments_from_records(
+    records: list[NCBIGenbank],
+    rule: SegmentRule,
+) -> list[Segment]:
+    """Return a list of SegmentPlans."""
+    segments = []
+
+    for record in sorted(records, key=lambda record: record.accession):
+        if not record.source.segment:
+            raise ValueError("No segment name found for multipartite OTU segment.")
+
+        segments.append(
+            Segment(
+                id=uuid4(),
+                name=get_multipartite_segment_name(record),
+                required=rule,
+                length=len(record.sequence),
+            ),
+        )
+
+    return segments
+
+
 def create_isolate_plan_from_records(
     records: list[NCBIGenbank],
-    segments: list[SegmentPlan] | None = None,
+    segments: list[Segment] | None = None,
 ) -> MonopartitePlan | MultipartitePlan | None:
     """Return a plan from a list of records representing an isolate."""
     if len(records) == 1:
-        return MonopartitePlan(id=uuid4(), length=len(records[0].sequence))
+        return MonopartitePlan.new(length=len(records[0].sequence))
 
     binned_records = group_genbank_records_by_isolate(records)
     if len(binned_records) > 1:
@@ -62,24 +85,12 @@ def create_isolate_plan_from_records(
         return None
 
     if segments is not None:
-        return MultipartitePlan(id=uuid4(), segments=segments)
+        return MultipartitePlan.new(segments=segments)
 
-    segments = []
-    for record in sorted(records, key=lambda record: record.accession):
-        if not record.source.segment:
-            raise ValueError("No segment name found for multipartite OTU segment.")
-
-        segments.append(
-            SegmentPlan(
-                id=uuid4(),
-                name=get_multipartite_segment_name(record),
-                required=SegmentRule.REQUIRED,
-                length=len(record.sequence),
-            ),
-        )
+    segments = create_segments_from_records(records, rule=SegmentRule.REQUIRED)
 
     if segments:
-        return MultipartitePlan(id=uuid4(), segments=segments)
+        return MultipartitePlan.new(segments=segments)
 
     return None
 

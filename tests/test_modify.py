@@ -1,13 +1,26 @@
 import subprocess
+from uuid import uuid4
 
 import pytest
+from syrupy import SnapshotAssertion
+from syrupy.filters import props
 
 from ref_builder.repo import Repo
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
     add_genbank_isolate,
+    add_segments_to_plan,
     promote_otu_accessions,
+    resize_monopartite_plan,
+    set_isolate_plan,
     set_representative_isolate,
+)
+from ref_builder.plan import (
+    MonopartitePlan,
+    MultipartitePlan,
+    SegmentName,
+    SegmentRule,
+    Segment,
 )
 
 
@@ -29,6 +42,129 @@ def test_update_representative_isolate(scratch_repo: Repo):
     assert otu_after.repr_isolate != otu_before.repr_isolate
 
     assert otu_after.repr_isolate == repr_isolate_after
+
+
+class TestSetIsolatePlan:
+    def test_set_isolate_plan(self, scratch_repo: Repo):
+        otu_before = scratch_repo.get_otu_by_taxid(223262)
+
+        original_plan = otu_before.plan
+
+        assert type(original_plan) is MultipartitePlan
+
+        new_isolate_plan = MultipartitePlan(
+            plan_type="multipartite",
+            id=uuid4(),
+            segments=original_plan.segments,
+        )
+
+        new_isolate_plan.segments.append(
+            Segment(
+                id=uuid4(),
+                length=2000,
+                name=SegmentName(prefix="DNA", key="C"),
+                required=SegmentRule.RECOMMENDED,
+            ),
+        )
+
+        new_isolate_plan.segments.append(
+            Segment(
+                id=uuid4(),
+                length=1000,
+                name=SegmentName(prefix="DNA", key="Z"),
+                required=SegmentRule.OPTIONAL,
+            ),
+        )
+
+        set_isolate_plan(scratch_repo, otu_before, new_isolate_plan)
+
+        assert type(new_isolate_plan) is MultipartitePlan
+
+        otu_after = scratch_repo.get_otu(otu_before.id)
+
+        assert len(otu_after.plan.segments) == len(otu_before.plan.segments) + 2
+
+        assert otu_after.plan == new_isolate_plan
+
+    def test_add_segments_to_plan(
+        self,
+        precached_repo: Repo,
+        snapshot: SnapshotAssertion,
+    ):
+        otu_before = create_otu(
+            precached_repo,
+            2164102,
+            ["MF062136", "MF062137"],
+            acronym="",
+        )
+
+        original_plan = otu_before.plan
+
+        assert type(original_plan) is MultipartitePlan
+
+        expanded_plan = add_segments_to_plan(
+            precached_repo,
+            otu_before,
+            rule=SegmentRule.OPTIONAL,
+            accessions=["MF062138"],
+        )
+
+        assert len(expanded_plan.segments) == len(original_plan.segments) + 1
+
+        otu_after = precached_repo.get_otu(otu_before.id)
+
+        assert otu_after.plan != otu_before.plan
+
+        assert otu_after.plan.model_dump() == snapshot(exclude=props("id"))
+
+    def test_resize_monopartite_plan(
+        self,
+        precached_repo: Repo,
+        snapshot: SnapshotAssertion,
+    ):
+        otu_before = create_otu(
+            precached_repo,
+            2164102,
+            ["MF062136"],
+            acronym="",
+        )
+
+        assert type(otu_before.plan) is MonopartitePlan
+
+        resize_monopartite_plan(
+            precached_repo,
+            otu_before,
+            name=SegmentName(prefix="RNA", key="L"),
+            rule=SegmentRule.RECOMMENDED,
+            accessions=["MF062137", "MF062138"],
+        )
+
+        otu_after = precached_repo.get_otu(otu_before.id)
+
+        assert type(otu_after.plan) is MultipartitePlan
+
+        assert otu_after.plan.required_segments[0].length == otu_before.plan.length
+
+        assert otu_after.plan.model_dump() == snapshot(exclude=props("id"))
+
+    def test_extend_plan_monopartite_fail(
+        self,
+        scratch_repo: Repo,
+    ):
+        """Test that add_segments_to_plan() fails out
+        when the original plan is a MonopartitePlan.
+        """
+        otu_before = scratch_repo.get_otu_by_taxid(96892)
+
+        assert type(otu_before.plan) is MonopartitePlan
+
+        with pytest.raises(ValueError):
+            add_segments_to_plan(
+                scratch_repo,
+                otu_before,
+                rule=SegmentRule.OPTIONAL,
+                accessions=["NC_010620"],
+            )
 
 
 class TestUpdateRepresentativeIsolateCommand:
