@@ -213,15 +213,16 @@ def create_isolate_from_records(
         raise
 
     for record in records:
-        repo.create_sequence(
+        sequence = repo.create_sequence(
             otu.id,
-            isolate.id,
             accession=record.accession_version,
             definition=record.definition,
             legacy_id=None,
             segment=record.source.segment,
             sequence=record.sequence,
         )
+
+        repo.link_sequence(otu.id, isolate.id, sequence.id)
 
         if record.refseq:
             refseq_status, old_accession = parse_refseq_comment(record.comment)
