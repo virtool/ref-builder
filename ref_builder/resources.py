@@ -262,7 +262,9 @@ class RepoOTU(BaseModel):
     @property
     def accessions(self) -> set[str]:
         """A set of accessions contained in this isolate."""
-        return set().union(*(isolate.accessions for isolate in self.isolates))
+        return set(
+            self._sequences_by_id[sequence_id].accession.key for sequence_id in self._sequences_by_id
+        )
 
     @property
     def blocked_accessions(self) -> set[str]:
@@ -281,7 +283,7 @@ class RepoOTU(BaseModel):
     @property
     def sequence_ids(self) -> set[UUID]:
         """A set of UUIDs for sequences in the OTU."""
-        return set().union(*(isolate.sequence_ids for isolate in self.isolates))
+        return set(self._sequences_by_id.keys())
 
     def add_isolate(self, isolate: RepoIsolate) -> None:
         """Add an isolate to the OTU."""
