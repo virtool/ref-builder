@@ -441,20 +441,25 @@ def update_isolate_from_records(
         if accession in isolate.accessions:
             old_sequence = isolate.get_sequence_by_accession(accession)
 
-            new_sequence = repo.replace_sequence(
+            new_sequence = repo.create_sequence(
                 otu.id,
-                isolate.id,
                 accession=record.accession_version,
                 definition=record.definition,
                 legacy_id=None,
                 segment=record.source.segment,
                 sequence=record.sequence,
-                replaced_sequence_id=old_sequence.id,
-                rationale=DeleteRationale.REFSEQ,
             )
             if new_sequence is None:
                 isolate_logger.error("Isolate could not be refilled.")
                 return None
+
+            repo.replace_sequence(
+                otu.id,
+                isolate.id,
+                new_sequence.id,
+                replaced_sequence_id=old_sequence.id,
+                rationale=DeleteRationale.REFSEQ,
+            )
 
             logger.debug(
                 f"{old_sequence.accession} replaced by {new_sequence.accession}"
@@ -657,14 +662,19 @@ def replace_sequence_in_otu(
     records = ncbi.fetch_genbank_records([new_accession])
     record = records[0]
 
-    new_sequence = repo.replace_sequence(
+    new_sequence = repo.create_sequence(
         otu.id,
-        isolate.id,
         accession=record.accession_version,
         definition=record.definition,
         legacy_id=None,
         segment=record.source.segment,
         sequence=record.sequence,
+    )
+
+    repo.replace_sequence(
+        otu.id,
+        isolate_id=isolate.id,
+        sequence_id=new_sequence.id,
         replaced_sequence_id=sequence_id,
         rationale="Requested by user",
     )
