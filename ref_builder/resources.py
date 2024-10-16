@@ -258,12 +258,12 @@ class RepoOTU(BaseModel):
             for sequence in isolate.sequences:
                 self._sequences_by_id[sequence.id] = sequence
 
-
     @property
     def accessions(self) -> set[str]:
         """A set of accessions contained in this isolate."""
         return set(
-            self._sequences_by_id[sequence_id].accession.key for sequence_id in self._sequences_by_id
+            self._sequences_by_id[sequence_id].accession.key
+            for sequence_id in self._sequences_by_id
         )
 
     @property
@@ -308,6 +308,8 @@ class RepoOTU(BaseModel):
 
     def delete_sequence(self, sequence_id: UUID4, isolate_id: UUID4) -> None:
         """Delete a sequence from a given isolate. Used only for rehydration."""
+        self._sequences_by_id.pop(sequence_id)
+
         self.get_isolate(isolate_id).delete_sequence(sequence_id)
 
     def get_isolate(self, isolate_id: UUID4) -> RepoIsolate | None:
@@ -365,7 +367,9 @@ class RepoOTU(BaseModel):
 
         raise ValueError(f"Accession {accession} found in index, but not in data")
 
-    def link_sequence(self, isolate_id: UUID4, sequence_id: UUID4) -> RepoSequence | None:
+    def link_sequence(
+        self, isolate_id: UUID4, sequence_id: UUID4
+    ) -> RepoSequence | None:
         """Link the given sequence to the given isolate."""
         self.get_isolate(isolate_id).add_sequence(self.get_sequence_by_id(sequence_id))
 
