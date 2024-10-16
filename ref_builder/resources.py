@@ -303,6 +303,9 @@ class RepoOTU(BaseModel):
 
         for isolate in self.isolates:
             if isolate.id == isolate_id:
+                for sequence in isolate.sequences:
+                    self._sequences_by_id.pop(sequence.id)
+
                 self.isolates.remove(isolate)
                 break
 
