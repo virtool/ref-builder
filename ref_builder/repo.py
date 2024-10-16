@@ -33,6 +33,7 @@ from ref_builder.events.base import (
     IsolateQuery,
     SequenceQuery,
 )
+from ref_builder.events.loader import event_adapter
 from ref_builder.events.repo import (
     CreateRepo,
     CreateRepoData,
@@ -79,20 +80,6 @@ from ref_builder.utils import (
 )
 
 logger = get_logger("repo")
-
-
-SUPPORTED_EVENTS = {
-    "CreateRepo": CreateRepo,
-    "CreateOTU": CreateOTU,
-    "CreateIsolate": CreateIsolate,
-    "CreateSequence": CreateSequence,
-    "LinkSequence": LinkSequence,
-    "DeleteIsolate": DeleteIsolate,
-    "DeleteSequence": DeleteSequence,
-    "CreatePlan": CreatePlan,
-    "SetReprIsolate": SetReprIsolate,
-    "ExcludeAccession": ExcludeAccession,
-}
 
 
 class Repo:
@@ -660,15 +647,7 @@ class EventStore:
 
         """
         with open(self.path / f"{pad_zeroes(event_id)}.json", "rb") as f:
-            loaded = orjson.loads(f.read())
-
-            try:
-                cls = SUPPORTED_EVENTS[loaded["type"]]
-
-                return cls(**loaded)
-
-            except KeyError:
-                raise ValueError(f"Unknown event type: {loaded['type']}")
+            return event_adapter.validate_json(f.read())
 
     def write_event(
         self,
