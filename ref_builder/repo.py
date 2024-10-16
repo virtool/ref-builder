@@ -747,3 +747,68 @@ class EventStore:
         self.last_id = event_id
 
         return event
+
+
+class OTURehydrator:
+    def __init__(self, event: CreateOTU):
+        """"""
+        self.otu = RepoOTU(
+            id=event.data.id,
+            acronym=event.data.acronym,
+            excluded_accessions=set(),
+            isolates=[],
+            legacy_id=event.data.legacy_id,
+            molecule=event.data.molecule,
+            name=event.data.name,
+            repr_isolate=None,
+            plan=event.data.plan,
+            taxid=event.data.taxid,
+        )
+
+
+    def create_sequence(self, event: CreateSequence):
+        self.otu.add_sequence(
+            RepoSequence(
+                id=event.data.id,
+                accession=event.data.accession,
+                definition=event.data.definition,
+                legacy_id=event.data.legacy_id,
+                segment=event.data.segment,
+                sequence=event.data.sequence,
+            ),
+        )
+
+
+    def delete_sequence(self, event: DeleteSequence):
+        self.otu.delete_sequence(
+            event.query.sequence_id,
+            event.query.isolate_id,
+        )
+
+    def create_isolate(self, event: CreateIsolate):
+        self.otu.add_isolate(
+            RepoIsolate(
+                id=event.data.id,
+                legacy_id=event.data.legacy_id,
+                name=event.data.name,
+                sequences=[],
+            ),
+        )
+
+    def delete_isolate(self, event: DeleteIsolate):
+        self.otu.delete_isolate(event.query.isolate_id)
+
+    def link_sequence(self, event: LinkSequence):
+        self.otu.link_sequence(
+            isolate_id=event.query.isolate_id,
+            sequence_id=event.query.sequence_id,
+        )
+
+    def create_plan(self, event: CreatePlan):
+        self.otu.plan = event.data.plan
+
+    def set_representative_isolate(self, event: SetReprIsolate):
+        self.otu.repr_isolate = event.data.isolate_id
+
+    def exclude_accession(self, event: ExcludeAccession):
+        self.otu.excluded_accessions.add(event.data.accession)
