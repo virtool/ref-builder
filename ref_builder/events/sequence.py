@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import UUID4
 
 from ref_builder.events.base import EventData, Event, SequenceQuery, LinkSequenceQuery
@@ -20,6 +22,7 @@ class CreateSequence(Event):
 
     data: CreateSequenceData
     query: SequenceQuery
+    type: Literal["CreateSequence"] = "CreateSequence"
 
 
 class DeleteSequenceData(EventData):
@@ -37,3 +40,4 @@ class DeleteSequence(Event):
 
     data: DeleteSequenceData
     query: LinkSequenceQuery
+    type: Literal["DeleteSequence"] = "DeleteSequence"
