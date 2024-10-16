@@ -396,7 +396,7 @@ class Repo:
                 otu_id=otu_id,
                 isolate_id=isolate_id,
                 sequence_id=new_sequence.id,
-            )
+            ),
         )
 
         return self.get_otu(otu_id).get_sequence_by_id(new_sequence.id)
@@ -450,9 +450,7 @@ class Repo:
         )
 
         return (
-            self.get_otu(otu_id)
-            .get_isolate(isolate_id)
-            .get_sequence_by_id(sequence_id)
+            self.get_otu(otu_id).get_isolate(isolate_id).get_sequence_by_id(sequence_id)
         )
 
     def set_repr_isolate(self, otu_id: uuid.UUID, isolate_id: uuid.UUID) -> uuid.UUID:
@@ -593,7 +591,7 @@ class Repo:
             elif isinstance(event, LinkSequence):
                 otu.link_sequence(
                     isolate_id=event.query.isolate_id,
-                    sequence_id=event.query.sequence_id
+                    sequence_id=event.query.sequence_id,
                 )
 
             elif isinstance(event, CreatePlan):
