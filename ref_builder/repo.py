@@ -679,6 +679,8 @@ class EventStore:
 
 
 class OTURehydrator:
+    """Interface for the rehydration of an OTU from a series of parsed events."""
+
     def __init__(self, event: CreateOTU):
         """Initialize the rehydrator using a CreateOTU event."""
         self.otu = RepoOTU(
@@ -693,6 +695,7 @@ class OTURehydrator:
             plan=event.data.plan,
             taxid=event.data.taxid,
         )
+        """The current state of the OTU undergoing rehydration."""
 
     def apply(self, event):
         """Apply the given event to the rehydrated OTU."""
@@ -715,6 +718,7 @@ class OTURehydrator:
                 self.exclude_accession(event)
 
     def create_sequence(self, event: CreateSequence):
+        """Apply CreateSequence event to the rehydrated OTU."""
         self.otu.add_sequence(
             RepoSequence(
                 id=event.data.id,
@@ -727,12 +731,14 @@ class OTURehydrator:
         )
 
     def delete_sequence(self, event: DeleteSequence):
+        """Apply DeleteSequence event to the rehydrated OTU."""
         self.otu.delete_sequence(
             event.query.sequence_id,
             event.query.isolate_id,
         )
 
     def create_isolate(self, event: CreateIsolate):
+        """Apply CreateIsolate event to the rehydrated OTU."""
         self.otu.add_isolate(
             RepoIsolate(
                 id=event.data.id,
@@ -743,19 +749,24 @@ class OTURehydrator:
         )
 
     def delete_isolate(self, event: DeleteIsolate):
+        """Apply DeleteIsolate event to the rehydrated OTU."""
         self.otu.delete_isolate(event.query.isolate_id)
 
     def link_sequence(self, event: LinkSequence):
+        """Apply LinkSequence event to the rehydrated OTU."""
         self.otu.link_sequence(
             isolate_id=event.query.isolate_id,
             sequence_id=event.query.sequence_id,
         )
 
     def create_plan(self, event: CreatePlan):
+        """Apply CreatePlan event to the rehydrated OTU."""
         self.otu.plan = event.data.plan
 
     def set_representative_isolate(self, event: SetReprIsolate):
+        """Apply SetReprIsolate event to the rehydrated OTU."""
         self.otu.repr_isolate = event.data.isolate_id
 
     def exclude_accession(self, event: ExcludeAccession):
+        """Apply ExcludeAccession event to the rehydrated OTU."""
         self.otu.excluded_accessions.add(event.data.accession)
