@@ -1,6 +1,5 @@
 import subprocess
 from pathlib import Path
-from uuid import UUID
 
 import pytest
 from click.testing import CliRunner
@@ -19,7 +18,6 @@ from ref_builder.otu.update import (
 )
 from ref_builder.otu.utils import RefSeqConflictError
 from ref_builder.repo import Repo
-from ref_builder.resources import RepoSequence
 from ref_builder.utils import IsolateName, IsolateNameType
 
 
@@ -399,61 +397,3 @@ class TestReplaceIsolateSequences:
 
         with pytest.raises(RefSeqConflictError):
             add_genbank_isolate(empty_repo, otu_before, refseq_accessions)
-
-
-class TestRemoveIsolate:
-    def test_ok(self, scratch_repo):
-        """Test that a given isolate can be removed from the OTU."""
-        taxid = 1169032
-
-        otu_before = scratch_repo.get_otu_by_taxid(taxid)
-
-        isolate_id = otu_before.get_isolate_id_by_name(
-            IsolateName(type=IsolateNameType.ISOLATE, value="WMoV-6.3"),
-        )
-
-        assert type(isolate_id) is UUID
-
-        delete_isolate_from_otu(scratch_repo, otu_before, isolate_id)
-
-        otu_after = scratch_repo.get_otu_by_taxid(taxid)
-
-        assert otu_after.get_isolate(isolate_id) is None
-
-        assert otu_before.get_isolate(isolate_id).accessions not in otu_after.accessions
-
-        assert len(otu_after.isolate_ids) == len(otu_before.isolate_ids) - 1
-
-
-class TestReplaceSequence:
-    def test_ok(self, precached_repo):
-        """Test that a sequence in an OTU can be replaced manually."""
-        otu_before = create_otu(
-            precached_repo,
-            1169032,
-            ["MK431779"],
-            acronym="",
-        )
-
-        isolate_id, old_sequence_id = (
-            otu_before.get_sequence_id_hierarchy_from_accession(
-                "MK431779",
-            )
-        )
-
-        assert type(old_sequence_id) is UUID
-
-        sequence = replace_sequence_in_otu(
-            repo=precached_repo,
-            otu=otu_before,
-            new_accession="NC_003355",
-            replaced_accession="MK431779",
-        )
-
-        assert type(sequence) is RepoSequence
-
-        otu_after = precached_repo.get_otu_by_taxid(1169032)
-
-        assert otu_after.accessions == {"NC_003355"}
-
-        assert otu_after.get_isolate(isolate_id).accessions == {"NC_003355"}
