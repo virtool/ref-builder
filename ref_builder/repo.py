@@ -541,67 +541,36 @@ class Repo:
                 "event",
             )
 
-        otu = RepoOTU(
-            id=event.data.id,
-            acronym=event.data.acronym,
-            excluded_accessions=set(),
-            isolates=[],
-            legacy_id=event.data.legacy_id,
-            molecule=event.data.molecule,
-            name=event.data.name,
-            repr_isolate=None,
-            plan=event.data.plan,
-            taxid=event.data.taxid,
-        )
+        rehydrator = OTURehydrator(event)
 
         for event_id in event_ids[1:]:
             event = self._event_store.read_event(event_id)
 
             if isinstance(event, CreateSequence):
-                otu.add_sequence(
-                    RepoSequence(
-                        id=event.data.id,
-                        accession=event.data.accession,
-                        definition=event.data.definition,
-                        legacy_id=event.data.legacy_id,
-                        segment=event.data.segment,
-                        sequence=event.data.sequence,
-                    ),
-                )
+                rehydrator.create_sequence(event)
 
             elif isinstance(event, DeleteSequence):
-                otu.delete_sequence(
-                    event.query.sequence_id,
-                    event.query.isolate_id,
-                )
+                rehydrator.delete_sequence(event)
 
             elif isinstance(event, CreateIsolate):
-                otu.add_isolate(
-                    RepoIsolate(
-                        id=event.data.id,
-                        legacy_id=event.data.legacy_id,
-                        name=event.data.name,
-                        sequences=[],
-                    ),
-                )
+                rehydrator.create_isolate(event)
 
             elif isinstance(event, DeleteIsolate):
-                otu.delete_isolate(event.query.isolate_id)
+                rehydrator.delete_isolate(event)
 
             elif isinstance(event, LinkSequence):
-                otu.link_sequence(
-                    isolate_id=event.query.isolate_id,
-                    sequence_id=event.query.sequence_id,
-                )
+                rehydrator.link_sequence(event)
 
             elif isinstance(event, CreatePlan):
-                otu.plan = event.data.plan
+                rehydrator.create_plan(event)
 
             elif isinstance(event, SetReprIsolate):
-                otu.repr_isolate = event.data.isolate_id
+                rehydrator.set_representative_isolate(event)
 
             elif isinstance(event, ExcludeAccession):
-                otu.excluded_accessions.add(event.data.accession)
+                rehydrator.exclude_accession(event)
+
+        otu = rehydrator.otu
 
         otu.isolates.sort(
             key=lambda i: f"{i.name.type} {i.name.value}"
