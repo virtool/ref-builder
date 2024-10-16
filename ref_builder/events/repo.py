@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import UUID4
 
 from ref_builder.events.base import EventData, Event, RepoQuery
@@ -22,3 +24,4 @@ class CreateRepo(Event):
 
     data: CreateRepoData
     query: RepoQuery
+    type: Literal["CreateRepo"] = "CreateRepo"

@@ -5,7 +5,12 @@ from typing import Annotated, Union
 from pydantic import BaseModel, Field, TypeAdapter
 
 from ref_builder.events.repo import CreateRepo
-from ref_builder.events.otu import CreateOTU, CreatePlan, SetReprIsolate, ExcludeAccession
+from ref_builder.events.otu import (
+    CreateOTU,
+    CreatePlan,
+    SetReprIsolate,
+    ExcludeAccession,
+)
 from ref_builder.events.isolate import CreateIsolate, LinkSequence, DeleteIsolate
 from ref_builder.events.sequence import CreateSequence, DeleteSequence
 
@@ -36,7 +41,7 @@ LoadableEvent = Annotated[
         SetReprIsolate,
         ExcludeAccession,
     ],
-    Field(discriminator='type'),
+    Field(discriminator="type"),
 ]
 
 
