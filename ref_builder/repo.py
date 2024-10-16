@@ -363,26 +363,16 @@ class Repo:
         self,
         otu_id: uuid.UUID,
         isolate_id: uuid.UUID,
-        accession: str,
-        definition: str,
-        legacy_id: str | None,
-        segment: str,
-        sequence: str,
+        sequence_id: uuid.UUID,
         replaced_sequence_id: uuid.UUID,
         rationale: str,
     ) -> RepoSequence | None:
-        """Create a new sequence and delete an existing sequence,
+        """Link a new sequence and delete an existing sequence,
         replacing the old sequence under the isolate.
         """
-        new_sequence = self.create_sequence(
-            otu_id=otu_id,
-            accession=accession,
-            definition=definition,
-            legacy_id=legacy_id,
-            segment=segment,
-            sequence=sequence,
-        )
+        otu = self.get_otu(otu_id)
 
+        new_sequence = otu.get_sequence_by_id(sequence_id)
         if new_sequence is None:
             return None
 
@@ -405,11 +395,11 @@ class Repo:
             LinkSequenceQuery(
                 otu_id=otu_id,
                 isolate_id=isolate_id,
-                sequence_id=replaced_sequence_id,
+                sequence_id=new_sequence.id,
             )
         )
 
-        return new_sequence
+        return self.get_otu(otu_id).get_sequence_by_id(new_sequence.id)
 
     def set_isolate_plan(
         self, otu_id: uuid.UUID, plan: MonopartitePlan | MultipartitePlan
