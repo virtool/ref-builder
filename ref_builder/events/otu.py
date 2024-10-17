@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import UUID4
 
 from ref_builder.events.base import EventData, Event, OTUQuery
@@ -22,6 +24,7 @@ class CreateOTU(Event):
 
     data: CreateOTUData
     query: OTUQuery
+    type: Literal["CreateOTU"] = "CreateOTU"
 
 
 class ExcludeAccessionData(EventData):
@@ -39,6 +42,7 @@ class ExcludeAccession(Event):
 
     data: ExcludeAccessionData
     query: OTUQuery
+    type: Literal["ExcludeAccession"] = "ExcludeAccession"
 
 
 class CreatePlanData(EventData):
@@ -52,6 +56,7 @@ class CreatePlan(Event):
 
     data: CreatePlanData
     query: OTUQuery
+    type: Literal["CreatePlan"] = "CreatePlan"
 
 
 class SetReprIsolateData(EventData):
@@ -65,3 +70,4 @@ class SetReprIsolate(Event):
 
     data: SetReprIsolateData
     query: OTUQuery
+    type: Literal["SetReprIsolate"] = "SetReprIsolate"

@@ -33,6 +33,7 @@ from ref_builder.events.base import (
     IsolateQuery,
     SequenceQuery,
 )
+from ref_builder.events.loader import event_adapter, SupportedEvent
 from ref_builder.events.repo import (
     CreateRepo,
     CreateRepoData,
@@ -529,67 +530,14 @@ class Repo:
                 "event",
             )
 
-        otu = RepoOTU(
-            id=event.data.id,
-            acronym=event.data.acronym,
-            excluded_accessions=set(),
-            isolates=[],
-            legacy_id=event.data.legacy_id,
-            molecule=event.data.molecule,
-            name=event.data.name,
-            repr_isolate=None,
-            plan=event.data.plan,
-            taxid=event.data.taxid,
-        )
+        otu_rehydrator = OTURehydrator(event)
 
         for event_id in event_ids[1:]:
             event = self._event_store.read_event(event_id)
 
-            if isinstance(event, CreateSequence):
-                otu.add_sequence(
-                    RepoSequence(
-                        id=event.data.id,
-                        accession=event.data.accession,
-                        definition=event.data.definition,
-                        legacy_id=event.data.legacy_id,
-                        segment=event.data.segment,
-                        sequence=event.data.sequence,
-                    ),
-                )
+            otu_rehydrator.apply(event)
 
-            elif isinstance(event, DeleteSequence):
-                otu.delete_sequence(
-                    event.query.sequence_id,
-                    event.query.isolate_id,
-                )
-
-            elif isinstance(event, CreateIsolate):
-                otu.add_isolate(
-                    RepoIsolate(
-                        id=event.data.id,
-                        legacy_id=event.data.legacy_id,
-                        name=event.data.name,
-                        sequences=[],
-                    ),
-                )
-
-            elif isinstance(event, DeleteIsolate):
-                otu.delete_isolate(event.query.isolate_id)
-
-            elif isinstance(event, LinkSequence):
-                otu.link_sequence(
-                    isolate_id=event.query.isolate_id,
-                    sequence_id=event.query.sequence_id,
-                )
-
-            elif isinstance(event, CreatePlan):
-                otu.plan = event.data.plan
-
-            elif isinstance(event, SetReprIsolate):
-                otu.repr_isolate = event.data.isolate_id
-
-            elif isinstance(event, ExcludeAccession):
-                otu.excluded_accessions.add(event.data.accession)
+        otu = otu_rehydrator.otu
 
         otu.isolates.sort(
             key=lambda i: f"{i.name.type} {i.name.value}"
@@ -687,26 +635,7 @@ class EventStore:
 
         """
         with open(self.path / f"{pad_zeroes(event_id)}.json", "rb") as f:
-            loaded = orjson.loads(f.read())
-
-            try:
-                cls = {
-                    "CreateRepo": CreateRepo,
-                    "CreateOTU": CreateOTU,
-                    "CreateIsolate": CreateIsolate,
-                    "CreateSequence": CreateSequence,
-                    "LinkSequence": LinkSequence,
-                    "DeleteIsolate": DeleteIsolate,
-                    "DeleteSequence": DeleteSequence,
-                    "CreatePlan": CreatePlan,
-                    "SetReprIsolate": SetReprIsolate,
-                    "ExcludeAccession": ExcludeAccession,
-                }[loaded["type"]]
-
-                return cls(**loaded)
-
-            except KeyError:
-                raise ValueError(f"Unknown event type: {loaded['type']}")
+            return event_adapter.validate_json(f.read())
 
     def write_event(
         self,
@@ -735,3 +664,97 @@ class EventStore:
         self.last_id = event_id
 
         return event
+
+
+class OTURehydrator:
+    """Interface for the rehydration of an OTU from a series of parsed events."""
+
+    def __init__(self, event: CreateOTU):
+        """Initialize the rehydrator using a CreateOTU event."""
+        self.otu = RepoOTU(
+            id=event.data.id,
+            acronym=event.data.acronym,
+            excluded_accessions=set(),
+            isolates=[],
+            legacy_id=event.data.legacy_id,
+            molecule=event.data.molecule,
+            name=event.data.name,
+            repr_isolate=None,
+            plan=event.data.plan,
+            taxid=event.data.taxid,
+        )
+        """The current state of the OTU undergoing rehydration."""
+
+    def apply(self, event: SupportedEvent):
+        """Apply the given event to the rehydrated OTU."""
+        match event.type:
+            case "CreateSequence":
+                self.create_sequence(event)
+            case "DeleteSequence":
+                self.delete_sequence(event)
+            case "CreateIsolate":
+                self.create_isolate(event)
+            case "DeleteIsolate":
+                self.delete_isolate(event)
+            case "LinkSequence":
+                self.link_sequence(event)
+            case "CreatePlan":
+                self.create_plan(event)
+            case "SetReprIsolate":
+                self.set_representative_isolate(event)
+            case "ExcludeAccession":
+                self.exclude_accession(event)
+
+    def create_sequence(self, event: CreateSequence):
+        """Apply CreateSequence event to the rehydrated OTU."""
+        self.otu.add_sequence(
+            RepoSequence(
+                id=event.data.id,
+                accession=event.data.accession,
+                definition=event.data.definition,
+                legacy_id=event.data.legacy_id,
+                segment=event.data.segment,
+                sequence=event.data.sequence,
+            ),
+        )
+
+    def delete_sequence(self, event: DeleteSequence):
+        """Apply DeleteSequence event to the rehydrated OTU."""
+        self.otu.delete_sequence(
+            event.query.sequence_id,
+            event.query.isolate_id,
+        )
+
+    def create_isolate(self, event: CreateIsolate):
+        """Apply CreateIsolate event to the rehydrated OTU."""
+        self.otu.add_isolate(
+            RepoIsolate(
+                id=event.data.id,
+                legacy_id=event.data.legacy_id,
+                name=event.data.name,
+                sequences=[],
+            ),
+        )
+
+    def delete_isolate(self, event: DeleteIsolate):
+        """Apply DeleteIsolate event to the rehydrated OTU."""
+        self.otu.delete_isolate(event.query.isolate_id)
+
+    def link_sequence(self, event: LinkSequence):
+        """Apply LinkSequence event to the rehydrated OTU."""
+        self.otu.link_sequence(
+            isolate_id=event.query.isolate_id,
+            sequence_id=event.query.sequence_id,
+        )
+
+    def create_plan(self, event: CreatePlan):
+        """Apply CreatePlan event to the rehydrated OTU."""
+        self.otu.plan = event.data.plan
+
+    def set_representative_isolate(self, event: SetReprIsolate):
+        """Apply SetReprIsolate event to the rehydrated OTU."""
+        self.otu.repr_isolate = event.data.isolate_id
+
+    def exclude_accession(self, event: ExcludeAccession):
+        """Apply ExcludeAccession event to the rehydrated OTU."""
+        self.otu.excluded_accessions.add(event.data.accession)

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import UUID4
 
 from ref_builder.events.base import EventData, Event, IsolateQuery, LinkSequenceQuery
@@ -17,6 +19,7 @@ class CreateIsolate(Event):
 
     data: CreateIsolateData
     query: IsolateQuery
+    type: Literal["CreateIsolate"] = "CreateIsolate"
 
 
 class LinkSequenceData(EventData):
@@ -28,6 +31,7 @@ class LinkSequence(Event):
 
     data: LinkSequenceData
     query: LinkSequenceQuery
+    type: Literal["LinkSequence"] = "LinkSequence"
 
 
 class DeleteIsolateData(EventData):
@@ -41,3 +45,4 @@ class DeleteIsolate(Event):
 
     data: DeleteIsolateData
     query: IsolateQuery
+    type: Literal["DeleteIsolate"] = "DeleteIsolate"
