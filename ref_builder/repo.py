@@ -33,7 +33,7 @@ from ref_builder.events.base import (
     IsolateQuery,
     SequenceQuery,
 )
-from ref_builder.events.loader import event_adapter
+from ref_builder.events.loader import event_adapter, SupportedEvent
 from ref_builder.events.repo import (
     CreateRepo,
     CreateRepoData,
@@ -697,7 +697,7 @@ class OTURehydrator:
         )
         """The current state of the OTU undergoing rehydration."""
 
-    def apply(self, event):
+    def apply(self, event: SupportedEvent):
         """Apply the given event to the rehydrated OTU."""
         match event.type:
             case "CreateSequence":
