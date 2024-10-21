@@ -96,15 +96,16 @@ def create_otu(
     otu.repr_isolate = repo.set_repr_isolate(otu_id=otu.id, isolate_id=isolate.id)
 
     for record in records:
-        repo.create_sequence(
+        sequence = repo.create_sequence(
             otu_id=otu.id,
-            isolate_id=isolate.id,
             accession=record.accession_version,
             definition=record.definition,
             legacy_id=None,
             segment=record.source.segment,
             sequence=record.sequence,
         )
+
+        repo.link_sequence(otu.id, isolate.id, sequence.id)
 
         if record.refseq:
             _, old_accession = parse_refseq_comment(record.comment)

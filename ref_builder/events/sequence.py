@@ -1,6 +1,6 @@
 from pydantic import UUID4
 
-from ref_builder.events.base import EventData, Event, SequenceQuery
+from ref_builder.events.base import EventData, Event, SequenceQuery, LinkSequenceQuery
 from ref_builder.utils import Accession
 
 
@@ -36,4 +36,4 @@ class DeleteSequence(Event):
     """
 
     data: DeleteSequenceData
-    query: SequenceQuery
+    query: LinkSequenceQuery
