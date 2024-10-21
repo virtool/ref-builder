@@ -72,7 +72,7 @@ class TestOTU:
             ),
             name="Tobacco mosaic virus",
             repr_isolate=None,
-            plan=MonopartitePlan(id=uuid4(), length=6395),
+            plan=MonopartitePlan.new(length=6395),
             taxid=12242,
         )
 

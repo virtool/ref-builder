@@ -1,0 +1,63 @@
+# serializer version: 1
+# name: TestSetIsolatePlan.test_add_segments_to_plan
+  dict({
+    'plan_type': 'multipartite',
+    'segments': list([
+      dict({
+        'length': 7219,
+        'name': dict({
+          'key': 'L',
+          'prefix': 'RNA',
+        }),
+        'required': 'required',
+      }),
+      dict({
+        'length': 1613,
+        'name': dict({
+          'key': 'M',
+          'prefix': 'RNA',
+        }),
+        'required': 'required',
+      }),
+      dict({
+        'length': 1291,
+        'name': dict({
+          'key': 'S',
+          'prefix': 'RNA',
+        }),
+        'required': 'optional',
+      }),
+    ]),
+  })
+# ---
+# name: TestSetIsolatePlan.test_resize_monopartite_plan
+  dict({
+    'plan_type': 'multipartite',
+    'segments': list([
+      dict({
+        'length': 7219,
+        'name': dict({
+          'key': 'L',
+          'prefix': 'RNA',
+        }),
+        'required': 'required',
+      }),
+      dict({
+        'length': 1613,
+        'name': dict({
+          'key': 'M',
+          'prefix': 'RNA',
+        }),
+        'required': 'recommended',
+      }),
+      dict({
+        'length': 1291,
+        'name': dict({
+          'key': 'S',
+          'prefix': 'RNA',
+        }),
+        'required': 'recommended',
+      }),
+    ]),
+  })
+# ---

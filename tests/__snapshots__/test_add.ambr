@@ -12,6 +12,7 @@
     }),
     'name': 'Cabbage leaf curl Jamaica virus',
     'plan': dict({
+      'plan_type': 'multipartite',
       'segments': list([
         dict({
           'length': 2575,
@@ -60,6 +61,7 @@
     'plan': dict({
       'length': 342,
       'name': None,
+      'plan_type': 'monopartite',
     }),
     'taxid': 1278205,
   })
@@ -77,6 +79,7 @@
     }),
     'name': 'Cabbage leaf curl Jamaica virus',
     'plan': dict({
+      'plan_type': 'multipartite',
       'segments': list([
         dict({
           'length': 2575,
