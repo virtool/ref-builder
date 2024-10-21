@@ -368,7 +368,7 @@ def test_create_sequence(empty_repo: Repo):
 class TestGetOTU:
     """Test the retrieval of OTU data."""
 
-    def test_get_otu(self, empty_repo: Repo):
+    def test_ok(self, empty_repo: Repo):
         """Test that getting an OTU returns the expected ``RepoOTU`` object including two
         isolates with one sequence each.
         """
@@ -470,7 +470,9 @@ class TestGetOTU:
                 ),
                 name="Tobacco mosaic virus",
                 repr_isolate=None,
-                plan=MonopartitePlan(id=monopartite_plan.id, length=150),
+                plan=MonopartitePlan(
+                    id=monopartite_plan.id, plan_type="monopartite", length=150
+                ),
                 taxid=12242,
                 isolates=otu_contents,
             ).model_dump()

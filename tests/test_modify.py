@@ -1,6 +1,5 @@
 import subprocess
-from uuid import UUID
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from syrupy import SnapshotAssertion
