@@ -29,11 +29,8 @@ class Event(BaseModel):
     timestamp: datetime.datetime
     """When the event occurred."""
 
-    @computed_field
-    @property
-    def type(self) -> str:
-        """The type of the event as a string."""
-        return self.__class__.__name__
+    type: str
+    """The type of the event as a string. Discriminator."""
 
 
 class RepoQuery(EventQuery):
