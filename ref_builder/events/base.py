@@ -2,6 +2,8 @@ import datetime
 
 from pydantic import BaseModel, computed_field, UUID4
 
+from ref_builder.resources import RepoOTU
+
 
 class EventQuery(BaseModel):
     """A base class for a query that targets an event at a specific resource."""
@@ -35,6 +37,10 @@ class Event(BaseModel):
         """The type of the event as a string."""
         return self.__class__.__name__
 
+
+class ApplicableEvent(Event):
+    def apply(self, otu: RepoOTU) -> RepoOTU:
+        return otu
 
 
 class RepoQuery(EventQuery):
