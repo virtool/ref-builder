@@ -245,14 +245,26 @@ class RepoOTU(BaseModel):
     _isolates_by_id: dict[UUID4:RepoIsolate]
     """A dictionary of isolates indexed by isolate UUID"""
 
+    _sequences_by_id: dict[UUID4:RepoSequence]
+    """A dictionary of sequences indexed by sequence UUID"""
+
     def __init__(self, **data) -> None:
         super().__init__(**data)
-        self._isolates_by_id = {isolate.id: isolate for isolate in self.isolates}
+
+        self._sequences_by_id = {}
+        self._isolates_by_id = {}
+        for isolate in self.isolates:
+            self._isolates_by_id[isolate.id] = isolate
+            for sequence in isolate.sequences:
+                self._sequences_by_id[sequence.id] = sequence
 
     @property
     def accessions(self) -> set[str]:
         """A set of accessions contained in this isolate."""
-        return set().union(*(isolate.accessions for isolate in self.isolates))
+        return set(
+            self._sequences_by_id[sequence_id].accession.key
+            for sequence_id in self._sequences_by_id
+        )
 
     @property
     def blocked_accessions(self) -> set[str]:
@@ -271,16 +283,19 @@ class RepoOTU(BaseModel):
     @property
     def sequence_ids(self) -> set[UUID]:
         """A set of UUIDs for sequences in the OTU."""
-        return set().union(*(isolate.sequence_ids for isolate in self.isolates))
+        return set(self._sequences_by_id.keys())
 
     def add_isolate(self, isolate: RepoIsolate) -> None:
         """Add an isolate to the OTU."""
         self.isolates.append(isolate)
         self._isolates_by_id[isolate.id] = isolate
 
-    def add_sequence(self, sequence: RepoSequence, isolate_id: UUID4) -> None:
+    def add_sequence(self, sequence: RepoSequence) -> None:
         """Add a sequence to a given isolate."""
-        self.get_isolate(isolate_id).add_sequence(sequence)
+        self._sequences_by_id[sequence.id] = sequence
+
+    def get_sequence_by_id(self, sequence_id: UUID) -> RepoSequence | None:
+        return self._sequences_by_id.get(sequence_id)
 
     def delete_isolate(self, isolate_id: UUID4) -> None:
         """Remove an isolate from the OTU."""
@@ -288,11 +303,16 @@ class RepoOTU(BaseModel):
 
         for isolate in self.isolates:
             if isolate.id == isolate_id:
+                for sequence in isolate.sequences:
+                    self._sequences_by_id.pop(sequence.id)
+
                 self.isolates.remove(isolate)
                 break
 
     def delete_sequence(self, sequence_id: UUID4, isolate_id: UUID4) -> None:
         """Delete a sequence from a given isolate. Used only for rehydration."""
+        self._sequences_by_id.pop(sequence_id)
+
         self.get_isolate(isolate_id).delete_sequence(sequence_id)
 
     def get_isolate(self, isolate_id: UUID4) -> RepoIsolate | None:
@@ -349,6 +369,14 @@ class RepoOTU(BaseModel):
                 return isolate.id, sequence.id
 
         raise ValueError(f"Accession {accession} found in index, but not in data")
+
+    def link_sequence(
+        self, isolate_id: UUID4, sequence_id: UUID4
+    ) -> RepoSequence | None:
+        """Link the given sequence to the given isolate."""
+        self.get_isolate(isolate_id).add_sequence(self.get_sequence_by_id(sequence_id))
+
+        return self.get_isolate(isolate_id).get_sequence_by_id(sequence_id)
 
     def replace_sequence(
         self,
