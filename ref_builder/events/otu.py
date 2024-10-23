@@ -26,7 +26,7 @@ class CreateOTU(Event):
 
     def apply(self) -> RepoOTU:
         return RepoOTU(
-            id=self.id,
+            id=self.query.otu_id,
             acronym=self.data.acronym,
             excluded_accessions=set(),
             isolates=[],
