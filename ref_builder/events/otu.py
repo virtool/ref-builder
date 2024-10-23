@@ -1,6 +1,7 @@
 from pydantic import UUID4
 
 from ref_builder.events.base import EventData, Event, OTUQuery
+from ref_builder.resources import RepoOTU
 from ref_builder.models import Molecule
 from ref_builder.plan import MonopartitePlan, MultipartitePlan
 
@@ -22,6 +23,20 @@ class CreateOTU(Event):
 
     data: CreateOTUData
     query: OTUQuery
+
+    def apply(self) -> RepoOTU:
+        return RepoOTU(
+            id=self.id,
+            acronym=self.data.acronym,
+            excluded_accessions=set(),
+            isolates=[],
+            legacy_id=self.data.legacy_id,
+            molecule=self.data.molecule,
+            name=self.data.name,
+            repr_isolate=None,
+            plan=self.data.plan,
+            taxid=self.data.taxid,
+        )
 
 
 class ExcludeAccessionData(EventData):

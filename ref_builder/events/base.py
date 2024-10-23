@@ -36,6 +36,7 @@ class Event(BaseModel):
         return self.__class__.__name__
 
 
+
 class RepoQuery(EventQuery):
     """An event query that targets an event at the repository."""
 
