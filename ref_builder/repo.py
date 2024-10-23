@@ -542,30 +542,19 @@ class Repo:
     def _rehydrate_otu(self, event_ids: list[int]) -> RepoOTU:
         event = self._event_store.read_event(event_ids[0])
 
-        if not isinstance(event, CreateOTU):
+        if isinstance(event, CreateOTU):
+            otu = event.apply()
+        else:
             raise TypeError(
                 f"The first event ({event_ids[0]}) for an OTU is not a CreateOTU "
                 "event",
             )
 
-        otu = RepoOTU(
-            id=event.data.id,
-            acronym=event.data.acronym,
-            excluded_accessions=set(),
-            isolates=[],
-            legacy_id=event.data.legacy_id,
-            molecule=event.data.molecule,
-            name=event.data.name,
-            repr_isolate=None,
-            plan=event.data.plan,
-            taxid=event.data.taxid,
-        )
-
         for event_id in event_ids[1:]:
             event = self._event_store.read_event(event_id)
 
             if not issubclass(type(event), ApplicableEvent):
-                raise TypeError(f"Event {event_id}: {str(type(event))} is not an applicable event.")
+                raise TypeError(f"Event {event_id} {str(type(event))} is not an applicable event.")
 
             otu = event.apply(otu)
 
