@@ -478,7 +478,7 @@ class TestGetOTU:
             ).model_dump()
         )
 
-        # assert empty_repo.last_id == 6
+        assert empty_repo.last_id == 8
 
     def test_retrieve_nonexistent_otu(self, initialized_repo: Repo):
         """Test that getting an OTU that does not exist returns ``None``."""
@@ -714,13 +714,13 @@ class TestDirectDelete:
 
         assert otu_before != otu_after
 
-        # assert len(otu_after.accessions) == len(otu_before.accessions)
+        assert len(otu_after.accessions) == len(otu_before.accessions)
 
         assert replaced_sequence_id not in otu_after.sequence_ids
 
-        # assert new_sequence.id in otu_after.sequence_ids
-        #
-        # assert otu_after.accessions == otu_after.get_isolate(isolate_id).accessions == {"TMVABCC"}
+        assert new_sequence.id in otu_after.sequence_ids
+
+        assert otu_after.accessions == otu_after.get_isolate(isolate_id).accessions == {"TMVABCC"}
 
 
 class TestSequenceReplace:
