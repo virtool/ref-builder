@@ -76,10 +76,16 @@ class NCBIClient:
             if records:
                 logger.debug(
                     f"Loaded {len(records)} cached records",
-                    cached_accessions=[record.get(GenbankRecordKey.PRIMARY_ACCESSION) for record in records]
+                    cached_accessions=[
+                        record.get(GenbankRecordKey.PRIMARY_ACCESSION)
+                        for record in records
+                    ],
                 )
             if uncached_accessions:
-                logger.debug(f"Uncached accessions found", uncached_accessions=uncached_accessions)
+                logger.debug(
+                    f"Uncached accessions found",
+                    uncached_accessions=uncached_accessions,
+                )
 
         fetch_list = list(
             set(accessions)

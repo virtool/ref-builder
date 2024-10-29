@@ -495,7 +495,10 @@ def auto_update_otu(
 
     accessions = ncbi.fetch_accessions_by_taxid(otu.taxid)
 
-    fetch_list = sorted(set(Accession.from_string(accession).key for accession in accessions) - otu.blocked_accessions)
+    fetch_list = sorted(
+        set(Accession.from_string(accession).key for accession in accessions)
+        - otu.blocked_accessions
+    )
 
     if fetch_list:
         logger.debug(
@@ -685,17 +688,23 @@ def promote_otu_accessions(
 
     otu_logger = logger.bind(otu_id=otu.id, taxid=otu.taxid)
 
-    otu_logger.debug("Checking for promotable records", accessions=sorted(otu.accessions))
+    otu_logger.debug(
+        "Checking for promotable records", accessions=sorted(otu.accessions)
+    )
 
     accessions = ncbi.fetch_accessions_by_taxid(otu.taxid)
     fetch_list = sorted(
-        set(Accession.from_string(accession).key for accession in accessions) - otu.blocked_accessions
+        set(Accession.from_string(accession).key for accession in accessions)
+        - otu.blocked_accessions
     )
 
     if fetch_list:
         records = ncbi.fetch_genbank_records(fetch_list)
 
-        otu_logger.debug(f"New accessions found. Checking for promotable records.", fetch_list=fetch_list)
+        otu_logger.debug(
+            f"New accessions found. Checking for promotable records.",
+            fetch_list=fetch_list,
+        )
 
         return promote_otu_accessions_from_records(repo, otu, records)
 
@@ -755,7 +764,7 @@ def promote_otu_accessions_from_records(
     if promoted_accessions:
         otu_logger.debug(
             f"Promoted f{len(promoted_accessions)} records",
-            promoted_accessions=sorted(promoted_accessions)
+            promoted_accessions=sorted(promoted_accessions),
         )
     else:
         otu_logger.debug("All accessions are up to date")
