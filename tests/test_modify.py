@@ -242,9 +242,9 @@ class TestUpdateRepresentativeIsolateCommand:
         )
 
 
-class TestRemoveIsolate:
+class TestDeleteIsolate:
     def test_ok(self, scratch_repo):
-        """Test that a given isolate can be removed from the OTU."""
+        """Test that a given isolate can be deleted from the OTU."""
         taxid = 1169032
 
         otu_before = scratch_repo.get_otu_by_taxid(taxid)
