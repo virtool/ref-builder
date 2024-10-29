@@ -309,11 +309,9 @@ class RepoOTU(BaseModel):
                 self.isolates.remove(isolate)
                 break
 
-    def delete_sequence(self, sequence_id: UUID4, isolate_id: UUID4) -> None:
-        """Delete a sequence from a given isolate. Used only for rehydration."""
+    def delete_sequence(self, sequence_id: UUID4) -> None:
+        """Delete a sequence from a given isolate. Used only during rehydration."""
         self._sequences_by_id.pop(sequence_id)
-
-        self.get_isolate(isolate_id).delete_sequence(sequence_id)
 
     def get_isolate(self, isolate_id: UUID4) -> RepoIsolate | None:
         """Get isolate associated with a given ID.
@@ -377,6 +375,10 @@ class RepoOTU(BaseModel):
         self.get_isolate(isolate_id).add_sequence(self.get_sequence_by_id(sequence_id))
 
         return self.get_isolate(isolate_id).get_sequence_by_id(sequence_id)
+
+    def unlink_sequence(self, isolate_id: UUID4, sequence_id: UUID4) -> None:
+        """Unlink the given sequence from the given isolate. Used only during rehydration."""
+        self.get_isolate(isolate_id).delete_sequence(sequence_id)
 
     def replace_sequence(
         self,

@@ -54,6 +54,8 @@ from ref_builder.events.isolate import (
     DeleteIsolateData,
     LinkSequence,
     LinkSequenceData,
+    UnlinkSequence,
+    UnlinkSequenceData,
 )
 from ref_builder.events.sequence import (
     CreateSequence,
@@ -377,14 +379,21 @@ class Repo:
             return None
 
         self._write_event(
+            UnlinkSequence,
+            UnlinkSequenceData(
+                sequence_id=replaced_sequence_id,
+            ),
+            IsolateQuery(otu_id=otu_id, isolate_id=isolate_id),
+        )
+
+        self._write_event(
             DeleteSequence,
             DeleteSequenceData(
                 replacement=new_sequence.id,
                 rationale=rationale,
             ),
-            LinkSequenceQuery(
+            SequenceQuery(
                 otu_id=otu_id,
-                isolate_id=isolate_id,
                 sequence_id=replaced_sequence_id,
             ),
         )
@@ -568,10 +577,7 @@ class Repo:
                 )
 
             elif isinstance(event, DeleteSequence):
-                otu.delete_sequence(
-                    event.query.sequence_id,
-                    event.query.isolate_id,
-                )
+                otu.delete_sequence(event.query.sequence_id)
 
             elif isinstance(event, CreateIsolate):
                 otu.add_isolate(
@@ -590,6 +596,12 @@ class Repo:
                 otu.link_sequence(
                     isolate_id=event.query.isolate_id,
                     sequence_id=event.data.sequence_id,
+                )
+
+            elif isinstance(event, UnlinkSequence):
+                otu.unlink_sequence(
+                    event.query.isolate_id,
+                    event.data.sequence_id,
                 )
 
             elif isinstance(event, CreatePlan):
@@ -706,6 +718,7 @@ class EventStore:
                     "CreateIsolate": CreateIsolate,
                     "CreateSequence": CreateSequence,
                     "LinkSequence": LinkSequence,
+                    "UnlinkSequence": UnlinkSequence,
                     "DeleteIsolate": DeleteIsolate,
                     "DeleteSequence": DeleteSequence,
                     "CreatePlan": CreatePlan,

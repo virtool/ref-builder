@@ -32,10 +32,16 @@ class LinkSequence(Event):
     query: IsolateQuery
 
 
+class UnlinkSequenceData(EventData):
+    """The data for a :class:`LinkSequence` event."""
+
+    sequence_id: UUID4
+
+
 class UnlinkSequence(Event):
     """An event that unlinks an existing sequence from an isolate."""
 
-    data: LinkSequenceData
+    data: UnlinkSequenceData
     query: IsolateQuery
 
 
