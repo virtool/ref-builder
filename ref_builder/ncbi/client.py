@@ -21,7 +21,7 @@ if email := os.environ.get("NCBI_EMAIL"):
 if api_key := os.environ.get("NCBI_API_KEY"):
     Entrez.api_key = os.environ.get("NCBI_API_KEY")
 
-base_logger = get_logger()
+base_logger = get_logger("ncbi")
 
 ESEARCH_PAGE_SIZE = 1000
 """The number of results to fetch per page in an Entrez esearch query."""
