@@ -66,12 +66,20 @@ class NCBIClient:
         logger = base_logger.bind(accessions=accessions)
 
         if not self.ignore_cache:
+            uncached_accessions = []
+
             for accession in accessions:
                 record = self.cache.load_genbank_record(accession)
                 if record is not None:
                     records.append(record)
-                else:
-                    logger.debug("Missing accession", missing_accession=accession)
+
+            if records:
+                logger.debug(
+                    f"Loaded {len(records)} cached records",
+                    cached_accessions=[record.get(GenbankRecordKey.PRIMARY_ACCESSION) for record in records]
+                )
+            if uncached_accessions:
+                logger.debug(f"Uncached accessions found", uncached_accessions=uncached_accessions)
 
         fetch_list = list(
             set(accessions)
