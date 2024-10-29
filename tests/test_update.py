@@ -8,11 +8,14 @@ from ref_builder.repo import Repo
 
 @pytest.mark.ncbi()
 class TestUpdateOTU:
+    """Test automatic OTU update functionality."""
+
     def test_without_exclusions_ok(
         self,
         precached_repo: Repo,
         snapshot: SnapshotAssertion,
     ):
+        """"""
         otu_before = create_otu(
             precached_repo,
             2164102,
@@ -120,3 +123,7 @@ class TestUpdateOTU:
             "OR889796",
             "OR889797",
         }
+
+        assert {
+            isolate.name: isolate.accessions for isolate in otu_after.isolates
+        } == snapshot()
