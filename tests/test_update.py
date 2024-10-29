@@ -33,10 +33,6 @@ class TestUpdateOTU:
 
         assert otu_after.isolate_ids.issuperset(otu_before.isolate_ids)
 
-        assert {
-            isolate.name: isolate.accessions for isolate in otu_after.isolates
-        } == snapshot()
-
         assert otu_after.excluded_accessions == {"MF062125", "MF062126", "MF062127"}
 
         assert otu_after.accessions == {
@@ -59,6 +55,10 @@ class TestUpdateOTU:
             "OR889796",
             "OR889797",
         }
+
+        assert {
+           str(isolate.name): isolate.accessions for isolate in otu_after.isolates
+        } == snapshot()
 
     def test_with_replacement_ok(
         self,
@@ -125,5 +125,5 @@ class TestUpdateOTU:
         }
 
         assert {
-            isolate.name: isolate.accessions for isolate in otu_after.isolates
+            str(isolate.name): isolate.accessions for isolate in otu_after.isolates
         } == snapshot()
