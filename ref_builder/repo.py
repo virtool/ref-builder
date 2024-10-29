@@ -392,7 +392,7 @@ class Repo:
         self._write_event(
             LinkSequence,
             LinkSequenceData(sequence_id=new_sequence.id),
-            LinkSequenceQuery(
+            IsolateQuery(
                 otu_id=otu_id,
                 isolate_id=isolate_id,
             ),
