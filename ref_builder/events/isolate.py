@@ -1,6 +1,6 @@
 from pydantic import UUID4
 
-from ref_builder.events.base import EventData, Event, IsolateQuery, LinkSequenceQuery
+from ref_builder.events.base import EventData, Event, IsolateQuery
 from ref_builder.utils import IsolateName
 
 
@@ -22,12 +22,21 @@ class CreateIsolate(Event):
 class LinkSequenceData(EventData):
     """The data for a :class:`LinkSequence` event."""
 
+    sequence_id: UUID4
+
 
 class LinkSequence(Event):
     """An event that links an existing sequence to an isolate."""
 
     data: LinkSequenceData
-    query: LinkSequenceQuery
+    query: IsolateQuery
+
+
+class UnlinkSequence(Event):
+    """An event that unlinks an existing sequence from an isolate."""
+
+    data: LinkSequenceData
+    query: IsolateQuery
 
 
 class DeleteIsolateData(EventData):

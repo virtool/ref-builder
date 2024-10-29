@@ -36,4 +36,4 @@ class DeleteSequence(Event):
     """
 
     data: DeleteSequenceData
-    query: LinkSequenceQuery
+    query: SequenceQuery

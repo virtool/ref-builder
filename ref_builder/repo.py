@@ -391,11 +391,10 @@ class Repo:
 
         self._write_event(
             LinkSequence,
-            LinkSequenceData(),
+            LinkSequenceData(sequence_id=new_sequence.id),
             LinkSequenceQuery(
                 otu_id=otu_id,
                 isolate_id=isolate_id,
-                sequence_id=new_sequence.id,
             ),
         )
 
@@ -433,11 +432,10 @@ class Repo:
 
         event = self._write_event(
             LinkSequence,
-            LinkSequenceData(),
-            LinkSequenceQuery(
+            LinkSequenceData(sequence_id=sequence_id),
+            IsolateQuery(
                 otu_id=otu_id,
                 isolate_id=isolate_id,
-                sequence_id=sequence_id,
             ),
         )
 
@@ -591,7 +589,7 @@ class Repo:
             elif isinstance(event, LinkSequence):
                 otu.link_sequence(
                     isolate_id=event.query.isolate_id,
-                    sequence_id=event.query.sequence_id,
+                    sequence_id=event.data.sequence_id,
                 )
 
             elif isinstance(event, CreatePlan):
