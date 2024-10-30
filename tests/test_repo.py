@@ -720,14 +720,18 @@ class TestDirectDelete:
 
         assert new_sequence.id in otu_after.sequence_ids
 
-        assert otu_after.accessions == otu_after.get_isolate(isolate_id).accessions == {"TMVABCC"}
+        assert (
+            otu_after.accessions
+            == otu_after.get_isolate(isolate_id).accessions
+            == {"TMVABCC"}
+        )
 
 
 class TestSequenceReplace:
     def test_manual_ok(self, initialized_repo):
-        otu_before = initialized_repo.get_otu_by_taxid(12242)
+        """Test that a sequence can be replaced."""
 
-        otu_id = otu_before.id
+        otu_before = initialized_repo.get_otu_by_taxid(12242)
 
         accession = "TMVABC"
 
@@ -742,10 +746,48 @@ class TestSequenceReplace:
         )
 
         new_sequence = initialized_repo.create_sequence(
-            otu_id,
+            otu_before.id,
             "TMVABCC.1",
             "TMV edit",
             None,
             "RNA",
             "ACGTGGAGAGACCA",
         )
+
+        otu_after = initialized_repo.get_otu(otu_before.id)
+
+        assert replaced_sequence_id not in otu_after.sequence_ids
+
+        assert otu_after.get_sequence_by_id(sequence_id=new_sequence.id) == new_sequence
+
+    def test_replace_sequence_function(self, initialized_repo):
+        otu_before = initialized_repo.get_otu_by_taxid(12242)
+
+        accession = "TMVABC"
+
+        isolate_id, replaced_sequence_id = (
+            otu_before.get_sequence_id_hierarchy_from_accession(accession)
+        )
+
+        new_sequence = initialized_repo.create_sequence(
+            otu_before.id,
+            "TMVABCC.1",
+            "TMV edit",
+            None,
+            "RNA",
+            "ACGTGGAGAGACCA",
+        )
+
+        initialized_repo.replace_sequence(
+            otu_id=otu_before.id,
+            isolate_id=isolate_id,
+            sequence_id=new_sequence.id,
+            replaced_sequence_id=replaced_sequence_id,
+            rationale="Testing sequence redaction",
+        )
+
+        otu_after = initialized_repo.get_otu(otu_before.id)
+
+        assert new_sequence in otu_after.sequence_ids
+
+        assert replaced_sequence_id not in otu_after.sequence_ids
