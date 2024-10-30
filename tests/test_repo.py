@@ -759,3 +759,45 @@ def test_replace_sequence_function(initialized_repo):
     assert new_sequence.id in otu_after.sequence_ids
 
     assert replaced_sequence_id not in otu_after.sequence_ids
+
+
+class TestMalformedEvent:
+    """Test that malformed events cannot be rehydrated."""
+
+    def test_bad_event_typing(self, initialized_repo):
+        """Test that an event with an invalid event type discriminator does not attempt to rehydrate"""
+        filepath = initialized_repo.path.joinpath("src", "00000002.json")
+
+        with open(filepath, "rb") as f:
+            event = orjson.loads(f.read())
+
+        otu = initialized_repo.get_otu_by_taxid(12242)
+
+        assert type(otu) is RepoOTU
+
+        event["type"] = "MalformedEvent"
+
+        with open(filepath, "wb") as f:
+            f.write(orjson.dumps(event))
+
+        with pytest.raises(ValueError):
+            initialized_repo.get_otu_by_taxid(12242)
+
+    def test_bad_event_data(self, initialized_repo):
+        """Test that an event with bad data cannot be rehydrated"""
+        filepath = initialized_repo.path.joinpath("src", "00000002.json")
+
+        with open(filepath, "rb") as f:
+            event = orjson.loads(f.read())
+
+        otu = initialized_repo.get_otu_by_taxid(12242)
+
+        assert type(otu) is RepoOTU
+
+        event["data"]["taxid"] = "popcorn"
+
+        with open(filepath, "wb") as f:
+            f.write(orjson.dumps(event))
+
+        with pytest.raises(ValueError):
+            initialized_repo.get_otu_by_taxid(12242)
