@@ -21,6 +21,7 @@ from pathlib import Path
 
 import arrow
 from orjson import orjson
+from pydantic import ValidationError
 from structlog import get_logger
 
 from ref_builder.events.base import (
@@ -31,7 +32,7 @@ from ref_builder.events.base import (
     RepoQuery,
     OTUQuery,
     IsolateQuery,
-    SequenceQuery, ApplicableEvent,
+    SequenceQuery,
 )
 from ref_builder.events.repo import (
     CreateRepo,
@@ -553,10 +554,12 @@ class Repo:
         for event_id in event_ids[1:]:
             event = self._event_store.read_event(event_id)
 
-            if not issubclass(type(event), ApplicableEvent):
-                raise TypeError(f"Event {event_id} {str(type(event))} is not an applicable event.")
+            try:
+                otu = event.apply(otu)
+            except ValidationError as e:
+                logger.error(e)
 
-            otu = event.apply(otu)
+                raise TypeError(f"Event {event_id} {str(type(event))} is not an applicable event.")
 
         otu.isolates.sort(
             key=lambda i: f"{i.name.type} {i.name.value}"
