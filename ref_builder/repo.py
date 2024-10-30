@@ -559,7 +559,9 @@ class Repo:
             except ValidationError as e:
                 logger.error(e)
 
-                raise TypeError(f"Event {event_id} {str(type(event))} is not an applicable event.")
+                raise TypeError(
+                    f"Event {event_id} {str(type(event))} is not an applicable event."
+                )
 
         otu.isolates.sort(
             key=lambda i: f"{i.name.type} {i.name.value}"

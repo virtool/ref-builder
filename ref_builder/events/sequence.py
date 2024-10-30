@@ -1,7 +1,13 @@
 from pydantic import UUID4
 
 from ref_builder.resources import RepoOTU, RepoSequence
-from ref_builder.events.base import ApplicableEvent, EventData, SequenceQuery
+from ref_builder.events.base import (
+    EventData,
+    Event,
+    SequenceQuery,
+    LinkSequenceQuery,
+    ApplicableEvent,
+)
 from ref_builder.utils import Accession
 
 
