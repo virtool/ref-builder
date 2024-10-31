@@ -261,10 +261,7 @@ class RepoOTU(BaseModel):
     @property
     def accessions(self) -> set[str]:
         """A set of accessions contained in this isolate."""
-        return set(
-            self._sequences_by_id[sequence_id].accession.key
-            for sequence_id in self._sequences_by_id
-        )
+        return {sequence.accession.key for sequence in self._sequences_by_id.values()}
 
     @property
     def blocked_accessions(self) -> set[str]:
