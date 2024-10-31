@@ -21,7 +21,7 @@ if email := os.environ.get("NCBI_EMAIL"):
 if api_key := os.environ.get("NCBI_API_KEY"):
     Entrez.api_key = os.environ.get("NCBI_API_KEY")
 
-base_logger = get_logger()
+base_logger = get_logger("ncbi")
 
 ESEARCH_PAGE_SIZE = 1000
 """The number of results to fetch per page in an Entrez esearch query."""
@@ -66,12 +66,26 @@ class NCBIClient:
         logger = base_logger.bind(accessions=accessions)
 
         if not self.ignore_cache:
+            uncached_accessions = []
+
             for accession in accessions:
                 record = self.cache.load_genbank_record(accession)
                 if record is not None:
                     records.append(record)
-                else:
-                    logger.debug("Missing accession", missing_accession=accession)
+
+            if records:
+                logger.debug(
+                    f"Loaded {len(records)} cached records",
+                    cached_accessions=[
+                        record.get(GenbankRecordKey.PRIMARY_ACCESSION)
+                        for record in records
+                    ],
+                )
+            if uncached_accessions:
+                logger.debug(
+                    "Uncached accessions found",
+                    uncached_accessions=uncached_accessions,
+                )
 
         fetch_list = list(
             set(accessions)
