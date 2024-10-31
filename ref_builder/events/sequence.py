@@ -2,11 +2,9 @@ from pydantic import UUID4
 
 from ref_builder.resources import RepoOTU, RepoSequence
 from ref_builder.events.base import (
-    EventData,
-    Event,
-    SequenceQuery,
-    LinkSequenceQuery,
     ApplicableEvent,
+    EventData,
+    SequenceQuery,
 )
 from ref_builder.utils import Accession
 
@@ -47,6 +45,7 @@ class CreateSequence(ApplicableEvent):
 class DeleteSequenceData(EventData):
     """The data for a :class:`DeleteSequence` event."""
 
+    sequence_id: UUID4
     replacement: UUID4
     rationale: str
 
@@ -62,9 +61,6 @@ class DeleteSequence(ApplicableEvent):
 
     def apply(self, otu: RepoOTU) -> RepoOTU:
         """Delete sequence from OTU and return."""
-        otu.delete_sequence(
-            self.query.sequence_id,
-            self.query.isolate_id,
-        )
+        otu.delete_sequence(self.data.sequence_id)
 
         return otu

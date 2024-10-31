@@ -390,6 +390,7 @@ class Repo:
         self._write_event(
             DeleteSequence,
             DeleteSequenceData(
+                sequence_id=replaced_sequence_id,
                 replacement=new_sequence.id,
                 rationale=rationale,
             ),
