@@ -763,7 +763,7 @@ def promote_otu_accessions_from_records(
 
     if promoted_accessions:
         otu_logger.debug(
-            f"Promoted records",
+            "Promoted records",
             count=len(promoted_accessions),
             promoted_accessions=sorted(promoted_accessions),
         )
