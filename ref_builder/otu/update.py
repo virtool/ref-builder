@@ -496,7 +496,7 @@ def auto_update_otu(
     accessions = ncbi.fetch_accessions_by_taxid(otu.taxid)
 
     fetch_list = sorted(
-        set(Accession.from_string(accession).key for accession in accessions)
+        {Accession.from_string(accession).key for accession in accessions}
         - otu.blocked_accessions
     )
 
@@ -708,7 +708,7 @@ def promote_otu_accessions(
 
         return promote_otu_accessions_from_records(repo, otu, records)
 
-    otu_logger.info("Extant records are up to date.")
+    otu_logger.info("Records are already up to date.")
 
 
 def promote_otu_accessions_from_records(
@@ -763,7 +763,8 @@ def promote_otu_accessions_from_records(
 
     if promoted_accessions:
         otu_logger.debug(
-            f"Promoted f{len(promoted_accessions)} records",
+            f"Promoted records",
+            count=len(promoted_accessions),
             promoted_accessions=sorted(promoted_accessions),
         )
     else:

@@ -29,7 +29,10 @@ class TestUpdateOTU:
             "NC_055390",
             "NC_055391",
             "NC_055392",
-        }.union({"MF062125", "MF062126", "MF062127"})
+            "MF062125",
+            "MF062126",
+            "MF062127",
+        }
 
         auto_update_otu(precached_repo, otu_before)
 

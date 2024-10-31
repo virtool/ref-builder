@@ -83,7 +83,7 @@ class NCBIClient:
                 )
             if uncached_accessions:
                 logger.debug(
-                    f"Uncached accessions found",
+                    "Uncached accessions found",
                     uncached_accessions=uncached_accessions,
                 )
 
