@@ -4,10 +4,8 @@ from ref_builder.resources import RepoOTU, RepoIsolate
 from ref_builder.events.base import (
     ApplicableEvent,
     EventData,
-    Event,
     IsolateQuery,
 )
-    LinkSequenceQuery,
 from ref_builder.utils import IsolateName
 
 
