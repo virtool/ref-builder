@@ -31,20 +31,22 @@ def initialized_repo(empty_repo: Repo):
         taxid=12242,
     )
 
-    isolate_a = empty_repo.create_isolate(
+    sequence_1 = empty_repo.create_sequence(
         otu.id,
-        None,
-        IsolateName(IsolateNameType.ISOLATE, "A"),
-    )
-    empty_repo.create_sequence(
-        otu.id,
-        isolate_a.id,
         "TMVABC.1",
         "TMV",
         None,
         "RNA",
         "ACGT",
     )
+
+    isolate_a = empty_repo.create_isolate(
+        otu.id,
+        None,
+        IsolateName(IsolateNameType.ISOLATE, "A"),
+    )
+
+    empty_repo.link_sequence(otu.id, isolate_a.id, sequence_1.id)
 
     return empty_repo
 
@@ -318,15 +320,8 @@ def test_create_sequence(empty_repo: Repo):
     """
     otu = init_otu(empty_repo)
 
-    isolate = empty_repo.create_isolate(
-        otu.id,
-        None,
-        IsolateName(IsolateNameType.ISOLATE, "A"),
-    )
-
     sequence = empty_repo.create_sequence(
         otu.id,
-        isolate.id,
         "TMVABC.1",
         "TMV",
         None,
@@ -345,7 +340,7 @@ def test_create_sequence(empty_repo: Repo):
         sequence="ACGT",
     )
 
-    with open(empty_repo.path.joinpath("src", "00000004.json")) as f:
+    with open(empty_repo.path.joinpath("src", "00000003.json")) as f:
         event = orjson.loads(f.read())
 
     del event["timestamp"]
@@ -359,22 +354,21 @@ def test_create_sequence(empty_repo: Repo):
             "segment": "RNA",
             "sequence": "ACGT",
         },
-        "id": 4,
+        "id": 3,
         "query": {
             "otu_id": str(otu.id),
-            "isolate_id": str(isolate.id),
             "sequence_id": str(sequence.id),
         },
         "type": "CreateSequence",
     }
 
-    assert empty_repo.last_id == 4
+    assert empty_repo.last_id == 3
 
 
 class TestGetOTU:
     """Test the retrieval of OTU data."""
 
-    def test_get_otu(self, empty_repo: Repo):
+    def test_ok(self, empty_repo: Repo):
         """Test that getting an OTU returns the expected ``RepoOTU`` object including two
         isolates with one sequence each.
         """
@@ -393,15 +387,8 @@ class TestGetOTU:
             plan=monopartite_plan,
         )
 
-        isolate_a = empty_repo.create_isolate(
+        sequence_1 = empty_repo.create_sequence(
             otu.id,
-            None,
-            IsolateName(IsolateNameType.ISOLATE, "A"),
-        )
-
-        empty_repo.create_sequence(
-            otu.id,
-            isolate_a.id,
             "TMVABC.1",
             "TMV",
             None,
@@ -409,20 +396,30 @@ class TestGetOTU:
             "ACGT",
         )
 
-        isolate_b = empty_repo.create_isolate(
+        isolate_a = empty_repo.create_isolate(
             otu.id,
             None,
-            IsolateName(IsolateNameType.ISOLATE, "B"),
+            IsolateName(IsolateNameType.ISOLATE, "A"),
         )
-        empty_repo.create_sequence(
+
+        empty_repo.link_sequence(otu.id, isolate_a.id, sequence_id=sequence_1.id)
+
+        sequence_2 = empty_repo.create_sequence(
             otu.id,
-            isolate_b.id,
             "TMVABCB.1",
             "TMV",
             None,
             "RNA",
             "ACGTGGAGAGACC",
         )
+
+        isolate_b = empty_repo.create_isolate(
+            otu.id,
+            None,
+            IsolateName(IsolateNameType.ISOLATE, "B"),
+        )
+
+        empty_repo.link_sequence(otu.id, isolate_b.id, sequence_id=sequence_2.id)
 
         otu = empty_repo.get_otu(otu.id)
 
@@ -459,26 +456,29 @@ class TestGetOTU:
             ),
         ]
 
-        assert otu == RepoOTU(
-            id=otu.id,
-            acronym="TMV",
-            excluded_accessions=set(),
-            legacy_id=None,
-            molecule=Molecule(
-                strandedness=Strandedness.SINGLE,
-                type=MolType.RNA,
-                topology=Topology.LINEAR,
-            ),
-            name="Tobacco mosaic virus",
-            repr_isolate=None,
-            plan=MonopartitePlan(
-                id=monopartite_plan.id, plan_type="monopartite", length=150
-            ),
-            taxid=12242,
-            isolates=otu_contents,
+        assert (
+            otu.model_dump()
+            == RepoOTU(
+                id=otu.id,
+                acronym="TMV",
+                excluded_accessions=set(),
+                legacy_id=None,
+                molecule=Molecule(
+                    strandedness=Strandedness.SINGLE,
+                    type=MolType.RNA,
+                    topology=Topology.LINEAR,
+                ),
+                name="Tobacco mosaic virus",
+                repr_isolate=None,
+                plan=MonopartitePlan(
+                    id=monopartite_plan.id, plan_type="monopartite", length=150
+                ),
+                taxid=12242,
+                isolates=otu_contents,
+            ).model_dump()
         )
 
-        assert empty_repo.last_id == 6
+        assert empty_repo.last_id == 8
 
     def test_retrieve_nonexistent_otu(self, initialized_repo: Repo):
         """Test that getting an OTU that does not exist returns ``None``."""
@@ -489,21 +489,22 @@ class TestGetOTU:
 
         assert otu.accessions == {"TMVABC"}
 
-        isolate_b = initialized_repo.create_isolate(
+        sequence_2 = initialized_repo.create_sequence(
             otu.id,
-            None,
-            IsolateName(type=IsolateNameType.ISOLATE, value="B"),
-        )
-
-        initialized_repo.create_sequence(
-            otu.id,
-            isolate_b.id,
             "TMVABCB.1",
             "TMV",
             None,
             "RNA",
             "ACGTGGAGAGACC",
         )
+
+        isolate_b = initialized_repo.create_isolate(
+            otu.id,
+            None,
+            IsolateName(type=IsolateNameType.ISOLATE, value="B"),
+        )
+
+        initialized_repo.link_sequence(otu.id, isolate_b.id, sequence_id=sequence_2.id)
 
         otu = next(initialized_repo.iter_otus())
 
@@ -512,21 +513,22 @@ class TestGetOTU:
     def test_get_blocked_accessions(self, initialized_repo: Repo):
         otu = initialized_repo.get_otu_by_taxid(12242)
 
-        isolate_b = initialized_repo.create_isolate(
+        sequence_2 = initialized_repo.create_sequence(
             otu.id,
-            None,
-            IsolateName(type=IsolateNameType.ISOLATE, value="B"),
-        )
-
-        initialized_repo.create_sequence(
-            otu.id,
-            isolate_b.id,
             "TMVABCB.1",
             "TMV",
             None,
             "RNA",
             "ACGTGGAGAGACC",
         )
+
+        isolate_b = initialized_repo.create_isolate(
+            otu.id,
+            None,
+            IsolateName(type=IsolateNameType.ISOLATE, value="B"),
+        )
+
+        initialized_repo.link_sequence(otu.id, isolate_b.id, sequence_id=sequence_2.id)
 
         initialized_repo.exclude_accession(otu.id, "GROK")
         initialized_repo.exclude_accession(otu.id, "TOK")
@@ -565,15 +567,8 @@ class TestGetIsolate:
 
         isolate_before = otu.isolates[0]
 
-        isolate_unnamed = initialized_repo.create_isolate(
+        sequence_1_1 = initialized_repo.create_sequence(
             otu.id,
-            None,
-            None,
-        )
-
-        initialized_repo.create_sequence(
-            otu.id,
-            isolate_id=isolate_unnamed.id,
             accession="EMPTY1.1",
             definition="TMV B",
             legacy_id=None,
@@ -581,14 +576,27 @@ class TestGetIsolate:
             sequence="GACCACGTGGAGA",
         )
 
-        initialized_repo.create_sequence(
+        sequence_2_1 = initialized_repo.create_sequence(
             otu.id,
-            isolate_id=isolate_unnamed.id,
             accession="EMPTY2.1",
             definition="TMV A",
             legacy_id=None,
             segment="RNA B",
             sequence="ACTAAGAGAAAAA",
+        )
+
+        isolate_unnamed = initialized_repo.create_isolate(
+            otu.id,
+            None,
+            None,
+        )
+
+        initialized_repo.link_sequence(
+            otu.id, isolate_unnamed.id, sequence_id=sequence_1_1.id
+        )
+
+        initialized_repo.link_sequence(
+            otu.id, isolate_unnamed.id, sequence_id=sequence_2_1.id
         )
 
         otu_after = next(initialized_repo.iter_otus())
@@ -673,29 +681,36 @@ class TestDirectDelete:
         """Test that a sequence can be redacted from an OTU."""
         otu_before = initialized_repo.get_otu_by_taxid(12242)
 
-        otu_id = otu_before.id
-
         accession = "TMVABC"
 
         isolate_id, replaced_sequence_id = (
             otu_before.get_sequence_id_hierarchy_from_accession(accession)
         )
 
-        assert otu_before.get_isolate(isolate_id).accessions == {"TMVABC"}
+        assert (
+            otu_before.accessions
+            == otu_before.get_isolate(isolate_id).accessions
+            == {"TMVABC"}
+        )
 
-        new_sequence = initialized_repo.replace_sequence(
-            otu_id,
-            isolate_id,
+        new_sequence = initialized_repo.create_sequence(
+            otu_before.id,
             "TMVABCC.1",
             "TMV edit",
             None,
             "RNA",
             "ACGTGGAGAGACCA",
-            replaced_sequence_id=replaced_sequence_id,
-            rationale="Testing redaction",
         )
 
-        otu_after = initialized_repo.get_otu(otu_id)
+        initialized_repo.replace_sequence(
+            otu_before.id,
+            isolate_id,
+            new_sequence.id,
+            replaced_sequence_id,
+            rationale="Testing sequence redaction",
+        )
+
+        otu_after = initialized_repo.get_otu(otu_before.id)
 
         assert otu_before != otu_after
 
@@ -705,4 +720,42 @@ class TestDirectDelete:
 
         assert new_sequence.id in otu_after.sequence_ids
 
-        assert otu_after.get_isolate(isolate_id).accessions == {"TMVABCC"}
+        assert (
+            otu_after.accessions
+            == otu_after.get_isolate(isolate_id).accessions
+            == {"TMVABCC"}
+        )
+
+
+def test_replace_sequence_function(initialized_repo):
+    """Test the replacement of am existing sequence using a new Genbank accession and record."""
+    otu_before = initialized_repo.get_otu_by_taxid(12242)
+
+    accession = "TMVABC"
+
+    isolate_id, replaced_sequence_id = (
+        otu_before.get_sequence_id_hierarchy_from_accession(accession)
+    )
+
+    new_sequence = initialized_repo.create_sequence(
+        otu_before.id,
+        "TMVABCC.1",
+        "TMV edit",
+        None,
+        "RNA",
+        "ACGTGGAGAGACCA",
+    )
+
+    initialized_repo.replace_sequence(
+        otu_id=otu_before.id,
+        isolate_id=isolate_id,
+        sequence_id=new_sequence.id,
+        replaced_sequence_id=replaced_sequence_id,
+        rationale="Testing sequence redaction",
+    )
+
+    otu_after = initialized_repo.get_otu(otu_before.id)
+
+    assert new_sequence.id in otu_after.sequence_ids
+
+    assert replaced_sequence_id not in otu_after.sequence_ids

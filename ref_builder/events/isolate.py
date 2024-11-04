@@ -19,6 +19,32 @@ class CreateIsolate(Event):
     query: IsolateQuery
 
 
+class LinkSequenceData(EventData):
+    """The data for a :class:`LinkSequence` event."""
+
+    sequence_id: UUID4
+
+
+class LinkSequence(Event):
+    """An event that links an existing sequence to an isolate."""
+
+    data: LinkSequenceData
+    query: IsolateQuery
+
+
+class UnlinkSequenceData(EventData):
+    """The data for a :class:`LinkSequence` event."""
+
+    sequence_id: UUID4
+
+
+class UnlinkSequence(Event):
+    """An event that unlinks an existing sequence from an isolate."""
+
+    data: UnlinkSequenceData
+    query: IsolateQuery
+
+
 class DeleteIsolateData(EventData):
     """The data for a :class:`DeleteIsolate` event."""
 
