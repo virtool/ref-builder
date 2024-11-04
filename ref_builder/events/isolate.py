@@ -71,6 +71,15 @@ class UnlinkSequence(ApplicableEvent):
     data: UnlinkSequenceData
     query: IsolateQuery
 
+    def apply(self, otu: RepoOTU) -> RepoOTU:
+        """Unlink specified sequence from specified isolate and return OTU."""
+        otu.unlink_sequence(
+            isolate_id=self.query.isolate_id,
+            sequence_id=self.data.sequence_id,
+        )
+
+        return otu
+
 
 class DeleteIsolateData(EventData):
     """The data for a :class:`DeleteIsolate` event."""
