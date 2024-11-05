@@ -69,6 +69,7 @@ class TestSetIsolatePlan:
             Segment(
                 id=uuid4(),
                 length=2000,
+                length_tolerance=scratch_repo.settings.default_segment_length_tolerance,
                 name=SegmentName(prefix="DNA", key="C"),
                 required=SegmentRule.RECOMMENDED,
             ),
@@ -78,6 +79,7 @@ class TestSetIsolatePlan:
             Segment(
                 id=uuid4(),
                 length=1000,
+                length_tolerance=scratch_repo.settings.default_segment_length_tolerance,
                 name=SegmentName(prefix="DNA", key="Z"),
                 required=SegmentRule.OPTIONAL,
             ),

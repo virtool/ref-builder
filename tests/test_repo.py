@@ -66,7 +66,7 @@ def init_otu(empty_repo: Repo) -> RepoOTU:
         name="Tobacco mosaic virus",
         plan=MonopartitePlan.new(
             length=150,
-        length_tolerance = empty_repo.settings.default_segment_length_tolerance,
+            length_tolerance=empty_repo.settings.default_segment_length_tolerance,
         ),
         taxid=12242,
     )
@@ -106,7 +106,7 @@ class TestCreateOTU:
         """
         monopartite_plan = MonopartitePlan.new(
             length=150,
-            length_tolerance = empty_repo.settings.default_segment_length_tolerance,
+            length_tolerance=empty_repo.settings.default_segment_length_tolerance,
         )
 
         otu = empty_repo.create_otu(

@@ -2,6 +2,7 @@
 # name: TestPlan.test_create_monopartite_plan_from_records
   dict({
     'length': 7424,
+    'length_tolerance': 0.03,
     'name': None,
     'plan_type': 'monopartite',
   })
@@ -12,6 +13,7 @@
     'segments': list([
       dict({
         'length': 1090,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'N',
           'prefix': 'DNA',
@@ -20,6 +22,7 @@
       }),
       dict({
         'length': 1057,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'U3',
           'prefix': 'DNA',
@@ -28,6 +31,7 @@
       }),
       dict({
         'length': 1087,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'S',
           'prefix': 'DNA',
@@ -36,6 +40,7 @@
       }),
       dict({
         'length': 1074,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'M',
           'prefix': 'DNA',
@@ -44,6 +49,7 @@
       }),
       dict({
         'length': 1015,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'C',
           'prefix': 'DNA',
@@ -52,6 +58,7 @@
       }),
       dict({
         'length': 1099,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'R',
           'prefix': 'DNA',
@@ -64,6 +71,7 @@
 # name: TestPlan.test_serialize_plan[accessions0-MonopartitePlan]
   dict({
     'length': 7424,
+    'length_tolerance': 0.03,
     'name': None,
     'plan_type': 'monopartite',
   })
@@ -74,6 +82,7 @@
     'segments': list([
       dict({
         'length': 1090,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'N',
           'prefix': 'DNA',
@@ -82,6 +91,7 @@
       }),
       dict({
         'length': 1057,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'U3',
           'prefix': 'DNA',
@@ -90,6 +100,7 @@
       }),
       dict({
         'length': 1087,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'S',
           'prefix': 'DNA',
@@ -98,6 +109,7 @@
       }),
       dict({
         'length': 1074,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'M',
           'prefix': 'DNA',
@@ -106,6 +118,7 @@
       }),
       dict({
         'length': 1015,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'C',
           'prefix': 'DNA',
@@ -114,6 +127,7 @@
       }),
       dict({
         'length': 1099,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'R',
           'prefix': 'DNA',
