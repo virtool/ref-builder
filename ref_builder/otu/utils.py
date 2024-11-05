@@ -138,7 +138,10 @@ def parse_refseq_comment(comment: str) -> tuple[str, str]:
 
     match = refseq_pattern.search(comment)
 
-    return match.group(1), match.group(2)
+    if match:
+        return match.group(1), match.group(2)
+
+    raise ValueError("Invalid RefSeq comment")
 
 
 def get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
