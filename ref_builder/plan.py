@@ -58,6 +58,9 @@ class Segment(SegmentMetadata):
 
     model_config = ConfigDict(use_enum_values=True)
 
+    length_tolerance: float
+    """The acceptable deviation from the recommended sequence length."""
+
     name: SegmentName | None
     """The name of the segment"""
 
@@ -76,6 +79,9 @@ class MonopartitePlan(BaseModel):
 
     length: int
     """The expected length of the sequence"""
+
+    length_tolerance: float
+    """The acceptable deviation from the recommended sequence length."""
 
     name: SegmentName | None = None
     """The name of the monopartite plan"""
