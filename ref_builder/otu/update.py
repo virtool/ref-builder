@@ -140,15 +140,6 @@ def add_unnamed_isolate(
 
     records = ncbi.fetch_genbank_records(fetch_list)
 
-    if type(otu.plan) is MonopartitePlan:
-        if not check_sequence_length(
-            records[0].sequence,
-            segment_length=otu.plan.length,
-            tolerance=repo.settings.default_segment_length_tolerance
-        ):
-            otu_logger.error("Sequence does not conform to plan length.", accession=accessions)
-            return None
-
     return create_isolate_from_records(
         repo,
         otu,
@@ -192,15 +183,6 @@ def add_and_name_isolate(
 
     records = ncbi.fetch_genbank_records(fetch_list)
 
-    if type(otu.plan) is MonopartitePlan:
-        if not check_sequence_length(
-            records[0].sequence,
-            segment_length=otu.plan.length,
-            tolerance=repo.settings.default_segment_length_tolerance
-        ):
-            otu_logger.error("Sequence does not conform to plan length.", accession=accessions)
-            return None
-
     return create_isolate_from_records(
         repo,
         otu,
@@ -223,6 +205,21 @@ def create_isolate_from_records(
         otu_name=otu.name,
         taxid=otu.taxid,
     )
+
+    if type(otu.plan) is MonopartitePlan:
+        if not check_sequence_length(
+            records[0].sequence,
+            segment_length=otu.plan.length,
+            tolerance=repo.settings.default_segment_length_tolerance
+        ):
+            isolate_logger.error(
+                "Sequence does not conform to plan length.",
+                accession=records[0].accession,
+                sequence_length=len(records[0].sequence),
+                plan_length=otu.plan.length,
+            )
+
+            return None
 
     try:
         isolate = repo.create_isolate(
