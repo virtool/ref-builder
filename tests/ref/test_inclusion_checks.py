@@ -15,10 +15,12 @@ faker.add_provider(SequenceProvider)
 
 
 def create_mock_record(
-    otu: RepoOTU, sequence_length: int,
+    otu: RepoOTU,
+    sequence_length: int,
 ) -> NCBIGenbank:
     mock_record_source = NCBISourceFactory.build(
-        taxid=otu.taxid, organism=otu.name,
+        taxid=otu.taxid,
+        organism=otu.name,
     )
 
     mock_record = NCBIGenbankFactory.build(
@@ -76,10 +78,7 @@ class TestSequenceLengthCheck:
 class TestAddMonopartiteIsolate:
     """Test that new monopartite isolates follow plan length limits."""
 
-    @pytest.mark.parametrize(
-        "sequence_length_multiplier",
-        [1.0, 1.03, 0.98]
-    )
+    @pytest.mark.parametrize("sequence_length_multiplier", [1.0, 1.03, 0.98])
     def test_ok(self, scratch_repo, sequence_length_multiplier: float):
         """Test that sequences within recommended length variance
         are added without issue."""
@@ -105,10 +104,7 @@ class TestAddMonopartiteIsolate:
 
         assert mock_record.accession in otu_after.accessions
 
-    @pytest.mark.parametrize(
-        "sequence_length_multiplier",
-        [0.5, 1.035, 20.0]
-    )
+    @pytest.mark.parametrize("sequence_length_multiplier", [0.5, 1.035, 20.0])
     def test_fail(self, scratch_repo, sequence_length_multiplier: float):
         """Test that sequences that exceed recommended length variance
         are automatically rejected.

@@ -83,7 +83,9 @@ class SequenceProvider(BaseProvider):
     """Dummy sequence data provider."""
 
     def sequence(
-        self, min: int = 100, max: int = 10000,
+        self,
+        min: int = 100,
+        max: int = 10000,
     ) -> str:
         """Return a pseudorandom string consisting of
         acceptable genetic sequence letters.

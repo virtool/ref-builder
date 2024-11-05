@@ -80,9 +80,11 @@ def add_genbank_isolate(
         if not check_sequence_length(
             records[0].sequence,
             segment_length=otu.plan.length,
-            tolerance=repo.settings.default_segment_length_tolerance
+            tolerance=repo.settings.default_segment_length_tolerance,
         ):
-            otu_logger.error("Sequence does not conform to plan length.", accession=accessions)
+            otu_logger.error(
+                "Sequence does not conform to plan length.", accession=accessions
+            )
             return None
 
     if (isolate_id := otu.get_isolate_id_by_name(isolate_name)) is not None:
@@ -199,6 +201,9 @@ def create_isolate_from_records(
 ) -> RepoIsolate | None:
     """Take a list of GenBank records that make up a new isolate
     and add them to the OTU.
+
+    If a monopartite sequence is outside of recommended length bounds,
+    automatically reject the isolate and return None.
     """
     isolate_logger = get_logger("otu.isolate").bind(
         isolate_name=str(isolate_name) if IsolateName is not None else None,
@@ -210,7 +215,7 @@ def create_isolate_from_records(
         if not check_sequence_length(
             records[0].sequence,
             segment_length=otu.plan.length,
-            tolerance=repo.settings.default_segment_length_tolerance
+            tolerance=repo.settings.default_segment_length_tolerance,
         ):
             isolate_logger.error(
                 "Sequence does not conform to plan length.",

@@ -45,13 +45,14 @@ def test_format_json(tmp_path: Path):
 
 class TestRefSeqCommentParser:
     """Test the parsing of standardized RefSeq comments."""
+
     @pytest.mark.parametrize(
         ("comment_string", "status", "predecessor_accession"),
         [
             (
                 "PROVISIONAL REFSEQ: "
                 "This record has not yet been subject to final NCBI review. "
-                "The reference sequence is identical to EF546808," 
+                "The reference sequence is identical to EF546808,"
                 "COMPLETENESS: full length.",
                 "PROVISIONAL REFSEQ",
                 "EF546808",
