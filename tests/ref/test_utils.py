@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from ref_builder.utils import format_json, pad_zeroes
+from ref_builder.otu.utils import parse_refseq_comment
 
 
 class TestPadZeroes:
@@ -40,3 +41,30 @@ def test_format_json(tmp_path: Path):
         '  "number": 10\n'
         "}"
     )
+
+
+class TestRefSeqCommentParser:
+    """Test the parsing of standardized RefSeq comments."""
+    @pytest.mark.parametrize(
+        ("comment_string", "status", "predecessor_accession"),
+        [
+            (
+                "PROVISIONAL REFSEQ: "
+                "This record has not yet been subject to final NCBI review. "
+                "The reference sequence is identical to EF546808," 
+                "COMPLETENESS: full length.",
+                "PROVISIONAL REFSEQ",
+                "EF546808",
+            )
+        ],
+    )
+    def test_ok(self, comment_string: str, status: str, predecessor_accession: str):
+        extracted_status, extracted_accession = parse_refseq_comment(comment_string)
+
+        assert extracted_accession == predecessor_accession
+
+        assert extracted_status == status
+
+    def test_fail(self):
+        with pytest.raises(ValueError, match="Invalid RefSeq comment"):
+            parse_refseq_comment("AGSDHJFKLDSFEU")
