@@ -67,7 +67,10 @@ def create_otu(
 
     molecule = get_molecule_from_records(records)
 
-    plan = create_isolate_plan_from_records(records)
+    plan = create_isolate_plan_from_records(
+        records,
+        length_tolerance=repo.settings.default_segment_length_tolerance,
+    )
 
     if plan is None:
         otu_logger.fatal("Could not create plan from records.")

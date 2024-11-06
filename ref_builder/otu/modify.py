@@ -1,4 +1,4 @@
-from uuid import uuid4
+from pydantic import ValidationError
 
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.update import logger
@@ -31,6 +31,34 @@ def set_isolate_plan(
     return repo.get_otu(otu.id).plan
 
 
+def set_plan_length_tolerances(
+    repo: Repo,
+    otu: RepoOTU,
+    tolerance: float,
+) -> MonopartitePlan | MultipartitePlan | None:
+    """Sets a plan's length tolerances to a new float value."""
+    if otu.plan.plan_type == "monopartite":
+        try:
+            repo.set_isolate_plan(
+                otu.id,
+                MonopartitePlan.new(
+                    length=otu.plan.length,
+                    length_tolerance=tolerance,
+                ),
+            )
+        except (ValueError, ValidationError) as e:
+            logger.error(
+                e,
+                name=otu.name,
+                taxid=otu.taxid,
+                tolerance=otu.plan.length_tolerance,
+                new_tolerance=tolerance,
+            )
+            return None
+
+    return repo.get_otu(otu.id).plan
+
+
 def add_segments_to_plan(
     repo: Repo,
     otu: RepoOTU,
@@ -42,6 +70,8 @@ def add_segments_to_plan(
     expand_logger = logger.bind(
         name=otu.name, taxid=otu.taxid, accessions=accessions, rule=rule
     )
+
+    sequence_length_tolerance = repo.settings.default_segment_length_tolerance
 
     if type(otu.plan) is MonopartitePlan:
         raise ValueError("Cannot add segments to a monopartite plan.")
@@ -61,6 +91,7 @@ def add_segments_to_plan(
     new_segments = create_segments_from_records(
         records,
         rule,
+        length_tolerance=sequence_length_tolerance,
     )
     if not new_segments:
         expand_logger.warning("No segments can be added.")
@@ -70,18 +101,7 @@ def add_segments_to_plan(
         segments=otu.plan.segments + new_segments,
     )
 
-    try:
-        repo.set_isolate_plan(otu.id, new_plan)
-    except ValueError as e:
-        expand_logger.error(e)
-        return None
-
-    expand_logger.info(
-        f"Segments {[str(segment.name) for segment in new_segments]} added to plan",
-        expanded_plan=new_plan.model_dump(),
-    )
-
-    return repo.get_otu(otu.id).plan
+    return set_isolate_plan(repo, otu, new_plan)
 
 
 def resize_monopartite_plan(
@@ -90,7 +110,7 @@ def resize_monopartite_plan(
     name: SegmentName,
     rule: SegmentRule,
     accessions: list[str],
-    sequence_length_tolerance: float | None = None,
+    # sequence_length_tolerance: float | None = None,
     ignore_cache: bool = False,
 ) -> MultipartitePlan | None:
     """Convert a monopartite plan to a multipartite plan and add segments."""
@@ -102,8 +122,7 @@ def resize_monopartite_plan(
         expand_logger.warning("OTU plan is already a multipartite plan.")
         return None
 
-    if sequence_length_tolerance is None:
-        sequence_length_tolerance = repo.settings.default_segment_length_tolerance
+    sequence_length_tolerance = repo.settings.default_segment_length_tolerance
 
     client = NCBIClient(ignore_cache)
 
@@ -115,6 +134,7 @@ def resize_monopartite_plan(
     new_segments = create_segments_from_records(
         records,
         rule,
+        length_tolerance=sequence_length_tolerance,
     )
     if not new_segments:
         expand_logger.warning("No segments can be added.")
@@ -122,9 +142,9 @@ def resize_monopartite_plan(
 
     new_plan = MultipartitePlan.new(
         segments=[
-            Segment(
-                id=uuid4(),
+            Segment.new(
                 length=otu.plan.length,
+                length_tolerance=sequence_length_tolerance,
                 name=name,
                 required=SegmentRule.REQUIRED,
             )
@@ -132,15 +152,4 @@ def resize_monopartite_plan(
         + new_segments,
     )
 
-    try:
-        repo.set_isolate_plan(otu.id, new_plan)
-    except ValueError as e:
-        expand_logger.error(e)
-        return None
-
-    expand_logger.info(
-        f"Segments {[str(segment.name) for segment in new_segments]} added to plan",
-        expanded_plan=new_plan.model_dump(),
-    )
-
-    return repo.get_otu(otu.id).plan
+    return set_isolate_plan(repo, otu, new_plan)
