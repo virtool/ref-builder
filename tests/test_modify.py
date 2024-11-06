@@ -8,12 +8,14 @@ from syrupy.filters import props
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoSequence
 from ref_builder.otu.create import create_otu
-from ref_builder.otu.update import (
-    add_genbank_isolate,
+from ref_builder.otu.modify import (
     add_segments_to_plan,
-    promote_otu_accessions,
     resize_monopartite_plan,
     set_isolate_plan,
+)
+from ref_builder.otu.update import (
+    add_genbank_isolate,
+    promote_otu_accessions,
     replace_sequence_in_otu,
     set_representative_isolate,
     delete_isolate_from_otu,

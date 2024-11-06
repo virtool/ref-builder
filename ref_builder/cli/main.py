@@ -25,14 +25,13 @@ from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
     add_and_name_isolate,
     add_genbank_isolate,
-    add_segments_to_plan,
     add_unnamed_isolate,
     auto_update_otu,
     exclude_accessions_from_otu,
     promote_otu_accessions,
-    resize_monopartite_plan,
     set_representative_isolate,
 )
+from ref_builder.otu.modify import add_segments_to_plan, resize_monopartite_plan
 from ref_builder.otu.utils import RefSeqConflictError
 from ref_builder.plan import SegmentName, SegmentRule
 from ref_builder.repo import Repo
