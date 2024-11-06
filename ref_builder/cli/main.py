@@ -176,6 +176,9 @@ def update(ctx: Context, path: Path, taxid: int) -> None:
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
+
 
 @update.command(name="automatic")  # type: ignore
 @ignore_cache_option
