@@ -4,7 +4,11 @@ import structlog
 
 
 def configure_logger(verbosity: int) -> None:
-    """Configure structlog-based logging."""
+    """Configure structlog-based logging.
+
+    :param verbosity: The verbosity level of the logger.
+    """
+    # Disable faker logging.
     logging.getLogger("faker").setLevel(logging.ERROR)
 
     processors = [
