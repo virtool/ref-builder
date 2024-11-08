@@ -10,6 +10,7 @@ from pydantic import BaseModel, TypeAdapter
 from pytest_mock import MockerFixture
 
 from ref_builder.legacy.utils import build_legacy_otu
+from ref_builder.logs import configure_logger
 from ref_builder.ncbi.cache import NCBICache
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.create import create_otu
@@ -17,6 +18,8 @@ from ref_builder.otu.update import update_otu_with_accessions
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
 from ref_builder.utils import Accession, DataType
+
+configure_logger(True)
 
 
 @pytest.fixture()
