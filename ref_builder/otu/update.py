@@ -215,7 +215,7 @@ def create_isolate_from_records(
         if not check_sequence_length(
             records[0].sequence,
             segment_length=otu.plan.length,
-            tolerance=repo.settings.default_segment_length_tolerance,
+            tolerance=otu.plan.length_tolerance,
         ):
             isolate_logger.error(
                 "Sequence does not conform to plan length.",
