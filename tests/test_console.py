@@ -4,15 +4,18 @@ from syrupy import SnapshotAssertion
 from ref_builder.console import console, print_otu, print_otu_list
 from ref_builder.models import OTUMinimal
 from ref_builder.repo import Repo
+from tests.fixtures.factories import OTUMinimalFactory
 
 
 class TestPrintOTUList:
     """Tests for the ``print_otu_list`` function."""
 
-    def test_ok(self, scratch_repo: Repo, snapshot: SnapshotAssertion) -> None:
+    def test_ok(self, snapshot: SnapshotAssertion) -> None:
         """Test that listed OTUs are printed."""
+        factory = OTUMinimalFactory()
+
         with console.capture() as capture:
-            print_otu_list(scratch_repo.iter_minimal_otus())
+            print_otu_list(factory.build() for _ in range(5))
 
         assert capture.get() == snapshot
 

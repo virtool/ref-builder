@@ -71,6 +71,14 @@ class AccessionProvider(BaseProvider):
         return self.refseq_accession()
 
 
+class BusinessProvider(BaseProvider):
+    """Provider that generates business-related data like IDs."""
+
+    def legacy_id(self) -> str:
+        """Return a pseudorandom legacy ID."""
+        return self.bothify("?????????")
+
+
 class SequenceProvider(BaseProvider):
     """Dummy sequence data provider."""
 
