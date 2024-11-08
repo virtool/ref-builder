@@ -121,7 +121,7 @@ def print_otu_list(otus: Iterator[OTUMinimal]) -> None:
     table.add_column("TAXID")
     table.add_column("ID")
 
-    count = 0
+    added_rows = False
 
     for otu in otus:
         table.add_row(
@@ -131,12 +131,12 @@ def print_otu_list(otus: Iterator[OTUMinimal]) -> None:
             str(otu.id),
         )
 
-        count += 1
+        added_rows = True
 
-    if count == 0:
-        console.print("No OTUs found")
-    else:
+    if added_rows:
         console.print(table)
+    else:
+        console.print("No OTUs found")
 
 
 console = rich.console.Console()
