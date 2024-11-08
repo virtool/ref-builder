@@ -6,6 +6,7 @@ from pathlib import Path
 from uuid import UUID
 
 import click
+import structlog
 from click import Context
 
 from ref_builder.build import build_json
@@ -38,12 +39,18 @@ from ref_builder.utils import DataType, IsolateName, IsolateNameType, format_jso
 PRECACHE_BUFFER_SIZE = 450
 """The number of Genbank records to fetch in a single request when pre-caching."""
 
+logger = structlog.get_logger()
+
 
 @click.group()
 @click.option("--debug", is_flag=True, help="Show debug logs")
-def entry(debug: bool) -> None:
+@click.option("-v", "--verbose", "verbosity", count=True)
+def entry(debug: bool, verbosity: int) -> None:
     """Build and maintain reference sets of pathogen genome sequences."""
-    configure_logger(debug)
+    if debug:
+        verbosity = 2
+
+    configure_logger(verbosity)
 
 
 @entry.command()

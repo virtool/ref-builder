@@ -1,59 +1,37 @@
 import logging
-import os
-import sys
 
-import click
 import structlog
 
-error_message_style = click.style("ERROR: ", fg="red")
 
-logging.basicConfig(
-    format="%(message)s",
-    stream=sys.stderr,
-    level=logging.DEBUG,
-)
+def configure_logger(verbosity: int) -> None:
+    """Configure structlog-based logging."""
+    logging.getLogger("faker").setLevel(logging.ERROR)
 
-
-def configure_logger(debug: bool = False) -> None:
-    """Configure structlog-based logging.
-
-    :param debug: Debugging flag. Defaults to False.
-    """
     processors = [
-        structlog.stdlib.filter_by_level,
-        structlog.stdlib.add_logger_name,
-        structlog.stdlib.add_log_level,
-        structlog.stdlib.PositionalArgumentsFormatter(),
-        structlog.processors.StackInfoRenderer(),
-        structlog.processors.UnicodeDecoder(),
+        structlog.processors.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso"),
     ]
 
-    if debug:
+    if verbosity == 0:
+        level = logging.WARNING
+    elif verbosity == 1:
+        level = logging.INFO
+    else:
+        level = logging.DEBUG
+
         processors.append(
             structlog.processors.CallsiteParameterAdder(
-                {
-                    structlog.processors.CallsiteParameter.FILENAME,
+                [
+                    structlog.processors.CallsiteParameter.MODULE,
                     structlog.processors.CallsiteParameter.FUNC_NAME,
-                    structlog.processors.CallsiteParameter.LINENO,
-                },
-            ),
+                ]
+            )
         )
 
-    if sys.stderr.isatty() and not os.environ.get("NO_COLOR"):
-        processors.append(structlog.dev.ConsoleRenderer())
-    else:
-        processors += [
-            structlog.processors.TimeStamper(fmt="iso"),
-            structlog.processors.format_exc_info,
-            structlog.processors.dict_tracebacks,
-            structlog.processors.JSONRenderer(),
-        ]
+    processors.append(structlog.dev.ConsoleRenderer())
 
     structlog.configure(
+        logger_factory=structlog.PrintLoggerFactory(),
         processors=processors,
-        logger_factory=structlog.stdlib.LoggerFactory(),
-        cache_logger_on_first_use=True,
-        wrapper_class=structlog.make_filtering_bound_logger(
-            logging.DEBUG if debug else logging.INFO,
-        ),
+        wrapper_class=structlog.make_filtering_bound_logger(level),
     )
