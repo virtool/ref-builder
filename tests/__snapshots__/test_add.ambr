@@ -12,6 +12,7 @@
     }),
     'name': 'Cabbage leaf curl Jamaica virus',
     'plan': dict({
+      'plan_type': 'multipartite',
       'segments': list([
         dict({
           'length': 2575,
@@ -60,6 +61,7 @@
     'plan': dict({
       'length': 342,
       'name': None,
+      'plan_type': 'monopartite',
     }),
     'taxid': 1278205,
   })
@@ -77,6 +79,7 @@
     }),
     'name': 'Cabbage leaf curl Jamaica virus',
     'plan': dict({
+      'plan_type': 'multipartite',
       'segments': list([
         dict({
           'length': 2575,
@@ -97,34 +100,5 @@
       ]),
     }),
     'taxid': 345184,
-  })
-# ---
-# name: TestUpdateOTU.test_without_exclusions_ok
-  dict({
-    IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='1148-13'): set({
-      'MF062130',
-      'MF062131',
-      'MF062132',
-    }),
-    IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='4342-5'): set({
-      'MF062136',
-      'MF062137',
-      'MF062138',
-    }),
-    IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='982-11'): set({
-      'NC_055390',
-      'NC_055391',
-      'NC_055392',
-    }),
-    IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='BR-Mishima'): set({
-      'MK936225',
-      'MK936226',
-      'MK936227',
-    }),
-    IsolateName(type=<IsolateNameType.ISOLATE: 'isolate'>, value='Pe2'): set({
-      'OQ420743',
-      'OQ420744',
-      'OQ420745',
-    }),
   })
 # ---

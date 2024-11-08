@@ -1,0 +1,69 @@
+# serializer version: 1
+# name: TestUpdateOTU.test_ok
+  dict({
+    'Isolate 1148-13': set({
+      'MF062130',
+      'MF062131',
+      'MF062132',
+    }),
+    'Isolate 4342-5': set({
+      'MF062136',
+      'MF062137',
+      'MF062138',
+    }),
+    'Isolate 982-11': set({
+      'NC_055390',
+      'NC_055391',
+      'NC_055392',
+    }),
+    'Isolate A13': set({
+      'OR889795',
+      'OR889796',
+      'OR889797',
+    }),
+    'Isolate BR-Mishima': set({
+      'MK936225',
+      'MK936226',
+      'MK936227',
+    }),
+    'Isolate Pe2': set({
+      'OQ420743',
+      'OQ420744',
+      'OQ420745',
+    }),
+  })
+# ---
+# name: TestUpdateOTU.test_with_refseq_replacement_ok
+  dict({
+    'Isolate 1148-13': set({
+      'MF062130',
+      'MF062131',
+      'MF062132',
+    }),
+    'Isolate 4342-5': set({
+      'MF062136',
+      'MF062137',
+      'MF062138',
+    }),
+    'Isolate 982-11': set({
+      'NC_055390',
+      'NC_055391',
+      'NC_055392',
+    }),
+    'Isolate A13': set({
+      'OR889795',
+      'OR889796',
+      'OR889797',
+    }),
+    'Isolate BR-Mishima': set({
+      'MK936225',
+      'MK936226',
+      'MK936227',
+    }),
+    'Isolate Pe2': set({
+      'OQ420743',
+      'OQ420744',
+      'OQ420745',
+    }),
+  })
+# ---

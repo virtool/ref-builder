@@ -11,10 +11,13 @@ from ref_builder.otu.utils import (
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
-from ref_builder.plan import MonopartitePlan, MultipartitePlan
+from ref_builder.plan import (
+    MonopartitePlan,
+    MultipartitePlan,
+)
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
-from ref_builder.utils import IsolateName
+from ref_builder.utils import Accession, IsolateName
 
 logger = get_logger("otu.update")
 
@@ -206,15 +209,16 @@ def create_isolate_from_records(
         raise
 
     for record in records:
-        repo.create_sequence(
+        sequence = repo.create_sequence(
             otu.id,
-            isolate.id,
             accession=record.accession_version,
             definition=record.definition,
             legacy_id=None,
             segment=record.source.segment,
             sequence=record.sequence,
         )
+
+        repo.link_sequence(otu.id, isolate.id, sequence.id)
 
         if record.refseq:
             refseq_status, old_accession = parse_refseq_comment(record.comment)
@@ -311,20 +315,25 @@ def update_isolate_from_records(
         if accession in isolate.accessions:
             old_sequence = isolate.get_sequence_by_accession(accession)
 
-            new_sequence = repo.replace_sequence(
+            new_sequence = repo.create_sequence(
                 otu.id,
-                isolate.id,
                 accession=record.accession_version,
                 definition=record.definition,
                 legacy_id=None,
                 segment=record.source.segment,
                 sequence=record.sequence,
-                replaced_sequence_id=old_sequence.id,
-                rationale=DeleteRationale.REFSEQ,
             )
             if new_sequence is None:
                 isolate_logger.error("Isolate could not be refilled.")
                 return None
+
+            repo.replace_sequence(
+                otu.id,
+                isolate.id,
+                new_sequence.id,
+                replaced_sequence_id=old_sequence.id,
+                rationale=DeleteRationale.REFSEQ,
+            )
 
             logger.debug(
                 f"{old_sequence.accession} replaced by {new_sequence.accession}"
@@ -366,7 +375,18 @@ def auto_update_otu(
 
     accessions = ncbi.fetch_accessions_by_taxid(otu.taxid)
 
-    if fetch_list := list(set(accessions) - otu.blocked_accessions):
+    fetch_list = sorted(
+        {Accession.from_string(accession).key for accession in accessions}
+        - otu.blocked_accessions
+    )
+
+    if fetch_list:
+        logger.debug(
+            f"Fetching {len(fetch_list)} records",
+            blocked_accessions=sorted(otu.blocked_accessions),
+            fetch_list=fetch_list,
+        )
+
         update_otu_with_accessions(repo, otu, fetch_list)
     else:
         otu_logger.info("OTU is up to date.")
@@ -386,7 +406,7 @@ def update_otu_with_accessions(
     ncbi = NCBIClient(ignore_cache)
 
     otu_logger.info(
-        "Fetching accessions",
+        "Fetching records",
         count=len(accessions),
         fetch_list=sorted(accessions),
     )
@@ -516,14 +536,19 @@ def replace_sequence_in_otu(
     records = ncbi.fetch_genbank_records([new_accession])
     record = records[0]
 
-    new_sequence = repo.replace_sequence(
+    new_sequence = repo.create_sequence(
         otu.id,
-        isolate.id,
         accession=record.accession_version,
         definition=record.definition,
         legacy_id=None,
         segment=record.source.segment,
         sequence=record.sequence,
+    )
+
+    repo.replace_sequence(
+        otu.id,
+        isolate_id=isolate.id,
+        sequence_id=new_sequence.id,
         replaced_sequence_id=sequence_id,
         rationale="Requested by user",
     )
@@ -546,12 +571,29 @@ def promote_otu_accessions(
     """
     ncbi = NCBIClient(ignore_cache)
 
+    otu_logger = logger.bind(otu_id=otu.id, taxid=otu.taxid)
+
+    otu_logger.debug(
+        "Checking for promotable records", accessions=sorted(otu.accessions)
+    )
+
     accessions = ncbi.fetch_accessions_by_taxid(otu.taxid)
-    fetch_list = set(accessions) - otu.blocked_accessions
+    fetch_list = sorted(
+        set(Accession.from_string(accession).key for accession in accessions)
+        - otu.blocked_accessions
+    )
 
-    records = ncbi.fetch_genbank_records(list(fetch_list))
+    if fetch_list:
+        records = ncbi.fetch_genbank_records(fetch_list)
 
-    return promote_otu_accessions_from_records(repo, otu, records)
+        otu_logger.debug(
+            f"New accessions found. Checking for promotable records.",
+            fetch_list=fetch_list,
+        )
+
+        return promote_otu_accessions_from_records(repo, otu, records)
+
+    otu_logger.info("Records are already up to date.")
 
 
 def promote_otu_accessions_from_records(
@@ -560,6 +602,8 @@ def promote_otu_accessions_from_records(
     """Take a list of records and check them against the contents of an OTU
     for promotable RefSeq sequences. Return a list of promoted accessions.
     """
+    otu_logger = logger.bind(otu_id=str(otu.id), taxid=otu.taxid)
+
     refseq_records = [record for record in records if record.refseq]
 
     promoted_accessions = set()
@@ -570,7 +614,7 @@ def promote_otu_accessions_from_records(
         status, predecessor_accession = parse_refseq_comment(record.comment)
 
         if predecessor_accession in otu.accessions:
-            logger.debug(
+            otu_logger.debug(
                 "Replaceable accession found",
                 predecessor_accession=predecessor_accession,
                 promoted_accession=record.accession,
@@ -589,18 +633,27 @@ def promote_otu_accessions_from_records(
         ]
         isolate = otu.get_isolate(isolate_id)
 
-        logger.debug(
+        otu_logger.debug(
             f"Promoting {isolate.name}", predecessor_accessions=isolate.accessions
         )
 
         promoted_isolate = update_isolate_from_records(repo, otu, isolate_id, records)
 
-        logger.debug(
+        otu_logger.debug(
             f"{isolate.name} sequences promoted using RefSeq data",
             accessions=promoted_isolate.accessions,
         )
 
         promoted_accessions.update(promoted_isolate.accessions)
+
+    if promoted_accessions:
+        otu_logger.debug(
+            "Promoted records",
+            count=len(promoted_accessions),
+            promoted_accessions=sorted(promoted_accessions),
+        )
+    else:
+        otu_logger.debug("All accessions are up to date")
 
     return promoted_accessions
 

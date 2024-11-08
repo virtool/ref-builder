@@ -1,10 +1,11 @@
 import re
 from enum import StrEnum
+from typing import Annotated, Literal, Union
+from uuid import uuid4
 
-from pydantic import UUID4, BaseModel, ConfigDict, computed_field
+from pydantic import UUID4, BaseModel, ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
-from ref_builder.models import Molecule
 from ref_builder.ncbi.models import NCBIGenbank, NCBISourceMolType
 
 SIMPLE_NAME_PATTERN = re.compile(r"([A-Za-z0-9])+")
@@ -52,12 +53,12 @@ class SegmentMetadata(BaseModel):
     """The expected length of the sequence"""
 
 
-class SegmentPlan(SegmentMetadata):
+class Segment(SegmentMetadata):
     """A segment in a multipartite plan."""
 
     model_config = ConfigDict(use_enum_values=True)
 
-    name: SegmentName
+    name: SegmentName | None
     """The name of the segment"""
 
     required: SegmentRule
@@ -66,6 +67,9 @@ class SegmentPlan(SegmentMetadata):
 
 class MonopartitePlan(BaseModel):
     """Expected properties for an acceptable monopartite isolate."""
+
+    plan_type: Literal["monopartite"]
+    """The plan type identifier."""
 
     id: UUID4
     """The unique ID of the monopartite plan."""
@@ -77,26 +81,63 @@ class MonopartitePlan(BaseModel):
     """The name of the monopartite plan"""
 
     @property
-    def segments(self) -> list["MonopartitePlan"]:
-        return [self]
+    def segments(self) -> list[Segment]:
+        """Return a simulated single-segment list of segments."""
+        return [
+            Segment(
+                id=self.id,
+                length=self.length,
+                name=self.name,
+                required=SegmentRule.REQUIRED,
+            )
+        ]
 
     @property
-    def required_segments(self) -> list["MonopartitePlan"]:
-        return [self]
+    def required_segments(self) -> list[Segment]:
+        """Return a simulated single-segment list of segments."""
+        return self.segments
+
+    @classmethod
+    def new(cls, length: int, name: SegmentName | None = None) -> "MonopartitePlan":
+        """Initialize a MonopartitePlan from a list of segments."""
+        return MonopartitePlan(
+            id=uuid4(),
+            plan_type="monopartite",
+            length=length,
+            name=name,
+        )
 
 
 class MultipartitePlan(BaseModel):
     """Expected segments for an acceptable multipartite isolate."""
 
+    plan_type: Literal["multipartite"]
+    """The plan type identifier."""
+
     id: UUID4
     """The unique id number of the multipartite plan"""
 
-    segments: list[SegmentPlan]
+    segments: list[Segment]
 
     @property
-    def required_segments(self) -> list[SegmentPlan]:
+    def required_segments(self) -> list[Segment]:
         """Return a list of segments that are required by all additions."""
         return [segment for segment in self.segments if segment.required]
+
+    @classmethod
+    def new(cls, segments: list["Segment"]) -> "MultipartitePlan":
+        """Initialize a MultipartitePlan from a list of segments."""
+        return MultipartitePlan(
+            id=uuid4(),
+            plan_type="multipartite",
+            segments=segments,
+        )
+
+
+Plan = Annotated[
+    Union[MultipartitePlan, MonopartitePlan], Field(discriminator="plan_type")
+]
+"""A discriminated union representing both plan types, monopartite and multipartite."""
 
 
 def determine_segment_prefix(moltype: NCBISourceMolType) -> str:

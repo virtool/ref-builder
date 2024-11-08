@@ -2,6 +2,8 @@ import datetime
 
 from pydantic import BaseModel, computed_field, UUID4
 
+from ref_builder.resources import RepoOTU
+
 
 class EventQuery(BaseModel):
     """A base class for a query that targets an event at a specific resource."""
@@ -36,6 +38,11 @@ class Event(BaseModel):
         return self.__class__.__name__
 
 
+class ApplicableEvent(Event):
+    def apply(self, otu: RepoOTU) -> RepoOTU:
+        return otu
+
+
 class RepoQuery(EventQuery):
     """An event query that targets an event at the repository."""
 
@@ -54,7 +61,15 @@ class IsolateQuery(OTUQuery):
     isolate_id: UUID4
 
 
-class SequenceQuery(IsolateQuery):
+class SequenceQuery(OTUQuery):
+    """An event query that targets an event at a sequence in a specific isolate and
+    OTU.
+    """
+
+    sequence_id: UUID4
+
+
+class LinkSequenceQuery(IsolateQuery):
     """An event query that targets an event at a sequence in a specific isolate and
     OTU.
     """
