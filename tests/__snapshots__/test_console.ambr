@@ -1,0 +1,101 @@
+# serializer version: 1
+# name: TestPrintOTUList.test_ok
+  '''
+   NAME                           ACRONYM  TAXID    ID                            
+   Cabbage leaf curl Jamaica               345184   48b41b4f-b428-4902-a617-3032… 
+   virus                                                                          
+   East African cassava mosaic             223262   7d5178d5-cef2-4911-80c7-2037… 
+   Cameroon virus                                                                 
+   Faba bean necrotic stunt                1441799  5f7a77bd-a150-4598-bc20-b91b… 
+   alphasatellite 1                                                               
+   Nanovirus-like particle                 96892    85f2f7a0-c268-430e-b439-6901… 
+   Vallota mosaic virus                    430059   a4a8d1f6-b97d-44ec-9bf5-0fd0… 
+   Wasabi mottle virus                     1169032  c50add81-f730-49e6-86ca-6708… 
+   Zantedeschia mild mosaic                270478   4c349f94-c6e7-4937-b4c9-0ff1… 
+   virus                                                                          
+   abaca bunchy top virus                  3158377  8b91f53b-2dc4-43b0-83cb-b620… 
+  
+  '''
+# ---
+# name: test_print_otu[3158377]
+  '''
+  abaca bunchy top virus
+  
+   ACRONYM                                       
+   ID       8b91f53b-2dc4-43b0-83cb-b62050c3e171 
+   TAXID    3158377                              
+  
+  SCHEMA
+  
+   SEGMENT  REQUIRED  LENGTH 
+   DNA N    Yes       1090   
+   DNA U3   Yes       1057   
+   DNA S    Yes       1087   
+   DNA M    Yes       1074   
+   DNA C    Yes       1015   
+   DNA R    Yes       1099   
+  
+  ISOLATES
+  
+  Isolate Q1108
+  
+   ACCESSION    SEGMENT  DEFINITION                                               
+   EF546802.1   DNA-N    Abaca bunchy top virus isolate Q1108 segment DNA-N,      
+                         complete sequence                                        
+   EF546803.1   DNA-U3   Abaca bunchy top virus isolate Q1108 segment DNA-U3,     
+                         complete sequence                                        
+   EF546804.1   DNA-S    Abaca bunchy top virus isolate Q1108 segment DNA-S,      
+                         complete sequence                                        
+   EF546805.1   DNA-M    Abaca bunchy top virus isolate Q1108 segment DNA-M,      
+                         complete sequence                                        
+   EF546806.1   DNA-C    Abaca bunchy top virus isolate Q1108 segment DNA-C,      
+                         complete sequence                                        
+   EF546807.1   DNA-R    Abaca bunchy top virus isolate Q1108 segment DNA-R,      
+                         complete sequence                                        
+  
+  Isolate Q767
+  
+   ACCESSION    SEGMENT  DEFINITION                                          
+   NC_010314.1  DNA N    Abaca bunchy top virus DNA-N, complete genome       
+   NC_010315.1  DNA U3   Abaca bunchy top virus segment 2, complete sequence 
+   NC_010316.1  DNA S    Abaca bunchy top virus DNA-S, complete genome       
+   NC_010317.1  DNA M    Abaca bunchy top virus DNA-M, complete genome       
+   NC_010318.1  DNA C    Abaca bunchy top virus DNA-C, complete sequence     
+   NC_010319.1  DNA R    Abaca bunchy top virus DNA-R, complete genome       
+  
+  '''
+# ---
+# name: test_print_otu[345184]
+  '''
+  Cabbage leaf curl Jamaica virus
+  
+   ACRONYM                                       
+   ID       48b41b4f-b428-4902-a617-303208d67520 
+   TAXID    345184                               
+  
+  SCHEMA
+  
+   SEGMENT  REQUIRED  LENGTH 
+   DNA A    Yes       2575   
+   DNA B    Yes       2494   
+  
+  ISOLATES
+  
+  Isolate CUc-3
+  
+   ACCESSION   SEGMENT  DEFINITION                                                
+   DQ178610.1  DNA-A    Cabbage leaf curl Jamaica virus clone 1910 Cu3-A8 segment 
+                        DNA-A, complete sequence                                  
+   DQ178611.1  DNA-B    Cabbage leaf curl Jamaica virus clone 1966 Cu3-B8 segment 
+                        DNA-B, complete sequence                                  
+  
+  Isolate Douglas Castle
+  
+   ACCESSION   SEGMENT  DEFINITION                                                
+   DQ178613.1  DNA-B    Cabbage leal curl virus isolate Jamaica clone pCRFB2      
+                        segment DNA-B, complete sequence                          
+   DQ178614.1  DNA-A    Cabbage leaf curl Jamaica virus clone pCRFA4 segment      
+                        DNA-A, complete sequence                                  
+  
+  '''
+# ---

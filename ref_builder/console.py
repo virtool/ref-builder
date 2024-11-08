@@ -4,8 +4,8 @@ import rich.console
 from rich.table import Table
 
 from ref_builder.models import OTUMinimal
-from ref_builder.resources import RepoOTU
 from ref_builder.plan import MultipartitePlan, SegmentRule
+from ref_builder.resources import RepoOTU
 
 
 def _render_taxonomy_id_link(taxid: int) -> str:
@@ -121,6 +121,8 @@ def print_otu_list(otus: Iterator[OTUMinimal]) -> None:
     table.add_column("TAXID")
     table.add_column("ID")
 
+    count = 0
+
     for otu in otus:
         table.add_row(
             otu.name,
@@ -129,7 +131,12 @@ def print_otu_list(otus: Iterator[OTUMinimal]) -> None:
             str(otu.id),
         )
 
-    console.print(table)
+        count += 1
+
+    if count == 0:
+        console.print("No OTUs found")
+    else:
+        console.print(table)
 
 
 console = rich.console.Console()
