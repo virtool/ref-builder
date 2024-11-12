@@ -5,6 +5,7 @@
     'segments': list([
       dict({
         'length': 7219,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'L',
           'prefix': 'RNA',
@@ -13,6 +14,7 @@
       }),
       dict({
         'length': 1613,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'M',
           'prefix': 'RNA',
@@ -21,6 +23,7 @@
       }),
       dict({
         'length': 1291,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'S',
           'prefix': 'RNA',
@@ -36,6 +39,7 @@
     'segments': list([
       dict({
         'length': 7219,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'L',
           'prefix': 'RNA',
@@ -44,6 +48,7 @@
       }),
       dict({
         'length': 1613,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'M',
           'prefix': 'RNA',
@@ -52,6 +57,7 @@
       }),
       dict({
         'length': 1291,
+        'length_tolerance': 0.03,
         'name': dict({
           'key': 'S',
           'prefix': 'RNA',

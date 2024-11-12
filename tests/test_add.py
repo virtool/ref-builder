@@ -12,8 +12,6 @@ from ref_builder.otu.update import (
     add_and_name_isolate,
     add_genbank_isolate,
     add_unnamed_isolate,
-    delete_isolate_from_otu,
-    replace_sequence_in_otu,
     update_isolate_from_accessions,
 )
 from ref_builder.otu.utils import RefSeqConflictError
