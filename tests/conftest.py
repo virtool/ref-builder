@@ -5,7 +5,6 @@ from typing import Any
 
 import orjson
 import pytest
-from faker.proxy import Faker
 from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel, TypeAdapter
 from pytest_mock import MockerFixture
@@ -21,8 +20,6 @@ from ref_builder.resources import RepoOTU
 from ref_builder.utils import Accession, DataType
 
 configure_logger(True)
-
-Faker.seed(9950)
 
 
 @pytest.fixture()

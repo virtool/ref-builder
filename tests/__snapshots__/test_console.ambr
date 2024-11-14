@@ -1,94 +1,79 @@
 # serializer version: 1
 # name: TestPrintOTUList.test_ok
   '''
-   NAME                     ACRONYM  TAXID   ID                                   
-   Pepper bunchy top virus  PBTV     166026  aed78618-2ffc-40d7-979d-bf2296d45e99 
-   Tomato bushy top virus   TBTV     306715  edd230b5-5d51-4eee-8e30-3927a05a34ef 
-   Prunus leaf curl virus   PLCV     195024  a8c30914-9262-4ce1-b0eb-fce8ab537609 
-   Garlic leaf curl virus   GLCV     837360  36e73d0f-a7dc-46a7-adbf-3dc141f2b9fb 
-   Maize leafroll virus     MLV      37076   e04858a7-3494-496d-a401-d6908c301f65 
+   NAME                           ACRONYM  TAXID   ID                             
+   Sweet potato chlorotic virus   SPCV     109263  c963cfe0-afae-4a3b-b909-6a04e… 
+   Sweet potato bunchy top virus  SPBTV    425603  f335c357-7972-436d-91b3-1a6c2… 
+   Pepper flower break virus      PFBV     950682  3e1dcfb5-92bd-431c-b4d2-ea161… 
+   Grapevine leaf crumple virus   GLCV     951539  3be4c78b-b4ae-4dd3-847e-60460… 
+   Sweet potato leaf crumple      SPLCV    123000  4617edaa-a37f-4ba2-ac24-63432… 
+   virus                                                                          
   
   '''
 # ---
 # name: test_print_otu[3158377]
   '''
-  abaca bunchy top virus
+  Babuvirus abacae
   
-   ACRONYM                                       
-   ID       8b91f53b-2dc4-43b0-83cb-b62050c3e171 
-   TAXID    3158377                              
+   ACRONYM  BabAV                                
+   ID       e7019832-f5b4-4b78-b528-9929bf0ec839 
+   TAXID    438782                               
   
   SCHEMA
   
    SEGMENT  REQUIRED  LENGTH 
-   DNA N    Yes       1090   
-   DNA U3   Yes       1057   
-   DNA S    Yes       1087   
-   DNA M    Yes       1074   
-   DNA C    Yes       1015   
    DNA R    Yes       1099   
+   DNA M    Yes       1074   
+   DNA S    Yes       1087   
   
   ISOLATES
   
-  Isolate Q1108
+  Isolate organization
   
-   ACCESSION    SEGMENT  DEFINITION                                               
-   EF546802.1   DNA-N    Abaca bunchy top virus isolate Q1108 segment DNA-N,      
-                         complete sequence                                        
-   EF546803.1   DNA-U3   Abaca bunchy top virus isolate Q1108 segment DNA-U3,     
-                         complete sequence                                        
-   EF546804.1   DNA-S    Abaca bunchy top virus isolate Q1108 segment DNA-S,      
-                         complete sequence                                        
-   EF546805.1   DNA-M    Abaca bunchy top virus isolate Q1108 segment DNA-M,      
-                         complete sequence                                        
-   EF546806.1   DNA-C    Abaca bunchy top virus isolate Q1108 segment DNA-C,      
-                         complete sequence                                        
-   EF546807.1   DNA-R    Abaca bunchy top virus isolate Q1108 segment DNA-R,      
-                         complete sequence                                        
+   ACCESSION    SEGMENT  DEFINITION                              
+   I48166.1     DNA R    Stand audience who artist travel sell.  
+   J64270.1     DNA S    Campaign college director less.         
+   NC_167153.1  DNA M    Support wind good training main forget. 
   
-  Isolate Q767
+  Isolate present
   
-   ACCESSION    SEGMENT  DEFINITION                                          
-   NC_010314.1  DNA N    Abaca bunchy top virus DNA-N, complete genome       
-   NC_010315.1  DNA U3   Abaca bunchy top virus segment 2, complete sequence 
-   NC_010316.1  DNA S    Abaca bunchy top virus DNA-S, complete genome       
-   NC_010317.1  DNA M    Abaca bunchy top virus DNA-M, complete genome       
-   NC_010318.1  DNA C    Abaca bunchy top virus DNA-C, complete sequence     
-   NC_010319.1  DNA R    Abaca bunchy top virus DNA-R, complete genome       
+   ACCESSION    SEGMENT  DEFINITION                                      
+   NC_132006.1  DNA M    Pull foot culture.                              
+   NC_134696.1  DNA R    Poor beyond interest finally require wish most. 
+   NC_795643.1  DNA S    Character game tell result marriage very.       
   
   '''
 # ---
 # name: test_print_otu[345184]
   '''
-  Cabbage leaf curl Jamaica virus
+  Babuvirus abacae
   
-   ACRONYM                                       
-   ID       48b41b4f-b428-4902-a617-303208d67520 
-   TAXID    345184                               
+   ACRONYM  BabAV                                
+   ID       e7019832-f5b4-4b78-b528-9929bf0ec839 
+   TAXID    438782                               
   
   SCHEMA
   
    SEGMENT  REQUIRED  LENGTH 
-   DNA A    Yes       2575   
-   DNA B    Yes       2494   
+   DNA R    Yes       1099   
+   DNA M    Yes       1074   
+   DNA S    Yes       1087   
   
   ISOLATES
   
-  Isolate CUc-3
+  Isolate organization
   
-   ACCESSION   SEGMENT  DEFINITION                                                
-   DQ178610.1  DNA-A    Cabbage leaf curl Jamaica virus clone 1910 Cu3-A8 segment 
-                        DNA-A, complete sequence                                  
-   DQ178611.1  DNA-B    Cabbage leaf curl Jamaica virus clone 1966 Cu3-B8 segment 
-                        DNA-B, complete sequence                                  
+   ACCESSION    SEGMENT  DEFINITION                              
+   I48166.1     DNA R    Stand audience who artist travel sell.  
+   J64270.1     DNA S    Campaign college director less.         
+   NC_167153.1  DNA M    Support wind good training main forget. 
   
-  Isolate Douglas Castle
+  Isolate present
   
-   ACCESSION   SEGMENT  DEFINITION                                                
-   DQ178613.1  DNA-B    Cabbage leal curl virus isolate Jamaica clone pCRFB2      
-                        segment DNA-B, complete sequence                          
-   DQ178614.1  DNA-A    Cabbage leaf curl Jamaica virus clone pCRFA4 segment      
-                        DNA-A, complete sequence                                  
+   ACCESSION    SEGMENT  DEFINITION                                      
+   NC_132006.1  DNA M    Pull foot culture.                              
+   NC_134696.1  DNA R    Poor beyond interest finally require wish most. 
+   NC_795643.1  DNA S    Character game tell result marriage very.       
   
   '''
 # ---

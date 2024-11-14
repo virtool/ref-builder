@@ -4,6 +4,7 @@ from faker import Faker
 from polyfactory import PostGenerated
 from polyfactory.decorators import post_generated
 from polyfactory.factories.pydantic_factory import ModelFactory
+from polyfactory.pytest_plugin import register_fixture
 
 from ref_builder.models import MolType, OTUMinimal
 from ref_builder.ncbi.models import NCBIGenbank, NCBISource, NCBISourceMolType
@@ -27,6 +28,7 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
     """NCBISource Factory with quasi-realistic data."""
 
     __faker__ = Faker()
+    __random_seed__ = 10
     __faker__.add_provider(OrganismProvider)
     __faker__.add_provider(SegmentProvider)
 
@@ -197,12 +199,15 @@ def derive_acronym(_: str, values: dict[str, str]) -> str:
     return "".join([part[0].upper() for part in name.split(" ")])
 
 
+@register_fixture
 class OTUMinimalFactory(ModelFactory[OTUMinimal]):
     """OTUMinimal Factory with quasi-realistic data."""
 
     __faker__ = Faker()
     __faker__.add_provider(BusinessProvider)
     __faker__.add_provider(OrganismProvider)
+
+    __random_seed__ = 20
 
     acronym = PostGenerated(derive_acronym)
 
