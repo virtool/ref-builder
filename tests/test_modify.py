@@ -1,5 +1,5 @@
 import subprocess
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 from syrupy import SnapshotAssertion
@@ -12,6 +12,7 @@ from ref_builder.otu.modify import (
     add_segments_to_plan,
     resize_monopartite_plan,
     set_isolate_plan,
+    set_plan_length_tolerances,
 )
 from ref_builder.otu.update import (
     add_genbank_isolate,
@@ -59,25 +60,21 @@ class TestSetIsolatePlan:
 
         assert type(original_plan) is MultipartitePlan
 
-        new_isolate_plan = MultipartitePlan(
-            plan_type="multipartite",
-            id=uuid4(),
-            segments=original_plan.segments,
-        )
+        new_isolate_plan = MultipartitePlan.new(segments=original_plan.segments)
 
         new_isolate_plan.segments.append(
-            Segment(
-                id=uuid4(),
+            Segment.new(
                 length=2000,
+                length_tolerance=scratch_repo.settings.default_segment_length_tolerance,
                 name=SegmentName(prefix="DNA", key="C"),
                 required=SegmentRule.RECOMMENDED,
             ),
         )
 
         new_isolate_plan.segments.append(
-            Segment(
-                id=uuid4(),
+            Segment.new(
                 length=1000,
+                length_tolerance=scratch_repo.settings.default_segment_length_tolerance,
                 name=SegmentName(prefix="DNA", key="Z"),
                 required=SegmentRule.OPTIONAL,
             ),
@@ -172,6 +169,38 @@ class TestSetIsolatePlan:
                 rule=SegmentRule.OPTIONAL,
                 accessions=["NC_010620"],
             )
+
+    @pytest.mark.parametrize("tolerance", [0.05, 0.5, 1.0])
+    def test_set_length_tolerances_ok(self, scratch_repo: Repo, tolerance: float):
+        """Check that plan length tolerances can be modified by function."""
+        otu_before = scratch_repo.get_otu_by_taxid(96892)
+
+        assert (
+            otu_before.plan.length_tolerance
+            == scratch_repo.settings.default_segment_length_tolerance
+        )
+
+        set_plan_length_tolerances(scratch_repo, otu_before, tolerance)
+
+        otu_after = scratch_repo.get_otu(otu_before.id)
+
+        assert otu_after.plan.length_tolerance == tolerance
+
+    @pytest.mark.parametrize("bad_tolerance", [-1.0, 1.1, 100.0])
+    def test_set_length_tolerances_fail(self, scratch_repo: Repo, bad_tolerance: float):
+        """Check that plan length tolerances cannot be set to an invalid float value."""
+        otu_before = scratch_repo.get_otu_by_taxid(96892)
+
+        assert (
+            otu_before.plan.length_tolerance
+            == scratch_repo.settings.default_segment_length_tolerance
+        )
+
+        set_plan_length_tolerances(scratch_repo, otu_before, bad_tolerance)
+
+        otu_after = scratch_repo.get_otu(otu_before.id)
+
+        assert otu_after.plan.length_tolerance == otu_before.plan.length_tolerance
 
 
 class TestUpdateRepresentativeIsolateCommand:

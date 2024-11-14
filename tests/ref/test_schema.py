@@ -30,7 +30,7 @@ class TestPlan:
     ):
         """Test the creation of a monopartite plan from a given record."""
         records = scratch_ncbi_client.fetch_genbank_records(["NC_024301"])
-        auto_plan = create_isolate_plan_from_records(records)
+        auto_plan = create_isolate_plan_from_records(records, length_tolerance=0.03)
 
         assert type(auto_plan) is MonopartitePlan
 
@@ -54,7 +54,7 @@ class TestPlan:
                 "NC_010319",
             ]
         )
-        auto_plan = create_isolate_plan_from_records(records)
+        auto_plan = create_isolate_plan_from_records(records, length_tolerance=0.03)
 
         assert type(auto_plan) is MultipartitePlan
 
@@ -86,7 +86,7 @@ class TestPlan:
     ):
         records = scratch_ncbi_client.fetch_genbank_records(accessions)
 
-        auto_plan = create_isolate_plan_from_records(records)
+        auto_plan = create_isolate_plan_from_records(records, length_tolerance=0.03)
 
         assert auto_plan.model_dump() == snapshot(exclude=props("id"))
 

@@ -58,11 +58,47 @@ class Segment(SegmentMetadata):
 
     model_config = ConfigDict(use_enum_values=True)
 
+    length_tolerance: float = Field(ge=0.0, le=1.0)
+    """The acceptable deviation from the recommended sequence length."""
+
     name: SegmentName | None
     """The name of the segment"""
 
     required: SegmentRule
     """Whether this segment must be present in all additions."""
+
+    @classmethod
+    def new(
+        cls,
+        length: int,
+        length_tolerance: float,
+        name: SegmentName | None,
+        required: SegmentRule,
+    ) -> "Segment":
+        """Return a new segment."""
+        return Segment(
+            id=uuid4(),
+            length=length,
+            length_tolerance=length_tolerance,
+            name=name,
+            required=required,
+        )
+
+    @classmethod
+    def from_record(
+        cls,
+        record: NCBIGenbank,
+        length_tolerance: float,
+        required: SegmentRule,
+    ) -> "Segment":
+        """Return a new segment from an NCBI Genbank record."""
+        return Segment(
+            id=uuid4(),
+            length=len(record.sequence),
+            length_tolerance=length_tolerance,
+            name=get_multipartite_segment_name(record),
+            required=required,
+        )
 
 
 class MonopartitePlan(BaseModel):
@@ -77,6 +113,9 @@ class MonopartitePlan(BaseModel):
     length: int
     """The expected length of the sequence"""
 
+    length_tolerance: float = Field(ge=0.0, le=1.0)
+    """The acceptable deviation from the recommended sequence length."""
+
     name: SegmentName | None = None
     """The name of the monopartite plan"""
 
@@ -87,6 +126,7 @@ class MonopartitePlan(BaseModel):
             Segment(
                 id=self.id,
                 length=self.length,
+                length_tolerance=self.length_tolerance,
                 name=self.name,
                 required=SegmentRule.REQUIRED,
             )
@@ -98,11 +138,17 @@ class MonopartitePlan(BaseModel):
         return self.segments
 
     @classmethod
-    def new(cls, length: int, name: SegmentName | None = None) -> "MonopartitePlan":
+    def new(
+        cls,
+        length: int,
+        length_tolerance: float,
+        name: SegmentName | None = None,
+    ) -> "MonopartitePlan":
         """Initialize a MonopartitePlan from a list of segments."""
         return MonopartitePlan(
             id=uuid4(),
             plan_type="monopartite",
+            length_tolerance=length_tolerance,
             length=length,
             name=name,
         )

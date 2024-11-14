@@ -16,6 +16,7 @@
       'segments': list([
         dict({
           'length': 2575,
+          'length_tolerance': 0.03,
           'name': dict({
             'key': 'A',
             'prefix': 'DNA',
@@ -24,6 +25,7 @@
         }),
         dict({
           'length': 2494,
+          'length_tolerance': 0.03,
           'name': dict({
             'key': 'B',
             'prefix': 'DNA',
@@ -60,6 +62,7 @@
     'name': 'Dahlia latent viroid',
     'plan': dict({
       'length': 342,
+      'length_tolerance': 0.03,
       'name': None,
       'plan_type': 'monopartite',
     }),
@@ -83,6 +86,7 @@
       'segments': list([
         dict({
           'length': 2575,
+          'length_tolerance': 0.03,
           'name': dict({
             'key': 'A',
             'prefix': 'DNA',
@@ -91,6 +95,7 @@
         }),
         dict({
           'length': 2494,
+          'length_tolerance': 0.03,
           'name': dict({
             'key': 'B',
             'prefix': 'DNA',
