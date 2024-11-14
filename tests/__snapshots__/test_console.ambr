@@ -11,7 +11,7 @@
   
   '''
 # ---
-# name: test_print_otu[3158377]
+# name: test_print_otu
   '''
   Babuvirus abacae
   
@@ -21,43 +21,10 @@
   
   SCHEMA
   
-   SEGMENT  REQUIRED  LENGTH 
-   DNA R    Yes       1099   
-   DNA M    Yes       1074   
-   DNA S    Yes       1087   
-  
-  ISOLATES
-  
-  Isolate organization
-  
-   ACCESSION    SEGMENT  DEFINITION                              
-   I48166.1     DNA R    Stand audience who artist travel sell.  
-   J64270.1     DNA S    Campaign college director less.         
-   NC_167153.1  DNA M    Support wind good training main forget. 
-  
-  Isolate present
-  
-   ACCESSION    SEGMENT  DEFINITION                                      
-   NC_132006.1  DNA M    Pull foot culture.                              
-   NC_134696.1  DNA R    Poor beyond interest finally require wish most. 
-   NC_795643.1  DNA S    Character game tell result marriage very.       
-  
-  '''
-# ---
-# name: test_print_otu[345184]
-  '''
-  Babuvirus abacae
-  
-   ACRONYM  BabAV                                
-   ID       e7019832-f5b4-4b78-b528-9929bf0ec839 
-   TAXID    438782                               
-  
-  SCHEMA
-  
-   SEGMENT  REQUIRED  LENGTH 
-   DNA R    Yes       1099   
-   DNA M    Yes       1074   
-   DNA S    Yes       1087   
+   SEGMENT  REQUIRED  LENGTH  TOLERANCE 
+   DNA R    Yes       1099    0.03      
+   DNA M    Yes       1074    0.03      
+   DNA S    Yes       1087    0.03      
   
   ISOLATES
   

@@ -1,11 +1,9 @@
-import pytest
 from faker import Faker
 from syrupy import SnapshotAssertion
 
 from ref_builder.console import console, print_otu, print_otu_list
 from ref_builder.models import Molecule, MolType, OTUMinimal, Strandedness, Topology
 from ref_builder.plan import MultipartitePlan, Segment, SegmentName, SegmentRule
-from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 from tests.fixtures.factories import OTUMinimalFactory
@@ -32,8 +30,7 @@ class TestPrintOTUList:
         assert capture.get() == "No OTUs found\n"
 
 
-@pytest.mark.parametrize("taxid", [345184, 3158377])
-def test_print_otu(scratch_repo: Repo, snapshot: SnapshotAssertion, taxid: int):
+def test_print_otu(snapshot: SnapshotAssertion):
     """Test that an OTU is printed as expected by ``print_otu``."""
     fake = Faker(["en_US"])
     fake.add_provider(AccessionProvider)
@@ -54,18 +51,21 @@ def test_print_otu(scratch_repo: Repo, snapshot: SnapshotAssertion, taxid: int):
                 Segment(
                     id=fake.uuid4(),
                     length=1099,
+                    length_tolerance=0.03,
                     name=SegmentName("DNA", "R"),
                     required=SegmentRule.REQUIRED,
                 ),
                 Segment(
                     id=fake.uuid4(),
                     length=1074,
+                    length_tolerance=0.03,
                     name=SegmentName("DNA", "M"),
                     required=SegmentRule.REQUIRED,
                 ),
                 Segment(
                     id=fake.uuid4(),
                     length=1087,
+                    length_tolerance=0.03,
                     name=SegmentName("DNA", "S"),
                     required=SegmentRule.REQUIRED,
                 ),

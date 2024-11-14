@@ -59,6 +59,7 @@ def print_otu(otu: RepoOTU) -> None:
     schema_table.add_column("SEGMENT")
     schema_table.add_column("REQUIRED")
     schema_table.add_column("LENGTH")
+    schema_table.add_column("TOLERANCE")
 
     if type(otu.plan) is MultipartitePlan:
         for segment in otu.plan.segments:
@@ -68,12 +69,14 @@ def print_otu(otu: RepoOTU) -> None:
                 if segment.required == SegmentRule.REQUIRED
                 else "[grey]No[/grey]",
                 str(segment.length),
+                str(segment.length_tolerance),
             )
     else:
         schema_table.add_row(
             otu.plan.name if otu.plan.name is not None else "N/A",
             "[red]Yes[/red]",
             str(otu.plan.length),
+            str(otu.plan.length_tolerance),
         )
 
     console.print(schema_table)
