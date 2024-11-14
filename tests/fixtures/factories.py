@@ -1,13 +1,16 @@
 """Factories for generating quasi-realistic NCBISource and NCBIGenbank data."""
 
 from faker import Faker
+from polyfactory import PostGenerated
 from polyfactory.decorators import post_generated
 from polyfactory.factories.pydantic_factory import ModelFactory
+from polyfactory.pytest_plugin import register_fixture
 
-from ref_builder.models import MolType
+from ref_builder.models import MolType, OTUMinimal
 from ref_builder.ncbi.models import NCBIGenbank, NCBISource, NCBISourceMolType
 from tests.fixtures.providers import (
     AccessionProvider,
+    BusinessProvider,
     OrganismProvider,
     SegmentProvider,
     SequenceProvider,
@@ -25,6 +28,7 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
     """NCBISource Factory with quasi-realistic data."""
 
     __faker__ = Faker()
+    __random_seed__ = 10
     __faker__.add_provider(OrganismProvider)
     __faker__.add_provider(SegmentProvider)
 
@@ -187,3 +191,36 @@ class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
             raise ValueError(
                 f"Source moltype {source.mol_type} cannot be matched to MolType",
             ) from err
+
+
+def derive_acronym(_: str, values: dict[str, str]) -> str:
+    """Derive an acronym from an OTU name."""
+    name = values["name"]
+    return "".join([part[0].upper() for part in name.split(" ")])
+
+
+@register_fixture
+class OTUMinimalFactory(ModelFactory[OTUMinimal]):
+    """OTUMinimal Factory with quasi-realistic data."""
+
+    __faker__ = Faker()
+    __faker__.add_provider(BusinessProvider)
+    __faker__.add_provider(OrganismProvider)
+
+    __random_seed__ = 20
+
+    acronym = PostGenerated(derive_acronym)
+
+    @classmethod
+    def legacy_id(cls) -> str:
+        return cls.__faker__.legacy_id()
+
+    @classmethod
+    def name(cls) -> str:
+        """OTU name faker."""
+        return cls.__faker__.organism()
+
+    @classmethod
+    def taxid(cls) -> int:
+        """Taxon ID faker."""
+        return cls.__faker__.random_int(1000, 999999)

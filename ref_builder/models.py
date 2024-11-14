@@ -1,12 +1,10 @@
-from dataclasses import dataclass
 from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
 
-@dataclass
-class OTUMinimal:
+class OTUMinimal(BaseModel):
     """A minimal representation of an OTU."""
 
     id: UUID

@@ -4,8 +4,8 @@ import rich.console
 from rich.table import Table
 
 from ref_builder.models import OTUMinimal
-from ref_builder.resources import RepoOTU
 from ref_builder.plan import MultipartitePlan, SegmentRule
+from ref_builder.resources import RepoOTU
 
 
 def _render_taxonomy_id_link(taxid: int) -> str:
@@ -59,6 +59,7 @@ def print_otu(otu: RepoOTU) -> None:
     schema_table.add_column("SEGMENT")
     schema_table.add_column("REQUIRED")
     schema_table.add_column("LENGTH")
+    schema_table.add_column("TOLERANCE")
 
     if type(otu.plan) is MultipartitePlan:
         for segment in otu.plan.segments:
@@ -68,12 +69,14 @@ def print_otu(otu: RepoOTU) -> None:
                 if segment.required == SegmentRule.REQUIRED
                 else "[grey]No[/grey]",
                 str(segment.length),
+                str(segment.length_tolerance),
             )
     else:
         schema_table.add_row(
             otu.plan.name if otu.plan.name is not None else "N/A",
             "[red]Yes[/red]",
             str(otu.plan.length),
+            str(otu.plan.length_tolerance),
         )
 
     console.print(schema_table)
@@ -121,6 +124,8 @@ def print_otu_list(otus: Iterator[OTUMinimal]) -> None:
     table.add_column("TAXID")
     table.add_column("ID")
 
+    added_rows = False
+
     for otu in otus:
         table.add_row(
             otu.name,
@@ -129,7 +134,12 @@ def print_otu_list(otus: Iterator[OTUMinimal]) -> None:
             str(otu.id),
         )
 
-    console.print(table)
+        added_rows = True
+
+    if added_rows:
+        console.print(table)
+    else:
+        console.print("No OTUs found")
 
 
 console = rich.console.Console()

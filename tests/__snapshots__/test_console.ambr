@@ -1,0 +1,46 @@
+# serializer version: 1
+# name: TestPrintOTUList.test_ok
+  '''
+   NAME                           ACRONYM  TAXID   ID                             
+   Sweet potato chlorotic virus   SPCV     109263  c963cfe0-afae-4a3b-b909-6a04e… 
+   Sweet potato bunchy top virus  SPBTV    425603  f335c357-7972-436d-91b3-1a6c2… 
+   Pepper flower break virus      PFBV     950682  3e1dcfb5-92bd-431c-b4d2-ea161… 
+   Grapevine leaf crumple virus   GLCV     951539  3be4c78b-b4ae-4dd3-847e-60460… 
+   Sweet potato leaf crumple      SPLCV    123000  4617edaa-a37f-4ba2-ac24-63432… 
+   virus                                                                          
+  
+  '''
+# ---
+# name: test_print_otu
+  '''
+  Babuvirus abacae
+  
+   ACRONYM  BabAV                                
+   ID       e7019832-f5b4-4b78-b528-9929bf0ec839 
+   TAXID    438782                               
+  
+  SCHEMA
+  
+   SEGMENT  REQUIRED  LENGTH  TOLERANCE 
+   DNA R    Yes       1099    0.03      
+   DNA M    Yes       1074    0.03      
+   DNA S    Yes       1087    0.03      
+  
+  ISOLATES
+  
+  Isolate organization
+  
+   ACCESSION    SEGMENT  DEFINITION                              
+   I48166.1     DNA R    Stand audience who artist travel sell.  
+   J64270.1     DNA S    Campaign college director less.         
+   NC_167153.1  DNA M    Support wind good training main forget. 
+  
+  Isolate present
+  
+   ACCESSION    SEGMENT  DEFINITION                                      
+   NC_132006.1  DNA M    Pull foot culture.                              
+   NC_134696.1  DNA R    Poor beyond interest finally require wish most. 
+   NC_795643.1  DNA S    Character game tell result marriage very.       
+  
+  '''
+# ---
