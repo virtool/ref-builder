@@ -1,6 +1,5 @@
 from structlog import get_logger
 
-from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.update import logger
 from ref_builder.otu.utils import (
@@ -29,28 +28,12 @@ def add_genbank_isolate(
     Download the GenBank records, categorize into an isolate bin and pass the isolate name
     and records to the add method.
     """
-    ncbi = NCBIClient(ignore_cache)
-
     otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
-    try:
-        fetch_list = _create_fetch_list(accessions, otu.blocked_accessions)
-    except ValueError:
-        otu_logger.error(
-            "Could not create a new isolate using the requested accessions.",
-            requested_accessions=accessions,
-            otu_accessions=otu.accessions,
-            excluded_accessions=otu.excluded_accessions,
-        )
+    records = fetch_records_from_accessions(accessions, otu.blocked_accessions, ignore_cache)
+
+    if not records:
         return None
-
-    otu_logger.info(
-        "Fetching accessions",
-        count={len(fetch_list)},
-        fetch_list=fetch_list,
-    )
-
-    records = ncbi.fetch_genbank_records(fetch_list)
 
     record_bins = group_genbank_records_by_isolate(records)
     if len(record_bins) != 1:
@@ -112,35 +95,17 @@ def add_unnamed_isolate(
 
     Download the GenBank records and pass the isolate name and records to the add method.
     """
-    ncbi = NCBIClient(ignore_cache)
+    records = fetch_records_from_accessions(accessions, otu.blocked_accessions, ignore_cache)
 
-    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
-
-    try:
-        fetch_list = _create_fetch_list(accessions, otu.blocked_accessions)
-    except ValueError:
-        otu_logger.error(
-            "Could not create a new isolate using the requested accessions.",
-            requested_accessions=accessions,
-            otu_accessions=otu.accessions,
-            excluded_accessions=otu.excluded_accessions,
+    if records:
+        return create_isolate_from_records(
+            repo,
+            otu,
+            isolate_name=None,
+            records=records,
         )
-        return None
 
-    otu_logger.info(
-        "Fetching accessions",
-        count={len(fetch_list)},
-        fetch_list=fetch_list,
-    )
-
-    records = ncbi.fetch_genbank_records(fetch_list)
-
-    return create_isolate_from_records(
-        repo,
-        otu,
-        isolate_name=None,
-        records=records,
-    )
+    return None
 
 
 def add_and_name_isolate(
@@ -155,35 +120,19 @@ def add_and_name_isolate(
 
     Download the GenBank records and pass the isolate name and records to the add method.
     """
-    ncbi = NCBIClient(ignore_cache)
-
     otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
-    try:
-        fetch_list = _create_fetch_list(accessions, otu.blocked_accessions)
-    except ValueError:
-        otu_logger.error(
-            "Could not create a new isolate using the requested accessions.",
-            requested_accessions=accessions,
-            otu_accessions=otu.accessions,
-            excluded_accessions=otu.excluded_accessions,
+    records = fetch_records_from_accessions(accessions, otu.blocked_accessions, ignore_cache)
+
+    if records:
+        return create_isolate_from_records(
+            repo,
+            otu,
+            isolate_name=isolate_name,
+            records=records,
         )
-        return None
 
-    otu_logger.info(
-        "Fetching accessions",
-        count={len(fetch_list)},
-        fetch_list=fetch_list,
-    )
-
-    records = ncbi.fetch_genbank_records(fetch_list)
-
-    return create_isolate_from_records(
-        repo,
-        otu,
-        isolate_name=isolate_name,
-        records=records,
-    )
+    return None
 
 
 def create_isolate_from_records(
