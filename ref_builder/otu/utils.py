@@ -65,6 +65,7 @@ def check_isolate_size(
 
 
 def check_sequence_length(sequence: str, segment_length: int, tolerance: float) -> bool:
+    """Check if the sequence length is within acceptable segment length tolerance."""
     if len(sequence) < segment_length * (1.0 - tolerance) or len(
         sequence
     ) > segment_length * (1.0 + tolerance):
@@ -134,27 +135,38 @@ def fetch_records_from_accessions(
     blocked_accessions: set,
     ignore_cache: bool = False,
 ) -> list[NCBIGenbank]:
-    fetch_logger = logger.bind()
+    """Take a list of requested accessions, remove blocked accessions
+    and fetch records using the remaining accessions.
+
+    Return a list of records.
+    """
+    fetch_logger = logger.bind(
+        requested=sorted(requested_accessions),
+        blocked=sorted(blocked_accessions),
+    )
 
     ncbi = NCBIClient(ignore_cache)
 
     try:
-        fetch_list = list(set(requested_accessions).difference(blocked_accessions))
-        if not fetch_list:
-            raise ValueError(
+        fetch_set = set(requested_accessions).difference(blocked_accessions)
+        if not fetch_set:
+            fetch_logger.error(
                 "None of the requested accessions were eligible for inclusion"
             )
+
+            return []
+
     except ValueError:
         fetch_logger.error(
-            "Could not create a new isolate using the requested accessions.",
-            requested=sorted(requested_accessions),
-            blocked=sorted(blocked_accessions),
+            "Could not create a new isolate using the requested accessions",
         )
         return []
 
+    fetch_list = list(fetch_set)
+
     fetch_logger.info(
         "Fetching accessions",
-        count=len(fetch_list),
+        count=len(fetch_set),
         fetch_list=fetch_list,
     )
 
