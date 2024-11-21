@@ -8,6 +8,8 @@ from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.utils import (
     DeleteRationale,
     RefSeqConflictError,
+    create_segments_from_records,
+    check_sequence_length,
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
@@ -73,6 +75,17 @@ def add_genbank_isolate(
             isolate_records=sorted(isolate_records.keys()),
         )
         return None
+
+    if type(otu.plan) is MonopartitePlan:
+        if not check_sequence_length(
+            records[0].sequence,
+            segment_length=otu.plan.length,
+            tolerance=repo.settings.default_segment_length_tolerance,
+        ):
+            otu_logger.error(
+                "Sequence does not conform to plan length.", accession=accessions
+            )
+            return None
 
     if (isolate_id := otu.get_isolate_id_by_name(isolate_name)) is not None:
         otu_logger.debug(f"{isolate_name} already exists in this OTU")
@@ -188,12 +201,30 @@ def create_isolate_from_records(
 ) -> RepoIsolate | None:
     """Take a list of GenBank records that make up a new isolate
     and add them to the OTU.
+
+    If a monopartite sequence is outside of recommended length bounds,
+    automatically reject the isolate and return None.
     """
     isolate_logger = get_logger("otu.isolate").bind(
         isolate_name=str(isolate_name) if IsolateName is not None else None,
         otu_name=otu.name,
         taxid=otu.taxid,
     )
+
+    if type(otu.plan) is MonopartitePlan:
+        if not check_sequence_length(
+            records[0].sequence,
+            segment_length=otu.plan.length,
+            tolerance=otu.plan.length_tolerance,
+        ):
+            isolate_logger.error(
+                "Sequence does not conform to plan length.",
+                accession=records[0].accession,
+                sequence_length=len(records[0].sequence),
+                plan_length=otu.plan.length,
+            )
+
+            return None
 
     try:
         isolate = repo.create_isolate(

@@ -138,7 +138,10 @@ def parse_refseq_comment(comment: str) -> tuple[str, str]:
 
     match = refseq_pattern.search(comment)
 
-    return match.group(1), match.group(2)
+    if match:
+        return match.group(1), match.group(2)
+
+    raise ValueError("Invalid RefSeq comment")
 
 
 def get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
@@ -161,6 +164,15 @@ def get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
             "topology": rep_record.topology.value,
         },
     )
+
+
+def check_sequence_length(sequence: str, segment_length: int, tolerance: float) -> bool:
+    if len(sequence) < segment_length * (1.0 - tolerance) or len(
+        sequence
+    ) > segment_length * (1.0 + tolerance):
+        return False
+
+    return True
 
 
 def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
