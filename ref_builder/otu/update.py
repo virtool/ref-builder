@@ -5,7 +5,10 @@ from structlog import get_logger
 
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.otu.isolate import create_isolate_from_records
+from ref_builder.otu.isolate import (
+    create_isolate_from_records,
+    create_monopartite_isolate,
+)
 from ref_builder.otu.utils import (
     DeleteRationale,
     check_isolate_size,
@@ -14,6 +17,7 @@ from ref_builder.otu.utils import (
 )
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU
+from ref_builder.plan import MonopartitePlan
 from ref_builder.utils import Accession, IsolateName
 
 logger = get_logger("otu.update")
@@ -208,12 +212,22 @@ def file_records_into_otu(
             )
             continue
 
-        isolate = create_isolate_from_records(
-            repo,
-            otu,
-            isolate_name,
-            list(isolate_records.values()),
-        )
+        if type(otu.plan) is MonopartitePlan:
+            isolate = create_monopartite_isolate(
+                repo,
+                otu,
+                isolate_name,
+                record=list(isolate_records.values())[0],
+            )
+
+        else:
+            isolate = create_isolate_from_records(
+                repo,
+                otu,
+                isolate_name,
+                records=list(isolate_records.values()),
+            )
+
         if isolate is not None:
             new_isolate_names.append(isolate_name)
 
