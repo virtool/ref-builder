@@ -54,17 +54,6 @@ def add_genbank_isolate(
         )
         return None
 
-    if type(otu.plan) is MonopartitePlan:
-        if not check_sequence_length(
-            records[0].sequence,
-            segment_length=otu.plan.length,
-            tolerance=repo.settings.default_segment_length_tolerance,
-        ):
-            otu_logger.error(
-                "Sequence does not conform to plan length.", accession=accessions
-            )
-            return None
-
     if (isolate_id := otu.get_isolate_id_by_name(isolate_name)) is not None:
         otu_logger.debug(f"{isolate_name} already exists in this OTU")
 
@@ -77,6 +66,14 @@ def add_genbank_isolate(
                     accessions=accessions,
                 )
             return None
+
+    if type(otu.plan) is MonopartitePlan:
+        return create_monopartite_isolate(
+            repo,
+            otu,
+            isolate_name,
+            records[0]
+        )
 
     return create_isolate_from_records(
         repo,
@@ -97,17 +94,37 @@ def add_unnamed_isolate(
 
     Download the GenBank records and pass the isolate name and records to the add method.
     """
+    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
+
     records = fetch_records_from_accessions(accessions, otu.blocked_accessions, ignore_cache)
 
-    if records:
-        return create_isolate_from_records(
+    if not records:
+        return None
+
+    try:
+        check_isolate_size(plan=otu.plan, isolate_n=len(records))
+    except ValueError as e:
+        otu_logger.warning(
+            e,
+            accessions=sorted(accessions),
+            isolate_name=None,
+        )
+        return None
+
+    if type(otu.plan) is MonopartitePlan:
+        return create_monopartite_isolate(
             repo,
             otu,
             isolate_name=None,
-            records=records,
+            record=records[0],
         )
 
-    return None
+    return create_isolate_from_records(
+        repo,
+        otu,
+        isolate_name=None,
+        records=records,
+    )
 
 
 def add_and_name_isolate(
@@ -126,15 +143,23 @@ def add_and_name_isolate(
 
     records = fetch_records_from_accessions(accessions, otu.blocked_accessions, ignore_cache)
 
-    if records:
-        return create_isolate_from_records(
+    if not records:
+        return None
+
+    if type(otu.plan) is MonopartitePlan:
+        return create_monopartite_isolate(
             repo,
             otu,
             isolate_name=isolate_name,
-            records=records,
+            record=records[0],
         )
 
-    return None
+    return create_isolate_from_records(
+        repo,
+        otu,
+        isolate_name=isolate_name,
+        records=records,
+    )
 
 
 def create_isolate_from_records(
