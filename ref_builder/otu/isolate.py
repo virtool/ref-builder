@@ -211,6 +211,70 @@ def create_isolate_from_records(
     return isolate
 
 
+def create_monopartite_isolate(
+    repo: Repo,
+    otu: RepoOTU,
+    isolate_name: IsolateName | None,
+    record: NCBIGenbank,
+) -> RepoIsolate | None:
+    """Take a GenBank record that makes up a new isolate
+    and add it to the OTU.
+    """
+    isolate_logger = get_logger("otu.isolate").bind(
+        isolate_name=str(isolate_name) if IsolateName is not None else None,
+        otu_name=otu.name,
+        taxid=otu.taxid,
+    )
+
+    if not check_sequence_length(
+        record.sequence,
+        segment_length=otu.plan.length,
+        tolerance=repo.settings.default_segment_length_tolerance,
+    ):
+        isolate_logger.error("Sequence does not conform to plan length.")
+        return None
+
+    try:
+        isolate = repo.create_isolate(
+            otu.id,
+            None,
+            isolate_name,
+        )
+    except ValueError as e:
+        if "Isolate name already exists" in str(e):
+            logger.error(
+                "OTU already contains isolate with name.",
+                isolate_name=str(isolate_name) if IsolateName is not None else None,
+                otu_name=otu.name,
+                taxid=otu.taxid,
+            )
+            return None
+
+        raise
+
+    sequence = create_sequence_from_record(repo, otu, record)
+
+    if sequence is None:
+        raise ValueError("Sequence could not be created")
+
+    repo.link_sequence(otu.id, isolate.id, sequence.id)
+
+    if record.refseq:
+        refseq_status, old_accession = parse_refseq_comment(record.comment)
+        repo.exclude_accession(
+            otu.id,
+            old_accession,
+        )
+
+    isolate_logger.info(
+        f"{isolate.name} created",
+        isolate_id=str(isolate.id),
+        sequences=str(sequence.accession),
+    )
+
+    return isolate
+
+
 def create_sequence_from_record(
     repo: Repo,
     otu: RepoOTU,
