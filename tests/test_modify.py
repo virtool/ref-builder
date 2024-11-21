@@ -15,12 +15,12 @@ from ref_builder.otu.modify import (
     set_plan_length_tolerances,
 )
 from ref_builder.otu.update import (
-    add_genbank_isolate,
     promote_otu_accessions,
     replace_sequence_in_otu,
     set_representative_isolate,
     delete_isolate_from_otu,
 )
+from ref_builder.otu.isolate import add_genbank_isolate
 from ref_builder.utils import IsolateName, IsolateNameType
 from ref_builder.plan import (
     MonopartitePlan,

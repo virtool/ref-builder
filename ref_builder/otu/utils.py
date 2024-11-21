@@ -244,7 +244,9 @@ def fetch_records_from_accessions(
     try:
         fetch_list = list(set(requested_accessions).difference(blocked_accessions))
         if not fetch_list:
-            raise ValueError("None of the requested accessions were eligible for inclusion")
+            raise ValueError(
+                "None of the requested accessions were eligible for inclusion"
+            )
     except ValueError:
         fetch_logger.error(
             "Could not create a new isolate using the requested accessions.",
