@@ -6,6 +6,7 @@ from uuid import UUID
 import structlog
 
 from ref_builder.models import Molecule
+from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.plan import (
     MonopartitePlan,
@@ -42,6 +43,25 @@ class RefSeqConflictError(ValueError):
         self.isolate_name = isolate_name
 
         self.accessions = accessions
+
+
+def check_isolate_size(
+    plan: MonopartitePlan | MultipartitePlan,
+    isolate_n: int,
+) -> bool:
+    """Return True if the size of the proposed isolate matches the isolate plan."""
+    if type(plan) is MonopartitePlan:
+        if isolate_n > 1:
+            raise ValueError("Too many segments in monopartite isolate.")
+        return True
+
+    if isolate_n == len(plan.required_segments):
+        return True
+
+    raise ValueError(
+        f"The plan requires {len(plan.required_segments)} segments: "
+        + f"{[str(segment.name) for segment in plan.segments]}"
+    )
 
 
 def create_segments_from_records(
@@ -191,3 +211,54 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
         return None
 
     raise ValueError("Record does not contain sufficient source data for inclusion.")
+
+
+def create_sequence_from_record(
+    repo: Repo,
+    otu: RepoOTU,
+    record: NCBIGenbank,
+    segment_name: str | None = None,
+) -> RepoSequence | None:
+    """Take a NCBI Nucleotide record and create a new sequence."""
+    sequence = repo.create_sequence(
+        otu.id,
+        accession=record.accession_version,
+        definition=record.definition,
+        legacy_id=None,
+        segment=segment_name if segment_name is not None else record.source.segment,
+        sequence=record.sequence,
+    )
+
+    return sequence
+
+
+def fetch_records_from_accessions(
+    requested_accessions: list | set,
+    blocked_accessions: set,
+    ignore_cache: bool = False,
+) -> list[NCBIGenbank]:
+    fetch_logger = logger.bind()
+
+    ncbi = NCBIClient(ignore_cache)
+
+    try:
+        fetch_list = list(set(requested_accessions).difference(blocked_accessions))
+        if not fetch_list:
+            raise ValueError("None of the requested accessions were eligible for inclusion")
+    except ValueError:
+        fetch_logger.error(
+            "Could not create a new isolate using the requested accessions.",
+            requested=sorted(requested_accessions),
+            blocked=sorted(blocked_accessions),
+        )
+        return []
+
+    fetch_logger.info(
+        "Fetching accessions",
+        count=len(fetch_list),
+        fetch_list=fetch_list,
+    )
+
+    records = ncbi.fetch_genbank_records(fetch_list)
+
+    return records
