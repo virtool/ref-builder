@@ -13,12 +13,12 @@ from ref_builder.otu.modify import (
     resize_monopartite_plan,
     set_isolate_plan,
     set_plan_length_tolerances,
+    delete_isolate_from_otu,
+    replace_sequence_in_otu,
+    set_representative_isolate,
 )
 from ref_builder.otu.update import (
     promote_otu_accessions,
-    replace_sequence_in_otu,
-    set_representative_isolate,
-    delete_isolate_from_otu,
 )
 from ref_builder.otu.isolate import add_genbank_isolate
 from ref_builder.utils import IsolateName, IsolateNameType

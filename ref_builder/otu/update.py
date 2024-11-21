@@ -13,46 +13,10 @@ from ref_builder.otu.utils import (
     parse_refseq_comment,
 )
 from ref_builder.repo import Repo
-from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
+from ref_builder.resources import RepoIsolate, RepoOTU
 from ref_builder.utils import Accession, IsolateName
 
 logger = get_logger("otu.update")
-
-
-def set_representative_isolate(
-    repo: Repo,
-    otu: RepoOTU,
-    isolate_id: UUID,
-) -> UUID | None:
-    """Sets an OTU's representative isolate to a given existing isolate ID.
-
-    Returns the isolate ID if successful, else None.
-    """
-    otu_logger = logger.bind(name=otu.name, taxid=otu.taxid)
-
-    new_representative_isolate = otu.get_isolate(isolate_id)
-    if new_representative_isolate is None:
-        otu_logger.error("Isolate not found. Please make a new isolate.")
-        return None
-
-    if otu.repr_isolate is not None:
-        if otu.repr_isolate == new_representative_isolate.id:
-            otu_logger.warning("This isolate is already the representative isolate.")
-            return otu.repr_isolate
-
-        otu_logger.warning(
-            f"Replacing representative isolate {otu.repr_isolate}",
-            representative_isolate_id=str(otu.repr_isolate),
-        )
-
-    repo.set_repr_isolate(otu.id, new_representative_isolate.id)
-
-    otu_logger.info(
-        f"Representative isolate set to {new_representative_isolate.name}.",
-        representative_isolate_id=str(new_representative_isolate.id),
-    )
-
-    return new_representative_isolate.id
 
 
 def update_isolate_from_accessions(
@@ -263,87 +227,6 @@ def file_records_into_otu(
 
     otu_logger.info("No new isolates added.")
     return []
-
-
-def exclude_accessions_from_otu(
-    repo: Repo,
-    otu: RepoOTU,
-    accessions: list[str],
-) -> None:
-    """Take a list of accessions and add them to an OTU's excluded accessions list."""
-    excluded_accessions = set()
-
-    # Using a set avoid duplicate accessions.
-    for accession in set(accessions):
-        excluded_accessions = repo.exclude_accession(otu.id, accession)
-
-    logger.debug(
-        f"Accessions currently excluded from fetches: {excluded_accessions}",
-        taxid=otu.taxid,
-        otu_id=str(otu.id),
-        name=otu.name,
-    )
-
-
-def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
-    """Remove an isolate from a specified OTU."""
-    if (isolate := otu.get_isolate(isolate_id)) is None:
-        logger.error("This isolate does not exist in this OTU.")
-        return
-
-    repo.delete_isolate(otu.id, isolate.id, rationale=DeleteRationale.USER)
-
-    logger.info(f"{isolate.name} removed.")
-
-
-def replace_sequence_in_otu(
-    repo: Repo,
-    otu: RepoOTU,
-    new_accession: str,
-    replaced_accession: str,
-    ignore_cache: bool = False,
-) -> RepoSequence | None:
-    """Replace a sequence in an OTU."""
-    ncbi = NCBIClient(ignore_cache)
-
-    (
-        isolate_id,
-        sequence_id,
-    ) = otu.get_sequence_id_hierarchy_from_accession(replaced_accession)
-    if sequence_id is None:
-        logger.error("This sequence does not exist in this OTU.")
-        return None
-
-    isolate = otu.get_isolate(isolate_id)
-
-    records = ncbi.fetch_genbank_records([new_accession])
-    record = records[0]
-
-    new_sequence = repo.create_sequence(
-        otu.id,
-        accession=record.accession_version,
-        definition=record.definition,
-        legacy_id=None,
-        segment=record.source.segment,
-        sequence=record.sequence,
-    )
-
-    repo.replace_sequence(
-        otu.id,
-        isolate_id=isolate.id,
-        sequence_id=new_sequence.id,
-        replaced_sequence_id=sequence_id,
-        rationale="Requested by user",
-    )
-
-    if new_sequence is not None:
-        logger.info(
-            f"{replaced_accession} replaced by {new_sequence.accession}.",
-            new_sequence_id=new_sequence.id,
-        )
-        return new_sequence
-
-    logger.error(f"{replaced_accession} could not be replaced.")
 
 
 def promote_otu_accessions(
