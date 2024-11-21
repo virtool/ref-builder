@@ -1,7 +1,6 @@
 from structlog import get_logger
 
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.otu.update import logger
 from ref_builder.otu.utils import (
     RefSeqConflictError,
     check_isolate_size,
@@ -12,8 +11,11 @@ from ref_builder.otu.utils import (
 )
 from ref_builder.plan import MonopartitePlan
 from ref_builder.repo import Repo
-from ref_builder.resources import RepoOTU, RepoIsolate
+from ref_builder.resources import RepoOTU, RepoIsolate, RepoSequence
 from ref_builder.utils import IsolateName
+
+
+logger = get_logger("otu.isolate")
 
 
 def add_genbank_isolate(
@@ -207,3 +209,22 @@ def create_isolate_from_records(
     )
 
     return isolate
+
+
+def create_sequence_from_record(
+    repo: Repo,
+    otu: RepoOTU,
+    record: NCBIGenbank,
+    segment_name: str | None = None,
+) -> RepoSequence | None:
+    """Take a NCBI Nucleotide record and create a new sequence."""
+    sequence = repo.create_sequence(
+        otu.id,
+        accession=record.accession_version,
+        definition=record.definition,
+        legacy_id=None,
+        segment=segment_name if segment_name is not None else record.source.segment,
+        sequence=record.sequence,
+    )
+
+    return sequence

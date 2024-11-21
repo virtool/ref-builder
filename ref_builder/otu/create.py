@@ -9,6 +9,8 @@ from ref_builder.otu.utils import (
     get_molecule_from_records,
     parse_refseq_comment,
 )
+from ref_builder.otu.isolate import create_sequence_from_record
+from ref_builder.plan import get_multipartite_segment_name
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
 

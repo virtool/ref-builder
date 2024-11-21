@@ -213,25 +213,6 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
     raise ValueError("Record does not contain sufficient source data for inclusion.")
 
 
-def create_sequence_from_record(
-    repo: Repo,
-    otu: RepoOTU,
-    record: NCBIGenbank,
-    segment_name: str | None = None,
-) -> RepoSequence | None:
-    """Take a NCBI Nucleotide record and create a new sequence."""
-    sequence = repo.create_sequence(
-        otu.id,
-        accession=record.accession_version,
-        definition=record.definition,
-        legacy_id=None,
-        segment=segment_name if segment_name is not None else record.source.segment,
-        sequence=record.sequence,
-    )
-
-    return sequence
-
-
 def fetch_records_from_accessions(
     requested_accessions: list | set,
     blocked_accessions: set,
