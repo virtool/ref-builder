@@ -32,7 +32,9 @@ def add_genbank_isolate(
     """
     otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
-    records = fetch_records_from_accessions(accessions, otu.blocked_accessions, ignore_cache)
+    records = fetch_records_from_accessions(
+        accessions, otu.blocked_accessions, ignore_cache
+    )
 
     if not records:
         return None
@@ -68,12 +70,7 @@ def add_genbank_isolate(
             return None
 
     if type(otu.plan) is MonopartitePlan:
-        return create_monopartite_isolate(
-            repo,
-            otu,
-            isolate_name,
-            records[0]
-        )
+        return create_monopartite_isolate(repo, otu, isolate_name, records[0])
 
     return create_isolate_from_records(
         repo,
@@ -96,7 +93,9 @@ def add_unnamed_isolate(
     """
     otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
-    records = fetch_records_from_accessions(accessions, otu.blocked_accessions, ignore_cache)
+    records = fetch_records_from_accessions(
+        accessions, otu.blocked_accessions, ignore_cache
+    )
 
     if not records:
         return None
@@ -141,7 +140,9 @@ def add_and_name_isolate(
     """
     otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
-    records = fetch_records_from_accessions(accessions, otu.blocked_accessions, ignore_cache)
+    records = fetch_records_from_accessions(
+        accessions, otu.blocked_accessions, ignore_cache
+    )
 
     if not records:
         return None
