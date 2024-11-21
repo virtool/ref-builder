@@ -19,6 +19,37 @@ from ref_builder.resources import RepoOTU, RepoSequence
 logger = get_logger("otu.modify")
 
 
+def exclude_accessions_from_otu(
+    repo: Repo,
+    otu: RepoOTU,
+    accessions: list[str],
+) -> None:
+    """Take a list of accessions and add them to an OTU's excluded accessions list."""
+    excluded_accessions = set()
+
+    # Using a set avoid duplicate accessions.
+    for accession in set(accessions):
+        excluded_accessions = repo.exclude_accession(otu.id, accession)
+
+    logger.debug(
+        f"Accessions currently excluded from fetches: {excluded_accessions}",
+        taxid=otu.taxid,
+        otu_id=str(otu.id),
+        name=otu.name,
+    )
+
+
+def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
+    """Remove an isolate from a specified OTU."""
+    if (isolate := otu.get_isolate(isolate_id)) is None:
+        logger.error("This isolate does not exist in this OTU.")
+        return
+
+    repo.delete_isolate(otu.id, isolate.id, rationale=DeleteRationale.USER)
+
+    logger.info(f"{isolate.name} removed.")
+
+
 def set_isolate_plan(
     repo: Repo,
     otu: RepoOTU,
@@ -158,37 +189,6 @@ def resize_monopartite_plan(
     )
 
     return set_isolate_plan(repo, otu, new_plan)
-
-
-def exclude_accessions_from_otu(
-    repo: Repo,
-    otu: RepoOTU,
-    accessions: list[str],
-) -> None:
-    """Take a list of accessions and add them to an OTU's excluded accessions list."""
-    excluded_accessions = set()
-
-    # Using a set avoid duplicate accessions.
-    for accession in set(accessions):
-        excluded_accessions = repo.exclude_accession(otu.id, accession)
-
-    logger.debug(
-        f"Accessions currently excluded from fetches: {excluded_accessions}",
-        taxid=otu.taxid,
-        otu_id=str(otu.id),
-        name=otu.name,
-    )
-
-
-def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
-    """Remove an isolate from a specified OTU."""
-    if (isolate := otu.get_isolate(isolate_id)) is None:
-        logger.error("This isolate does not exist in this OTU.")
-        return
-
-    repo.delete_isolate(otu.id, isolate.id, rationale=DeleteRationale.USER)
-
-    logger.info(f"{isolate.name} removed.")
 
 
 def replace_sequence_in_otu(

@@ -23,6 +23,37 @@ from ref_builder.utils import Accession, IsolateName
 logger = get_logger("otu.update")
 
 
+def auto_update_otu(
+    repo: Repo,
+    otu: RepoOTU,
+    ignore_cache: bool = False,
+) -> None:
+    """Fetch a full list of Nucleotide accessions associated with the OTU
+    and pass the list to the add method.
+    """
+    ncbi = NCBIClient(ignore_cache)
+
+    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
+
+    accessions = ncbi.fetch_accessions_by_taxid(otu.taxid)
+
+    fetch_list = sorted(
+        {Accession.from_string(accession).key for accession in accessions}
+        - otu.blocked_accessions
+    )
+
+    if fetch_list:
+        logger.debug(
+            f"Fetching {len(fetch_list)} records",
+            blocked_accessions=sorted(otu.blocked_accessions),
+            fetch_list=fetch_list,
+        )
+
+        update_otu_with_accessions(repo, otu, fetch_list)
+    else:
+        otu_logger.info("OTU is up to date.")
+
+
 def update_isolate_from_accessions(
     repo: Repo,
     otu: RepoOTU,
@@ -110,37 +141,6 @@ def update_isolate_from_records(
     )
 
     return isolate
-
-
-def auto_update_otu(
-    repo: Repo,
-    otu: RepoOTU,
-    ignore_cache: bool = False,
-) -> None:
-    """Fetch a full list of Nucleotide accessions associated with the OTU
-    and pass the list to the add method.
-    """
-    ncbi = NCBIClient(ignore_cache)
-
-    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
-
-    accessions = ncbi.fetch_accessions_by_taxid(otu.taxid)
-
-    fetch_list = sorted(
-        {Accession.from_string(accession).key for accession in accessions}
-        - otu.blocked_accessions
-    )
-
-    if fetch_list:
-        logger.debug(
-            f"Fetching {len(fetch_list)} records",
-            blocked_accessions=sorted(otu.blocked_accessions),
-            fetch_list=fetch_list,
-        )
-
-        update_otu_with_accessions(repo, otu, fetch_list)
-    else:
-        otu_logger.info("OTU is up to date.")
 
 
 def update_otu_with_accessions(
