@@ -3,9 +3,10 @@ from uuid import uuid4
 import pytest
 
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
+from ref_builder.otu.models import RepoOTU
 from ref_builder.plan import MonopartitePlan
 from ref_builder.repo import Repo
-from ref_builder.resources import RepoIsolate, RepoOTU
+from ref_builder.resources import RepoIsolate
 from ref_builder.utils import IsolateName, IsolateNameType
 
 
@@ -95,5 +96,4 @@ class TestOTU:
         )
 
         assert otu.get_isolate(isolate_id) is not None
-
-        assert sequence_id in otu.sequence_ids
+        assert otu.get_sequence_by_id(sequence_id) is not None

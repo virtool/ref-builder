@@ -5,11 +5,11 @@ import orjson
 import pytest
 
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
+from ref_builder.otu.models import RepoOTU
 from ref_builder.plan import MonopartitePlan
 from ref_builder.repo import Repo
 from ref_builder.resources import (
     RepoIsolate,
-    RepoOTU,
     RepoSequence,
 )
 from ref_builder.utils import Accession, DataType, IsolateName, IsolateNameType
@@ -735,9 +735,8 @@ def test_replace_sequence(initialized_repo):
 
     otu_after = initialized_repo.get_otu(otu_before.id)
 
-    assert new_sequence.id in otu_after.sequence_ids
-
-    assert replaced_sequence_id not in otu_after.sequence_ids
+    assert otu_after.get_sequence_by_id(new_sequence.id) is not None
+    assert otu_after.get_sequence_by_id(replaced_sequence_id) is None
 
 
 class TestMalformedEvent:
