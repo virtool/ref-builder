@@ -5,9 +5,14 @@ from polyfactory import PostGenerated
 from polyfactory.decorators import post_generated
 from polyfactory.factories.pydantic_factory import ModelFactory
 from polyfactory.pytest_plugin import register_fixture
+from pydantic.v1 import UUID4
 
 from ref_builder.models import MolType, OTUMinimal
 from ref_builder.ncbi.models import NCBIGenbank, NCBISource, NCBISourceMolType
+from ref_builder.otu.models import IsolateBase, OTUBase
+from ref_builder.plan import MultipartitePlan, Segment, SegmentName, SegmentRule
+from ref_builder.resources import RepoIsolate, RepoSequence
+from ref_builder.utils import Accession, IsolateName, IsolateNameType
 from tests.fixtures.providers import (
     AccessionProvider,
     BusinessProvider,
@@ -199,6 +204,118 @@ def derive_acronym(_: str, values: dict[str, str]) -> str:
     return "".join([part[0].upper() for part in name.split(" ")])
 
 
+def derive_repr_isolate(_: str, values: dict[str, str]) -> str:
+    """Derive a representative isolate from an OTU name."""
+    return values["isolates"][0]["name"]
+
+
+@register_fixture
+class OTUFactory(ModelFactory[OTUBase]):
+    """OTU Factory with quasi-realistic data."""
+
+    __faker__ = Faker()
+
+    __faker__.add_provider(AccessionProvider)
+    __faker__.add_provider(BusinessProvider)
+    __faker__.add_provider(OrganismProvider)
+    __faker__.add_provider(SequenceProvider)
+
+    __random_seed__ = 21
+
+    @post_generated
+    @classmethod
+    def acronym(cls, name: str) -> str:
+        """Derive an acronym from an OTU name."""
+        return "".join([part[0].upper() for part in name.split(" ")])
+
+    @post_generated
+    @classmethod
+    def isolates(cls, plan: MultipartitePlan) -> list[IsolateBase]:
+        """Derive a list of isolates from a plan."""
+        isolates = []
+
+        for _ in range(cls.__faker__.random_int(2, 5)):
+            sequences = [
+                RepoSequence(
+                    id=cls.__faker__.uuid4(),
+                    accession=Accession(key=cls.__faker__.accession(), version=1),
+                    definition=cls.__faker__.sentence(),
+                    legacy_id=None,
+                    segment=str(segment.name),
+                    sequence=cls.__faker__.sequence(),
+                )
+                for segment in plan.segments
+            ]
+
+            isolates.append(
+                IsolateBase(
+                    id=cls.__faker__.uuid4(),
+                    legacy_id=None,
+                    name=IsolateName(
+                        type=IsolateNameType.ISOLATE,
+                        value=cls.__faker__.word(part_of_speech="noun").capitalize(),
+                    ),
+                    sequences=sequences,
+                )
+            )
+
+        return isolates
+
+    @post_generated
+    @classmethod
+    def repr_isolate(cls, isolates: list[RepoIsolate]) -> UUID4:
+        """Derive a representative isolate from an OTU name."""
+        return cls.__faker__.random_element(isolates).id
+
+    @post_generated
+    @classmethod
+    def sequences(cls, isolates: list[RepoIsolate]) -> list[RepoSequence]:
+        """Derive a list of sequences from a list of isolates."""
+        return [sequence for isolate in isolates for sequence in isolate.sequences]
+
+    @classmethod
+    def excluded_accessions(cls) -> set[str]:
+        """Generate a set of excluded accessions."""
+        return set()
+
+    @classmethod
+    def legacy_id(cls) -> str:
+        """Generate an 8-character unique identifier as used in virtool-cli."""
+        return cls.__faker__.legacy_id()
+
+    @classmethod
+    def name(cls) -> str:
+        """Generate a realistic name for a plant virus."""
+        return cls.__faker__.organism()
+
+    @classmethod
+    def plan(cls) -> MultipartitePlan:
+        """Generate a multipartite plan with two segments."""
+        return MultipartitePlan.new(
+            [
+                Segment(
+                    id=cls.__faker__.uuid4(),
+                    length=1099,
+                    length_tolerance=0.03,
+                    name=SegmentName("DNA", "A"),
+                    required=SegmentRule.REQUIRED,
+                ),
+                Segment(
+                    id=cls.__faker__.uuid4(),
+                    length=1074,
+                    length_tolerance=0.03,
+                    name=SegmentName("DNA", "B"),
+                    required=SegmentRule.REQUIRED,
+                ),
+            ],
+        )
+
+    @classmethod
+    def taxid(cls) -> int:
+        """Generate a realistic taxonomy ID."""
+        return cls.__faker__.random_int(1000, 999999)
+
+
 @register_fixture
 class OTUMinimalFactory(ModelFactory[OTUMinimal]):
     """OTUMinimal Factory with quasi-realistic data."""
@@ -213,14 +330,15 @@ class OTUMinimalFactory(ModelFactory[OTUMinimal]):
 
     @classmethod
     def legacy_id(cls) -> str:
+        """Generate a realistic 8-character ``legacy_id`` for the OTU."""
         return cls.__faker__.legacy_id()
 
     @classmethod
     def name(cls) -> str:
-        """OTU name faker."""
+        """Generaete a realistic name for the OTU."""
         return cls.__faker__.organism()
 
     @classmethod
     def taxid(cls) -> int:
-        """Taxon ID faker."""
+        """Generate a realistic taxonomy ID."""
         return cls.__faker__.random_int(1000, 999999)
