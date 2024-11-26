@@ -232,7 +232,7 @@ def create_isolate_from_records(
         f"Isolate created",
         accessions=sorted([str(record.accession) for record in records]),
         id=str(isolate.id),
-        name=str(isolate.name)
+        name=str(isolate.name),
     )
 
     return isolate

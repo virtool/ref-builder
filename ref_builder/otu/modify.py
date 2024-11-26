@@ -41,13 +41,13 @@ def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
         otu_logger.info(
             f"{isolate.name} removed.",
             removed_isolate_id=isolate_id,
-            current_isolate_ids=list[otu.isolate_ids]
+            current_isolate_ids=list[otu.isolate_ids],
         )
 
     logger.error(
         "This isolate does not exist in this OTU.",
         isolate_id=isolate_id,
-        current_isolate_ids=list[otu.isolate_ids]
+        current_isolate_ids=list[otu.isolate_ids],
     )
     return
 
