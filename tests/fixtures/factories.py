@@ -204,11 +204,6 @@ def derive_acronym(_: str, values: dict[str, str]) -> str:
     return "".join([part[0].upper() for part in name.split(" ")])
 
 
-def derive_repr_isolate(_: str, values: dict[str, str]) -> str:
-    """Derive a representative isolate from an OTU name."""
-    return values["isolates"][0]["name"]
-
-
 @register_fixture
 class OTUFactory(ModelFactory[OTUBase]):
     """OTU Factory with quasi-realistic data."""
@@ -222,11 +217,8 @@ class OTUFactory(ModelFactory[OTUBase]):
 
     __random_seed__ = 21
 
-    @post_generated
-    @classmethod
-    def acronym(cls, name: str) -> str:
-        """Derive an acronym from an OTU name."""
-        return "".join([part[0].upper() for part in name.split(" ")])
+    acronym = PostGenerated(derive_acronym)
+    """An acronym for the OTU derived from its name."""
 
     @post_generated
     @classmethod
@@ -260,18 +252,6 @@ class OTUFactory(ModelFactory[OTUBase]):
             )
 
         return isolates
-
-    @post_generated
-    @classmethod
-    def repr_isolate(cls, isolates: list[RepoIsolate]) -> UUID4:
-        """Derive a representative isolate from an OTU name."""
-        return cls.__faker__.random_element(isolates).id
-
-    @post_generated
-    @classmethod
-    def sequences(cls, isolates: list[RepoIsolate]) -> list[RepoSequence]:
-        """Derive a list of sequences from a list of isolates."""
-        return [sequence for isolate in isolates for sequence in isolate.sequences]
 
     @classmethod
     def excluded_accessions(cls) -> set[str]:
@@ -310,6 +290,18 @@ class OTUFactory(ModelFactory[OTUBase]):
             ],
         )
 
+    @post_generated
+    @classmethod
+    def repr_isolate(cls, isolates: list[RepoIsolate]) -> UUID4:
+        """Derive a representative isolate from an OTU name."""
+        return cls.__faker__.random_element(isolates).id
+
+    @post_generated
+    @classmethod
+    def sequences(cls, isolates: list[RepoIsolate]) -> list[RepoSequence]:
+        """Derive a list of sequences from a list of isolates."""
+        return [sequence for isolate in isolates for sequence in isolate.sequences]
+
     @classmethod
     def taxid(cls) -> int:
         """Generate a realistic taxonomy ID."""
@@ -327,6 +319,7 @@ class OTUMinimalFactory(ModelFactory[OTUMinimal]):
     __random_seed__ = 20
 
     acronym = PostGenerated(derive_acronym)
+    """An acronym for the OTU derived from its name."""
 
     @classmethod
     def legacy_id(cls) -> str:
@@ -335,7 +328,7 @@ class OTUMinimalFactory(ModelFactory[OTUMinimal]):
 
     @classmethod
     def name(cls) -> str:
-        """Generaete a realistic name for the OTU."""
+        """Generate a realistic name for the OTU."""
         return cls.__faker__.organism()
 
     @classmethod

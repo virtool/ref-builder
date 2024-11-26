@@ -112,7 +112,7 @@ class OTU(OTUBase):
     isolates: list[RepoIsolate] = Field(min_length=1)
     """Isolates contained in this OTU.
 
-    A valid O%TU must have at least one isolate.
+    A valid OTU must have at least one isolate.
     """
 
     repr_isolate: UUID4
