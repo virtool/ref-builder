@@ -41,13 +41,23 @@ def exclude_accessions_from_otu(
 
 def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
     """Remove an isolate from a specified OTU."""
-    if (isolate := otu.get_isolate(isolate_id)) is None:
-        logger.error("This isolate does not exist in this OTU.")
-        return
+    otu_logger = logger.bind(otu_id=str(otu.id), taxid=otu.taxid)
 
-    repo.delete_isolate(otu.id, isolate.id, rationale=DeleteRationale.USER)
+    if isolate := otu.get_isolate(isolate_id):
+        repo.delete_isolate(otu.id, isolate.id, rationale=DeleteRationale.USER)
 
-    logger.info(f"{isolate.name} removed.")
+        otu_logger.info(
+            f"{isolate.name} removed.",
+            removed_isolate_id=isolate_id,
+            current_isolate_ids=list[otu.isolate_ids]
+        )
+
+    logger.error(
+        "This isolate does not exist in this OTU.",
+        isolate_id=isolate_id,
+        current_isolate_ids=list[otu.isolate_ids]
+    )
+    return
 
 
 def set_isolate_plan(
