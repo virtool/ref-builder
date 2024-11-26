@@ -9,10 +9,12 @@ from syrupy.filters import props
 from ref_builder.cli.main import isolate_create, otu_create
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.update import (
-    add_and_name_isolate,
+    update_isolate_from_accessions,
+)
+from ref_builder.otu.isolate import (
     add_genbank_isolate,
     add_unnamed_isolate,
-    update_isolate_from_accessions,
+    add_and_name_isolate,
 )
 from ref_builder.otu.utils import RefSeqConflictError
 from ref_builder.repo import Repo

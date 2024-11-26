@@ -9,6 +9,8 @@ from ref_builder.otu.utils import (
     get_molecule_from_records,
     parse_refseq_comment,
 )
+from ref_builder.otu.isolate import create_sequence_from_record
+from ref_builder.plan import get_multipartite_segment_name
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
 
@@ -98,15 +100,10 @@ def create_otu(
     otu.add_isolate(isolate)
     otu.repr_isolate = repo.set_repr_isolate(otu_id=otu.id, isolate_id=isolate.id)
 
-    for record in records:
-        sequence = repo.create_sequence(
-            otu_id=otu.id,
-            accession=record.accession_version,
-            definition=record.definition,
-            legacy_id=None,
-            segment=record.source.segment,
-            sequence=record.sequence,
-        )
+    if otu.plan.plan_type == "monopartite":
+        record = records[0]
+
+        sequence = create_sequence_from_record(repo, otu, record)
 
         repo.link_sequence(otu.id, isolate.id, sequence.id)
 
@@ -116,5 +113,22 @@ def create_otu(
                 otu.id,
                 old_accession,
             )
+
+    else:
+        for record in records:
+            normalized_segment_name = get_multipartite_segment_name(record)
+
+            sequence = create_sequence_from_record(
+                repo, otu, record, segment_name=str(normalized_segment_name)
+            )
+
+            repo.link_sequence(otu.id, isolate.id, sequence.id)
+
+            if record.refseq:
+                _, old_accession = parse_refseq_comment(record.comment)
+                repo.exclude_accession(
+                    otu.id,
+                    old_accession,
+                )
 
     return repo.get_otu(otu.id)

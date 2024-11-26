@@ -1,8 +1,10 @@
+from uuid import UUID
+
 from pydantic import ValidationError
+from structlog import get_logger
 
 from ref_builder.ncbi.client import NCBIClient
-from ref_builder.otu.update import logger
-from ref_builder.otu.utils import create_segments_from_records
+from ref_builder.otu.utils import DeleteRationale, create_segments_from_records
 from ref_builder.plan import (
     MonopartitePlan,
     MultipartitePlan,
@@ -11,7 +13,43 @@ from ref_builder.plan import (
     Segment,
 )
 from ref_builder.repo import Repo
-from ref_builder.resources import RepoOTU
+from ref_builder.resources import RepoOTU, RepoSequence
+
+
+logger = get_logger("otu.modify")
+
+
+def exclude_accessions_from_otu(
+    repo: Repo,
+    otu: RepoOTU,
+    accessions: list[str],
+) -> None:
+    """Take a list of accessions and add them to an OTU's excluded accessions list."""
+    accession_set = set(accessions)
+
+    for accession in accession_set:
+        repo.exclude_accession(otu.id, accession)
+
+
+def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
+    """Remove an isolate from a specified OTU."""
+    otu_logger = logger.bind(otu_id=str(otu.id), taxid=otu.taxid)
+
+    if isolate := otu.get_isolate(isolate_id):
+        repo.delete_isolate(otu.id, isolate.id, rationale=DeleteRationale.USER)
+
+        otu_logger.info(
+            f"{isolate.name} removed.",
+            removed_isolate_id=isolate_id,
+            current_isolate_ids=list[otu.isolate_ids],
+        )
+
+    logger.error(
+        "This isolate does not exist in this OTU.",
+        isolate_id=isolate_id,
+        current_isolate_ids=list[otu.isolate_ids],
+    )
+    return
 
 
 def set_isolate_plan(
@@ -153,3 +191,89 @@ def resize_monopartite_plan(
     )
 
     return set_isolate_plan(repo, otu, new_plan)
+
+
+def replace_sequence_in_otu(
+    repo: Repo,
+    otu: RepoOTU,
+    new_accession: str,
+    replaced_accession: str,
+    ignore_cache: bool = False,
+) -> RepoSequence | None:
+    """Replace a sequence in an OTU."""
+    ncbi = NCBIClient(ignore_cache)
+
+    (
+        isolate_id,
+        sequence_id,
+    ) = otu.get_sequence_id_hierarchy_from_accession(replaced_accession)
+    if sequence_id is None:
+        logger.error("This sequence does not exist in this OTU.")
+        return None
+
+    isolate = otu.get_isolate(isolate_id)
+
+    records = ncbi.fetch_genbank_records([new_accession])
+    record = records[0]
+
+    new_sequence = repo.create_sequence(
+        otu.id,
+        accession=record.accession_version,
+        definition=record.definition,
+        legacy_id=None,
+        segment=record.source.segment,
+        sequence=record.sequence,
+    )
+
+    repo.replace_sequence(
+        otu.id,
+        isolate_id=isolate.id,
+        sequence_id=new_sequence.id,
+        replaced_sequence_id=sequence_id,
+        rationale="Requested by user",
+    )
+
+    if new_sequence is not None:
+        logger.info(
+            f"{replaced_accession} replaced by {new_sequence.accession}.",
+            new_sequence_id=new_sequence.id,
+        )
+        return new_sequence
+
+    logger.error(f"{replaced_accession} could not be replaced.")
+
+
+def set_representative_isolate(
+    repo: Repo,
+    otu: RepoOTU,
+    isolate_id: UUID,
+) -> UUID | None:
+    """Sets an OTU's representative isolate to a given existing isolate ID.
+
+    Returns the isolate ID if successful, else None.
+    """
+    otu_logger = logger.bind(name=otu.name, taxid=otu.taxid)
+
+    new_representative_isolate = otu.get_isolate(isolate_id)
+    if new_representative_isolate is None:
+        otu_logger.error("Isolate not found. Please make a new isolate.")
+        return None
+
+    if otu.repr_isolate is not None:
+        if otu.repr_isolate == new_representative_isolate.id:
+            otu_logger.warning("This isolate is already the representative isolate.")
+            return otu.repr_isolate
+
+        otu_logger.warning(
+            f"Replacing representative isolate {otu.repr_isolate}",
+            representative_isolate_id=str(otu.repr_isolate),
+        )
+
+    repo.set_repr_isolate(otu.id, new_representative_isolate.id)
+
+    otu_logger.info(
+        f"Representative isolate set to {new_representative_isolate.name}.",
+        representative_isolate_id=str(new_representative_isolate.id),
+    )
+
+    return new_representative_isolate.id

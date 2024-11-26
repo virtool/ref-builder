@@ -3,7 +3,7 @@ from faker import Faker
 
 from ref_builder.resources import RepoOTU
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.otu.update import create_isolate_from_records
+from ref_builder.otu.isolate import create_isolate_from_records
 from ref_builder.otu.utils import check_sequence_length, IsolateName, IsolateNameType
 from tests.fixtures.factories import NCBIGenbankFactory, NCBISourceFactory
 from tests.fixtures.providers import AccessionProvider, SequenceProvider

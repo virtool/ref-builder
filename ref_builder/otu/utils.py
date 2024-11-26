@@ -6,6 +6,7 @@ from uuid import UUID
 import structlog
 
 from ref_builder.models import Molecule
+from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.plan import (
     MonopartitePlan,
@@ -42,6 +43,33 @@ class RefSeqConflictError(ValueError):
         self.isolate_name = isolate_name
 
         self.accessions = accessions
+
+
+def check_isolate_size(
+    plan: MonopartitePlan | MultipartitePlan,
+    isolate_count: int,
+) -> bool:
+    """Return True if the size of the proposed isolate matches the isolate plan."""
+    if type(plan) is MonopartitePlan:
+        if isolate_count > 1:
+            raise ValueError("Too many segments in monopartite isolate.")
+        return True
+
+    if isolate_count == len(plan.required_segments):
+        return True
+
+    raise ValueError(
+        f"The plan requires {len(plan.required_segments)} segments: "
+        + f"{[str(segment.name) for segment in plan.segments]}"
+    )
+
+
+def check_sequence_length(sequence: str, segment_length: int, tolerance: float) -> bool:
+    """Check if the sequence length is within acceptable segment length tolerance."""
+    min_length = segment_length * (1.0 - tolerance)
+    max_length = segment_length * (1.0 + tolerance)
+
+    return min_length <= len(sequence) <= max_length
 
 
 def create_segments_from_records(
@@ -100,6 +128,79 @@ def create_isolate_plan_from_records(
     return None
 
 
+def fetch_records_from_accessions(
+    requested_accessions: list | set,
+    blocked_accessions: set,
+    ignore_cache: bool = False,
+) -> list[NCBIGenbank]:
+    """Take a list of requested accessions, remove blocked accessions
+    and fetch records using the remaining accessions.
+
+    Return a list of records.
+    """
+    fetch_logger = logger.bind(
+        requested=sorted(requested_accessions),
+        blocked=sorted(blocked_accessions),
+    )
+
+    ncbi = NCBIClient(ignore_cache)
+
+    try:
+        fetch_set = set(requested_accessions) - blocked_accessions
+        if not fetch_set:
+            fetch_logger.error(
+                "None of the requested accessions were eligible for inclusion"
+            )
+
+            return []
+
+    except ValueError:
+        fetch_logger.error(
+            "Could not create a new isolate using the requested accessions",
+        )
+        return []
+
+    fetch_list = list(fetch_set)
+
+    fetch_logger.info(
+        "Fetching accessions",
+        count=len(fetch_set),
+        fetch_list=fetch_list,
+    )
+
+    records = ncbi.fetch_genbank_records(fetch_list)
+
+    return records
+
+
+def get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
+    """Return relevant molecule metadata from one or more records.
+    Molecule metadata is retrieved from the first RefSeq record in the list.
+    If no RefSeq record is found in the list, molecule metadata is retrieved
+    from record[0].
+    """
+    if not records:
+        raise IndexError("No records given")
+
+    # Assign first record as benchmark to start
+    representative_record = records[0]
+
+    if not representative_record.refseq:
+        for record in records:
+            if record.refseq:
+                # Replace representative record with first RefSeq record found
+                representative_record = record
+                break
+
+    return Molecule.model_validate(
+        {
+            "strandedness": representative_record.strandedness.value,
+            "type": representative_record.moltype.value,
+            "topology": representative_record.topology.value,
+        },
+    )
+
+
 def group_genbank_records_by_isolate(
     records: list[NCBIGenbank],
 ) -> dict[IsolateName, dict[Accession, NCBIGenbank]]:
@@ -142,37 +243,6 @@ def parse_refseq_comment(comment: str) -> tuple[str, str]:
         return match.group(1), match.group(2)
 
     raise ValueError("Invalid RefSeq comment")
-
-
-def get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
-    """Return relevant molecule metadata from one or more records."""
-    if not records:
-        raise IndexError("No records given")
-
-    rep_record = None
-    for record in records:
-        if record.refseq:
-            rep_record = record
-            break
-    if rep_record is None:
-        rep_record = records[0]
-
-    return Molecule.model_validate(
-        {
-            "strandedness": rep_record.strandedness.value,
-            "type": rep_record.moltype.value,
-            "topology": rep_record.topology.value,
-        },
-    )
-
-
-def check_sequence_length(sequence: str, segment_length: int, tolerance: float) -> bool:
-    if len(sequence) < segment_length * (1.0 - tolerance) or len(
-        sequence
-    ) > segment_length * (1.0 + tolerance):
-        return False
-
-    return True
 
 
 def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
