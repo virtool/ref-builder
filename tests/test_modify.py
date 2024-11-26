@@ -10,11 +10,12 @@ from ref_builder.resources import RepoSequence
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.modify import (
     add_segments_to_plan,
+    delete_isolate_from_otu,
+    exclude_accessions_from_otu,
     resize_monopartite_plan,
+    replace_sequence_in_otu,
     set_isolate_plan,
     set_plan_length_tolerances,
-    delete_isolate_from_otu,
-    replace_sequence_in_otu,
     set_representative_isolate,
 )
 from ref_builder.otu.update import (
@@ -29,6 +30,23 @@ from ref_builder.plan import (
     SegmentRule,
     Segment,
 )
+
+
+def test_exclude_accessions(scratch_repo: Repo):
+    """Test accession exclusion function"""
+    taxid = 345184
+
+    otu_before = scratch_repo.get_otu_by_taxid(taxid)
+
+    assert not otu_before.excluded_accessions
+
+    exclude_accessions_from_otu(
+        scratch_repo, otu_before, accessions=["DQ178608", "DQ178609"]
+    )
+
+    otu_after = scratch_repo.get_otu_by_taxid(taxid)
+
+    assert otu_after.excluded_accessions == {"DQ178608", "DQ178609"}
 
 
 def test_update_representative_isolate(scratch_repo: Repo):
