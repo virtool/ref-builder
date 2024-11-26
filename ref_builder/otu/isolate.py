@@ -69,7 +69,7 @@ def add_genbank_isolate(
                 )
             return None
 
-    if type(otu.plan) is MonopartitePlan:
+    if isinstance(otu.plan, MonopartitePlan):
         return create_monopartite_isolate(repo, otu, isolate_name, records[0])
 
     return create_isolate_from_records(
@@ -229,9 +229,10 @@ def create_isolate_from_records(
             )
 
     isolate_logger.info(
-        f"{isolate.name} created",
-        isolate_id=str(isolate.id),
-        sequences=sorted([str(record.accession) for record in records]),
+        f"Isolate created",
+        accessions=sorted([str(record.accession) for record in records]),
+        id=str(isolate.id),
+        name=str(isolate.name)
     )
 
     return isolate
