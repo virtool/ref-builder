@@ -176,23 +176,29 @@ def fetch_records_from_accessions(
 
 
 def get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
-    """Return relevant molecule metadata from one or more records."""
+    """Return relevant molecule metadata from one or more records.
+    Molecule metadata is retrieved from the first RefSeq record in the list.
+    If no RefSeq record is found in the list, molecule metadata is retrieved
+    from record[0].
+    """
     if not records:
         raise IndexError("No records given")
 
-    rep_record = None
-    for record in records:
-        if record.refseq:
-            rep_record = record
-            break
-    if rep_record is None:
-        rep_record = records[0]
+    # Assign first record as benchmark to start
+    representative_record = records[0]
+
+    if not representative_record.refseq:
+        for record in records:
+            if record.refseq:
+                # Replace representative record with first RefSeq record found
+                representative_record = record
+                break
 
     return Molecule.model_validate(
         {
-            "strandedness": rep_record.strandedness.value,
-            "type": rep_record.moltype.value,
-            "topology": rep_record.topology.value,
+            "strandedness": representative_record.strandedness.value,
+            "type": representative_record.moltype.value,
+            "topology": representative_record.topology.value,
         },
     )
 
