@@ -25,18 +25,10 @@ def exclude_accessions_from_otu(
     accessions: list[str],
 ) -> None:
     """Take a list of accessions and add them to an OTU's excluded accessions list."""
-    excluded_accessions = set()
+    accession_set = set(accessions)
 
-    # Using a set avoid duplicate accessions.
-    for accession in set(accessions):
-        excluded_accessions = repo.exclude_accession(otu.id, accession)
-
-    logger.debug(
-        f"Accessions currently excluded from fetches: {excluded_accessions}",
-        taxid=otu.taxid,
-        otu_id=str(otu.id),
-        name=otu.name,
-    )
+    for accession in accession_set:
+        repo.exclude_accession(otu.id, accession)
 
 
 def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
