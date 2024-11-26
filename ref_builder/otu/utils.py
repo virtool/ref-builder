@@ -66,12 +66,10 @@ def check_isolate_size(
 
 def check_sequence_length(sequence: str, segment_length: int, tolerance: float) -> bool:
     """Check if the sequence length is within acceptable segment length tolerance."""
-    if len(sequence) < segment_length * (1.0 - tolerance) or len(
-        sequence
-    ) > segment_length * (1.0 + tolerance):
-        return False
+    min_length = segment_length * (1.0 - tolerance)
+    max_length = segment_length * (1.0 + tolerance)
 
-    return True
+    return min_length <= len(sequence) <= max_length
 
 
 def create_segments_from_records(
@@ -148,7 +146,7 @@ def fetch_records_from_accessions(
     ncbi = NCBIClient(ignore_cache)
 
     try:
-        fetch_set = set(requested_accessions).difference(blocked_accessions)
+        fetch_set = set(requested_accessions) - blocked_accessions
         if not fetch_set:
             fetch_logger.error(
                 "None of the requested accessions were eligible for inclusion"
