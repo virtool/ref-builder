@@ -95,5 +95,4 @@ class TestOTU:
         )
 
         assert otu.get_isolate(isolate_id) is not None
-
-        assert sequence_id in otu.sequence_ids
+        assert otu.get_sequence_by_id(sequence_id) is not None

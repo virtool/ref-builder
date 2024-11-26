@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import UUID4, BaseModel, Field, field_serializer, field_validator
 
 from ref_builder.models import Molecule
-from ref_builder.plan import Plan, MonopartitePlan, MultipartitePlan
+from ref_builder.plan import Plan
 from ref_builder.utils import Accession, DataType, IsolateName
 
 
@@ -276,11 +276,6 @@ class RepoOTU(BaseModel):
     def isolate_ids(self) -> set[UUID4]:
         """A set of UUIDs for isolates in the OTU."""
         return set(self._isolates_by_id.keys())
-
-    @property
-    def sequence_ids(self) -> set[UUID]:
-        """A set of UUIDs for sequences in the OTU."""
-        return set(self._sequences_by_id.keys())
 
     def add_isolate(self, isolate: RepoIsolate) -> None:
         """Add an isolate to the OTU."""

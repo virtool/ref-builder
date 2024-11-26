@@ -513,7 +513,10 @@ class TestGetOTU:
         """Test that getting an OTU that does not exist returns ``None``."""
         assert initialized_repo.get_otu(uuid4()) is None
 
-    def test_get_accessions(self, initialized_repo: Repo):
+    def test_accessions(self, initialized_repo: Repo):
+        """Test that the `accessions` property returns the expected set of
+        accessions.
+        """
         otu = next(initialized_repo.iter_otus())
 
         assert otu.accessions == {"TMVABC"}
@@ -539,7 +542,10 @@ class TestGetOTU:
 
         assert otu.accessions == {"TMVABC", "TMVABCB"}
 
-    def test_get_blocked_accessions(self, initialized_repo: Repo):
+    def test_blocked_accessions(self, initialized_repo: Repo):
+        """Test that the `blocked_accessions` property returns the expected set of
+        accessions.
+        """
         otu = initialized_repo.get_otu_by_taxid(12242)
 
         sequence_2 = initialized_repo.create_sequence(
@@ -681,13 +687,13 @@ def test_exclude_accession(empty_repo: Repo):
     }
 
 
-def test_delete_isolate(initialized_repo):
+def test_delete_isolate(initialized_repo: Repo):
     """Test that an isolate can be redacted from an OTU."""
     otu_before = next(initialized_repo.iter_otus())
 
     otu_id = otu_before.id
 
-    isolate_before = list(otu_before.isolates)[0]
+    isolate_before = next(iter(otu_before.isolates))
 
     initialized_repo.delete_isolate(
         otu_id,
@@ -706,8 +712,10 @@ def test_delete_isolate(initialized_repo):
     assert isolate_before.accessions not in otu_after.accessions
 
 
-def test_replace_sequence(initialized_repo):
-    """Test the replacement of am existing sequence using a new Genbank accession and record."""
+def test_replace_sequence(initialized_repo: Repo):
+    """Test the replacement of am existing sequence using a new Genbank accession and
+    record.
+    """
     otu_before = initialized_repo.get_otu_by_taxid(12242)
 
     accession = "TMVABC"
@@ -735,16 +743,17 @@ def test_replace_sequence(initialized_repo):
 
     otu_after = initialized_repo.get_otu(otu_before.id)
 
-    assert new_sequence.id in otu_after.sequence_ids
-
-    assert replaced_sequence_id not in otu_after.sequence_ids
+    assert otu_after.get_sequence_by_id(new_sequence.id) is not None
+    assert otu_after.get_sequence_by_id(replaced_sequence_id) is None
 
 
 class TestMalformedEvent:
     """Test that malformed events cannot be rehydrated."""
 
-    def test_bad_event_typing(self, initialized_repo):
-        """Test that an event with an invalid event type discriminator does not attempt to rehydrate"""
+    def test_bad_event_typing(self, initialized_repo: Repo):
+        """Test that an event with an invalid event type discriminator does not attempt
+        to rehydrate.
+        """
         filepath = initialized_repo.path.joinpath("src", "00000002.json")
 
         with open(filepath, "rb") as f:
@@ -759,14 +768,14 @@ class TestMalformedEvent:
         with open(filepath, "wb") as f:
             f.write(orjson.dumps(event))
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Unknown event type: MalformedEvent"):
             initialized_repo.get_otu_by_taxid(12242)
 
-    def test_bad_event_data(self, initialized_repo):
-        """Test that an event with bad data cannot be rehydrated"""
-        filepath = initialized_repo.path.joinpath("src", "00000002.json")
+    def test_bad_event_data(self, initialized_repo: Repo):
+        """Test that an event with bad data cannot be rehydrated."""
+        path = initialized_repo.path.joinpath("src", "00000002.json")
 
-        with open(filepath, "rb") as f:
+        with open(path, "rb") as f:
             event = orjson.loads(f.read())
 
         otu = initialized_repo.get_otu_by_taxid(12242)
@@ -775,8 +784,11 @@ class TestMalformedEvent:
 
         event["data"]["taxid"] = "popcorn"
 
-        with open(filepath, "wb") as f:
+        with open(path, "wb") as f:
             f.write(orjson.dumps(event))
 
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="Input should be a valid integer, unable to parse string",
+        ):
             initialized_repo.get_otu_by_taxid(12242)
