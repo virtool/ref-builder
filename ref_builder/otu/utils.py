@@ -47,15 +47,15 @@ class RefSeqConflictError(ValueError):
 
 def check_isolate_size(
     plan: MonopartitePlan | MultipartitePlan,
-    isolate_n: int,
+    isolate_count: int,
 ) -> bool:
     """Return True if the size of the proposed isolate matches the isolate plan."""
     if type(plan) is MonopartitePlan:
-        if isolate_n > 1:
+        if isolate_count > 1:
             raise ValueError("Too many segments in monopartite isolate.")
         return True
 
-    if isolate_n == len(plan.required_segments):
+    if isolate_count == len(plan.required_segments):
         return True
 
     raise ValueError(

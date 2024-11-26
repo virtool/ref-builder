@@ -47,7 +47,7 @@ def add_genbank_isolate(
     isolate_name, isolate_records = list(record_bins.items())[0]
 
     try:
-        check_isolate_size(plan=otu.plan, isolate_n=len(isolate_records))
+        check_isolate_size(plan=otu.plan, isolate_count=len(isolate_records))
     except ValueError as e:
         otu_logger.warning(
             e,
@@ -101,7 +101,7 @@ def add_unnamed_isolate(
         return None
 
     try:
-        check_isolate_size(plan=otu.plan, isolate_n=len(records))
+        check_isolate_size(plan=otu.plan, isolate_count=len(records))
     except ValueError as e:
         otu_logger.warning(
             e,

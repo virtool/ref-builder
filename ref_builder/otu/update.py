@@ -203,7 +203,7 @@ def file_records_into_otu(
         isolate_records = record_bins[isolate_name]
 
         try:
-            check_isolate_size(plan=otu.plan, isolate_n=len(isolate_records))
+            check_isolate_size(plan=otu.plan, isolate_count=len(isolate_records))
         except ValueError as e:
             otu_logger.warning(
                 e,
