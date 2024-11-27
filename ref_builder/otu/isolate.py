@@ -5,6 +5,7 @@ from structlog import get_logger
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.utils import (
     RefSeqConflictError,
+    assign_records_to_segments,
     check_isolate_size,
     check_sequence_length,
     fetch_records_from_accessions,
@@ -74,12 +75,17 @@ def add_genbank_isolate(
     if isinstance(otu.plan, MonopartitePlan):
         return create_monopartite_isolate(repo, otu, isolate_name, records[0])
 
-    return create_isolate_from_records(
-        repo,
-        otu,
-        isolate_name,
-        list(isolate_records.values()),
-    )
+    try:
+        return create_multipartite_isolate(
+            repo,
+            otu,
+            isolate_name,
+            assigned_records=assign_records_to_segments(records, otu.plan),
+        )
+    except ValueError as e:
+        otu_logger.error(e)
+
+    return None
 
 
 def add_unnamed_isolate(
@@ -120,12 +126,17 @@ def add_unnamed_isolate(
             record=records[0],
         )
 
-    return create_isolate_from_records(
-        repo,
-        otu,
-        isolate_name=None,
-        records=records,
-    )
+    try:
+        return create_multipartite_isolate(
+            repo,
+            otu,
+            isolate_name=None,
+            assigned_records=assign_records_to_segments(records, otu.plan),
+        )
+    except ValueError as e:
+        otu_logger.error(e)
+
+    return None
 
 
 def add_and_name_isolate(
@@ -157,12 +168,17 @@ def add_and_name_isolate(
             record=records[0],
         )
 
-    return create_isolate_from_records(
-        repo,
-        otu,
-        isolate_name=isolate_name,
-        records=records,
-    )
+    try:
+        return create_multipartite_isolate(
+            repo,
+            otu,
+            isolate_name=isolate_name,
+            assigned_records=assign_records_to_segments(records, otu.plan),
+        )
+    except ValueError as e:
+        otu_logger.error(e)
+
+    return None
 
 
 def create_isolate_from_records(
@@ -341,7 +357,10 @@ def create_multipartite_isolate(
         normalized_segment_name = get_multipartite_segment_name(record)
 
         sequence = create_sequence_from_record(
-            repo, otu, record, str(normalized_segment_name),
+            repo,
+            otu,
+            record,
+            str(normalized_segment_name),
         )
 
         if sequence is None:
