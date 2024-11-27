@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from structlog import get_logger
 
 from ref_builder.ncbi.models import NCBIGenbank
@@ -9,7 +11,7 @@ from ref_builder.otu.utils import (
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
-from ref_builder.plan import MonopartitePlan
+from ref_builder.plan import MonopartitePlan, get_multipartite_segment_name
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU, RepoIsolate, RepoSequence
 from ref_builder.utils import IsolateName
@@ -297,6 +299,67 @@ def create_monopartite_isolate(
         f"{isolate.name} created",
         isolate_id=str(isolate.id),
         sequences=str(sequence.accession),
+    )
+
+    return isolate
+
+
+def create_multipartite_isolate(
+    repo: Repo,
+    otu: RepoOTU,
+    isolate_name: IsolateName | None,
+    assigned_records: dict[UUID, NCBIGenbank]
+):
+    """Take a dictionary of records keyed by segment name and add them to the OTU."""
+    isolate_logger = get_logger("otu.isolate").bind(
+        isolate_name=str(isolate_name) if IsolateName is not None else None,
+        otu_name=otu.name,
+        taxid=otu.taxid,
+    )
+
+    try:
+        isolate = repo.create_isolate(
+            otu_id=otu.id,
+            legacy_id=None,
+            name=isolate_name,
+        )
+    except ValueError as e:
+        if "Isolate name already exists" in str(e):
+            logger.error(
+                "OTU already contains isolate with name.",
+                isolate_name=str(isolate_name) if IsolateName is not None else None,
+                otu_name=otu.name,
+                taxid=otu.taxid,
+            )
+            return None
+
+        raise e
+
+    for segment_id in assigned_records:
+        record = assigned_records[segment_id]
+
+        normalized_segment_name = get_multipartite_segment_name(record)
+
+        sequence = create_sequence_from_record(
+            repo, otu, record, str(normalized_segment_name),
+        )
+
+        if sequence is None:
+            raise ValueError("Sequence could not be created")
+
+        repo.link_sequence(otu.id, isolate.id, sequence.id)
+
+        if record.refseq:
+            refseq_status, old_accession = parse_refseq_comment(record.comment)
+            repo.exclude_accession(
+                otu.id,
+                old_accession,
+            )
+
+    isolate_logger.info(
+        f"{isolate.name} created",
+        isolate_id=str(isolate.id),
+        sequences=list(isolate.accessions),
     )
 
     return isolate
