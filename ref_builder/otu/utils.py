@@ -13,6 +13,7 @@ from ref_builder.plan import (
     MultipartitePlan,
     Segment,
     SegmentRule,
+    get_multipartite_segment_name,
 )
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
@@ -261,3 +262,27 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
         return None
 
     raise ValueError("Record does not contain sufficient source data for inclusion.")
+
+
+def assign_records_to_segments(
+    records: list[NCBIGenbank], plan: MultipartitePlan
+) -> dict[UUID, NCBIGenbank]:
+    """Return a dictionary of records keyed by segment UUID, else raise a ValueError."""
+    assigned_records = {}
+
+    unassigned_segments = plan.segments.copy()
+
+    for record in records:
+        normalized_segment_name = get_multipartite_segment_name(record)
+
+        for segment in unassigned_segments:
+            if segment.name == normalized_segment_name:
+                assigned_records[segment.id] = record
+                unassigned_segments.remove(segment)
+                break
+
+    for segment in plan.required_segments:
+        if segment.id not in assigned_records:
+            raise ValueError("Missing one or more required segments")
+
+    return assigned_records
