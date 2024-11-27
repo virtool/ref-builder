@@ -170,6 +170,10 @@ class MultipartitePlan(BaseModel):
         """Return a list of segments that are required by all additions."""
         return [segment for segment in self.segments if segment.required]
 
+    @property
+    def secondary_segments(self) -> list[Segment]:
+        return [segment for segment in self.segments if not segment.required]
+
     @classmethod
     def new(cls, segments: list["Segment"]) -> "MultipartitePlan":
         """Initialize a MultipartitePlan from a list of segments."""
