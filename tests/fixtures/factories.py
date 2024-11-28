@@ -261,6 +261,35 @@ def derive_acronym(_: str, values: dict[str, str]) -> str:
     return "".join([part[0].upper() for part in name.split(" ")])
 
 
+class SequenceFactory(ModelFactory[RepoSequence]):
+    __faker__ = Faker()
+
+    __faker__.add_provider(AccessionProvider)
+    __faker__.add_provider(BusinessProvider)
+    __faker__.add_provider(SequenceProvider)
+
+    @classmethod
+    def accession(cls) -> Accession:
+        return Accession(key=cls.__faker__.accession(), version=1)
+
+    @classmethod
+    def definition(cls):
+        return cls.__faker__.sentence()
+
+    @classmethod
+    def legacy_id(cls) -> str:
+        """Generate an 8-character unique identifier as used in virtool-cli."""
+        return cls.__faker__.legacy_id()
+
+    @classmethod
+    def segment(cls) -> str:
+        return cls.__faker__.segment()
+
+    @classmethod
+    def sequence(cls) -> str:
+        return cls.__faker__.sequence()
+
+
 @register_fixture
 class OTUFactory(ModelFactory[OTUBase]):
     """OTU Factory with quasi-realistic data."""
@@ -285,14 +314,7 @@ class OTUFactory(ModelFactory[OTUBase]):
 
         for _ in range(cls.__faker__.random_int(2, 5)):
             sequences = [
-                RepoSequence(
-                    id=cls.__faker__.uuid4(),
-                    accession=Accession(key=cls.__faker__.accession(), version=1),
-                    definition=cls.__faker__.sentence(),
-                    legacy_id=None,
-                    segment=str(segment.name),
-                    sequence=cls.__faker__.sequence(),
-                )
+                SequenceFactory.build(segment=str(segment.name))
                 for segment in plan.segments
             ]
 
