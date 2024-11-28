@@ -1,7 +1,7 @@
 import re
 from enum import StrEnum
 from typing import Annotated, Literal, Union
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from pydantic import UUID4, BaseModel, ConfigDict, Field
 from pydantic.dataclasses import dataclass
@@ -172,6 +172,7 @@ class MultipartitePlan(BaseModel):
 
     @property
     def secondary_segments(self) -> list[Segment]:
+        """Return a list of segments that are not always required for inclusion."""
         return [segment for segment in self.segments if not segment.required]
 
     @classmethod
@@ -182,6 +183,26 @@ class MultipartitePlan(BaseModel):
             plan_type="multipartite",
             segments=segments,
         )
+
+    def get_segment_by_id(self, segment_id: UUID) -> Segment | None:
+        """Return the segment with the matching segment ID if it exists,
+        otherwise return None.
+        """
+        for segment in self.segments:
+            if segment.id == segment_id:
+                return segment
+
+        return None
+
+    def get_segment_by_key(self, name_key: str) -> Segment | None:
+        """Return the segment with the matching SegmentName.key it exists,
+        otherwise return None.
+        """
+        for segment in self.segments:
+            if segment.name.key == name_key:
+                return segment
+
+        return None
 
 
 Plan = Annotated[
