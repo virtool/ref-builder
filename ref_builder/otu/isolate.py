@@ -333,23 +333,25 @@ def create_multipartite_isolate(
         taxid=otu.taxid,
     )
 
-    for segment in otu.plan.segments:
-        if segment.id in assigned_records:
-            record = assigned_records[segment.id]
-            if not check_sequence_length(
-                record.sequence,
-                segment_length=segment.length,
-                tolerance=segment.length_tolerance,
-            ):
-                isolate_logger.warning(
-                    "Sequence does not conform to recommended segment length.",
-                    record_accession=record.accession_version,
-                    record_data_length=len(record.sequence),
-                    segment_id=str(segment.id),
-                    segment_name=str(segment.name),
-                    segment_length=segment.length,
-                )
-                return None
+    for segment_id in assigned_records:
+        matching_segment = otu.plan.get_segment_by_id(segment_id)
+
+        record = assigned_records[segment_id]
+        if not check_sequence_length(
+            record.sequence,
+            segment_length=matching_segment.length,
+            tolerance=matching_segment.length_tolerance,
+        ):
+            isolate_logger.warning(
+                "Sequence does not conform to recommended segment length.",
+                record_accession=record.accession_version,
+                record_data_length=len(record.sequence),
+                segment_id=str(matching_segment.id),
+                segment_name=str(matching_segment.name),
+                segment_length=matching_segment.length,
+                segment_tolerance=matching_segment.length_tolerance,
+            )
+            return None
 
     try:
         isolate = repo.create_isolate(
