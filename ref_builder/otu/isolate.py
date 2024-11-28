@@ -324,7 +324,7 @@ def create_multipartite_isolate(
     repo: Repo,
     otu: RepoOTU,
     isolate_name: IsolateName | None,
-    assigned_records: dict[UUID, NCBIGenbank]
+    assigned_records: dict[UUID, NCBIGenbank],
 ):
     """Take a dictionary of records keyed by segment name and add them to the OTU."""
     isolate_logger = get_logger("otu.isolate").bind(
@@ -332,6 +332,24 @@ def create_multipartite_isolate(
         otu_name=otu.name,
         taxid=otu.taxid,
     )
+
+    for segment in otu.plan.segments:
+        if segment.id in assigned_records:
+            record = assigned_records[segment.id]
+            if not check_sequence_length(
+                record.sequence,
+                segment_length=segment.length,
+                tolerance=segment.length_tolerance,
+            ):
+                isolate_logger.warning(
+                    "Sequence does not conform to recommended segment length.",
+                    record_accession=record.accession_version,
+                    record_data_length=len(record.sequence),
+                    segment_id=str(segment.id),
+                    segment_name=str(segment.name),
+                    segment_length=segment.length,
+                )
+                return None
 
     try:
         isolate = repo.create_isolate(
