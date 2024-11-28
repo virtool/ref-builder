@@ -290,6 +290,27 @@ class SequenceFactory(ModelFactory[RepoSequence]):
         return cls.__faker__.sequence()
 
 
+class IsolateFactory(ModelFactory[IsolateBase]):
+    __faker__ = Faker()
+
+    __faker__.add_provider(BusinessProvider)
+
+    @classmethod
+    def legacy_id(cls) -> str:
+        """Generate an 8-character unique identifier as used in virtool-cli."""
+        return cls.__faker__.legacy_id()
+
+    @classmethod
+    def name(cls) -> IsolateName:
+        return IsolateName(
+            type=IsolateNameType.ISOLATE,
+            value=cls.__faker__.word(part_of_speech="noun").capitalize(),
+        )
+
+    def sequences(cls) -> list[RepoSequence]:
+        return SequenceFactory.batch(cls.__faker__.random_int(1, 6))
+
+
 @register_fixture
 class OTUFactory(ModelFactory[OTUBase]):
     """OTU Factory with quasi-realistic data."""
@@ -318,17 +339,7 @@ class OTUFactory(ModelFactory[OTUBase]):
                 for segment in plan.segments
             ]
 
-            isolates.append(
-                IsolateBase(
-                    id=cls.__faker__.uuid4(),
-                    legacy_id=None,
-                    name=IsolateName(
-                        type=IsolateNameType.ISOLATE,
-                        value=cls.__faker__.word(part_of_speech="noun").capitalize(),
-                    ),
-                    sequences=sequences,
-                )
-            )
+            isolates.append(IsolateFactory.build(sequences=sequences))
 
         return isolates
 
