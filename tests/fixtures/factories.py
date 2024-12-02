@@ -266,6 +266,7 @@ class SequenceFactory(ModelFactory[RepoSequence]):
 
     __faker__.add_provider(AccessionProvider)
     __faker__.add_provider(BusinessProvider)
+    __faker__.add_provider(SegmentProvider)
     __faker__.add_provider(SequenceProvider)
 
     @classmethod
@@ -293,6 +294,7 @@ class SequenceFactory(ModelFactory[RepoSequence]):
 class IsolateFactory(ModelFactory[IsolateBase]):
     __faker__ = Faker()
 
+    __faker__.add_provider(AccessionProvider)
     __faker__.add_provider(BusinessProvider)
 
     @classmethod
@@ -307,11 +309,22 @@ class IsolateFactory(ModelFactory[IsolateBase]):
             value=cls.__faker__.word(part_of_speech="noun").capitalize(),
         )
 
+    @classmethod
     def sequences(cls) -> list[RepoSequence]:
-        return SequenceFactory.batch(cls.__faker__.random_int(1, 6))
+        n_sequences = cls.__faker__.random_int(1, 6)
+
+        accessions = cls.__faker__.accessions(n_sequences)
+
+        sequences = []
+        for accession in accessions:
+            sequences.append(
+                SequenceFactory.build(accession=Accession(key=accession, version=1))
+            )
+
+        return sequences
 
 
-@register_fixture
+# @register_fixture
 class OTUFactory(ModelFactory[OTUBase]):
     """OTU Factory with quasi-realistic data."""
 
