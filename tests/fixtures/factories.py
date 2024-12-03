@@ -10,7 +10,13 @@ from pydantic.v1 import UUID4
 from ref_builder.models import MolType, OTUMinimal
 from ref_builder.ncbi.models import NCBIGenbank, NCBISource, NCBISourceMolType
 from ref_builder.otu.models import IsolateBase, OTUBase
-from ref_builder.plan import MultipartitePlan, Segment, SegmentName, SegmentRule
+from ref_builder.plan import (
+    MonopartitePlan,
+    MultipartitePlan,
+    Segment,
+    SegmentName,
+    SegmentRule,
+)
 from ref_builder.resources import RepoIsolate, RepoSequence
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 from tests.fixtures.providers import (
@@ -196,6 +202,57 @@ class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
             raise ValueError(
                 f"Source moltype {source.mol_type} cannot be matched to MolType",
             ) from err
+
+    @staticmethod
+    def build_from_metadata(
+        plan: MonopartitePlan | MultipartitePlan,
+        moltype: MolType,
+        name: str,
+        taxid: int,
+    ) -> list[NCBIGenbank]:
+        """Return a list of mock records matching given OTU metadata."""
+        source_moltype = None
+
+        match moltype:
+            case MolType.DNA:
+                source_moltype = NCBISourceMolType.GENOMIC_DNA
+            case MolType.RNA:
+                source_moltype = NCBISourceMolType.GENOMIC_RNA
+            case MolType.CRNA:
+                source_moltype = NCBISourceMolType.VIRAL_CRNA
+            case MolType.MRNA:
+                source_moltype = NCBISourceMolType.MRNA
+            case MolType.TRNA:
+                source_moltype = NCBISourceMolType.TRANSCRIBED_RNA
+
+        if source_moltype is None:
+            raise ValueError(
+                f"MolType {moltype} cannot be matched to NCBISourceMolType"
+            )
+
+        if isinstance(plan, MonopartitePlan):
+            source = NCBISourceFactory.build(
+                moltype=source_moltype,
+                organism=name,
+                segment="",
+                taxid=taxid,
+            )
+
+            return [NCBIGenbankFactory.build(source=source)]
+
+        mock_records = []
+
+        for segment in plan.required_segments:
+            source = NCBISourceFactory.build(
+                moltype=source_moltype,
+                organism=name,
+                segment=str(segment.name),
+                taxid=taxid,
+            )
+
+            mock_records.append(NCBIGenbankFactory.build(source=source))
+
+        return mock_records
 
 
 def derive_acronym(_: str, values: dict[str, str]) -> str:
