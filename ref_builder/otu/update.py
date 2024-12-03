@@ -6,8 +6,9 @@ from structlog import get_logger
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.isolate import (
-    create_isolate_from_records,
+    assign_records_to_segments,
     create_monopartite_isolate,
+    create_multipartite_isolate,
 )
 from ref_builder.otu.utils import (
     DeleteRationale,
@@ -220,16 +221,28 @@ def file_records_into_otu(
                 record=list(isolate_records.values())[0],
             )
 
-        else:
-            isolate = create_isolate_from_records(
-                repo,
-                otu,
-                isolate_name,
-                records=list(isolate_records.values()),
-            )
+            if isolate is not None:
+                new_isolate_names.append(isolate_name)
 
-        if isolate is not None:
-            new_isolate_names.append(isolate_name)
+        else:
+            assigned_records = None
+            try:
+                assigned_records = assign_records_to_segments(
+                    list(isolate_records.values()), otu.plan
+                )
+
+            except ValueError as e:
+                otu_logger.error(e)
+
+            if assigned_records:
+                isolate = create_multipartite_isolate(
+                    repo,
+                    otu,
+                    isolate_name,
+                    assigned_records,
+                )
+
+                new_isolate_names.append(isolate_name)
 
     if new_isolate_names:
         otu_logger.info(

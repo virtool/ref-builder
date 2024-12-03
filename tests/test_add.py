@@ -220,6 +220,36 @@ class TestCreateOTUCommands:
 
 
 class TestAddIsolate:
+    def test_add_multipartite(self, precached_repo: Repo):
+        otu_before = create_otu(
+            precached_repo, 2164102, ["MF062136", "MF062137", "MF062138"], acronym=""
+        )
+
+        assert otu_before.accessions == {"MF062136", "MF062137", "MF062138"}
+
+        assert len(otu_before.isolate_ids) == 1
+
+        isolate = add_genbank_isolate(
+            precached_repo, otu_before, ["MF062125", "MF062126", "MF062127"]
+        )
+
+        otu_after = precached_repo.get_otu(otu_before.id)
+
+        assert otu_after.accessions == {
+            "MF062125",
+            "MF062126",
+            "MF062127",
+            "MF062136",
+            "MF062137",
+            "MF062138",
+        }
+
+        assert otu_after.get_isolate(isolate.id).accessions == {
+            "MF062125",
+            "MF062126",
+            "MF062127",
+        }
+
     def test_duplicate_accessions(self, precached_repo: Repo):
         """Test that an error is raised when duplicate accessions are provided."""
         runner = CliRunner()

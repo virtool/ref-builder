@@ -3,7 +3,9 @@ from faker import Faker
 
 from ref_builder.resources import RepoOTU
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.otu.isolate import create_isolate_from_records
+from ref_builder.otu.isolate import (
+    create_monopartite_isolate,
+)
 from ref_builder.otu.utils import check_sequence_length, IsolateName, IsolateNameType
 from tests.fixtures.factories import NCBIGenbankFactory, NCBISourceFactory
 from tests.fixtures.providers import AccessionProvider, SequenceProvider
@@ -91,11 +93,11 @@ class TestAddMonopartiteIsolate:
 
         assert mock_record
 
-        mock_isolate = create_isolate_from_records(
+        mock_isolate = create_monopartite_isolate(
             scratch_repo,
             otu_before,
             isolate_name=IsolateName(type=IsolateNameType.ISOLATE, value="mock"),
-            records=[mock_record],
+            record=mock_record,
         )
 
         otu_after = scratch_repo.get_otu_by_taxid(270478)
@@ -118,11 +120,11 @@ class TestAddMonopartiteIsolate:
 
         assert mock_record
 
-        mock_isolate = create_isolate_from_records(
+        mock_isolate = create_monopartite_isolate(
             scratch_repo,
             otu_before,
             isolate_name=IsolateName(type=IsolateNameType.ISOLATE, value="mock"),
-            records=[mock_record],
+            record=mock_record,
         )
 
         assert mock_isolate is None
