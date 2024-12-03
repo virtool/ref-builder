@@ -137,13 +137,13 @@ class Plan(BaseModel):
         return Plan(id=uuid4(), segments=segments)
 
     @classmethod
-    def new_monopartite(cls, record: NCBIGenbank, length_tolerance: float) -> "Plan":
+    def new_monopartite(cls, length: int, length_tolerance: float) -> "Plan":
         """Initialize a new monopartite Plan from a record and a length tolerance."""
         return Plan(
             id=uuid4(),
             segments=[
                 Segment.new(
-                    length=len(record.sequence),
+                    length=length,
                     length_tolerance=length_tolerance,
                     name=None,
                     required=SegmentRule.REQUIRED,

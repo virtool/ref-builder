@@ -6,7 +6,6 @@ from structlog import get_logger
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.utils import DeleteRationale, create_segments_from_records
 from ref_builder.plan import (
-    MonopartitePlan,
     Plan,
     SegmentRule,
     SegmentName,
@@ -55,8 +54,8 @@ def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
 def set_isolate_plan(
     repo: Repo,
     otu: RepoOTU,
-    plan: MonopartitePlan | Plan,
-) -> MonopartitePlan | Plan | None:
+    plan: Plan,
+) -> Plan | None:
     """Sets an OTU's isolate plan to a new plan."""
     otu_logger = logger.bind(name=otu.name, taxid=otu.taxid, plan=plan.model_dump())
 
@@ -73,14 +72,14 @@ def set_plan_length_tolerances(
     repo: Repo,
     otu: RepoOTU,
     tolerance: float,
-) -> MonopartitePlan | Plan | None:
+) -> Plan | None:
     """Sets a plan's length tolerances to a new float value."""
-    if otu.plan.plan_type == "monopartite":
+    if otu.plan.monopartite:
         try:
             repo.set_isolate_plan(
                 otu.id,
-                MonopartitePlan.new(
-                    length=otu.plan.length,
+                Plan.new_monopartite(
+                    length=otu.plan.segments[0].length,
                     length_tolerance=tolerance,
                 ),
             )
@@ -89,7 +88,7 @@ def set_plan_length_tolerances(
                 e,
                 name=otu.name,
                 taxid=otu.taxid,
-                tolerance=otu.plan.length_tolerance,
+                tolerance=otu.plan.segments[0].length_tolerance,
                 new_tolerance=tolerance,
             )
             return None
@@ -111,7 +110,7 @@ def add_segments_to_plan(
 
     sequence_length_tolerance = repo.settings.default_segment_length_tolerance
 
-    if type(otu.plan) is MonopartitePlan:
+    if otu.plan.monopartite:
         raise ValueError("Cannot add segments to a monopartite plan.")
 
     client = NCBIClient(ignore_cache)
@@ -181,7 +180,7 @@ def resize_monopartite_plan(
     new_plan = Plan.new(
         segments=[
             Segment.new(
-                length=otu.plan.length,
+                length=otu.plan[0].length,
                 length_tolerance=sequence_length_tolerance,
                 name=name,
                 required=SegmentRule.REQUIRED,

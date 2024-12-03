@@ -100,7 +100,7 @@ def create_otu(
     otu.add_isolate(isolate)
     otu.repr_isolate = repo.set_repr_isolate(otu_id=otu.id, isolate_id=isolate.id)
 
-    if otu.plan.plan_type == "monopartite":
+    if otu.plan.monopartite:
         record = records[0]
 
         sequence = create_sequence_from_record(repo, otu, record)

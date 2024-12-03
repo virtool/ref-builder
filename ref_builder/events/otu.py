@@ -3,7 +3,7 @@ from pydantic import UUID4
 from ref_builder.events.base import ApplicableEvent, EventData, Event, OTUQuery
 from ref_builder.resources import RepoOTU
 from ref_builder.models import Molecule
-from ref_builder.plan import MonopartitePlan, Plan
+from ref_builder.plan import Plan
 
 
 class CreateOTUData(EventData):
@@ -15,7 +15,7 @@ class CreateOTUData(EventData):
     molecule: Molecule
     name: str
     taxid: int
-    plan: MonopartitePlan | Plan
+    plan: Plan
 
 
 class CreateOTU(Event):
@@ -65,7 +65,7 @@ class ExcludeAccession(ApplicableEvent):
 class CreatePlanData(EventData):
     """The data for a :class:`CreatePlan` event."""
 
-    plan: MonopartitePlan | Plan
+    plan: Plan
 
 
 class CreatePlan(ApplicableEvent):

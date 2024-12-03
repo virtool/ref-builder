@@ -9,7 +9,6 @@ from ref_builder.models import Molecule
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.plan import (
-    MonopartitePlan,
     Plan,
     Segment,
     SegmentRule,
@@ -47,11 +46,11 @@ class RefSeqConflictError(ValueError):
 
 
 def check_isolate_size(
-    plan: MonopartitePlan | Plan,
+    plan: Plan,
     isolate_count: int,
 ) -> bool:
     """Return True if the size of the proposed isolate matches the isolate plan."""
-    if type(plan) is MonopartitePlan:
+    if plan.monopartite:
         if isolate_count > 1:
             raise ValueError("Too many segments in monopartite isolate.")
         return True
@@ -98,10 +97,10 @@ def create_isolate_plan_from_records(
     records: list[NCBIGenbank],
     length_tolerance: float,
     segments: list[Segment] | None = None,
-) -> MonopartitePlan | Plan | None:
+) -> Plan | None:
     """Return a plan from a list of records representing an isolate."""
     if len(records) == 1:
-        return MonopartitePlan.new(
+        return Plan.new_monopartite(
             length=len(records[0].sequence),
             length_tolerance=length_tolerance,
         )
