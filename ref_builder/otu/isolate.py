@@ -82,8 +82,8 @@ def add_genbank_isolate(
             isolate_name,
             assigned_records=assign_records_to_segments(records, otu.plan),
         )
-    except ValueError as e:
-        otu_logger.error(e)
+    except ValueError:
+        otu_logger.exception()
 
     return None
 
@@ -396,9 +396,9 @@ def create_multipartite_isolate(
             )
 
     isolate_logger.info(
-        f"{isolate.name} created",
-        isolate_id=str(isolate.id),
-        sequences=list(isolate.accessions),
+        f"Isolate created",
+        id=str(isolate.id),
+        accessions=list(isolate.accessions),
     )
 
     return isolate
