@@ -110,6 +110,10 @@ class Plan(BaseModel):
     """A list of segments"""
 
     @property
+    def monopartite(self) -> bool:
+        return len(self.segments) == 1
+
+    @property
     def required_segments(self) -> list[Segment]:
         """Return a list of segments that are required by all additions."""
         return [
@@ -131,6 +135,21 @@ class Plan(BaseModel):
     def new(cls, segments: list["Segment"]) -> "Plan":
         """Initialize a new Plan from a list of segments."""
         return Plan(id=uuid4(), segments=segments)
+
+    @classmethod
+    def new_monopartite(cls, record: NCBIGenbank, length_tolerance: float) -> "Plan":
+        """Initialize a new monopartite Plan from a record and a length tolerance."""
+        return Plan(
+            id=uuid4(),
+            segments=[
+                Segment.new(
+                    length=len(record.sequence),
+                    length_tolerance=length_tolerance,
+                    name=None,
+                    required=SegmentRule.REQUIRED,
+                )
+            ]
+        )
 
     def get_segment_by_id(self, segment_id: UUID) -> Segment | None:
         """Return the segment with the matching segment ID if it exists,
