@@ -1,7 +1,6 @@
 # serializer version: 1
 # name: TestSetIsolatePlan.test_add_segments_to_plan
   dict({
-    'plan_type': 'multipartite',
     'segments': list([
       dict({
         'length': 7219,
@@ -35,34 +34,12 @@
 # ---
 # name: TestSetIsolatePlan.test_resize_monopartite_plan
   dict({
-    'plan_type': 'multipartite',
     'segments': list([
       dict({
         'length': 7219,
         'length_tolerance': 0.03,
-        'name': dict({
-          'key': 'L',
-          'prefix': 'RNA',
-        }),
+        'name': None,
         'required': 'required',
-      }),
-      dict({
-        'length': 1613,
-        'length_tolerance': 0.03,
-        'name': dict({
-          'key': 'M',
-          'prefix': 'RNA',
-        }),
-        'required': 'recommended',
-      }),
-      dict({
-        'length': 1291,
-        'length_tolerance': 0.03,
-        'name': dict({
-          'key': 'S',
-          'prefix': 'RNA',
-        }),
-        'required': 'recommended',
       }),
     ]),
   })

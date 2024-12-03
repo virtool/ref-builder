@@ -88,7 +88,7 @@ class TestAddMonopartiteIsolate:
 
         mock_record = create_mock_record(
             otu_before,
-            int(otu_before.plan.length * sequence_length_multiplier),
+            int(otu_before.plan.segments[0].length * sequence_length_multiplier),
         )
 
         assert mock_record
@@ -115,7 +115,7 @@ class TestAddMonopartiteIsolate:
 
         mock_record = create_mock_record(
             otu_before,
-            int(otu_before.plan.length * sequence_length_multiplier),
+            int(otu_before.plan.segments[0].length * sequence_length_multiplier),
         )
 
         assert mock_record

@@ -1,5 +1,4 @@
 import pytest
-from pydantic import TypeAdapter
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
@@ -8,16 +7,11 @@ from ref_builder.ncbi.models import NCBISourceMolType
 from ref_builder.otu.utils import create_isolate_plan_from_records
 from ref_builder.plan import (
     Plan,
-    MonopartitePlan,
-    Plan,
     SegmentName,
     get_multipartite_segment_name,
     parse_segment_name,
 )
 from tests.fixtures.factories import NCBIGenbankFactory, NCBISourceFactory
-
-
-plan_typer = TypeAdapter(Plan)
 
 
 class TestPlan:
@@ -31,8 +25,6 @@ class TestPlan:
         """Test the creation of a monopartite plan from a given record."""
         records = scratch_ncbi_client.fetch_genbank_records(["NC_024301"])
         auto_plan = create_isolate_plan_from_records(records, length_tolerance=0.03)
-
-        assert type(auto_plan) is MonopartitePlan
 
         assert auto_plan.model_dump() == snapshot(exclude=props("id"))
 
@@ -61,9 +53,9 @@ class TestPlan:
         assert auto_plan.model_dump() == snapshot(exclude=props("id"))
 
     @pytest.mark.parametrize(
-        ("accessions", "plan_type"),
+        ("accessions", "is_monopartite"),
         [
-            (["NC_024301"], MonopartitePlan),
+            (["NC_024301"], True),
             (
                 [
                     "NC_010314",
@@ -73,14 +65,14 @@ class TestPlan:
                     "NC_010318",
                     "NC_010319",
                 ],
-                Plan,
+                False,
             ),
         ],
     )
     def test_serialize_plan(
         self,
         accessions: list[str],
-        plan_type: MonopartitePlan | Plan,
+        is_monopartite: bool,
         scratch_ncbi_client: NCBIClient,
         snapshot: SnapshotAssertion,
     ):
@@ -92,11 +84,11 @@ class TestPlan:
 
         auto_plan_json = auto_plan.model_dump_json()
 
-        reconstituted_plan = plan_typer.validate_json(auto_plan_json)
+        auto_plan_from_json = Plan.model_validate_json(auto_plan_json)
 
-        assert type(reconstituted_plan) is plan_type
+        assert auto_plan_from_json.monopartite == is_monopartite
 
-        assert reconstituted_plan == auto_plan
+        assert auto_plan_from_json == auto_plan
 
 
 class TestSegmentNameParser:

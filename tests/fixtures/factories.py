@@ -11,7 +11,6 @@ from ref_builder.models import MolType, OTUMinimal
 from ref_builder.ncbi.models import NCBIGenbank, NCBISource, NCBISourceMolType
 from ref_builder.otu.models import IsolateBase, OTUBase
 from ref_builder.plan import (
-    MonopartitePlan,
     Plan,
     Segment,
     SegmentName,
@@ -205,7 +204,7 @@ class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
 
     @staticmethod
     def build_from_metadata(
-        plan: MonopartitePlan | Plan,
+        plan: Plan,
         moltype: MolType,
         name: str,
         taxid: int,
@@ -230,7 +229,7 @@ class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
                 f"MolType {moltype} cannot be matched to NCBISourceMolType"
             )
 
-        if isinstance(plan, MonopartitePlan):
+        if plan.monopartite:
             source = NCBISourceFactory.build(
                 moltype=source_moltype,
                 organism=name,
