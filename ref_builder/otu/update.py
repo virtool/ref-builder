@@ -6,7 +6,6 @@ from structlog import get_logger
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.isolate import (
-    create_isolate_from_records,
     assign_records_to_segments,
     create_monopartite_isolate,
     create_multipartite_isolate,
