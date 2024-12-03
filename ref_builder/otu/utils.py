@@ -10,7 +10,7 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.plan import (
     MonopartitePlan,
-    MultipartitePlan,
+    Plan,
     Segment,
     SegmentRule,
     get_multipartite_segment_name,
@@ -47,7 +47,7 @@ class RefSeqConflictError(ValueError):
 
 
 def check_isolate_size(
-    plan: MonopartitePlan | MultipartitePlan,
+    plan: MonopartitePlan | Plan,
     isolate_count: int,
 ) -> bool:
     """Return True if the size of the proposed isolate matches the isolate plan."""
@@ -98,7 +98,7 @@ def create_isolate_plan_from_records(
     records: list[NCBIGenbank],
     length_tolerance: float,
     segments: list[Segment] | None = None,
-) -> MonopartitePlan | MultipartitePlan | None:
+) -> MonopartitePlan | Plan | None:
     """Return a plan from a list of records representing an isolate."""
     if len(records) == 1:
         return MonopartitePlan.new(
@@ -115,7 +115,7 @@ def create_isolate_plan_from_records(
         return None
 
     if segments is not None:
-        return MultipartitePlan.new(segments=segments)
+        return Plan.new(segments=segments)
 
     segments = create_segments_from_records(
         records,
@@ -124,7 +124,7 @@ def create_isolate_plan_from_records(
     )
 
     if segments:
-        return MultipartitePlan.new(segments=segments)
+        return Plan.new(segments=segments)
 
     return None
 
@@ -265,7 +265,7 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
 
 
 def assign_records_to_segments(
-    records: list[NCBIGenbank], plan: MultipartitePlan
+    records: list[NCBIGenbank], plan: Plan
 ) -> dict[UUID, NCBIGenbank]:
     """Return a dictionary of records keyed by segment UUID, else raise a ValueError."""
     assigned_records = {}

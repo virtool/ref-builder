@@ -4,7 +4,7 @@ import rich.console
 from rich.table import Table
 
 from ref_builder.models import OTUMinimal
-from ref_builder.plan import MultipartitePlan, SegmentRule
+from ref_builder.plan import Plan, SegmentRule
 from ref_builder.resources import RepoOTU
 
 
@@ -61,7 +61,7 @@ def print_otu(otu: RepoOTU) -> None:
     schema_table.add_column("LENGTH")
     schema_table.add_column("TOLERANCE")
 
-    if type(otu.plan) is MultipartitePlan:
+    if type(otu.plan) is Plan:
         for segment in otu.plan.segments:
             schema_table.add_row(
                 str(segment.name),

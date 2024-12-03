@@ -8,7 +8,7 @@ from ref_builder.logs import configure_logger
 from ref_builder.models import Molecule
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.repo import Repo
-from ref_builder.plan import MonopartitePlan, MultipartitePlan
+from ref_builder.plan import MonopartitePlan, Plan
 from ref_builder.utils import DataType, IsolateName, IsolateNameType
 
 
@@ -56,7 +56,7 @@ def convert_legacy_repo(name: str, path: Path, target_path: Path) -> None:
             {**segment, "id": uuid.uuid4()} for segment in otu["schema"]
         ]
         if len(original_segments) > 2:
-            isolate_plan = MultipartitePlan.model_validate(
+            isolate_plan = Plan.model_validate(
                 {
                     "id": uuid.uuid4(),
                     "segments": original_segments,

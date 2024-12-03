@@ -9,7 +9,7 @@ from ref_builder.otu.utils import create_isolate_plan_from_records
 from ref_builder.plan import (
     Plan,
     MonopartitePlan,
-    MultipartitePlan,
+    Plan,
     SegmentName,
     get_multipartite_segment_name,
     parse_segment_name,
@@ -56,7 +56,7 @@ class TestPlan:
         )
         auto_plan = create_isolate_plan_from_records(records, length_tolerance=0.03)
 
-        assert type(auto_plan) is MultipartitePlan
+        assert type(auto_plan) is Plan
 
         assert auto_plan.model_dump() == snapshot(exclude=props("id"))
 
@@ -73,14 +73,14 @@ class TestPlan:
                     "NC_010318",
                     "NC_010319",
                 ],
-                MultipartitePlan,
+                Plan,
             ),
         ],
     )
     def test_serialize_plan(
         self,
         accessions: list[str],
-        plan_type: MonopartitePlan | MultipartitePlan,
+        plan_type: MonopartitePlan | Plan,
         scratch_ncbi_client: NCBIClient,
         snapshot: SnapshotAssertion,
     ):

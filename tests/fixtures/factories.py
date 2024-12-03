@@ -12,7 +12,7 @@ from ref_builder.ncbi.models import NCBIGenbank, NCBISource, NCBISourceMolType
 from ref_builder.otu.models import IsolateBase, OTUBase
 from ref_builder.plan import (
     MonopartitePlan,
-    MultipartitePlan,
+    Plan,
     Segment,
     SegmentName,
     SegmentRule,
@@ -205,7 +205,7 @@ class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
 
     @staticmethod
     def build_from_metadata(
-        plan: MonopartitePlan | MultipartitePlan,
+        plan: MonopartitePlan | Plan,
         moltype: MolType,
         name: str,
         taxid: int,
@@ -279,7 +279,7 @@ class OTUFactory(ModelFactory[OTUBase]):
 
     @post_generated
     @classmethod
-    def isolates(cls, plan: MultipartitePlan) -> list[IsolateBase]:
+    def isolates(cls, plan: Plan) -> list[IsolateBase]:
         """Derive a list of isolates from a plan."""
         isolates = []
 
@@ -326,9 +326,9 @@ class OTUFactory(ModelFactory[OTUBase]):
         return cls.__faker__.organism()
 
     @classmethod
-    def plan(cls) -> MultipartitePlan:
+    def plan(cls) -> Plan:
         """Generate a multipartite plan with two segments."""
-        return MultipartitePlan.new(
+        return Plan.new(
             [
                 Segment(
                     id=cls.__faker__.uuid4(),

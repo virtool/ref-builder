@@ -25,7 +25,7 @@ from ref_builder.otu.isolate import add_genbank_isolate
 from ref_builder.utils import IsolateName, IsolateNameType
 from ref_builder.plan import (
     MonopartitePlan,
-    MultipartitePlan,
+    Plan,
     SegmentName,
     SegmentRule,
     Segment,
@@ -76,9 +76,9 @@ class TestSetIsolatePlan:
 
         original_plan = otu_before.plan
 
-        assert type(original_plan) is MultipartitePlan
+        assert type(original_plan) is Plan
 
-        new_isolate_plan = MultipartitePlan.new(segments=original_plan.segments)
+        new_isolate_plan = Plan.new(segments=original_plan.segments)
 
         new_isolate_plan.segments.append(
             Segment.new(
@@ -100,7 +100,7 @@ class TestSetIsolatePlan:
 
         set_isolate_plan(scratch_repo, otu_before, new_isolate_plan)
 
-        assert type(new_isolate_plan) is MultipartitePlan
+        assert type(new_isolate_plan) is Plan
 
         otu_after = scratch_repo.get_otu(otu_before.id)
 
@@ -122,7 +122,7 @@ class TestSetIsolatePlan:
 
         original_plan = otu_before.plan
 
-        assert type(original_plan) is MultipartitePlan
+        assert type(original_plan) is Plan
 
         expanded_plan = add_segments_to_plan(
             precached_repo,
@@ -163,7 +163,7 @@ class TestSetIsolatePlan:
 
         otu_after = precached_repo.get_otu(otu_before.id)
 
-        assert type(otu_after.plan) is MultipartitePlan
+        assert type(otu_after.plan) is Plan
 
         assert otu_after.plan.required_segments[0].length == otu_before.plan.length
 

@@ -7,7 +7,7 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.utils import DeleteRationale, create_segments_from_records
 from ref_builder.plan import (
     MonopartitePlan,
-    MultipartitePlan,
+    Plan,
     SegmentRule,
     SegmentName,
     Segment,
@@ -55,8 +55,8 @@ def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
 def set_isolate_plan(
     repo: Repo,
     otu: RepoOTU,
-    plan: MonopartitePlan | MultipartitePlan,
-) -> MonopartitePlan | MultipartitePlan | None:
+    plan: MonopartitePlan | Plan,
+) -> MonopartitePlan | Plan | None:
     """Sets an OTU's isolate plan to a new plan."""
     otu_logger = logger.bind(name=otu.name, taxid=otu.taxid, plan=plan.model_dump())
 
@@ -73,7 +73,7 @@ def set_plan_length_tolerances(
     repo: Repo,
     otu: RepoOTU,
     tolerance: float,
-) -> MonopartitePlan | MultipartitePlan | None:
+) -> MonopartitePlan | Plan | None:
     """Sets a plan's length tolerances to a new float value."""
     if otu.plan.plan_type == "monopartite":
         try:
@@ -103,7 +103,7 @@ def add_segments_to_plan(
     rule: SegmentRule,
     accessions: list[str],
     ignore_cache: bool = False,
-) -> MultipartitePlan | None:
+) -> Plan | None:
     """Add new segments to a multipartite plan."""
     expand_logger = logger.bind(
         name=otu.name, taxid=otu.taxid, accessions=accessions, rule=rule
@@ -135,7 +135,7 @@ def add_segments_to_plan(
         expand_logger.warning("No segments can be added.")
         return None
 
-    new_plan = MultipartitePlan.new(
+    new_plan = Plan.new(
         segments=otu.plan.segments + new_segments,
     )
 
@@ -150,13 +150,13 @@ def resize_monopartite_plan(
     accessions: list[str],
     # sequence_length_tolerance: float | None = None,
     ignore_cache: bool = False,
-) -> MultipartitePlan | None:
+) -> Plan | None:
     """Convert a monopartite plan to a multipartite plan and add segments."""
     expand_logger = logger.bind(
         name=otu.name, taxid=otu.taxid, accessions=accessions, rule=rule
     )
 
-    if type(otu.plan) is MultipartitePlan:
+    if type(otu.plan) is Plan:
         expand_logger.warning("OTU plan is already a multipartite plan.")
         return None
 
@@ -178,7 +178,7 @@ def resize_monopartite_plan(
         expand_logger.warning("No segments can be added.")
         return None
 
-    new_plan = MultipartitePlan.new(
+    new_plan = Plan.new(
         segments=[
             Segment.new(
                 length=otu.plan.length,
