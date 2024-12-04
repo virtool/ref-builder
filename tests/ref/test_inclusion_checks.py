@@ -63,9 +63,7 @@ def create_mock_isolate_records(
         mock_assigned_records[segment.id] = NCBIGenbankFactory.build(
             accession=f"AB{accession_starter + i}",
             source=mock_record_source,
-            sequence=faker.sequence(
-                min=sequence_length, max=sequence_length
-            ),
+            sequence=faker.sequence(min=sequence_length, max=sequence_length),
         )
 
     return mock_assigned_records
