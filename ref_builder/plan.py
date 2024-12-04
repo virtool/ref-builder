@@ -2,7 +2,7 @@ import re
 from enum import StrEnum
 from uuid import UUID, uuid4
 
-from pydantic import UUID4, BaseModel, ConfigDict, Field
+from pydantic import UUID4, BaseModel, ConfigDict, Field, model_validator
 from pydantic.dataclasses import dataclass
 
 from ref_builder.ncbi.models import NCBIGenbank, NCBISourceMolType
@@ -151,9 +151,31 @@ class Plan(BaseModel):
             ]
         )
 
+    @model_validator(mode="after")
+    def check_naming(self) -> "Plan":
+        """Check that all segments have non-None, unique names if the plan is
+        multipartite.
+        """
+        if self.monopartite:
+            return self
+
+        names = [segment.name for segment in self.segments if segment.name]
+
+        if any(name is None for name in names):
+            raise ValueError("All segments must have a name in a multipartite plan.")
+
+        if len(names) != len(set(names)):
+            raise ValueError("Segment names must be unique within a plan.")
+
+        return self
+
     def get_segment_by_id(self, segment_id: UUID) -> Segment | None:
-        """Return the segment with the matching segment ID if it exists,
-        otherwise return None.
+        """Get the segment with the given ``segment_id`.
+
+        Return ``None`` if the segment is not found.
+
+        :param segment_id: the ID of the segment to retrieve
+        :return: the segment with the given ID, or None
         """
         for segment in self.segments:
             if segment.id == segment_id:
@@ -162,7 +184,9 @@ class Plan(BaseModel):
         return None
 
     def get_segment_by_key(self, name_key: str) -> Segment | None:
-        """Return the segment with the matching SegmentName.key it exists,
+        """Get the segment with the given ``name_key``.
+
+        Return the segment with the matching SegmentName.key it exists,
         otherwise return None.
         """
         for segment in self.segments:
