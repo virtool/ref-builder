@@ -1,7 +1,7 @@
 """Factories for generating quasi-realistic NCBISource and NCBIGenbank data."""
 
 from faker import Faker
-from polyfactory import PostGenerated
+from polyfactory import PostGenerated, Use
 from polyfactory.decorators import post_generated
 from polyfactory.factories.pydantic_factory import ModelFactory
 from polyfactory.pytest_plugin import register_fixture
@@ -260,6 +260,33 @@ def derive_acronym(_: str, values: dict[str, str]) -> str:
     return "".join([part[0].upper() for part in name.split(" ")])
 
 
+class PlanFactory(ModelFactory[Plan]):
+    __faker__ = Faker()
+
+    __faker__.add_provider(SequenceProvider)
+    __faker__.add_provider(SegmentProvider)
+
+    __random_seed__ = 21
+
+    @classmethod
+    def segments(cls) -> list[Segment]:
+        mock_segments = []
+
+        ref_string = "ABCDEF"
+
+        for i in range(cls.__faker__.random_int(1, 5)):
+            mock_segments.append(
+                Segment(
+                    id=cls.__faker__.uuid4(),
+                    length=len(cls.__faker__.sequence()),
+                    length_tolerance=0.03,
+                    name=SegmentName(prefix="DNA", key=ref_string[i-1]),
+                    required=SegmentRule.REQUIRED,
+                ),
+            )
+
+        return mock_segments
+
 @register_fixture
 class OTUFactory(ModelFactory[OTUBase]):
     """OTU Factory with quasi-realistic data."""
@@ -272,6 +299,8 @@ class OTUFactory(ModelFactory[OTUBase]):
     __faker__.add_provider(SequenceProvider)
 
     __random_seed__ = 21
+
+    plan = Use(PlanFactory)
 
     acronym = PostGenerated(derive_acronym)
     """An acronym for the OTU derived from its name."""
@@ -323,28 +352,6 @@ class OTUFactory(ModelFactory[OTUBase]):
     def name(cls) -> str:
         """Generate a realistic name for a plant virus."""
         return cls.__faker__.organism()
-
-    @classmethod
-    def plan(cls) -> Plan:
-        """Generate a multipartite plan with two segments."""
-        return Plan.new(
-            [
-                Segment(
-                    id=cls.__faker__.uuid4(),
-                    length=1099,
-                    length_tolerance=0.03,
-                    name=SegmentName("DNA", "A"),
-                    required=SegmentRule.REQUIRED,
-                ),
-                Segment(
-                    id=cls.__faker__.uuid4(),
-                    length=1074,
-                    length_tolerance=0.03,
-                    name=SegmentName("DNA", "B"),
-                    required=SegmentRule.REQUIRED,
-                ),
-            ],
-        )
 
     @post_generated
     @classmethod
