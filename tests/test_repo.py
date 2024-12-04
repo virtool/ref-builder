@@ -111,9 +111,7 @@ class TestCreateOTU:
             required=SegmentRule.REQUIRED,
         )
 
-        monopartite_plan = Plan.new(
-            segments=[monopartite_segment]
-        )
+        monopartite_plan = Plan.new(segments=[monopartite_segment])
 
         otu = empty_repo.create_otu(
             acronym="TMV",
@@ -150,7 +148,7 @@ class TestCreateOTU:
                         name=None,
                         required=SegmentRule.REQUIRED,
                     )
-                ]
+                ],
             ),
             taxid=12242,
             isolates=[],
@@ -182,8 +180,7 @@ class TestCreateOTU:
                             "name": None,
                             "required": SegmentRule.REQUIRED,
                         }
-
-                    ]
+                    ],
                 },
                 "taxid": 12242,
             },
@@ -420,9 +417,7 @@ class TestGetOTU:
             required=SegmentRule.REQUIRED,
         )
 
-        monopartite_plan = Plan.new(
-            segments=[monopartite_segment]
-        )
+        monopartite_plan = Plan.new(segments=[monopartite_segment])
 
         otu = empty_repo.create_otu(
             acronym="TMV",
@@ -530,7 +525,7 @@ class TestGetOTU:
                             name=None,
                             required=SegmentRule.REQUIRED,
                         )
-                    ]
+                    ],
                 ),
                 taxid=12242,
                 isolates=otu_contents,

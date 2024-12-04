@@ -148,7 +148,7 @@ class Plan(BaseModel):
                     name=None,
                     required=SegmentRule.REQUIRED,
                 )
-            ]
+            ],
         )
 
     @model_validator(mode="after")

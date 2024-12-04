@@ -164,7 +164,10 @@ class TestSetIsolatePlan:
 
         assert type(otu_after.plan) is Plan
 
-        assert otu_after.plan.required_segments[0].length == otu_before.plan.segments[0].length
+        assert (
+            otu_after.plan.required_segments[0].length
+            == otu_before.plan.segments[0].length
+        )
 
         assert otu_after.plan.model_dump() == snapshot(exclude=props("id"))
 
@@ -217,7 +220,10 @@ class TestSetIsolatePlan:
 
         otu_after = scratch_repo.get_otu(otu_before.id)
 
-        assert otu_after.plan.segments[0].length_tolerance == otu_before.plan.segments[0].length_tolerance
+        assert (
+            otu_after.plan.segments[0].length_tolerance
+            == otu_before.plan.segments[0].length_tolerance
+        )
 
 
 class TestUpdateRepresentativeIsolateCommand:
