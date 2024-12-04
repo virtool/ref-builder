@@ -33,6 +33,9 @@ DNA_MOLTYPES = {
 }
 """NCBISourceMolTypes that map to MolType.DNA"""
 
+RANDOM_SEED = 21
+"""Factory random seed"""
+
 
 class NCBISourceFactory(ModelFactory[NCBISource]):
     """NCBISource Factory with quasi-realistic data."""
@@ -298,7 +301,7 @@ class OTUFactory(ModelFactory[OTUBase]):
     __faker__.add_provider(OrganismProvider)
     __faker__.add_provider(SequenceProvider)
 
-    __random_seed__ = 21
+    __random_seed__ = RANDOM_SEED
 
     plan = Use(PlanFactory)
 
