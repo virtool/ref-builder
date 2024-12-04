@@ -290,6 +290,7 @@ class PlanFactory(ModelFactory[Plan]):
 
         return mock_segments
 
+
 @register_fixture
 class OTUFactory(ModelFactory[OTUBase]):
     """OTU Factory with quasi-realistic data."""
@@ -303,7 +304,7 @@ class OTUFactory(ModelFactory[OTUBase]):
 
     __random_seed__ = RANDOM_SEED
 
-    plan = Use(PlanFactory)
+    plan = Use(PlanFactory.build)
 
     acronym = PostGenerated(derive_acronym)
     """An acronym for the OTU derived from its name."""

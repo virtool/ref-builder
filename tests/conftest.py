@@ -5,6 +5,7 @@ from typing import Any
 
 import orjson
 import pytest
+from polyfactory import Use
 from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel, TypeAdapter
 from pytest_mock import MockerFixture
@@ -18,6 +19,7 @@ from ref_builder.otu.update import update_otu_with_accessions
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
 from ref_builder.utils import Accession, DataType
+from tests.fixtures.factories import PlanFactory
 
 configure_logger(True)
 
@@ -212,8 +214,10 @@ otu_contents_list_adapter = TypeAdapter(list[OTUContents])
 def indexable_otus() -> list[RepoOTU]:
     """A list of eight OTUs for use in Snapshotter testing."""
 
-    class OTUFactory(ModelFactory[RepoOTU]):
+    class RepoOTUFactory(ModelFactory[RepoOTU]):
         __model__ = RepoOTU
+
+        plan = Use(PlanFactory.build)
 
         @classmethod
         def get_provider_map(cls) -> dict[Any, Callable[[], Any]]:
@@ -227,7 +231,7 @@ def indexable_otus() -> list[RepoOTU]:
                 ),
             }
 
-    otus = [OTUFactory.build() for _ in range(8)]
+    otus = [RepoOTUFactory.build() for _ in range(8)]
 
     # We want at least one OTU with a `None` legacy ID to test `get_id_by_legacy_id`.
     if all(otu.legacy_id is not None for otu in otus):
