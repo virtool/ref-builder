@@ -128,11 +128,11 @@ class Plan(BaseModel):
         return [
             segment
             for segment in self.segments
-            if not segment.required == SegmentRule.REQUIRED
+            if segment.required != SegmentRule.REQUIRED
         ]
 
     @classmethod
-    def new(cls, segments: list["Segment"]) -> "Plan":
+    def new(cls, segments: list[Segment]) -> "Plan":
         """Initialize a new Plan from a list of segments."""
         return Plan(id=uuid4(), segments=segments)
 
@@ -150,6 +150,14 @@ class Plan(BaseModel):
                 )
             ]
         )
+
+    @model_validator(mode="after")
+    def check_required_segments(self) -> "Plan":
+        """Check that there is at least one required segment."""
+        if not self.required_segments:
+            raise ValueError("Plan contains no required segments.")
+
+        return self
 
     @model_validator(mode="after")
     def check_naming(self) -> "Plan":
