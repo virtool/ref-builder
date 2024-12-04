@@ -263,29 +263,54 @@ def derive_acronym(_: str, values: dict[str, str]) -> str:
     return "".join([part[0].upper() for part in name.split(" ")])
 
 
-class PlanFactory(ModelFactory[Plan]):
+class SegmentFactory(ModelFactory[Segment]):
     __faker__ = Faker()
 
     __faker__.add_provider(SequenceProvider)
     __faker__.add_provider(SegmentProvider)
 
-    __random_seed__ = 21
+    __random_seed__ = RANDOM_SEED
+
+    @classmethod
+    def name(cls) -> SegmentName | None:
+        dice_roll = cls.__faker__.random_int(0, 10)
+
+        if dice_roll > 5:
+            return SegmentName(
+                prefix=cls.__faker__.random_element(["DNA", "RNA"]),
+                key=cls.__faker__.segment_key(),
+            )
+
+        return None
+
+    @classmethod
+    def length(cls) -> int:
+        return len(cls.__faker__.sequence())
+
+
+class PlanFactory(ModelFactory[Plan]):
+    __faker__ = Faker()
+
+    __random_seed__ = RANDOM_SEED
 
     @classmethod
     def segments(cls) -> list[Segment]:
-        mock_segments = []
+        """Return a set of quasi-realistic segments."""
+        dice_roll = cls.__faker__.random_int(0, 10)
+
+        if dice_roll > 5:
+            return [SegmentFactory.build(name=None, required=SegmentRule.REQUIRED)]
 
         ref_string = "ABCDEF"
 
-        for i in range(cls.__faker__.random_int(1, 5)):
+        mock_segments = []
+
+        for i in range(cls.__faker__.random_int(2, 5)):
             mock_segments.append(
-                Segment(
-                    id=cls.__faker__.uuid4(),
-                    length=len(cls.__faker__.sequence()),
-                    length_tolerance=0.03,
-                    name=SegmentName(prefix="DNA", key=ref_string[i-1]),
+                SegmentFactory.build(
+                    name=SegmentName(prefix="DNA", key=ref_string[i - 1]),
                     required=SegmentRule.REQUIRED,
-                ),
+                )
             )
 
         return mock_segments
