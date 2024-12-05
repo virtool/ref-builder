@@ -48,9 +48,23 @@ MAX_SEQUENCE_LENGTH = 1500
 class AccessionProvider(BaseProvider):
     """Raw accession provider based on GenBank's guidelines for accession numbers."""
 
-    def refseq_accession(self) -> str:
-        """Return a pseudorandom RefSeq accession number."""
-        return "NC_" + self.numerify("######")
+    def accession(self) -> str:
+        """Return a pseudorandom accession number."""
+        dice_roll = self.random_int(0, 10)
+
+        if dice_roll > 7:
+            return self.genbank_accession()
+
+        return self.refseq_accession()
+
+    def accessions(self, n: int) -> list[str]:
+        """Return a list of pseudorandom, consecutive accession numbers."""
+        dice_roll = self.random_int(0, 10)
+
+        if dice_roll > 7:
+            return self.genbank_accessions(n)
+
+        return self.refseq_accessions(n)
 
     def genbank_accession(self) -> str:
         """Return a pseudorandom non-RefSeq accession number."""
@@ -61,14 +75,44 @@ class AccessionProvider(BaseProvider):
 
         return self.bothify("??######").upper()
 
-    def accession(self) -> str:
-        """Return a pseudorandom accession number."""
+    def genbank_accessions(self, n: int) -> list[str]:
+        """Return a list of pseudorandom, consecutive accession numbers."""
         dice_roll = self.random_int(0, 10)
 
-        if dice_roll > 7:
-            return self.genbank_accession()
+        accessions = []
 
-        return self.refseq_accession()
+        if dice_roll > 6:
+            prefix = self.lexify("?")
+
+            first_number = self.random_int(0, 99999 - n)
+
+            for i in range(n):
+                accessions.append(f"{prefix}{first_number + n}")
+
+        else:
+            prefix = self.lexify("??")
+
+            first_number = self.random_int(0, 999999 - n)
+
+            for i in range(n):
+                accessions.append(f"{prefix}{first_number + i}")
+
+        return accessions
+
+    def refseq_accession(self) -> str:
+        """Return a pseudorandom RefSeq accession number."""
+        return "NC_" + self.numerify("######")
+
+    def refseq_accessions(self, n: int) -> list[str]:
+        """Return a list of pseudorandom, consecutive RefSeq accession numbers."""
+        accessions = []
+
+        first_number = self.random_int(0, 999999 - n)
+
+        for i in range(n):
+            accessions.append(f"NC_{first_number + i}")
+
+        return accessions
 
 
 class BusinessProvider(BaseProvider):
