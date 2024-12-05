@@ -1,6 +1,7 @@
 """A client for fetching data from NCBI databases."""
 
 import os
+from collections.abc import Collection
 from contextlib import contextmanager
 from enum import StrEnum
 from http import HTTPStatus
@@ -50,7 +51,7 @@ class NCBIClient:
         self.cache = NCBICache()
         self.ignore_cache = ignore_cache
 
-    def fetch_genbank_records(self, accessions: list[str]) -> list[NCBIGenbank]:
+    def fetch_genbank_records(self, accessions: Collection[str]) -> list[NCBIGenbank]:
         """Fetch or load NCBI Nucleotide records corresponding to a list of accessions.
 
         Cache fetched records if found. Returns validated records.
@@ -118,7 +119,7 @@ class NCBIClient:
         return []
 
     @staticmethod
-    def fetch_unvalidated_genbank_records(accessions: list[str]) -> list[dict]:
+    def fetch_unvalidated_genbank_records(accessions: Collection[str]) -> list[dict]:
         """Fetch a list of Genbank records given a list of accessions.
 
         :param accessions: List of accession numbers to fetch from GenBank
@@ -131,7 +132,7 @@ class NCBIClient:
                 try:
                     handle = Entrez.efetch(
                         db=NCBIDatabase.NUCCORE,
-                        id=accessions,
+                        id=list(accessions),
                         rettype="gb",
                         retmode="xml",
                     )
