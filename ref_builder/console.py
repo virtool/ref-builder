@@ -61,7 +61,7 @@ def print_otu(otu: RepoOTU) -> None:
     schema_table.add_column("LENGTH")
     schema_table.add_column("TOLERANCE")
 
-    if type(otu.plan) is Plan:
+    if not otu.plan.monopartite:
         for segment in otu.plan.segments:
             schema_table.add_row(
                 str(segment.name),
@@ -72,11 +72,12 @@ def print_otu(otu: RepoOTU) -> None:
                 str(segment.length_tolerance),
             )
     else:
+        monopartite_segment = otu.plan.segments[0]
         schema_table.add_row(
-            otu.plan.name if otu.plan.name is not None else "N/A",
+            monopartite_segment.name if monopartite_segment.name is not None else "N/A",
             "[red]Yes[/red]",
-            str(otu.plan.length),
-            str(otu.plan.length_tolerance),
+            str(monopartite_segment.length),
+            str(monopartite_segment.length_tolerance),
         )
 
     console.print(schema_table)

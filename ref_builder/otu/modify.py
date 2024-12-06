@@ -155,7 +155,7 @@ def resize_monopartite_plan(
         name=otu.name, taxid=otu.taxid, accessions=accessions, rule=rule
     )
 
-    if type(otu.plan) is Plan:
+    if not otu.plan.monopartite:
         expand_logger.warning("OTU plan is already a multipartite plan.")
         return None
 
