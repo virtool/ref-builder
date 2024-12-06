@@ -180,7 +180,7 @@ def resize_monopartite_plan(
     new_plan = Plan.new(
         segments=[
             Segment.new(
-                length=otu.plan[0].length,
+                length=otu.plan.segments[0].length,
                 length_tolerance=sequence_length_tolerance,
                 name=name,
                 required=SegmentRule.REQUIRED,
