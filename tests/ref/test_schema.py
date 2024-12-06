@@ -4,7 +4,7 @@ from syrupy.filters import props
 
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBISourceMolType
-from ref_builder.otu.utils import create_isolate_plan_from_records
+from ref_builder.otu.utils import create_plan_from_records
 from ref_builder.plan import (
     Plan,
     SegmentName,
@@ -24,7 +24,7 @@ class TestPlan:
     ):
         """Test the creation of a monopartite plan from a given record."""
         records = scratch_ncbi_client.fetch_genbank_records(["NC_024301"])
-        auto_plan = create_isolate_plan_from_records(records, length_tolerance=0.03)
+        auto_plan = create_plan_from_records(records, length_tolerance=0.03)
 
         assert auto_plan.model_dump() == snapshot(exclude=props("id"))
 
@@ -46,7 +46,7 @@ class TestPlan:
                 "NC_010319",
             ]
         )
-        auto_plan = create_isolate_plan_from_records(records, length_tolerance=0.03)
+        auto_plan = create_plan_from_records(records, length_tolerance=0.03)
 
         assert type(auto_plan) is Plan
 
@@ -78,7 +78,7 @@ class TestPlan:
     ):
         records = scratch_ncbi_client.fetch_genbank_records(accessions)
 
-        auto_plan = create_isolate_plan_from_records(records, length_tolerance=0.03)
+        auto_plan = create_plan_from_records(records, length_tolerance=0.03)
 
         assert auto_plan.model_dump() == snapshot(exclude=props("id"))
 

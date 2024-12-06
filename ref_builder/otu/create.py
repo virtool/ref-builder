@@ -4,7 +4,7 @@ import structlog
 
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.utils import (
-    create_isolate_plan_from_records,
+    create_plan_from_records,
     group_genbank_records_by_isolate,
     get_molecule_from_records,
     parse_refseq_comment,
@@ -69,7 +69,7 @@ def create_otu(
 
     molecule = get_molecule_from_records(records)
 
-    plan = create_isolate_plan_from_records(
+    plan = create_plan_from_records(
         records,
         length_tolerance=repo.settings.default_segment_length_tolerance,
     )

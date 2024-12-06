@@ -55,7 +55,7 @@ def convert_legacy_repo(name: str, path: Path, target_path: Path) -> None:
         original_segments = [
             {**segment, "id": uuid.uuid4()} for segment in otu["schema"]
         ]
-        isolate_plan = Plan.model_validate(
+        plan = Plan.model_validate(
             {
                 "id": uuid.uuid4(),
                 "segments": original_segments,
@@ -69,7 +69,7 @@ def convert_legacy_repo(name: str, path: Path, target_path: Path) -> None:
                     otu["_id"],
                     molecule=molecule,
                     name=otu["name"],
-                    plan=isolate_plan,
+                    plan=plan,
                     taxid=otu["taxid"],
                 )
             except ValueError as err:

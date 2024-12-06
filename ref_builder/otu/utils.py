@@ -93,7 +93,7 @@ def create_segments_from_records(
     return segments
 
 
-def create_isolate_plan_from_records(
+def create_plan_from_records(
     records: list[NCBIGenbank],
     length_tolerance: float,
     segments: list[Segment] | None = None,

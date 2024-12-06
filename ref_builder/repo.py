@@ -411,7 +411,7 @@ class Repo:
 
         return self.get_otu(otu_id).get_sequence_by_id(new_sequence.id)
 
-    def set_isolate_plan(self, otu_id: uuid.UUID, plan: Plan) -> Plan:
+    def set_plan(self, otu_id: uuid.UUID, plan: Plan) -> Plan:
         """Set the isolate plan for an OTU."""
         self._write_event(
             CreatePlan,

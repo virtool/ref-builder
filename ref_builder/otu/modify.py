@@ -51,7 +51,7 @@ def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
     return
 
 
-def set_isolate_plan(
+def set_plan(
     repo: Repo,
     otu: RepoOTU,
     plan: Plan,
@@ -60,7 +60,7 @@ def set_isolate_plan(
     otu_logger = logger.bind(name=otu.name, taxid=otu.taxid, plan=plan.model_dump())
 
     try:
-        repo.set_isolate_plan(otu.id, plan)
+        repo.set_plan(otu.id, plan)
     except ValueError as e:
         otu_logger.error(e)
         return None
@@ -76,7 +76,7 @@ def set_plan_length_tolerances(
     """Sets a plan's length tolerances to a new float value."""
     if otu.plan.monopartite:
         try:
-            repo.set_isolate_plan(
+            repo.set_plan(
                 otu.id,
                 Plan.new_monopartite(
                     length=otu.plan.segments[0].length,
@@ -138,7 +138,7 @@ def add_segments_to_plan(
         segments=otu.plan.segments + new_segments,
     )
 
-    return set_isolate_plan(repo, otu, new_plan)
+    return set_plan(repo, otu, new_plan)
 
 
 def resize_monopartite_plan(
@@ -189,7 +189,7 @@ def resize_monopartite_plan(
         + new_segments,
     )
 
-    return set_isolate_plan(repo, otu, new_plan)
+    return set_plan(repo, otu, new_plan)
 
 
 def replace_sequence_in_otu(

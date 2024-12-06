@@ -14,7 +14,7 @@ from ref_builder.otu.modify import (
     exclude_accessions_from_otu,
     resize_monopartite_plan,
     replace_sequence_in_otu,
-    set_isolate_plan,
+    set_plan,
     set_plan_length_tolerances,
     set_representative_isolate,
 )
@@ -69,17 +69,17 @@ def test_update_representative_isolate(scratch_repo: Repo):
     assert otu_after.repr_isolate == repr_isolate_after
 
 
-class TestSetIsolatePlan:
-    def test_set_isolate_plan(self, scratch_repo: Repo):
+class TestSetPlan:
+    def test_ok(self, scratch_repo: Repo):
         otu_before = scratch_repo.get_otu_by_taxid(223262)
 
         original_plan = otu_before.plan
 
         assert type(original_plan) is Plan
 
-        new_isolate_plan = Plan.new(segments=original_plan.segments)
+        new_plan = Plan.new(segments=original_plan.segments)
 
-        new_isolate_plan.segments.append(
+        new_plan.segments.append(
             Segment.new(
                 length=2000,
                 length_tolerance=scratch_repo.settings.default_segment_length_tolerance,
@@ -88,7 +88,7 @@ class TestSetIsolatePlan:
             ),
         )
 
-        new_isolate_plan.segments.append(
+        new_plan.segments.append(
             Segment.new(
                 length=1000,
                 length_tolerance=scratch_repo.settings.default_segment_length_tolerance,
@@ -97,15 +97,15 @@ class TestSetIsolatePlan:
             ),
         )
 
-        set_isolate_plan(scratch_repo, otu_before, new_isolate_plan)
+        set_plan(scratch_repo, otu_before, new_plan)
 
-        assert type(new_isolate_plan) is Plan
+        assert type(new_plan) is Plan
 
         otu_after = scratch_repo.get_otu(otu_before.id)
 
         assert len(otu_after.plan.segments) == len(otu_before.plan.segments) + 2
 
-        assert otu_after.plan == new_isolate_plan
+        assert otu_after.plan == new_plan
 
     def test_add_segments_to_plan(
         self,
