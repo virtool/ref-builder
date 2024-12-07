@@ -186,7 +186,7 @@ class TestAddMultipartiteIsolate:
 
     @pytest.mark.parametrize("sequence_length_multiplier", [1.0, 1.03, 0.98])
     def test_ok(self, scratch_repo, sequence_length_multiplier: float):
-        """Test that sequences within recommended length variance
+        """Test that sequences within recommended length tolerance
         are added without issue."""
         otu_before = scratch_repo.get_otu_by_taxid(3158377)
 
