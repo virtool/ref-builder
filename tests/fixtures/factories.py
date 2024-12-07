@@ -264,6 +264,8 @@ def derive_acronym(_: str, values: dict[str, str]) -> str:
 
 
 class SegmentFactory(ModelFactory[Segment]):
+    """Segment Factory with quasi-realistic data."""
+
     __faker__ = Faker()
 
     __faker__.add_provider(SequenceProvider)
@@ -273,9 +275,8 @@ class SegmentFactory(ModelFactory[Segment]):
 
     @classmethod
     def name(cls) -> SegmentName | None:
-        dice_roll = cls.__faker__.random_int(0, 10)
-
-        if dice_roll > 5:
+        """Generate a quasi-realistic segment name or null."""
+        if cls.__faker__.random_int(0, 10) > 5:
             return SegmentName(
                 prefix=cls.__faker__.random_element(["DNA", "RNA"]),
                 key=cls.__faker__.segment_key(),
@@ -285,10 +286,13 @@ class SegmentFactory(ModelFactory[Segment]):
 
     @classmethod
     def length(cls) -> int:
+        """Generate a realistic sequence length."""
         return len(cls.__faker__.sequence())
 
 
 class PlanFactory(ModelFactory[Plan]):
+    """Plan Factory with quasi-realistic data."""
+
     __faker__ = Faker()
 
     __random_seed__ = RANDOM_SEED
