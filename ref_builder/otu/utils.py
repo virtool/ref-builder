@@ -100,9 +100,15 @@ def create_plan_from_records(
 ) -> Plan | None:
     """Return a plan from a list of records representing an isolate."""
     if len(records) == 1:
-        return Plan.new_monopartite(
-            length=len(records[0].sequence),
-            length_tolerance=length_tolerance,
+        return Plan.new(
+            segments=[
+                Segment.new(
+                    length=len(records[0].sequence),
+                    length_tolerance=length_tolerance,
+                    name=None,
+                    required=SegmentRule.REQUIRED,
+                )
+            ]
         )
 
     binned_records = group_genbank_records_by_isolate(records)

@@ -27,9 +27,14 @@ def initialized_repo(empty_repo: Repo):
             topology=Topology.LINEAR,
         ),
         name="Tobacco mosaic virus",
-        plan=Plan.new_monopartite(
-            length=150,
-            length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+        plan=Plan.new(
+            segments=[
+                Segment.new(
+                    length=150,
+                    length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                    name=None,
+                )
+            ]
         ),
         taxid=12242,
     )
@@ -64,9 +69,14 @@ def init_otu(empty_repo: Repo) -> RepoOTU:
             topology=Topology.LINEAR,
         ),
         name="Tobacco mosaic virus",
-        plan=Plan.new_monopartite(
-            length=150,
-            length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+        plan=Plan.new(
+            segments=[
+                Segment.new(
+                    length=150,
+                    length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                    name=None,
+                )
+            ]
         ),
         taxid=12242,
     )
@@ -104,14 +114,15 @@ class TestCreateOTU:
         """Test that creating an OTU returns the expected ``RepoOTU`` object and creates
         the expected event file.
         """
-        monopartite_segment = Segment.new(
-            length=150,
-            length_tolerance=empty_repo.settings.default_segment_length_tolerance,
-            name=None,
-            required=SegmentRule.REQUIRED,
+        monopartite_plan = Plan.new(
+            segments=[
+                Segment.new(
+                    length=150,
+                    length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                    name=None,
+                )
+            ]
         )
-
-        monopartite_plan = Plan.new(segments=[monopartite_segment])
 
         otu = empty_repo.create_otu(
             acronym="TMV",
@@ -142,7 +153,7 @@ class TestCreateOTU:
                 id=monopartite_plan.id,
                 segments=[
                     Segment(
-                        id=monopartite_segment.id,
+                        id=monopartite_plan.segments[0].id,
                         length=150,
                         length_tolerance=empty_repo.settings.default_segment_length_tolerance,
                         name=None,
@@ -174,7 +185,7 @@ class TestCreateOTU:
                     "id": str(monopartite_plan.id),
                     "segments": [
                         {
-                            "id": str(monopartite_segment.id),
+                            "id": str(monopartite_plan.segments[0].id),
                             "length": 150,
                             "length_tolerance": empty_repo.settings.default_segment_length_tolerance,
                             "name": None,
@@ -206,9 +217,14 @@ class TestCreateOTU:
                 topology=Topology.LINEAR,
             ),
             name="Tobacco mosaic virus",
-            plan=Plan.new_monopartite(
-                length=150,
-                length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+            plan=Plan.new(
+                segments=[
+                    Segment.new(
+                        length=150,
+                        length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                        name=None,
+                    )
+                ]
             ),
             taxid=12242,
         )
@@ -226,9 +242,14 @@ class TestCreateOTU:
                     topology=Topology.LINEAR,
                 ),
                 name="Tobacco mosaic virus",
-                plan=Plan.new_monopartite(
-                    length=150,
-                    length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                plan=Plan.new(
+                    segments=[
+                        Segment.new(
+                            length=150,
+                            length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                            name=None,
+                        )
+                    ]
                 ),
                 taxid=438782,
             )
@@ -246,9 +267,14 @@ class TestCreateOTU:
                 topology=Topology.LINEAR,
             ),
             name="Tobacco mosaic virus",
-            plan=Plan.new_monopartite(
-                length=150,
-                length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+            plan=Plan.new(
+                segments=[
+                    Segment.new(
+                        length=150,
+                        length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                        name=None,
+                    )
+                ]
             ),
             taxid=12242,
         )
@@ -266,9 +292,14 @@ class TestCreateOTU:
                 ),
                 legacy_id="abcd1234",
                 name="Abaca bunchy top virus",
-                plan=Plan.new_monopartite(
-                    length=150,
-                    length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                plan=Plan.new(
+                    segments=[
+                        Segment.new(
+                            length=150,
+                            length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                            name=None,
+                        )
+                    ]
                 ),
                 taxid=438782,
             )
@@ -410,14 +441,15 @@ class TestGetOTU:
         """Test that getting an OTU returns the expected ``RepoOTU`` object including two
         isolates with one sequence each.
         """
-        monopartite_segment = Segment.new(
-            length=150,
-            length_tolerance=empty_repo.settings.default_segment_length_tolerance,
-            name=None,
-            required=SegmentRule.REQUIRED,
+        monopartite_plan = Plan.new(
+            segments=[
+                Segment.new(
+                    length=150,
+                    length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                    name=None,
+                )
+            ]
         )
-
-        monopartite_plan = Plan.new(segments=[monopartite_segment])
 
         otu = empty_repo.create_otu(
             acronym="TMV",
@@ -519,7 +551,7 @@ class TestGetOTU:
                     id=monopartite_plan.id,
                     segments=[
                         Segment(
-                            id=monopartite_segment.id,
+                            id=monopartite_plan.segments[0].id,
                             length=150,
                             length_tolerance=empty_repo.settings.default_segment_length_tolerance,
                             name=None,

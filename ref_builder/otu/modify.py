@@ -78,9 +78,15 @@ def set_plan_length_tolerances(
         try:
             repo.set_plan(
                 otu.id,
-                Plan.new_monopartite(
-                    length=otu.plan.segments[0].length,
-                    length_tolerance=tolerance,
+                plan=Plan.new(
+                    segments=[
+                        Segment.new(
+                            length=otu.plan.segments[0].length,
+                            length_tolerance=tolerance,
+                            name=None,
+                            required=SegmentRule.REQUIRED,
+                        )
+                    ]
                 ),
             )
         except (ValueError, ValidationError) as e:

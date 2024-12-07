@@ -73,7 +73,7 @@ class Segment(SegmentMetadata):
         length: int,
         length_tolerance: float,
         name: SegmentName | None,
-        required: SegmentRule,
+        required: SegmentRule = SegmentRule.REQUIRED,
     ) -> "Segment":
         """Return a new segment."""
         return Segment(
