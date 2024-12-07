@@ -12,7 +12,7 @@ from ref_builder.plan import (
     Plan,
     Segment,
     SegmentRule,
-    get_multipartite_segment_name,
+    extract_segment_name_from_record,
 )
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
@@ -104,7 +104,7 @@ def create_plan_from_records(
 
         segment_name = None
         try:
-            segment_name = get_multipartite_segment_name(record)
+            segment_name = extract_segment_name_from_record(record)
         except ValueError:
             pass
 
@@ -286,7 +286,7 @@ def assign_records_to_segments(
     unassigned_segments = plan.segments.copy()
 
     for record in records:
-        normalized_segment_name = get_multipartite_segment_name(record)
+        normalized_segment_name = extract_segment_name_from_record(record)
 
         for segment in unassigned_segments:
             if segment.name == normalized_segment_name:

@@ -10,7 +10,7 @@ from ref_builder.otu.utils import (
     parse_refseq_comment,
 )
 from ref_builder.otu.isolate import create_sequence_from_record
-from ref_builder.plan import get_multipartite_segment_name
+from ref_builder.plan import extract_segment_name_from_record
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
 
@@ -116,7 +116,7 @@ def create_otu(
 
     else:
         for record in records:
-            normalized_segment_name = get_multipartite_segment_name(record)
+            normalized_segment_name = extract_segment_name_from_record(record)
 
             sequence = create_sequence_from_record(
                 repo, otu, record, segment_name=str(normalized_segment_name)

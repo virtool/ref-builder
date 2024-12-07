@@ -8,7 +8,7 @@ from ref_builder.otu.utils import create_plan_from_records
 from ref_builder.plan import (
     Plan,
     SegmentName,
-    get_multipartite_segment_name,
+    extract_segment_name_from_record,
     parse_segment_name,
 )
 from tests.fixtures.factories import NCBIGenbankFactory, NCBISourceFactory
@@ -147,7 +147,7 @@ class TestSegmentNameParser:
             ),
         )
 
-        assert get_multipartite_segment_name(dummy_record) == expected_result
+        assert extract_segment_name_from_record(dummy_record) == expected_result
 
     @pytest.mark.parametrize(
         ("test_name", "test_moltype"),
@@ -173,4 +173,4 @@ class TestSegmentNameParser:
         )
 
         with pytest.raises(ValueError, match=r"\s* is not a valid segment name$"):
-            get_multipartite_segment_name(dummy_record)
+            extract_segment_name_from_record(dummy_record)

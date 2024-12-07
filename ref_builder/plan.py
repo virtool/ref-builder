@@ -96,7 +96,7 @@ class Segment(SegmentMetadata):
             id=uuid4(),
             length=len(record.sequence),
             length_tolerance=length_tolerance,
-            name=get_multipartite_segment_name(record),
+            name=extract_segment_name_from_record(record),
             required=required,
         )
 
@@ -235,8 +235,8 @@ def parse_segment_name(raw: str) -> SegmentName:
     raise ValueError(f"{raw} is not a valid segment name")
 
 
-def get_multipartite_segment_name(record: NCBIGenbank) -> SegmentName:
-    """Get a multipartite segment name from the record."""
+def extract_segment_name_from_record(record: NCBIGenbank) -> SegmentName:
+    """Get a segment name from a Genbank record."""
     if SIMPLE_NAME_PATTERN.fullmatch(record.source.segment):
         return SegmentName(
             prefix=record.moltype,

@@ -12,7 +12,7 @@ from ref_builder.otu.utils import (
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
-from ref_builder.plan import get_multipartite_segment_name
+from ref_builder.plan import extract_segment_name_from_record
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU, RepoIsolate, RepoSequence
 from ref_builder.utils import IsolateName
@@ -299,7 +299,7 @@ def create_multipartite_isolate(
     for segment_id in assigned_records:
         record = assigned_records[segment_id]
 
-        normalized_segment_name = get_multipartite_segment_name(record)
+        normalized_segment_name = extract_segment_name_from_record(record)
 
         sequence = create_sequence_from_record(
             repo,
