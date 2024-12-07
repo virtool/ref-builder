@@ -155,7 +155,7 @@ class TestAddMonopartiteIsolate:
 
     @pytest.mark.parametrize("sequence_length_multiplier", [0.5, 1.035, 20.0])
     def test_fail(self, scratch_repo, sequence_length_multiplier: float):
-        """Test that sequences that exceed recommended length variance
+        """Test that sequences that exceed recommended length tolerance
         are automatically rejected.
         """
         otu_before = scratch_repo.get_otu_by_taxid(270478)
@@ -212,7 +212,7 @@ class TestAddMultipartiteIsolate:
 
     @pytest.mark.parametrize("sequence_length_multiplier", [0.5, 1.035, 20.0])
     def test_fail(self, scratch_repo, sequence_length_multiplier: float):
-        """Test that sequences that exceed recommended length variance
+        """Test that sequences that exceed recommended length tolerance
         are automatically rejected.
         """
         otu_before = scratch_repo.get_otu_by_taxid(3158377)
