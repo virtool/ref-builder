@@ -1,5 +1,6 @@
 import re
 from enum import StrEnum
+from warnings import warn
 from uuid import UUID, uuid4
 
 from pydantic import UUID4, BaseModel, ConfigDict, Field, model_validator
@@ -155,7 +156,7 @@ class Plan(BaseModel):
     def check_required_segments(self) -> "Plan":
         """Check that there is at least one required segment."""
         if not self.required_segments:
-            raise ValueError("Plan contains no required segments.")
+            warn("Warning: Plan contains no required segments.")
 
         return self
 
