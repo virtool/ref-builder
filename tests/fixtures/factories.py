@@ -273,6 +273,8 @@ class SegmentFactory(ModelFactory[Segment]):
 
     __random_seed__ = RANDOM_SEED
 
+    length = Use(__faker__.sequence_length)
+
     @classmethod
     def name(cls) -> SegmentName | None:
         """Generate a quasi-realistic segment name or null."""
@@ -283,11 +285,6 @@ class SegmentFactory(ModelFactory[Segment]):
             )
 
         return None
-
-    @classmethod
-    def length(cls) -> int:
-        """Generate a realistic sequence length."""
-        return len(cls.__faker__.sequence())
 
 
 class PlanFactory(ModelFactory[Plan]):
