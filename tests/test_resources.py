@@ -3,7 +3,7 @@ from uuid import uuid4
 import pytest
 
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
-from ref_builder.plan import MonopartitePlan
+from ref_builder.plan import Plan, Segment
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU
 from ref_builder.utils import IsolateName, IsolateNameType
@@ -72,7 +72,15 @@ class TestOTU:
             ),
             name="Tobacco mosaic virus",
             repr_isolate=None,
-            plan=MonopartitePlan.new(length=6395, length_tolerance=0.03),
+            plan=Plan.new(
+                segments=[
+                    Segment.new(
+                        length=6395,
+                        length_tolerance=0.03,
+                        name=None,
+                    )
+                ]
+            ),
             taxid=12242,
         )
 
