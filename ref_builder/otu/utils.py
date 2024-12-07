@@ -100,10 +100,18 @@ def create_plan_from_records(
 ) -> Plan | None:
     """Return a plan from a list of records representing an isolate."""
     if len(records) == 1:
+        record = records[0]
+
+        segment_name = None
+        try:
+            segment_name = get_multipartite_segment_name(record)
+        except ValueError:
+            pass
+
         return Plan.new(
             segments=[
                 Segment.new(
-                    length=len(records[0].sequence),
+                    length=len(record.sequence),
                     length_tolerance=length_tolerance,
                     name=None,
                     required=SegmentRule.REQUIRED,
