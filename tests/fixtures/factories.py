@@ -297,19 +297,18 @@ class PlanFactory(ModelFactory[Plan]):
     @classmethod
     def segments(cls) -> list[Segment]:
         """Return a set of quasi-realistic segments."""
-        dice_roll = cls.__faker__.random_int(0, 10)
 
-        if dice_roll > 5:
+        if cls.__faker__.random_int(0, 10) > 5:
             return [SegmentFactory.build(name=None, required=SegmentRule.REQUIRED)]
 
-        ref_string = "ABCDEF"
+        segment_name_keys = "ABCDEF"
 
         mock_segments = []
 
         for i in range(cls.__faker__.random_int(2, 5)):
             mock_segments.append(
                 SegmentFactory.build(
-                    name=SegmentName(prefix="DNA", key=ref_string[i - 1]),
+                    name=SegmentName(prefix="DNA", key=segment_name_keys[i]),
                     required=SegmentRule.REQUIRED,
                 )
             )
