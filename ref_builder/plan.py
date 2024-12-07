@@ -137,26 +137,6 @@ class Plan(BaseModel):
         """Initialize a new Plan from a list of segments."""
         return Plan(id=uuid4(), segments=segments)
 
-    @classmethod
-    def new_monopartite(
-        cls,
-        length: int,
-        length_tolerance: float,
-        name: SegmentName | None = None,
-    ) -> "Plan":
-        """Initialize a new monopartite Plan from a record and a length tolerance."""
-        return Plan(
-            id=uuid4(),
-            segments=[
-                Segment.new(
-                    length=length,
-                    length_tolerance=length_tolerance,
-                    name=name,
-                    required=SegmentRule.REQUIRED,
-                )
-            ],
-        )
-
     @model_validator(mode="after")
     def check_required_segments(self) -> "Plan":
         """Check that there is at least one required segment."""
