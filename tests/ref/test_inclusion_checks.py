@@ -18,14 +18,20 @@ faker = Faker()
 faker.add_provider(AccessionProvider)
 faker.add_provider(SequenceProvider)
 
-REF_STRING = "ABCDEFGH"
-
 
 def create_mock_record(
     otu: RepoOTU,
     sequence_length: int,
 ) -> NCBIGenbank:
-    """Return a mock records based on a monopartite OTU."""
+    """Generate a single mock Genbank record capable of passing the inclusion check
+    on a given monopartite OTU.
+
+    :param otu: A monopartite OTU that the generated record must match.
+    :param sequence_length: The length of the mock sequence.
+    """
+    if not otu.plan.monopartite:
+        raise ValueError("Basis OTU must be monopartite")
+
     mock_record_source = NCBISourceFactory.build(
         taxid=otu.taxid,
         organism=otu.name,
@@ -42,9 +48,15 @@ def create_mock_record(
 
 def create_mock_isolate_records(
     otu: RepoOTU,
-    sequence_length_multiplier: float,
+    sequence_length_multiplier: float = 1.0,
 ) -> dict[UUID, NCBIGenbank]:
-    """Return a dictionary of mock records based on a multipartite OTU."""
+    """Generate a collection of mock Genbank records capable of passing the isolate inclusion checks
+    on a given multipartite OTU, as long as sequence_length_multiplier is 1.0.
+    Builds one mock record per segment.
+
+    :param otu: A monopartite OTU that the generated record must match.
+    :param sequence_length_multiplier: A float multiplier for the generated mock sequence length.
+    """
     mock_assigned_records = {}
 
     accession_starter = 100000
@@ -117,7 +129,7 @@ class TestAddMonopartiteIsolate:
 
     @pytest.mark.parametrize("sequence_length_multiplier", [1.0, 1.03, 0.98])
     def test_ok(self, scratch_repo, sequence_length_multiplier: float):
-        """Test that sequences within recommended length variance
+        """Test that sequences within recommended length tolerance
         are added without issue."""
         otu_before = scratch_repo.get_otu_by_taxid(270478)
 
