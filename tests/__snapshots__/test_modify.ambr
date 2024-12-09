@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: TestSetPlan.test_add_segments_to_plan
+# name: TestSetPlan.test_add_segments_to_plan[accessions0]
   dict({
     'segments': list([
       dict({
@@ -16,6 +16,30 @@
         'length_tolerance': 0.03,
         'name': dict({
           'key': 'M',
+          'prefix': 'RNA',
+        }),
+        'required': 'required',
+      }),
+      dict({
+        'length': 1291,
+        'length_tolerance': 0.03,
+        'name': dict({
+          'key': 'S',
+          'prefix': 'RNA',
+        }),
+        'required': 'optional',
+      }),
+    ]),
+  })
+# ---
+# name: TestSetPlan.test_add_segments_to_plan[accessions1]
+  dict({
+    'segments': list([
+      dict({
+        'length': 7219,
+        'length_tolerance': 0.03,
+        'name': dict({
+          'key': 'L',
           'prefix': 'RNA',
         }),
         'required': 'required',

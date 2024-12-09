@@ -158,15 +158,18 @@ class TestSetPlan:
             == first_segment.name
         )
 
+    @pytest.mark.parametrize("accessions", [["MF062136", "MF062137"], ["MF062136"]])
     def test_add_segments_to_plan(
         self,
         precached_repo: Repo,
+        accessions: list[str],
         snapshot: SnapshotAssertion,
     ):
+        """Test the addition of segments to an OTU plan."""
         otu_before = create_otu(
             precached_repo,
             2164102,
-            ["MF062136", "MF062137"],
+            accessions,
             acronym="",
         )
 
