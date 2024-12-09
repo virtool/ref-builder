@@ -50,38 +50,30 @@ class AccessionProvider(BaseProvider):
 
     def accession(self) -> str:
         """Return a pseudorandom accession number."""
-        dice_roll = self.random_int(0, 10)
-
-        if dice_roll > 7:
+        if self.random_int(0, 10) > 7:
             return self.genbank_accession()
 
         return self.refseq_accession()
 
     def accessions(self, n: int) -> list[str]:
         """Return a list of pseudorandom, consecutive accession numbers."""
-        dice_roll = self.random_int(0, 10)
-
-        if dice_roll > 7:
+        if self.random_int(0, 10) > 7:
             return self.genbank_accessions(n)
 
         return self.refseq_accessions(n)
 
     def genbank_accession(self) -> str:
         """Return a pseudorandom non-RefSeq accession number."""
-        dice_roll = self.random_int(0, 10)
-
-        if dice_roll > 6:
+        if self.random_int(0, 10) > 6:
             return self.bothify("?#####").upper()
 
         return self.bothify("??######").upper()
 
     def genbank_accessions(self, n: int) -> list[str]:
         """Return a list of pseudorandom, consecutive accession numbers."""
-        dice_roll = self.random_int(0, 10)
-
         accessions = []
 
-        if dice_roll > 6:
+        if self.random_int(0, 10) > 6:
             prefix = self.lexify("?")
 
             first_number = self.random_int(0, 99999 - n)
@@ -103,14 +95,12 @@ class AccessionProvider(BaseProvider):
         """Return a pseudorandom RefSeq accession number."""
         return "NC_" + self.numerify("######")
 
-    def refseq_accessions(self, n: int) -> list[str]:
+    def refseq_accessions(self, count: int) -> list[str]:
         """Return a list of pseudorandom, consecutive RefSeq accession numbers."""
-        accessions = []
 
-        first_number = self.random_int(0, 999999 - n)
+        first_number = self.random_int(0, 999999 - count)
 
-        for i in range(n):
-            accessions.append(f"NC_{first_number + i}")
+        accessions = [f"NC_{first_number + i}" for i in range(count)]
 
         return accessions
 
