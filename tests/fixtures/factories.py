@@ -1,7 +1,7 @@
 """Factories for generating quasi-realistic NCBISource and NCBIGenbank data."""
 
 from faker import Faker
-from polyfactory import PostGenerated
+from polyfactory import PostGenerated, Use
 from polyfactory.decorators import post_generated
 from polyfactory.factories.pydantic_factory import ModelFactory
 from polyfactory.pytest_plugin import register_fixture
@@ -11,8 +11,7 @@ from ref_builder.models import MolType, OTUMinimal
 from ref_builder.ncbi.models import NCBIGenbank, NCBISource, NCBISourceMolType
 from ref_builder.otu.models import IsolateBase, OTUBase
 from ref_builder.plan import (
-    MonopartitePlan,
-    MultipartitePlan,
+    Plan,
     Segment,
     SegmentName,
     SegmentRule,
@@ -33,6 +32,9 @@ DNA_MOLTYPES = {
     NCBISourceMolType.UNASSIGNED_DNA,
 }
 """NCBISourceMolTypes that map to MolType.DNA"""
+
+RANDOM_SEED = 21
+"""Factory random seed"""
 
 
 class NCBISourceFactory(ModelFactory[NCBISource]):
@@ -205,7 +207,7 @@ class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
 
     @staticmethod
     def build_from_metadata(
-        plan: MonopartitePlan | MultipartitePlan,
+        plan: Plan,
         moltype: MolType,
         name: str,
         taxid: int,
@@ -230,7 +232,7 @@ class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
                 f"MolType {moltype} cannot be matched to NCBISourceMolType"
             )
 
-        if isinstance(plan, MonopartitePlan):
+        if plan.monopartite:
             source = NCBISourceFactory.build(
                 moltype=source_moltype,
                 organism=name,
@@ -261,6 +263,60 @@ def derive_acronym(_: str, values: dict[str, str]) -> str:
     return "".join([part[0].upper() for part in name.split(" ")])
 
 
+class SegmentFactory(ModelFactory[Segment]):
+    """Segment Factory with quasi-realistic data."""
+
+    __faker__ = Faker()
+
+    __faker__.add_provider(SequenceProvider)
+    __faker__.add_provider(SegmentProvider)
+
+    __random_seed__ = RANDOM_SEED
+
+    length = Use(__faker__.sequence_length)
+    """Generate a quasi-realistic length for a sequence."""
+
+    @classmethod
+    def name(cls) -> SegmentName | None:
+        """Generate a quasi-realistic segment name or null."""
+        if cls.__faker__.random_int(0, 10) > 5:
+            return SegmentName(
+                prefix=cls.__faker__.random_element(["DNA", "RNA"]),
+                key=cls.__faker__.segment_key(),
+            )
+
+        return None
+
+
+class PlanFactory(ModelFactory[Plan]):
+    """Plan Factory with quasi-realistic data."""
+
+    __faker__ = Faker()
+
+    __random_seed__ = RANDOM_SEED
+
+    @classmethod
+    def segments(cls) -> list[Segment]:
+        """Return a set of quasi-realistic segments."""
+
+        if cls.__faker__.random_int(0, 10) > 5:
+            return [SegmentFactory.build(name=None, required=SegmentRule.REQUIRED)]
+
+        segment_name_keys = "ABCDEF"
+
+        mock_segments = []
+
+        for i in range(cls.__faker__.random_int(2, 5)):
+            mock_segments.append(
+                SegmentFactory.build(
+                    name=SegmentName(prefix="DNA", key=segment_name_keys[i]),
+                    required=SegmentRule.REQUIRED,
+                )
+            )
+
+        return mock_segments
+
+
 @register_fixture
 class OTUFactory(ModelFactory[OTUBase]):
     """OTU Factory with quasi-realistic data."""
@@ -272,14 +328,16 @@ class OTUFactory(ModelFactory[OTUBase]):
     __faker__.add_provider(OrganismProvider)
     __faker__.add_provider(SequenceProvider)
 
-    __random_seed__ = 21
+    __random_seed__ = RANDOM_SEED
+
+    plan = Use(PlanFactory.build)
 
     acronym = PostGenerated(derive_acronym)
     """An acronym for the OTU derived from its name."""
 
     @post_generated
     @classmethod
-    def isolates(cls, plan: MultipartitePlan) -> list[IsolateBase]:
+    def isolates(cls, plan: Plan) -> list[IsolateBase]:
         """Derive a list of isolates from a plan."""
         isolates = []
 
@@ -324,28 +382,6 @@ class OTUFactory(ModelFactory[OTUBase]):
     def name(cls) -> str:
         """Generate a realistic name for a plant virus."""
         return cls.__faker__.organism()
-
-    @classmethod
-    def plan(cls) -> MultipartitePlan:
-        """Generate a multipartite plan with two segments."""
-        return MultipartitePlan.new(
-            [
-                Segment(
-                    id=cls.__faker__.uuid4(),
-                    length=1099,
-                    length_tolerance=0.03,
-                    name=SegmentName("DNA", "A"),
-                    required=SegmentRule.REQUIRED,
-                ),
-                Segment(
-                    id=cls.__faker__.uuid4(),
-                    length=1074,
-                    length_tolerance=0.03,
-                    name=SegmentName("DNA", "B"),
-                    required=SegmentRule.REQUIRED,
-                ),
-            ],
-        )
 
     @post_generated
     @classmethod

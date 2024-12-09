@@ -14,7 +14,7 @@ from ref_builder.otu.modify import (
     exclude_accessions_from_otu,
     resize_monopartite_plan,
     replace_sequence_in_otu,
-    set_isolate_plan,
+    set_plan,
     set_plan_length_tolerances,
     set_representative_isolate,
 )
@@ -24,8 +24,7 @@ from ref_builder.otu.update import (
 from ref_builder.otu.isolate import add_genbank_isolate
 from ref_builder.utils import IsolateName, IsolateNameType
 from ref_builder.plan import (
-    MonopartitePlan,
-    MultipartitePlan,
+    Plan,
     SegmentName,
     SegmentRule,
     Segment,
@@ -70,17 +69,17 @@ def test_update_representative_isolate(scratch_repo: Repo):
     assert otu_after.repr_isolate == repr_isolate_after
 
 
-class TestSetIsolatePlan:
-    def test_set_isolate_plan(self, scratch_repo: Repo):
+class TestSetPlan:
+    def test_ok(self, scratch_repo: Repo):
         otu_before = scratch_repo.get_otu_by_taxid(223262)
 
         original_plan = otu_before.plan
 
-        assert type(original_plan) is MultipartitePlan
+        assert type(original_plan) is Plan
 
-        new_isolate_plan = MultipartitePlan.new(segments=original_plan.segments)
+        new_plan = Plan.new(segments=original_plan.segments)
 
-        new_isolate_plan.segments.append(
+        new_plan.segments.append(
             Segment.new(
                 length=2000,
                 length_tolerance=scratch_repo.settings.default_segment_length_tolerance,
@@ -89,7 +88,7 @@ class TestSetIsolatePlan:
             ),
         )
 
-        new_isolate_plan.segments.append(
+        new_plan.segments.append(
             Segment.new(
                 length=1000,
                 length_tolerance=scratch_repo.settings.default_segment_length_tolerance,
@@ -98,15 +97,15 @@ class TestSetIsolatePlan:
             ),
         )
 
-        set_isolate_plan(scratch_repo, otu_before, new_isolate_plan)
+        set_plan(scratch_repo, otu_before, new_plan)
 
-        assert type(new_isolate_plan) is MultipartitePlan
+        assert type(new_plan) is Plan
 
         otu_after = scratch_repo.get_otu(otu_before.id)
 
         assert len(otu_after.plan.segments) == len(otu_before.plan.segments) + 2
 
-        assert otu_after.plan == new_isolate_plan
+        assert otu_after.plan == new_plan
 
     def test_add_segments_to_plan(
         self,
@@ -122,7 +121,7 @@ class TestSetIsolatePlan:
 
         original_plan = otu_before.plan
 
-        assert type(original_plan) is MultipartitePlan
+        assert type(original_plan) is Plan
 
         expanded_plan = add_segments_to_plan(
             precached_repo,
@@ -151,7 +150,7 @@ class TestSetIsolatePlan:
             acronym="",
         )
 
-        assert type(otu_before.plan) is MonopartitePlan
+        assert otu_before.plan.monopartite
 
         resize_monopartite_plan(
             precached_repo,
@@ -163,9 +162,12 @@ class TestSetIsolatePlan:
 
         otu_after = precached_repo.get_otu(otu_before.id)
 
-        assert type(otu_after.plan) is MultipartitePlan
+        assert type(otu_after.plan) is Plan
 
-        assert otu_after.plan.required_segments[0].length == otu_before.plan.length
+        assert (
+            otu_after.plan.required_segments[0].length
+            == otu_before.plan.segments[0].length
+        )
 
         assert otu_after.plan.model_dump() == snapshot(exclude=props("id"))
 
@@ -174,11 +176,11 @@ class TestSetIsolatePlan:
         scratch_repo: Repo,
     ):
         """Test that add_segments_to_plan() fails out
-        when the original plan is a MonopartitePlan.
+        when the original plan is monopartite.
         """
         otu_before = scratch_repo.get_otu_by_taxid(96892)
 
-        assert type(otu_before.plan) is MonopartitePlan
+        assert otu_before.plan.monopartite
 
         with pytest.raises(ValueError):
             add_segments_to_plan(
@@ -194,7 +196,7 @@ class TestSetIsolatePlan:
         otu_before = scratch_repo.get_otu_by_taxid(96892)
 
         assert (
-            otu_before.plan.length_tolerance
+            otu_before.plan.segments[0].length_tolerance
             == scratch_repo.settings.default_segment_length_tolerance
         )
 
@@ -202,7 +204,7 @@ class TestSetIsolatePlan:
 
         otu_after = scratch_repo.get_otu(otu_before.id)
 
-        assert otu_after.plan.length_tolerance == tolerance
+        assert otu_after.plan.segments[0].length_tolerance == tolerance
 
     @pytest.mark.parametrize("bad_tolerance", [-1.0, 1.1, 100.0])
     def test_set_length_tolerances_fail(self, scratch_repo: Repo, bad_tolerance: float):
@@ -210,7 +212,7 @@ class TestSetIsolatePlan:
         otu_before = scratch_repo.get_otu_by_taxid(96892)
 
         assert (
-            otu_before.plan.length_tolerance
+            otu_before.plan.segments[0].length_tolerance
             == scratch_repo.settings.default_segment_length_tolerance
         )
 
@@ -218,7 +220,10 @@ class TestSetIsolatePlan:
 
         otu_after = scratch_repo.get_otu(otu_before.id)
 
-        assert otu_after.plan.length_tolerance == otu_before.plan.length_tolerance
+        assert (
+            otu_after.plan.segments[0].length_tolerance
+            == otu_before.plan.segments[0].length_tolerance
+        )
 
 
 class TestUpdateRepresentativeIsolateCommand:

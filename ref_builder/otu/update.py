@@ -18,7 +18,6 @@ from ref_builder.otu.utils import (
 )
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU
-from ref_builder.plan import MonopartitePlan
 from ref_builder.utils import Accession, IsolateName
 
 logger = get_logger("otu.update")
@@ -213,7 +212,7 @@ def file_records_into_otu(
             )
             continue
 
-        if type(otu.plan) is MonopartitePlan:
+        if otu.plan.monopartite:
             isolate = create_monopartite_isolate(
                 repo,
                 otu,

@@ -12,7 +12,6 @@
     }),
     'name': 'Cabbage leaf curl Jamaica virus',
     'plan': dict({
-      'plan_type': 'multipartite',
       'segments': list([
         dict({
           'length': 2575,
@@ -61,10 +60,14 @@
     }),
     'name': 'Dahlia latent viroid',
     'plan': dict({
-      'length': 342,
-      'length_tolerance': 0.03,
-      'name': None,
-      'plan_type': 'monopartite',
+      'segments': list([
+        dict({
+          'length': 342,
+          'length_tolerance': 0.03,
+          'name': None,
+          'required': 'required',
+        }),
+      ]),
     }),
     'taxid': 1278205,
   })
@@ -82,7 +85,6 @@
     }),
     'name': 'Cabbage leaf curl Jamaica virus',
     'plan': dict({
-      'plan_type': 'multipartite',
       'segments': list([
         dict({
           'length': 2575,

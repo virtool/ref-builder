@@ -6,8 +6,7 @@ from structlog import get_logger
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.utils import DeleteRationale, create_segments_from_records
 from ref_builder.plan import (
-    MonopartitePlan,
-    MultipartitePlan,
+    Plan,
     SegmentRule,
     SegmentName,
     Segment,
@@ -52,16 +51,16 @@ def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
     return
 
 
-def set_isolate_plan(
+def set_plan(
     repo: Repo,
     otu: RepoOTU,
-    plan: MonopartitePlan | MultipartitePlan,
-) -> MonopartitePlan | MultipartitePlan | None:
+    plan: Plan,
+) -> Plan | None:
     """Sets an OTU's isolate plan to a new plan."""
     otu_logger = logger.bind(name=otu.name, taxid=otu.taxid, plan=plan.model_dump())
 
     try:
-        repo.set_isolate_plan(otu.id, plan)
+        repo.set_plan(otu.id, plan)
     except ValueError as e:
         otu_logger.error(e)
         return None
@@ -73,15 +72,21 @@ def set_plan_length_tolerances(
     repo: Repo,
     otu: RepoOTU,
     tolerance: float,
-) -> MonopartitePlan | MultipartitePlan | None:
+) -> Plan | None:
     """Sets a plan's length tolerances to a new float value."""
-    if otu.plan.plan_type == "monopartite":
+    if otu.plan.monopartite:
         try:
-            repo.set_isolate_plan(
+            repo.set_plan(
                 otu.id,
-                MonopartitePlan.new(
-                    length=otu.plan.length,
-                    length_tolerance=tolerance,
+                plan=Plan.new(
+                    segments=[
+                        Segment.new(
+                            length=otu.plan.segments[0].length,
+                            length_tolerance=tolerance,
+                            name=None,
+                            required=SegmentRule.REQUIRED,
+                        )
+                    ]
                 ),
             )
         except (ValueError, ValidationError) as e:
@@ -89,7 +94,7 @@ def set_plan_length_tolerances(
                 e,
                 name=otu.name,
                 taxid=otu.taxid,
-                tolerance=otu.plan.length_tolerance,
+                tolerance=otu.plan.segments[0].length_tolerance,
                 new_tolerance=tolerance,
             )
             return None
@@ -103,7 +108,7 @@ def add_segments_to_plan(
     rule: SegmentRule,
     accessions: list[str],
     ignore_cache: bool = False,
-) -> MultipartitePlan | None:
+) -> Plan | None:
     """Add new segments to a multipartite plan."""
     expand_logger = logger.bind(
         name=otu.name, taxid=otu.taxid, accessions=accessions, rule=rule
@@ -111,8 +116,8 @@ def add_segments_to_plan(
 
     sequence_length_tolerance = repo.settings.default_segment_length_tolerance
 
-    if type(otu.plan) is MonopartitePlan:
-        raise ValueError("Cannot add segments to a monopartite plan.")
+    if otu.plan.monopartite and otu.plan.segments[0].name is None:
+        raise ValueError("Current monopartite segment is unnamed.")
 
     client = NCBIClient(ignore_cache)
 
@@ -135,11 +140,11 @@ def add_segments_to_plan(
         expand_logger.warning("No segments can be added.")
         return None
 
-    new_plan = MultipartitePlan.new(
+    new_plan = Plan.new(
         segments=otu.plan.segments + new_segments,
     )
 
-    return set_isolate_plan(repo, otu, new_plan)
+    return set_plan(repo, otu, new_plan)
 
 
 def resize_monopartite_plan(
@@ -150,13 +155,13 @@ def resize_monopartite_plan(
     accessions: list[str],
     # sequence_length_tolerance: float | None = None,
     ignore_cache: bool = False,
-) -> MultipartitePlan | None:
+) -> Plan | None:
     """Convert a monopartite plan to a multipartite plan and add segments."""
     expand_logger = logger.bind(
         name=otu.name, taxid=otu.taxid, accessions=accessions, rule=rule
     )
 
-    if type(otu.plan) is MultipartitePlan:
+    if not otu.plan.monopartite:
         expand_logger.warning("OTU plan is already a multipartite plan.")
         return None
 
@@ -178,10 +183,10 @@ def resize_monopartite_plan(
         expand_logger.warning("No segments can be added.")
         return None
 
-    new_plan = MultipartitePlan.new(
+    new_plan = Plan.new(
         segments=[
             Segment.new(
-                length=otu.plan.length,
+                length=otu.plan.segments[0].length,
                 length_tolerance=sequence_length_tolerance,
                 name=name,
                 required=SegmentRule.REQUIRED,
@@ -190,7 +195,7 @@ def resize_monopartite_plan(
         + new_segments,
     )
 
-    return set_isolate_plan(repo, otu, new_plan)
+    return set_plan(repo, otu, new_plan)
 
 
 def replace_sequence_in_otu(
