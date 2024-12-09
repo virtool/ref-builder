@@ -1,5 +1,5 @@
 import subprocess
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from syrupy import SnapshotAssertion
@@ -12,6 +12,7 @@ from ref_builder.otu.modify import (
     add_segments_to_plan,
     delete_isolate_from_otu,
     exclude_accessions_from_otu,
+    rename_plan_segment,
     resize_monopartite_plan,
     replace_sequence_in_otu,
     set_plan,
@@ -106,6 +107,56 @@ class TestSetPlan:
         assert len(otu_after.plan.segments) == len(otu_before.plan.segments) + 2
 
         assert otu_after.plan == new_plan
+
+    def test_rename_segment_ok(self, scratch_repo: Repo):
+        """Test that a given plan segment can be renamed."""
+        otu_before = scratch_repo.get_otu_by_taxid(223262)
+
+        first_segment_id = otu_before.plan.segments[0].id
+
+        new_name = SegmentName(prefix="RNA", key="TestName")
+
+        assert otu_before.plan.get_segment_by_id(first_segment_id).name != new_name
+
+        rename_plan_segment(
+            scratch_repo,
+            otu_before,
+            segment_id=first_segment_id,
+            segment_name=SegmentName(prefix="RNA", key="TestName"),
+        )
+
+        otu_after = scratch_repo.get_otu_by_taxid(223262)
+
+        assert otu_after.plan.get_segment_by_id(first_segment_id).name == new_name
+
+    def test_rename_segment_fail(self, scratch_repo: Repo):
+        """Test that an attempt to rename a nonexistent segment does not change the OTU."""
+        otu_before = scratch_repo.get_otu_by_taxid(223262)
+
+        first_segment = otu_before.plan.segments[0]
+
+        new_name = SegmentName(prefix="RNA", key="TestName")
+
+        assert otu_before.plan.get_segment_by_id(first_segment.id).name != new_name
+
+        assert (
+            rename_plan_segment(
+                scratch_repo,
+                otu_before,
+                segment_id=uuid4(),
+                segment_name=SegmentName(prefix="RNA", key="TestName"),
+            )
+            is None
+        )
+
+        otu_after = scratch_repo.get_otu_by_taxid(223262)
+
+        assert otu_after.plan.model_dump_json() == otu_before.plan.model_dump_json()
+
+        assert (
+            otu_after.plan.get_segment_by_id(first_segment.id).name
+            == first_segment.name
+        )
 
     def test_add_segments_to_plan(
         self,
