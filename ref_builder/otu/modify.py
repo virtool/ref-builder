@@ -117,7 +117,8 @@ def add_segments_to_plan(
     sequence_length_tolerance = repo.settings.default_segment_length_tolerance
 
     if otu.plan.monopartite:
-        raise ValueError("Cannot add segments to a monopartite plan.")
+        if otu.plan.segments[0].name is None:
+            raise ValueError("Current monopartite segment is unnamed.")
 
     client = NCBIClient(ignore_cache)
 
