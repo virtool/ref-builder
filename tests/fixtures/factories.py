@@ -274,6 +274,7 @@ class SegmentFactory(ModelFactory[Segment]):
     __random_seed__ = RANDOM_SEED
 
     length = Use(__faker__.sequence_length)
+    """Generate a quasi-realistic length for a sequence."""
 
     @classmethod
     def name(cls) -> SegmentName | None:
