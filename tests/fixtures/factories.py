@@ -262,6 +262,8 @@ def derive_acronym(_: str, values: dict[str, str]) -> str:
 
 
 class SequenceFactory(ModelFactory[RepoSequence]):
+    """Sequence factory with quasi-realistic data."""
+
     __faker__ = Faker()
 
     __faker__.add_provider(AccessionProvider)
@@ -271,10 +273,12 @@ class SequenceFactory(ModelFactory[RepoSequence]):
 
     @classmethod
     def accession(cls) -> Accession:
+        """Generate a pseudo-realistic accession."""
         return Accession(key=cls.__faker__.accession(), version=1)
 
     @classmethod
     def definition(cls):
+        """Generate a mock sentence to serve as the definition field."""
         return cls.__faker__.sentence()
 
     @classmethod
@@ -284,14 +288,18 @@ class SequenceFactory(ModelFactory[RepoSequence]):
 
     @classmethod
     def segment(cls) -> str:
+        """Generate a quasi-realistic mock segment string."""
         return cls.__faker__.segment()
 
     @classmethod
     def sequence(cls) -> str:
+        """Generate a quasi-realistic mock genomic sequence."""
         return cls.__faker__.sequence()
 
 
 class IsolateFactory(ModelFactory[IsolateBase]):
+    """Isolate factory with quasi-realistic data."""
+
     __faker__ = Faker()
 
     __faker__.add_provider(AccessionProvider)
@@ -304,6 +312,7 @@ class IsolateFactory(ModelFactory[IsolateBase]):
 
     @classmethod
     def name(cls) -> IsolateName:
+        """Generate a quasi-realistic isolate name."""
         return IsolateName(
             type=IsolateNameType.ISOLATE,
             value=cls.__faker__.word(part_of_speech="noun").capitalize(),
@@ -311,6 +320,7 @@ class IsolateFactory(ModelFactory[IsolateBase]):
 
     @classmethod
     def sequences(cls) -> list[RepoSequence]:
+        """Generate between 1 and 6 sequences with numerically sequential accessions."""
         n_sequences = cls.__faker__.random_int(1, 6)
 
         accessions = cls.__faker__.accessions(n_sequences)
