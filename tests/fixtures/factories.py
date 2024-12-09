@@ -1,7 +1,7 @@
 """Factories for generating quasi-realistic NCBISource and NCBIGenbank data."""
 
 from faker import Faker
-from polyfactory import PostGenerated
+from polyfactory import PostGenerated, Use
 from polyfactory.decorators import post_generated
 from polyfactory.factories.pydantic_factory import ModelFactory
 from polyfactory.pytest_plugin import register_fixture
@@ -271,30 +271,25 @@ class SequenceFactory(ModelFactory[RepoSequence]):
     __faker__.add_provider(SegmentProvider)
     __faker__.add_provider(SequenceProvider)
 
+    id = Use(__faker__.uuid4, cast_to=None)
+    """Generate a UUID."""
+
+    definition = Use(__faker__.sentence)
+    """Generate a mock sentence to serve as the definition field."""
+
+    legacy_id = Use(__faker__.legacy_id)
+    """Generate an 8-character unique identifier as used in virtool-cli."""
+
+    segment = Use(__faker__.segment)
+    """Generate a quasi-realistic mock segment string."""
+
+    sequence = Use(__faker__.sequence)
+    """Generate a quasi-realistic mock genomic sequence."""
+
     @classmethod
     def accession(cls) -> Accession:
-        """Generate a pseudo-realistic accession."""
+        """Generate a quasi-realistic accession."""
         return Accession(key=cls.__faker__.accession(), version=1)
-
-    @classmethod
-    def definition(cls):
-        """Generate a mock sentence to serve as the definition field."""
-        return cls.__faker__.sentence()
-
-    @classmethod
-    def legacy_id(cls) -> str:
-        """Generate an 8-character unique identifier as used in virtool-cli."""
-        return cls.__faker__.legacy_id()
-
-    @classmethod
-    def segment(cls) -> str:
-        """Generate a quasi-realistic mock segment string."""
-        return cls.__faker__.segment()
-
-    @classmethod
-    def sequence(cls) -> str:
-        """Generate a quasi-realistic mock genomic sequence."""
-        return cls.__faker__.sequence()
 
 
 class IsolateFactory(ModelFactory[IsolateBase]):
@@ -305,10 +300,11 @@ class IsolateFactory(ModelFactory[IsolateBase]):
     __faker__.add_provider(AccessionProvider)
     __faker__.add_provider(BusinessProvider)
 
-    @classmethod
-    def legacy_id(cls) -> str:
-        """Generate an 8-character unique identifier as used in virtool-cli."""
-        return cls.__faker__.legacy_id()
+    id = Use(__faker__.uuid4, cast_to=None)
+    """Generate a UUID."""
+
+    legacy_id = Use(__faker__.legacy_id)
+    """Generate an 8-character unique identifier as used in virtool-cli."""
 
     @classmethod
     def name(cls) -> IsolateName:
@@ -334,7 +330,6 @@ class IsolateFactory(ModelFactory[IsolateBase]):
         return sequences
 
 
-# @register_fixture
 class OTUFactory(ModelFactory[OTUBase]):
     """OTU Factory with quasi-realistic data."""
 
@@ -348,23 +343,16 @@ class OTUFactory(ModelFactory[OTUBase]):
     __random_seed__ = 21
 
     acronym = PostGenerated(derive_acronym)
-    """An acronym for the OTU derived from its name."""
+    """Generate an acronym for the OTU derived from its name."""
 
-    @post_generated
-    @classmethod
-    def isolates(cls, plan: MultipartitePlan) -> list[IsolateBase]:
-        """Derive a list of isolates from a plan."""
-        isolates = []
+    id = Use(__faker__.uuid4, cast_to=None)
+    """Generate a UUID."""
 
-        for _ in range(cls.__faker__.random_int(2, 5)):
-            sequences = [
-                SequenceFactory.build(segment=str(segment.name))
-                for segment in plan.segments
-            ]
+    legacy_id = Use(__faker__.legacy_id)
+    """Generate an 8-character unique identifier as used in virtool-cli."""
 
-            isolates.append(IsolateFactory.build(sequences=sequences))
-
-        return isolates
+    name = Use(__faker__.organism)
+    """Generate a realistic name for a plant virus."""
 
     @classmethod
     def excluded_accessions(cls) -> set[str]:
@@ -372,14 +360,9 @@ class OTUFactory(ModelFactory[OTUBase]):
         return set()
 
     @classmethod
-    def legacy_id(cls) -> str:
-        """Generate an 8-character unique identifier as used in virtool-cli."""
-        return cls.__faker__.legacy_id()
-
-    @classmethod
-    def name(cls) -> str:
-        """Generate a realistic name for a plant virus."""
-        return cls.__faker__.organism()
+    def taxid(cls) -> int:
+        """Generate a realistic taxonomy ID."""
+        return cls.__faker__.random_int(1000, 999999)
 
     @classmethod
     def plan(cls) -> MultipartitePlan:
@@ -405,8 +388,24 @@ class OTUFactory(ModelFactory[OTUBase]):
 
     @post_generated
     @classmethod
+    def isolates(cls, plan: MultipartitePlan) -> list[IsolateBase]:
+        """Derive a list of isolates from a plan."""
+        isolates = []
+
+        for _ in range(cls.__faker__.random_int(2, 5)):
+            sequences = [
+                SequenceFactory.build(segment=str(segment.name))
+                for segment in plan.segments
+            ]
+
+            isolates.append(IsolateFactory.build(sequences=sequences))
+
+        return isolates
+
+    @post_generated
+    @classmethod
     def repr_isolate(cls, isolates: list[RepoIsolate]) -> UUID4:
-        """Derive a representative isolate from an OTU name."""
+        """Derive a representative isolate from a list of OTUs."""
         return cls.__faker__.random_element(isolates).id
 
     @post_generated
@@ -414,11 +413,6 @@ class OTUFactory(ModelFactory[OTUBase]):
     def sequences(cls, isolates: list[RepoIsolate]) -> list[RepoSequence]:
         """Derive a list of sequences from a list of isolates."""
         return [sequence for isolate in isolates for sequence in isolate.sequences]
-
-    @classmethod
-    def taxid(cls) -> int:
-        """Generate a realistic taxonomy ID."""
-        return cls.__faker__.random_int(1000, 999999)
 
 
 @register_fixture
