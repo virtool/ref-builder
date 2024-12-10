@@ -78,14 +78,14 @@ class AccessionProvider(BaseProvider):
 
             ceiling = 99999
 
-            digit_format = '{0:05d}'
+            digit_format = "{0:05d}"
 
         else:
             prefix = self.random_uppercase_letter() + self.random_uppercase_letter()
 
             ceiling = 999999
 
-            digit_format = '{0:06d}'
+            digit_format = "{0:06d}"
 
         first_number = self.random_int(0, ceiling - count)
 
