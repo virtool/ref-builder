@@ -317,17 +317,12 @@ class IsolateFactory(ModelFactory[IsolateBase]):
     @classmethod
     def sequences(cls) -> list[RepoSequence]:
         """Generate between 1 and 6 sequences with numerically sequential accessions."""
-        n_sequences = cls.__faker__.random_int(1, 6)
+        sequence_count = cls.__faker__.random_int(1, 6)
 
-        accessions = cls.__faker__.accessions(n_sequences)
-
-        sequences = []
-        for accession in accessions:
-            sequences.append(
-                SequenceFactory.build(accession=Accession(key=accession, version=1))
-            )
-
-        return sequences
+        return [
+            SequenceFactory.build(accession=Accession(key=accession, version=1))
+            for accession in cls.__faker__.accessions(sequence_count)
+        ]
 
 
 class OTUFactory(ModelFactory[OTUBase]):
