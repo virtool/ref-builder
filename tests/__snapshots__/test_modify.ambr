@@ -1,7 +1,6 @@
 # serializer version: 1
-# name: TestSetIsolatePlan.test_add_segments_to_plan
+# name: TestSetPlan.test_add_segments_to_plan
   dict({
-    'plan_type': 'multipartite',
     'segments': list([
       dict({
         'length': 7219,
@@ -33,9 +32,8 @@
     ]),
   })
 # ---
-# name: TestSetIsolatePlan.test_resize_monopartite_plan
+# name: TestSetPlan.test_resize_monopartite_plan
   dict({
-    'plan_type': 'multipartite',
     'segments': list([
       dict({
         'length': 7219,

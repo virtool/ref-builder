@@ -89,7 +89,8 @@ class TestCreateOTU:
         # value of the creation function.
         assert list(precached_repo.iter_otus()) == [otu]
 
-    def test_empty_fail(self, scratch_repo: Repo):
+    def test_create_duplicate_fail(self, scratch_repo: Repo):
+        """Test that an OTU with the same Taxonomy ID cannot be created."""
         with pytest.raises(ValueError):
             create_otu(
                 scratch_repo,

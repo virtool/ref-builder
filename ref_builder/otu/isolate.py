@@ -12,7 +12,7 @@ from ref_builder.otu.utils import (
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
-from ref_builder.plan import MonopartitePlan, get_multipartite_segment_name
+from ref_builder.plan import extract_segment_name_from_record
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU, RepoIsolate, RepoSequence
 from ref_builder.utils import IsolateName
@@ -72,7 +72,7 @@ def add_genbank_isolate(
                 )
             return None
 
-    if isinstance(otu.plan, MonopartitePlan):
+    if otu.plan.monopartite:
         return create_monopartite_isolate(repo, otu, isolate_name, records[0])
 
     try:
@@ -118,7 +118,7 @@ def add_unnamed_isolate(
         )
         return None
 
-    if type(otu.plan) is MonopartitePlan:
+    if otu.plan.monopartite:
         return create_monopartite_isolate(
             repo,
             otu,
@@ -160,7 +160,7 @@ def add_and_name_isolate(
     if not records:
         return None
 
-    if type(otu.plan) is MonopartitePlan:
+    if otu.plan.monopartite:
         return create_monopartite_isolate(
             repo,
             otu,
@@ -198,8 +198,8 @@ def create_monopartite_isolate(
 
     if not check_sequence_length(
         record.sequence,
-        segment_length=otu.plan.length,
-        tolerance=repo.settings.default_segment_length_tolerance,
+        segment_length=otu.plan.segments[0].length,
+        tolerance=otu.plan.segments[0].length_tolerance,
     ):
         isolate_logger.error("Sequence does not conform to plan length.")
         return None
@@ -299,7 +299,7 @@ def create_multipartite_isolate(
     for segment_id in assigned_records:
         record = assigned_records[segment_id]
 
-        normalized_segment_name = get_multipartite_segment_name(record)
+        normalized_segment_name = extract_segment_name_from_record(record)
 
         sequence = create_sequence_from_record(
             repo,

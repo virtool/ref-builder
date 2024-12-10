@@ -1,15 +1,18 @@
 # serializer version: 1
 # name: TestPlan.test_create_monopartite_plan_from_records
   dict({
-    'length': 7424,
-    'length_tolerance': 0.03,
-    'name': None,
-    'plan_type': 'monopartite',
+    'segments': list([
+      dict({
+        'length': 7424,
+        'length_tolerance': 0.03,
+        'name': None,
+        'required': 'required',
+      }),
+    ]),
   })
 # ---
 # name: TestPlan.test_create_multipartite_plan_from_records
   dict({
-    'plan_type': 'multipartite',
     'segments': list([
       dict({
         'length': 1090,
@@ -68,17 +71,20 @@
     ]),
   })
 # ---
-# name: TestPlan.test_serialize_plan[accessions0-MonopartitePlan]
+# name: TestPlan.test_serialize_plan[accessions0-True]
   dict({
-    'length': 7424,
-    'length_tolerance': 0.03,
-    'name': None,
-    'plan_type': 'monopartite',
+    'segments': list([
+      dict({
+        'length': 7424,
+        'length_tolerance': 0.03,
+        'name': None,
+        'required': 'required',
+      }),
+    ]),
   })
 # ---
-# name: TestPlan.test_serialize_plan[accessions1-MultipartitePlan]
+# name: TestPlan.test_serialize_plan[accessions1-False]
   dict({
-    'plan_type': 'multipartite',
     'segments': list([
       dict({
         'length': 1090,

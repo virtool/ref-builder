@@ -66,7 +66,7 @@ from ref_builder.events.sequence import (
 )
 from ref_builder.index import Index
 from ref_builder.models import Molecule, OTUMinimal
-from ref_builder.plan import MonopartitePlan, MultipartitePlan
+from ref_builder.plan import Plan
 from ref_builder.resources import (
     RepoIsolate,
     RepoMeta,
@@ -218,7 +218,7 @@ class Repo:
         legacy_id: str | None,
         molecule: Molecule,
         name: str,
-        plan: MonopartitePlan | MultipartitePlan,
+        plan: Plan,
         taxid: int,
     ) -> RepoOTU | None:
         """Create an OTU."""
@@ -411,9 +411,7 @@ class Repo:
 
         return self.get_otu(otu_id).get_sequence_by_id(new_sequence.id)
 
-    def set_isolate_plan(
-        self, otu_id: uuid.UUID, plan: MonopartitePlan | MultipartitePlan
-    ) -> MonopartitePlan | MultipartitePlan:
+    def set_plan(self, otu_id: uuid.UUID, plan: Plan) -> Plan:
         """Set the isolate plan for an OTU."""
         self._write_event(
             CreatePlan,

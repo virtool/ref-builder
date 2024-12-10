@@ -4,13 +4,13 @@ import structlog
 
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.utils import (
-    create_isolate_plan_from_records,
+    create_plan_from_records,
     group_genbank_records_by_isolate,
     get_molecule_from_records,
     parse_refseq_comment,
 )
 from ref_builder.otu.isolate import create_sequence_from_record
-from ref_builder.plan import get_multipartite_segment_name
+from ref_builder.plan import extract_segment_name_from_record
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
 
@@ -69,7 +69,7 @@ def create_otu(
 
     molecule = get_molecule_from_records(records)
 
-    plan = create_isolate_plan_from_records(
+    plan = create_plan_from_records(
         records,
         length_tolerance=repo.settings.default_segment_length_tolerance,
     )
@@ -100,7 +100,7 @@ def create_otu(
     otu.add_isolate(isolate)
     otu.repr_isolate = repo.set_repr_isolate(otu_id=otu.id, isolate_id=isolate.id)
 
-    if otu.plan.plan_type == "monopartite":
+    if otu.plan.monopartite:
         record = records[0]
 
         sequence = create_sequence_from_record(repo, otu, record)
@@ -116,7 +116,7 @@ def create_otu(
 
     else:
         for record in records:
-            normalized_segment_name = get_multipartite_segment_name(record)
+            normalized_segment_name = extract_segment_name_from_record(record)
 
             sequence = create_sequence_from_record(
                 repo, otu, record, segment_name=str(normalized_segment_name)

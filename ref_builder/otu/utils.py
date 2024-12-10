@@ -9,11 +9,10 @@ from ref_builder.models import Molecule
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.plan import (
-    MonopartitePlan,
-    MultipartitePlan,
+    Plan,
     Segment,
     SegmentRule,
-    get_multipartite_segment_name,
+    extract_segment_name_from_record,
 )
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
@@ -47,11 +46,11 @@ class RefSeqConflictError(ValueError):
 
 
 def check_isolate_size(
-    plan: MonopartitePlan | MultipartitePlan,
+    plan: Plan,
     isolate_count: int,
 ) -> bool:
     """Return True if the size of the proposed isolate matches the isolate plan."""
-    if type(plan) is MonopartitePlan:
+    if plan.monopartite:
         if isolate_count > 1:
             raise ValueError("Too many segments in monopartite isolate.")
         return True
@@ -94,16 +93,30 @@ def create_segments_from_records(
     return segments
 
 
-def create_isolate_plan_from_records(
+def create_plan_from_records(
     records: list[NCBIGenbank],
     length_tolerance: float,
     segments: list[Segment] | None = None,
-) -> MonopartitePlan | MultipartitePlan | None:
+) -> Plan | None:
     """Return a plan from a list of records representing an isolate."""
     if len(records) == 1:
-        return MonopartitePlan.new(
-            length=len(records[0].sequence),
-            length_tolerance=length_tolerance,
+        record = records[0]
+
+        segment_name = None
+        try:
+            segment_name = extract_segment_name_from_record(record)
+        except ValueError:
+            pass
+
+        return Plan.new(
+            segments=[
+                Segment.new(
+                    length=len(record.sequence),
+                    length_tolerance=length_tolerance,
+                    name=segment_name,
+                    required=SegmentRule.REQUIRED,
+                )
+            ]
         )
 
     binned_records = group_genbank_records_by_isolate(records)
@@ -115,7 +128,7 @@ def create_isolate_plan_from_records(
         return None
 
     if segments is not None:
-        return MultipartitePlan.new(segments=segments)
+        return Plan.new(segments=segments)
 
     segments = create_segments_from_records(
         records,
@@ -124,7 +137,7 @@ def create_isolate_plan_from_records(
     )
 
     if segments:
-        return MultipartitePlan.new(segments=segments)
+        return Plan.new(segments=segments)
 
     return None
 
@@ -263,7 +276,7 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
 
 
 def assign_records_to_segments(
-    records: list[NCBIGenbank], plan: MultipartitePlan
+    records: list[NCBIGenbank], plan: Plan
 ) -> dict[UUID, NCBIGenbank]:
     """Return a dictionary of records keyed by segment UUID, else raise a ValueError."""
     assigned_records = {}
@@ -271,7 +284,7 @@ def assign_records_to_segments(
     unassigned_segments = plan.segments.copy()
 
     for record in records:
-        normalized_segment_name = get_multipartite_segment_name(record)
+        normalized_segment_name = extract_segment_name_from_record(record)
 
         for segment in unassigned_segments:
             if segment.name == normalized_segment_name:

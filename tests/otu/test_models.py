@@ -14,8 +14,8 @@ class TestOTU:
     otu: OTUBase
 
     @pytest.fixture(autouse=True)
-    def _build_otu(self):
-        self.otu = OTUFactory.build()
+    def _build_otu(self, otu_factory: OTUFactory):
+        self.otu = otu_factory.build()
 
     def test_ok(self):
         """Test that a valid OTU passes validation."""
@@ -67,7 +67,6 @@ class TestOTU:
 
     def test_unique_isolate_names(self):
         """Test that validation fails if the OTU has duplicate isolate names."""
-        print(len(self.otu.isolates))
         duplicate_name = self.otu.isolates[1].name = self.otu.isolates[0].name
 
         with pytest.raises(

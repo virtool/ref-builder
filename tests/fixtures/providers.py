@@ -120,8 +120,8 @@ class SequenceProvider(BaseProvider):
 
     def sequence(
         self,
-        min: int = 100,
-        max: int = 10000,
+        min: int = MIN_SEQUENCE_LENGTH,
+        max: int = MAX_SEQUENCE_LENGTH,
     ) -> str:
         """Return a pseudorandom string consisting of
         acceptable genetic sequence letters.
@@ -133,6 +133,13 @@ class SequenceProvider(BaseProvider):
                 use_weighting=True,
             ),
         )
+
+    def sequence_length(
+        self,
+        min: int = MIN_SEQUENCE_LENGTH,
+        max: int = MAX_SEQUENCE_LENGTH,
+    ) -> int:
+        return self.random_int(min, max)
 
 
 class OrganismProvider(BaseProvider):

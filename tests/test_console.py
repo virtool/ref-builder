@@ -3,7 +3,7 @@ from syrupy import SnapshotAssertion
 
 from ref_builder.console import console, print_otu, print_otu_list
 from ref_builder.models import Molecule, MolType, OTUMinimal, Strandedness, Topology
-from ref_builder.plan import MultipartitePlan, Segment, SegmentName, SegmentRule
+from ref_builder.plan import Plan, Segment, SegmentName, SegmentRule
 from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 from tests.fixtures.factories import OTUMinimalFactory
@@ -46,7 +46,7 @@ def test_print_otu(snapshot: SnapshotAssertion):
             strandedness=Strandedness.SINGLE, topology=Topology.LINEAR, type=MolType.RNA
         ),
         name="Babuvirus abacae",
-        plan=MultipartitePlan.new(
+        plan=Plan.new(
             [
                 Segment(
                     id=fake.uuid4(),
