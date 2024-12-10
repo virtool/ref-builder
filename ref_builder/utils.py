@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import NamedTuple
 
 import orjson
 
@@ -9,7 +8,8 @@ ZERO_PADDING_MAX = 99999999
 """The maximum number that can be padded with zeroes in event IDs and filenames."""
 
 
-class Accession(NamedTuple):
+@dataclass(frozen=True)
+class Accession:
     """A Genbank accession number."""
 
     key: str
@@ -42,6 +42,18 @@ class Accession(NamedTuple):
 
         msg = f"Raw accession {string} is not versioned."
         raise ValueError(msg)
+
+    def __eq__(self, other: "Accession") -> bool:
+        if isinstance(other, Accession):
+            return self.key == other.key and self.version == other.version
+
+    def __lt__(self, other: "Accession") -> bool:
+        if isinstance(other, Accession):
+            return self.key < other.key or self.version < other.version
+
+    def __gt__(self, other: "Accession") -> bool:
+        if isinstance(other, Accession):
+            return self.key > other.key or self.version > other.version
 
     def __str__(self) -> str:
         """Return the accession as a string."""
