@@ -371,7 +371,7 @@ def test_create_sequence(empty_repo: Repo):
     assert event == {
         "data": {
             "id": str(sequence.id),
-            "accession": ["TMVABC", 1],
+            "accession": {"key": "TMVABC", "version": 1},
             "definition": "TMV",
             "legacy_id": None,
             "segment": "RNA",

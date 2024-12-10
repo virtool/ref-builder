@@ -14,8 +14,8 @@ class TestOTU:
     otu: OTUBase
 
     @pytest.fixture(autouse=True)
-    def _build_otu(self, otu_factory: OTUFactory):
-        self.otu = otu_factory.build()
+    def _build_otu(self):
+        self.otu = OTUFactory.build()
 
     def test_ok(self):
         """Test that a valid OTU passes validation."""
