@@ -67,7 +67,6 @@ class TestOTU:
 
     def test_unique_isolate_names(self):
         """Test that validation fails if the OTU has duplicate isolate names."""
-        print(len(self.otu.isolates))
         duplicate_name = self.otu.isolates[1].name = self.otu.isolates[0].name
 
         with pytest.raises(

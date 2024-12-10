@@ -288,8 +288,43 @@ class SegmentFactory(ModelFactory[Segment]):
         return None
 
 
+class SequenceFactory(ModelFactory[RepoSequence]):
+    """Sequence factory with quasi-realistic data."""
+
+    __faker__ = Faker()
+
+    __faker__.add_provider(AccessionProvider)
+    __faker__.add_provider(BusinessProvider)
+    __faker__.add_provider(SegmentProvider)
+    __faker__.add_provider(SequenceProvider)
+
+    id = Use(__faker__.uuid4, cast_to=None)
+    """Generate a UUID."""
+
+    definition = Use(__faker__.sentence)
+    """Generate a mock sentence to serve as the definition field."""
+
+    legacy_id = Use(__faker__.legacy_id)
+    """Generate an 8-character unique identifier as used in virtool-cli."""
+
+    segment = Use(__faker__.segment)
+    """Generate a quasi-realistic mock segment string."""
+
+    sequence = Use(__faker__.sequence)
+    """Generate a quasi-realistic mock genomic sequence."""
+
+    @classmethod
+    def accession(cls) -> Accession:
+        """Generate a quasi-realistic accession."""
+        return Accession(key=cls.__faker__.accession(), version=1)
+
+
 class PlanFactory(ModelFactory[Plan]):
-    """Plan Factory with quasi-realistic data."""
+    """A Polyfactory that generates valid instwances of :class:`Plan`.
+
+    The factory generates a random number of segments, with a 75% chance of generating a
+    monopartite plan.
+    """
 
     __faker__ = Faker()
 
@@ -298,26 +333,55 @@ class PlanFactory(ModelFactory[Plan]):
     @classmethod
     def segments(cls) -> list[Segment]:
         """Return a set of quasi-realistic segments."""
-
-        if cls.__faker__.random_int(0, 10) > 5:
+        # The segment represent a monopartite OTU 75% of the time.
+        if cls.__faker__.random_int(0, 3):
             return [SegmentFactory.build(name=None, required=SegmentRule.REQUIRED)]
 
+        segment_count = cls.__faker__.random_int(2, 5)
         segment_name_keys = "ABCDEF"
 
-        mock_segments = []
-
-        for i in range(cls.__faker__.random_int(2, 5)):
-            mock_segments.append(
-                SegmentFactory.build(
-                    name=SegmentName(prefix="DNA", key=segment_name_keys[i]),
-                    required=SegmentRule.REQUIRED,
-                )
+        return [
+            SegmentFactory.build(
+                name=SegmentName(prefix="DNA", key=segment_name_keys[i]),
+                required=SegmentRule.REQUIRED,
             )
+            for i in range(segment_count)
+        ]
 
-        return mock_segments
+
+class IsolateFactory(ModelFactory[IsolateBase]):
+    """Isolate factory with quasi-realistic data."""
+
+    __faker__ = Faker()
+
+    __faker__.add_provider(AccessionProvider)
+    __faker__.add_provider(BusinessProvider)
+
+    id = Use(__faker__.uuid4, cast_to=None)
+    """Generate a UUID."""
+
+    legacy_id = Use(__faker__.legacy_id)
+    """Generate an 8-character unique identifier as used in virtool-cli."""
+
+    @classmethod
+    def name(cls) -> IsolateName:
+        """Generate a quasi-realistic isolate name."""
+        return IsolateName(
+            type=IsolateNameType.ISOLATE,
+            value=cls.__faker__.word(part_of_speech="noun").capitalize(),
+        )
+
+    @classmethod
+    def sequences(cls) -> list[RepoSequence]:
+        """Generate between 1 and 6 sequences with numerically sequential accessions."""
+        sequence_count = cls.__faker__.random_int(1, 6)
+
+        return [
+            SequenceFactory.build(accession=Accession(key=accession, version=1))
+            for accession in cls.__faker__.accessions(sequence_count)
+        ]
 
 
-@register_fixture
 class OTUFactory(ModelFactory[OTUBase]):
     """OTU Factory with quasi-realistic data."""
 
@@ -330,10 +394,13 @@ class OTUFactory(ModelFactory[OTUBase]):
 
     __random_seed__ = RANDOM_SEED
 
-    plan = Use(PlanFactory.build)
-
     acronym = PostGenerated(derive_acronym)
-    """An acronym for the OTU derived from its name."""
+    """Generate an acronym for the OTU derived from its name."""
+
+    @classmethod
+    def excluded_accessions(cls) -> set[str]:
+        """Generate a set of excluded accessions."""
+        return set()
 
     @post_generated
     @classmethod
@@ -343,50 +410,30 @@ class OTUFactory(ModelFactory[OTUBase]):
 
         for _ in range(cls.__faker__.random_int(2, 5)):
             sequences = [
-                RepoSequence(
-                    id=cls.__faker__.uuid4(),
-                    accession=Accession(key=cls.__faker__.accession(), version=1),
-                    definition=cls.__faker__.sentence(),
-                    legacy_id=None,
-                    segment=str(segment.name),
-                    sequence=cls.__faker__.sequence(),
-                )
+                SequenceFactory.build(segment=str(segment.name))
                 for segment in plan.segments
             ]
 
-            isolates.append(
-                IsolateBase(
-                    id=cls.__faker__.uuid4(),
-                    legacy_id=None,
-                    name=IsolateName(
-                        type=IsolateNameType.ISOLATE,
-                        value=cls.__faker__.word(part_of_speech="noun").capitalize(),
-                    ),
-                    sequences=sequences,
-                )
-            )
+            isolates.append(IsolateFactory.build(sequences=sequences))
 
         return isolates
 
-    @classmethod
-    def excluded_accessions(cls) -> set[str]:
-        """Generate a set of excluded accessions."""
-        return set()
+    id = Use(__faker__.uuid4, cast_to=None)
+    """Generate a UUID."""
 
-    @classmethod
-    def legacy_id(cls) -> str:
-        """Generate an 8-character unique identifier as used in virtool-cli."""
-        return cls.__faker__.legacy_id()
+    legacy_id = Use(__faker__.legacy_id)
+    """Generate an 8-character unique identifier as used in virtool-cli."""
 
-    @classmethod
-    def name(cls) -> str:
-        """Generate a realistic name for a plant virus."""
-        return cls.__faker__.organism()
+    name = Use(__faker__.organism)
+    """Generate a realistic name for a plant virus."""
+
+    plan = Use(PlanFactory.build)
+    """Generate a quasi-realistic plan for the OTU."""
 
     @post_generated
     @classmethod
     def repr_isolate(cls, isolates: list[RepoIsolate]) -> UUID4:
-        """Derive a representative isolate from an OTU name."""
+        """Derive a representative isolate from a list of OTUs."""
         return cls.__faker__.random_element(isolates).id
 
     @post_generated

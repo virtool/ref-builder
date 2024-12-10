@@ -174,15 +174,13 @@ def fetch_records_from_accessions(
         )
         return []
 
-    fetch_list = list(fetch_set)
-
     fetch_logger.info(
         "Fetching accessions",
         count=len(fetch_set),
-        fetch_list=fetch_list,
+        fetch_list=sorted(fetch_set),
     )
 
-    records = ncbi.fetch_genbank_records(fetch_list)
+    records = ncbi.fetch_genbank_records(fetch_set)
 
     return records
 
