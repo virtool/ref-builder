@@ -170,6 +170,7 @@ def rename_plan_segment(
             return set_plan(repo, otu, modified_plan)
 
     rename_logger.error("Segment with requested ID not found.")
+
     return None
 
 
