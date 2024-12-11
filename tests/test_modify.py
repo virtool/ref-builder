@@ -1,5 +1,5 @@
 import subprocess
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from syrupy import SnapshotAssertion
@@ -12,7 +12,7 @@ from ref_builder.otu.modify import (
     add_segments_to_plan,
     delete_isolate_from_otu,
     exclude_accessions_from_otu,
-    resize_monopartite_plan,
+    rename_plan_segment,
     replace_sequence_in_otu,
     set_plan,
     set_plan_length_tolerances,
@@ -70,7 +70,10 @@ def test_update_representative_isolate(scratch_repo: Repo):
 
 
 class TestSetPlan:
+    """Test functions that make changes to an OTU plan."""
+
     def test_ok(self, scratch_repo: Repo):
+        """Test that an OTU's plan can be replaced."""
         otu_before = scratch_repo.get_otu_by_taxid(223262)
 
         original_plan = otu_before.plan
@@ -107,15 +110,68 @@ class TestSetPlan:
 
         assert otu_after.plan == new_plan
 
-    def test_add_segments_to_plan(
+    def test_rename_segment_ok(self, scratch_repo: Repo):
+        """Test that a given plan segment can be renamed."""
+        otu_before = scratch_repo.get_otu_by_taxid(223262)
+
+        first_segment_id = otu_before.plan.segments[0].id
+
+        new_name = SegmentName(prefix="RNA", key="TestName")
+
+        assert otu_before.plan.get_segment_by_id(first_segment_id).name != new_name
+
+        rename_plan_segment(
+            scratch_repo,
+            otu_before,
+            segment_id=first_segment_id,
+            segment_name=SegmentName(prefix="RNA", key="TestName"),
+        )
+
+        otu_after = scratch_repo.get_otu_by_taxid(223262)
+
+        assert otu_after.plan.get_segment_by_id(first_segment_id).name == new_name
+
+    def test_rename_segment_fail(self, scratch_repo: Repo):
+        """Test that an attempt to rename a nonexistent segment does not change the OTU."""
+        otu_before = scratch_repo.get_otu_by_taxid(223262)
+
+        first_segment = otu_before.plan.segments[0]
+
+        new_name = SegmentName(prefix="RNA", key="TestName")
+
+        assert otu_before.plan.get_segment_by_id(first_segment.id).name != new_name
+
+        assert (
+            rename_plan_segment(
+                scratch_repo,
+                otu_before,
+                segment_id=uuid4(),
+                segment_name=SegmentName(prefix="RNA", key="TestName"),
+            )
+            is None
+        )
+
+        otu_after = scratch_repo.get_otu_by_taxid(223262)
+
+        assert otu_after.plan.model_dump_json() == otu_before.plan.model_dump_json()
+
+        assert (
+            otu_after.plan.get_segment_by_id(first_segment.id).name
+            == first_segment.name
+        )
+
+    @pytest.mark.parametrize("accessions", [["MF062136", "MF062137"], ["MF062136"]])
+    def test_add_segments_to_plan_ok(
         self,
         precached_repo: Repo,
+        accessions: list[str],
         snapshot: SnapshotAssertion,
     ):
+        """Test the addition of segments to an OTU plan."""
         otu_before = create_otu(
             precached_repo,
             2164102,
-            ["MF062136", "MF062137"],
+            accessions,
             acronym="",
         )
 
@@ -138,45 +194,12 @@ class TestSetPlan:
 
         assert otu_after.plan.model_dump() == snapshot(exclude=props("id"))
 
-    def test_resize_monopartite_plan(
-        self,
-        precached_repo: Repo,
-        snapshot: SnapshotAssertion,
-    ):
-        otu_before = create_otu(
-            precached_repo,
-            2164102,
-            ["MF062136"],
-            acronym="",
-        )
-
-        assert otu_before.plan.monopartite
-
-        resize_monopartite_plan(
-            precached_repo,
-            otu_before,
-            name=SegmentName(prefix="RNA", key="L"),
-            rule=SegmentRule.RECOMMENDED,
-            accessions=["MF062137", "MF062138"],
-        )
-
-        otu_after = precached_repo.get_otu(otu_before.id)
-
-        assert type(otu_after.plan) is Plan
-
-        assert (
-            otu_after.plan.required_segments[0].length
-            == otu_before.plan.segments[0].length
-        )
-
-        assert otu_after.plan.model_dump() == snapshot(exclude=props("id"))
-
-    def test_extend_plan_monopartite_fail(
+    def test_add_segments_to_plan_fail(
         self,
         scratch_repo: Repo,
     ):
-        """Test that add_segments_to_plan() fails out
-        when the original plan is monopartite.
+        """Test that segments cannot be added to a monopartite plan with
+        a preexisting unnamed segment.
         """
         otu_before = scratch_repo.get_otu_by_taxid(96892)
 
