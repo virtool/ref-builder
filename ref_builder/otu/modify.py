@@ -147,13 +147,38 @@ def add_segments_to_plan(
     return set_plan(repo, otu, new_plan)
 
 
+def rename_plan_segment(
+    repo: Repo,
+    otu: RepoOTU,
+    segment_id: UUID,
+    segment_name: SegmentName,
+) -> Plan | None:
+    """Set a new name for the segment matching the given ID if possible, else return None."""
+    rename_logger = logger.bind(
+        name=otu.name,
+        taxid=otu.taxid,
+        segment_id=str(segment_id),
+        segment_name=str(segment_name),
+    )
+
+    modified_plan = otu.plan.model_copy()
+
+    for segment in modified_plan.segments:
+        if segment.id == segment_id:
+            segment.name = segment_name
+
+            return set_plan(repo, otu, modified_plan)
+
+    rename_logger.error("Segment with requested ID not found.")
+    return None
+
+
 def resize_monopartite_plan(
     repo: Repo,
     otu: RepoOTU,
     name: SegmentName,
     rule: SegmentRule,
     accessions: list[str],
-    # sequence_length_tolerance: float | None = None,
     ignore_cache: bool = False,
 ) -> Plan | None:
     """Convert a monopartite plan to a multipartite plan and add segments."""
