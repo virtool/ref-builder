@@ -194,7 +194,7 @@ class TestSetPlan:
 
         assert otu_after.plan.model_dump() == snapshot(exclude=props("id"))
 
-    def test_extend_plan_monopartite_fail(
+    def test_add_segments_to_plan_fail(
         self,
         scratch_repo: Repo,
     ):
