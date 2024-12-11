@@ -71,7 +71,10 @@ def test_update_representative_isolate(scratch_repo: Repo):
 
 
 class TestSetPlan:
+    """Test functions that make changes to an OTU plan."""
+
     def test_ok(self, scratch_repo: Repo):
+        """Test that an OTU's plan can be replaced."""
         otu_before = scratch_repo.get_otu_by_taxid(223262)
 
         original_plan = otu_before.plan
@@ -229,8 +232,8 @@ class TestSetPlan:
         self,
         scratch_repo: Repo,
     ):
-        """Test that add_segments_to_plan() fails out
-        when the original plan is monopartite.
+        """Test that segments cannot be added to a monopartite plan with
+        a preexisting unnamed segment.
         """
         otu_before = scratch_repo.get_otu_by_taxid(96892)
 
