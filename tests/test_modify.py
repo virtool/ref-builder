@@ -13,7 +13,6 @@ from ref_builder.otu.modify import (
     delete_isolate_from_otu,
     exclude_accessions_from_otu,
     rename_plan_segment,
-    resize_monopartite_plan,
     replace_sequence_in_otu,
     set_plan,
     set_plan_length_tolerances,
@@ -192,39 +191,6 @@ class TestSetPlan:
         otu_after = precached_repo.get_otu(otu_before.id)
 
         assert otu_after.plan != otu_before.plan
-
-        assert otu_after.plan.model_dump() == snapshot(exclude=props("id"))
-
-    def test_resize_monopartite_plan(
-        self,
-        precached_repo: Repo,
-        snapshot: SnapshotAssertion,
-    ):
-        otu_before = create_otu(
-            precached_repo,
-            2164102,
-            ["MF062136"],
-            acronym="",
-        )
-
-        assert otu_before.plan.monopartite
-
-        resize_monopartite_plan(
-            precached_repo,
-            otu_before,
-            name=SegmentName(prefix="RNA", key="L"),
-            rule=SegmentRule.RECOMMENDED,
-            accessions=["MF062137", "MF062138"],
-        )
-
-        otu_after = precached_repo.get_otu(otu_before.id)
-
-        assert type(otu_after.plan) is Plan
-
-        assert (
-            otu_after.plan.required_segments[0].length
-            == otu_before.plan.segments[0].length
-        )
 
         assert otu_after.plan.model_dump() == snapshot(exclude=props("id"))
 
