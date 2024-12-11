@@ -161,7 +161,7 @@ class TestSetPlan:
         )
 
     @pytest.mark.parametrize("accessions", [["MF062136", "MF062137"], ["MF062136"]])
-    def test_add_segments_to_plan(
+    def test_add_segments_to_plan_ok(
         self,
         precached_repo: Repo,
         accessions: list[str],
