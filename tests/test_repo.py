@@ -744,6 +744,46 @@ def test_exclude_accession(empty_repo: Repo):
     }
 
 
+class TestForgiveAccessions:
+    """Test that forgiven accessions are not retrieved from an OTU excession list."""
+
+    def test_ok(self, empty_repo: Repo):
+        otu = init_otu(empty_repo)
+
+        mock_accessions = {"TM100021", "TM100022", "TM100023"}
+
+        for mock_accession in mock_accessions:
+            empty_repo.exclude_accession(otu.id, mock_accession)
+
+        otu_before = empty_repo.get_otu(otu.id)
+
+        assert otu_before.excluded_accessions == mock_accessions
+
+        empty_repo.forgive_accessions(otu.id, ["TM100021", "TM100022"])
+
+        otu_after = empty_repo.get_otu(otu.id)
+
+        assert otu_after.excluded_accessions == {"TM100023"}
+
+    def test_forgive_unexcepted(self, empty_repo: Repo):
+        otu = init_otu(empty_repo)
+
+        mock_accessions = {"TM100021", "TM100022", "TM100023"}
+
+        for mock_accession in mock_accessions:
+            empty_repo.exclude_accession(otu.id, mock_accession)
+
+        otu_before = empty_repo.get_otu(otu.id)
+
+        assert otu_before.excluded_accessions == mock_accessions
+
+        empty_repo.forgive_accessions(otu.id, ["TM100024"])
+
+        otu_after = empty_repo.get_otu(otu.id)
+
+        assert otu_after.excluded_accessions == mock_accessions
+
+
 def test_delete_isolate(initialized_repo: Repo):
     """Test that an isolate can be redacted from an OTU."""
     otu_before = next(initialized_repo.iter_otus())
