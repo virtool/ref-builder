@@ -504,22 +504,25 @@ class Repo:
         """Remove accessions from OTU's excluded accessions."""
         otu = self.get_otu(otu_id)
 
+        otu_logger = logger.bind(otu_id=str(otu_id))
+
         forgiven_accessions = set(accessions)
 
         if redundant_accessions := forgiven_accessions.difference(
             otu.excluded_accessions
         ):
-            logger.debug(
+            otu_logger.debug(
                 "Ignoring non-excluded accessions",
+                requested_exclusions=sorted(forgiven_accessions),
                 non_excluded_accessions=sorted(redundant_accessions),
             )
 
-            forgiven_accessions = forgiven_accessions.difference(redundant_accessions)
+            forgiven_accessions = forgiven_accessions - redundant_accessions
 
-        else:
+        if forgiven_accessions:
             self._write_event(
                 ForgiveAccessions,
-                ForgiveAccessionsData(accessions=forgiven_accessions),
+                ForgiveAccessionsData(accessions=list(forgiven_accessions)),
                 OTUQuery(otu_id=otu_id),
             )
 
