@@ -62,6 +62,30 @@ class ExcludeAccession(ApplicableEvent):
         return otu
 
 
+class ForgiveAccessionsData(EventData):
+    """The data for a :class:`ForgiveAccessionsData` event."""
+
+    accessions: list[str]
+
+
+class ForgiveAccessions(ApplicableEvent):
+    """A removal-from-excluded-list event.
+
+    This event is emitted when excluded Genbank accessions are removed from the OTU.
+    """
+
+    data: ForgiveAccessionsData
+    query: OTUQuery
+
+    def apply(self, otu: RepoOTU) -> RepoOTU:
+        """Add excluded accession to OTU and return."""
+
+        for accession in self.data.accessions:
+            otu.excluded_accessions.remove(accession)
+
+        return otu
+
+
 class CreatePlanData(EventData):
     """The data for a :class:`CreatePlan` event."""
 

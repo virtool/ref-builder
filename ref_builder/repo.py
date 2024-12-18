@@ -16,7 +16,7 @@ TODO: Check for accession conflicts.
 import shutil
 import uuid
 from collections import defaultdict
-from collections.abc import Generator, Iterator
+from collections.abc import Collection, Generator, Iterator
 from pathlib import Path
 
 import arrow
@@ -45,6 +45,8 @@ from ref_builder.events.otu import (
     CreatePlanData,
     ExcludeAccession,
     ExcludeAccessionData,
+    ForgiveAccessions,
+    ForgiveAccessionsData,
     SetReprIsolate,
     SetReprIsolateData,
 )
@@ -494,6 +496,38 @@ class Repo:
 
         return self.get_otu(otu_id).excluded_accessions
 
+    def forgive_accessions(
+        self,
+        otu_id: uuid.UUID,
+        accessions: Collection[str],
+    ) -> set[str]:
+        """Remove accessions from OTU's excluded accessions."""
+        otu = self.get_otu(otu_id)
+
+        otu_logger = logger.bind(otu_id=str(otu_id))
+
+        forgiven_accessions = set(accessions)
+
+        if redundant_accessions := forgiven_accessions.difference(
+            otu.excluded_accessions
+        ):
+            otu_logger.debug(
+                "Ignoring non-excluded accessions",
+                requested_exclusions=sorted(forgiven_accessions),
+                non_excluded_accessions=sorted(redundant_accessions),
+            )
+
+            forgiven_accessions = forgiven_accessions - redundant_accessions
+
+        if forgiven_accessions:
+            self._write_event(
+                ForgiveAccessions,
+                ForgiveAccessionsData(accessions=list(forgiven_accessions)),
+                OTUQuery(otu_id=otu_id),
+            )
+
+        return self.get_otu(otu_id).excluded_accessions
+
     def get_otu(self, otu_id: uuid.UUID) -> RepoOTU | None:
         """Get the OTU with the given ``otu_id``.
 
@@ -673,6 +707,7 @@ class EventStore:
                     "CreatePlan": CreatePlan,
                     "SetReprIsolate": SetReprIsolate,
                     "ExcludeAccession": ExcludeAccession,
+                    "ForgiveAccessions": ForgiveAccessions,
                 }[loaded["type"]]
 
                 return cls(**loaded)
