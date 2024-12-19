@@ -496,6 +496,47 @@ class Repo:
 
         return self.get_otu(otu_id).excluded_accessions
 
+    def exclude_accessions(
+        self,
+        otu_id: uuid.UUID,
+        accessions: Collection[str],
+    ) -> set[str]:
+        """Add accessions to OTU's excluded accessions."""
+        otu = self.get_otu(otu_id)
+
+        excludable_accessions = set(accessions)
+
+        if (
+            extant_requested_accessions := excludable_accessions
+            & otu.excluded_accessions
+        ):
+            logger.info(
+                "Ignoring already excluded accessions",
+                requested_exclusions=sorted(extant_requested_accessions),
+                old_excluded_accessions=sorted(otu.excluded_accessions),
+            )
+
+            excludable_accessions -= otu.excluded_accessions
+
+        if excludable_accessions:
+            self._write_event(
+                EditAllowedAccessions,
+                EditAllowedAccessionsData(
+                    accessions=excludable_accessions, allow=False,
+                ),
+                OTUQuery(otu_id=otu_id),
+            )
+
+            logger.info(
+                "Added accessions to excluded accession list.",
+                taxid=otu.taxid,
+                otu_id=str(otu.id),
+                new_excluded_accessions=sorted(excludable_accessions),
+                old_excluded_accessions=sorted(otu.excluded_accessions),
+            )
+
+        return self.get_otu(otu_id).excluded_accessions
+
     def allow_accessions(
         self,
         otu_id: uuid.UUID,
