@@ -744,6 +744,71 @@ def test_exclude_accession(empty_repo: Repo):
     }
 
 
+class TestAllowAccessions:
+    """Test that accessions allowed back into the OTU are no longer contained
+    in the excluded accessions set.
+    """
+
+    def test_ok(self, empty_repo: Repo):
+        """Test that Repo.allow_accessions() produces the correct event and
+        creates the expected RepoOTU.excluded_accessions set.
+        """
+        otu = init_otu(empty_repo)
+
+        mock_accessions = {"TM100021", "TM100022", "TM100023"}
+
+        empty_repo.exclude_accessions(otu.id, mock_accessions)
+
+        otu_before = empty_repo.get_otu(otu.id)
+
+        assert otu_before.excluded_accessions == mock_accessions
+
+        empty_repo.allow_accessions(otu.id, ["TM100021", "TM100022"])
+
+        otu_after = empty_repo.get_otu(otu.id)
+
+        with open(empty_repo.path.joinpath("src", "00000004.json")) as f:
+            event = orjson.loads(f.read())
+
+            del event["timestamp"]
+
+            assert event == {
+                "data": {
+                    "accessions": ["TM100021","TM100022"],
+                    "allow": True,
+                },
+                "id": 4,
+                "query": {
+                    "otu_id": str(otu_after.id),
+                },
+                "type": "EditAllowedAccessions",
+            }
+
+        assert otu_after.excluded_accessions == {"TM100023"}
+
+    def test_skip_redundant_accessions(self, empty_repo: Repo):
+        """Test that an event only gets written if the accession exists
+        in the exclusion list, avoiding the creation of a redundant event.
+        """
+        otu = init_otu(empty_repo)
+
+        mock_accessions = {"TM100021", "TM100022", "TM100023"}
+
+        empty_repo.exclude_accessions(otu.id, mock_accessions)
+
+        otu_before = empty_repo.get_otu(otu.id)
+
+        assert otu_before.excluded_accessions == mock_accessions
+
+        empty_repo.allow_accessions(otu.id, ["TM100024"])
+
+        otu_after = empty_repo.get_otu(otu.id)
+
+        assert not empty_repo.path.joinpath("src", "00000005.json").exists()
+
+        assert otu_after.excluded_accessions == mock_accessions
+
+
 def test_delete_isolate(initialized_repo: Repo):
     """Test that an isolate can be redacted from an OTU."""
     otu_before = next(initialized_repo.iter_otus())
