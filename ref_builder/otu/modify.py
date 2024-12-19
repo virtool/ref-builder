@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from uuid import UUID
 
 from pydantic import ValidationError
@@ -20,11 +21,21 @@ logger = get_logger("otu.modify")
 def exclude_accessions_from_otu(
     repo: Repo,
     otu: RepoOTU,
-    accessions: list[str],
+    accessions: Collection[str],
 ) -> None:
     """Take a list of accessions and add them to an OTU's excluded accessions list."""
 
     repo.exclude_accessions(otu_id=otu.id, accessions=accessions)
+
+
+def allow_accessions_into_otu(
+    repo: Repo,
+    otu: RepoOTU,
+    accessions: Collection[str],
+) -> None:
+    """Take a list of accessions and remove them from an OTU's excluded accessions list."""
+
+    repo.allow_accessions(otu_id=otu.id, accessions=accessions)
 
 
 def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
