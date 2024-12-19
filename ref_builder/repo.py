@@ -699,7 +699,7 @@ class EventStore:
         with open(self.path / f"{pad_zeroes(event_id)}.json", "wb") as f:
             f.write(
                 orjson.dumps(
-                    event.model_dump(by_alias=True),
+                    event.model_dump(by_alias=True, mode="json"),
                     f,
                 ),
             )
