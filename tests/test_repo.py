@@ -723,13 +723,14 @@ def test_exclude_accession(empty_repo: Repo):
 
         assert event == {
             "data": {
-                "accession": "TMVABC.1",
+                "accessions": ["TMVABC.1"],
+                "allow": False,
             },
             "id": 3,
             "query": {
                 "otu_id": str(otu.id),
             },
-            "type": "ExcludeAccession",
+            "type": "EditAllowedAccessions",
         }
 
     assert empty_repo.get_otu(otu.id).excluded_accessions == {
