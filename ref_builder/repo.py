@@ -673,6 +673,7 @@ class EventStore:
                     "CreatePlan": CreatePlan,
                     "SetReprIsolate": SetReprIsolate,
                     "ExcludeAccession": ExcludeAccession,
+                    "EditAllowedAccessions": EditAllowedAccessions,
                 }[loaded["type"]]
 
                 return cls(**loaded)
