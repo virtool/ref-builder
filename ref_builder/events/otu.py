@@ -98,3 +98,38 @@ class SetReprIsolate(ApplicableEvent):
         otu.repr_isolate = self.data.isolate_id
 
         return otu
+
+
+class EditAllowedAccessionsData(EventData):
+    """The data for an EditAllowedAccessions event."""
+
+    accessions: set[str]
+
+    allow: bool
+
+
+class EditAllowedAccessions(ApplicableEvent):
+    """An event that changes the OTU excluded accessions collection.
+
+    This event is emitted when Genbank accessions are either
+    allowed or disallowed from inclusion in the reference.
+    """
+
+    data: EditAllowedAccessionsData
+    query: OTUQuery
+
+    def apply(self, otu: RepoOTU) -> RepoOTU:
+        """Add accession allowance changes to OTU and return."""
+
+        if self.data.allow:
+            for accession in self.data.accessions:
+                try:
+                    otu.excluded_accessions.remove(accession)
+                except KeyError:
+                    pass
+
+        else:
+            for accession in self.data.accessions:
+                otu.excluded_accessions.add(accession)
+
+        return otu
