@@ -16,7 +16,7 @@ TODO: Check for accession conflicts.
 import shutil
 import uuid
 from collections import defaultdict
-from collections.abc import Generator, Iterator
+from collections.abc import Collection, Generator, Iterator
 from pathlib import Path
 
 import arrow
@@ -45,6 +45,8 @@ from ref_builder.events.otu import (
     CreatePlanData,
     ExcludeAccession,
     ExcludeAccessionData,
+    EditAllowedAccessions,
+    EditAllowedAccessionsData,
     SetReprIsolate,
     SetReprIsolateData,
 )
@@ -490,6 +492,44 @@ class Repo:
                 ExcludeAccession,
                 ExcludeAccessionData(accession=accession),
                 OTUQuery(otu_id=otu_id),
+            )
+
+        return self.get_otu(otu_id).excluded_accessions
+
+    def allow_accessions(
+        self,
+        otu_id: uuid.UUID,
+        accessions: Collection[str],
+    ) -> set[str]:
+        """Remove accessions from OTU's excluded accessions."""
+        otu = self.get_otu(otu_id)
+
+        allowable_accessions = set(accessions)
+
+        if redundant_accessions := allowable_accessions - otu.excluded_accessions:
+            logger.debug(
+                "Ignoring non-excluded accessions",
+                non_excluded_accessions=sorted(redundant_accessions),
+            )
+
+            allowable_accessions = allowable_accessions - redundant_accessions
+
+        if allowable_accessions:
+            self._write_event(
+                EditAllowedAccessions,
+                EditAllowedAccessionsData(
+                    accessions=set(allowable_accessions),
+                    allow=True,
+                ),
+                OTUQuery(otu_id=otu_id),
+            )
+
+            logger.info(
+                "Removed accessions from excluded accession list.",
+                taxid=otu.taxid,
+                otu_id=str(otu.id),
+                excluded_accessions=sorted(otu.excluded_accessions),
+                new_excluded_accessions=sorted(allowable_accessions),
             )
 
         return self.get_otu(otu_id).excluded_accessions
