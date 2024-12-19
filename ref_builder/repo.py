@@ -489,8 +489,8 @@ class Repo:
             logger.debug("Accession is already excluded.", accession=accession)
         else:
             self._write_event(
-                ExcludeAccession,
-                ExcludeAccessionData(accession=accession),
+                EditAllowedAccessions,
+                EditAllowedAccessionsData(accessions={accession}, allow=False),
                 OTUQuery(otu_id=otu_id),
             )
 
