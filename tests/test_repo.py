@@ -745,6 +745,75 @@ def test_exclude_accession(empty_repo: Repo):
     }
 
 
+class TestExcludeAccessions:
+    """Test that accessions can be excluded from future fetches."""
+
+    def test_ok(self, empty_repo: Repo):
+        otu_before = init_otu(empty_repo)
+
+        assert not otu_before.excluded_accessions
+
+        mock_accessions = {"TM100021", "TM100022", "TM100023"}
+
+        empty_repo.exclude_accessions(otu_before.id, mock_accessions)
+
+        otu_after = empty_repo.get_otu(otu_before.id)
+
+        assert otu_after.excluded_accessions == mock_accessions
+
+        with open(empty_repo.path.joinpath("src", "00000003.json")) as f:
+            event = orjson.loads(f.read())
+
+            del event["timestamp"]
+
+            assert event == {
+                "data": {
+                    "accessions": ["TM100021", "TM100022", "TM100023"],
+                    "allow": False,
+                },
+                "id": 3,
+                "query": {
+                    "otu_id": str(otu_after.id),
+                },
+                "type": "EditAllowedAccessions",
+            }
+
+        assert empty_repo.get_otu(otu_after.id).excluded_accessions == {
+            "TM100021",
+            "TM100022",
+            "TM100023",
+        }
+
+    def test_events(self, empty_repo):
+        otu_id = init_otu(empty_repo).id
+
+        assert not empty_repo.get_otu(otu_id).excluded_accessions
+
+        mock_accessions = {"TM100021", "TM100022", "TM100023"}
+
+        empty_repo.exclude_accessions(otu_id, mock_accessions)
+
+        assert empty_repo.path.joinpath("src", "00000003.json").exists()
+
+        empty_repo.exclude_accessions(otu_id, {"TM100021"})
+
+        otu_before = empty_repo.get_otu(otu_id)
+
+        assert otu_before.excluded_accessions == mock_accessions
+
+        assert not empty_repo.path.joinpath("src", "00000004.json").exists()
+
+        assert empty_repo.exclude_accessions(
+            otu_id, {"TM100024"}
+        ) == mock_accessions | {"TM100024"}
+
+        otu_after = empty_repo.get_otu(otu_id)
+
+        assert empty_repo.path.joinpath("src", "00000004.json").exists()
+
+        assert otu_after.excluded_accessions == mock_accessions | {"TM100024"}
+
+
 class TestAllowAccessions:
     """Test that accessions allowed back into the OTU are no longer contained
     in the excluded accessions set.
