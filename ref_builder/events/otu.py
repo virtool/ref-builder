@@ -1,4 +1,4 @@
-from pydantic import UUID4
+from pydantic import UUID4, field_serializer
 
 from ref_builder.events.base import ApplicableEvent, EventData, Event, OTUQuery
 from ref_builder.resources import RepoOTU
@@ -107,6 +107,10 @@ class EditAllowedAccessionsData(EventData):
 
     allow: bool
 
+    @field_serializer("accessions")
+    def serialize_accessions(self, accessions: set[str]) -> list[str]:
+        return sorted(accessions)
+
 
 class EditAllowedAccessions(ApplicableEvent):
     """An event that changes the OTU excluded accessions collection.
@@ -133,3 +137,4 @@ class EditAllowedAccessions(ApplicableEvent):
                 otu.excluded_accessions.add(accession)
 
         return otu
+
