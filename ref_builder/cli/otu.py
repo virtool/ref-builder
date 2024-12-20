@@ -207,6 +207,7 @@ def otu_set_representative_isolate(
 
 
 @otu.command(name="extend-plan")
+@click.argument("TAXID", type=int)
 @click.argument(
     "accessions_",
     metavar="ACCESSIONS",
@@ -243,6 +244,42 @@ def plan_extend_segment_list(
             rule=SegmentRule.OPTIONAL if optional else SegmentRule.RECOMMENDED,
             accessions=accessions_,
             ignore_cache=ignore_cache,
+        )
+    except ValueError as e:
+        click.echo(e, err=True)
+
+
+@otu.command(name="rename-plan-segment")
+@click.argument("TAXID", type=int)
+@click.argument("SEGMENT_ID", type=str)
+@click.argument(
+    "segment_name_",
+    metavar="SEGMENT_NAME",
+    nargs=2,
+    type=str,
+    required=True,
+)
+@path_option
+def plan_rename_segment(
+    path: Path,
+    taxid: int,
+    segment_id: str,
+    segment_name_: tuple[str, str]
+) -> None:
+    """Give an unnamed segment a name."""
+    repo = Repo(path)
+    otu_ = repo.get_otu_by_taxid(taxid)
+
+    if otu_ is None:
+        click.echo(f"OTU {taxid} not found.", err=True)
+        sys.exit(1)
+
+    try:
+        rename_plan_segment(
+            repo,
+            otu_,
+            segment_id=UUID(segment_id),
+            segment_name=SegmentName(segment_name_[0], segment_name_[1]),
         )
     except ValueError as e:
         click.echo(e, err=True)
