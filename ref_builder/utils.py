@@ -150,4 +150,7 @@ def get_accession_key(raw: str) -> str:
 
     versioned_accession = Accession.from_string(raw)
 
-    return versioned_accession.key
+    if genbank_accession_params.match(versioned_accession.key) or refseq_accession_params.match(versioned_accession.key):
+        return versioned_accession.key
+
+    raise(ValueError(f"Invalid accession key"))

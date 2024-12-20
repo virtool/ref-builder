@@ -80,6 +80,7 @@ from ref_builder.utils import (
     Accession,
     DataType,
     IsolateName,
+    get_accession_key,
     pad_zeroes,
 )
 
@@ -504,7 +505,15 @@ class Repo:
         """Add accessions to OTU's excluded accessions."""
         otu = self.get_otu(otu_id)
 
-        excludable_accessions = set(accessions)
+        try:
+            excludable_accessions = {
+                get_accession_key(raw_accession) for raw_accession in accessions
+            }
+        except ValueError:
+            logger.error(
+                "Invalid accession included in set. No changes were made to excluded accessions."
+            )
+            return otu.excluded_accessions
 
         if (
             extant_requested_accessions := excludable_accessions
