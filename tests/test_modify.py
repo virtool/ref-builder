@@ -289,15 +289,10 @@ class TestUpdateRepresentativeIsolateCommand:
                 break
 
         subprocess.run(
-            [
-                "ref-builder",
-                "otu",
-                "update",
-            ]
+            ["ref-builder", "otu", "set-default-isolate"]
             + ["--path", str(scratch_repo.path)]
             + [str(taxid)]
-            + ["default"]
-            + [str(representative_isolate_after)],
+            + [str(repr_isolate_after)],
             check=False,
         )
 
@@ -322,15 +317,10 @@ class TestUpdateRepresentativeIsolateCommand:
                 break
 
         subprocess.run(
-            [
-                "ref-builder",
-                "otu",
-                "update",
-            ]
+            ["ref-builder", "otu", "set-default-isolate"]
             + ["--path", str(scratch_repo.path)]
             + [str(taxid)]
-            + ["default"]
-            + [str(representative_isolate_after)],
+            + [str(repr_isolate_name_after)],
             check=False,
         )
 
