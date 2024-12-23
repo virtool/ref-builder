@@ -81,7 +81,6 @@ class EditAllowedAccessionsData(EventData):
     """The data for an EditAllowedAccessions event."""
 
     accessions: set[str]
-
     allow: bool
 
     @field_serializer("accessions")
@@ -114,4 +113,3 @@ class EditAllowedAccessions(ApplicableEvent):
                 otu.excluded_accessions.add(accession)
 
         return otu
-

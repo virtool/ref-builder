@@ -81,14 +81,12 @@ class TestGetAccessionKey:
             ("NC_123456.1", "NC_123456"),
         ],
     )
-    def test_ok(self, raw_string: str, expected_accession:str):
+    def test_ok(self, raw_string: str, expected_accession: str):
         assert get_accession_key(raw_string) == expected_accession
 
     @pytest.mark.parametrize(
-        "raw_string",
-        ["CLOCKTOWER", "AC269481.3.5", "123453.1", "123453"]
+        "raw_string", ["CLOCKTOWER", "AC269481.3.5", "123453.1", "123453"]
     )
     def test_fail(self, raw_string: str):
         with pytest.raises(ValueError):
             get_accession_key(raw_string)
-

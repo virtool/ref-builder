@@ -753,7 +753,9 @@ class TestExcludeAccessions:
 
         assert not otu_before.excluded_accessions
 
-        empty_repo.exclude_accessions(otu_before.id, {"TM100021.1", "TM100022", "TM100023.1"})
+        empty_repo.exclude_accessions(
+            otu_before.id, {"TM100021.1", "TM100022", "TM100023.1"}
+        )
 
         otu_after = empty_repo.get_otu(otu_before.id)
 
@@ -842,7 +844,7 @@ class TestAllowAccessions:
 
             assert event == {
                 "data": {
-                    "accessions": ["TM100021","TM100022"],
+                    "accessions": ["TM100021", "TM100022"],
                     "allow": True,
                 },
                 "id": 4,

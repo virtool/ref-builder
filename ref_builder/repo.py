@@ -528,7 +528,8 @@ class Repo:
             self._write_event(
                 EditAllowedAccessions,
                 EditAllowedAccessionsData(
-                    accessions=excludable_accessions, allow=False,
+                    accessions=excludable_accessions,
+                    allow=False,
                 ),
                 OTUQuery(otu_id=otu_id),
             )
