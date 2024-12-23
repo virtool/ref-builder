@@ -39,29 +39,6 @@ class CreateOTU(Event):
         )
 
 
-class ExcludeAccessionData(EventData):
-    """The data for a :class:`ExcludeAccession` event."""
-
-    accession: str
-
-
-class ExcludeAccession(ApplicableEvent):
-    """An accession exclusion event.
-
-    This event is emitted when a Genbank accession is not going to be allowed in the
-    reference.
-    """
-
-    data: ExcludeAccessionData
-    query: OTUQuery
-
-    def apply(self, otu: RepoOTU) -> RepoOTU:
-        """Add excluded accession to OTU and return."""
-        otu.excluded_accessions.add(self.data.accession)
-
-        return otu
-
-
 class CreatePlanData(EventData):
     """The data for a :class:`CreatePlan` event."""
 

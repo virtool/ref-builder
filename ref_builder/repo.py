@@ -759,7 +759,6 @@ class EventStore:
                     "DeleteSequence": DeleteSequence,
                     "CreatePlan": CreatePlan,
                     "SetReprIsolate": SetReprIsolate,
-                    "ExcludeAccession": ExcludeAccession,
                     "EditAllowedAccessions": EditAllowedAccessions,
                 }[loaded["type"]]
 
