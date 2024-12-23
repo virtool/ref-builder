@@ -753,13 +753,11 @@ class TestExcludeAccessions:
 
         assert not otu_before.excluded_accessions
 
-        mock_accessions = {"TM100021", "TM100022", "TM100023"}
-
-        empty_repo.exclude_accessions(otu_before.id, mock_accessions)
+        empty_repo.exclude_accessions(otu_before.id, {"TM100021.1", "TM100022", "TM100023.1"})
 
         otu_after = empty_repo.get_otu(otu_before.id)
 
-        assert otu_after.excluded_accessions == mock_accessions
+        assert otu_after.excluded_accessions == {"TM100021", "TM100022", "TM100023"}
 
         with open(empty_repo.path.joinpath("src", "00000003.json")) as f:
             event = orjson.loads(f.read())
