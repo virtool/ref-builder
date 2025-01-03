@@ -103,10 +103,7 @@ class UpdateAllowedAccessions(ApplicableEvent):
 
         if self.data.allow:
             for accession in self.data.accessions:
-                try:
-                    otu.excluded_accessions.remove(accession)
-                except KeyError:
-                    pass
+                otu.excluded_accessions.discard(accession)
 
         else:
             for accession in self.data.accessions:
