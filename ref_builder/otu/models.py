@@ -96,7 +96,7 @@ class OTUBase(BaseModel):
     plan: Plan
     """The schema of the OTU"""
 
-    repr_isolate: UUID4 | None
+    representative_isolate: UUID4 | None
     """The UUID of the representative isolate of this OTU"""
 
     sequences: list[RepoSequence]
@@ -115,7 +115,7 @@ class OTU(OTUBase):
     A valid OTU must have at least one isolate.
     """
 
-    repr_isolate: UUID4
+    representative_isolate: UUID4
     """The UUID of the representative isolate of this OTU.
 
     A valid OTU must have a representative isolate.
@@ -136,7 +136,7 @@ class OTU(OTUBase):
     @model_validator(mode="after")
     def check_representative_isolate(self) -> "OTU":
         """Ensure that the default isolate is in the OTU."""
-        if self.repr_isolate not in {isolate.id for isolate in self.isolates}:
+        if self.representative_isolate not in {isolate.id for isolate in self.isolates}:
             raise ValueError("Representative isolate must be in the OTU")
 
         return self

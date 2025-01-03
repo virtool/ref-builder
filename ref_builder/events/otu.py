@@ -1,9 +1,9 @@
 from pydantic import UUID4
 
-from ref_builder.events.base import ApplicableEvent, EventData, Event, OTUQuery
-from ref_builder.resources import RepoOTU
+from ref_builder.events.base import ApplicableEvent, Event, EventData, OTUQuery
 from ref_builder.models import Molecule
 from ref_builder.plan import Plan
+from ref_builder.resources import RepoOTU
 
 
 class CreateOTUData(EventData):
@@ -33,7 +33,7 @@ class CreateOTU(Event):
             legacy_id=self.data.legacy_id,
             molecule=self.data.molecule,
             name=self.data.name,
-            repr_isolate=None,
+            representative_isolate=None,
             plan=self.data.plan,
             taxid=self.data.taxid,
         )
@@ -81,20 +81,20 @@ class CreatePlan(ApplicableEvent):
         return otu
 
 
-class SetReprIsolateData(EventData):
+class SetRepresentativeIsolateData(EventData):
     """The data for a :class:`SetReprIsolate` event."""
 
     isolate_id: UUID4
 
 
-class SetReprIsolate(ApplicableEvent):
+class SetRepresentativeIsolate(ApplicableEvent):
     """An event that sets the representative isolate for an OTU."""
 
-    data: SetReprIsolateData
+    data: SetRepresentativeIsolateData
     query: OTUQuery
 
     def apply(self, otu: RepoOTU) -> RepoOTU:
         """Update the OTU's representative isolate and return."""
-        otu.repr_isolate = self.data.isolate_id
+        otu.representative_isolate = self.data.isolate_id
 
         return otu

@@ -227,8 +227,8 @@ class RepoOTU(BaseModel):
     name: str
     """The name of the OTU (eg. TMV for Tobacco mosaic virus)"""
 
-    repr_isolate: UUID4 | None
-    """The UUID of the representative isolate of this OTU"""
+    representative_isolate: UUID4 | None
+    """The UUID of the representative isolate for the OTU."""
 
     molecule: Molecule
     """The type of molecular information contained in this OTU."""

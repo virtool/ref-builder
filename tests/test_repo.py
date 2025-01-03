@@ -5,13 +5,13 @@ import orjson
 import pytest
 
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
+from ref_builder.plan import Plan, Segment, SegmentRule
 from ref_builder.repo import Repo
 from ref_builder.resources import (
     RepoIsolate,
     RepoOTU,
     RepoSequence,
 )
-from ref_builder.plan import Plan, Segment, SegmentRule
 from ref_builder.utils import Accession, DataType, IsolateName, IsolateNameType
 
 
@@ -148,7 +148,7 @@ class TestCreateOTU:
                 topology=Topology.LINEAR,
             ),
             name="Tobacco mosaic virus",
-            repr_isolate=None,
+            representative_isolate=None,
             plan=Plan(
                 id=monopartite_plan.id,
                 segments=[
@@ -546,7 +546,7 @@ class TestGetOTU:
                     topology=Topology.LINEAR,
                 ),
                 name="Tobacco mosaic virus",
-                repr_isolate=None,
+                representative_isolate=None,
                 plan=Plan(
                     id=monopartite_plan.id,
                     segments=[

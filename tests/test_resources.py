@@ -71,7 +71,7 @@ class TestOTU:
                 topology=Topology.LINEAR,
             ),
             name="Tobacco mosaic virus",
-            repr_isolate=None,
+            representative_isolate=None,
             plan=Plan.new(
                 segments=[
                     Segment.new(
