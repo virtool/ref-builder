@@ -5,9 +5,8 @@ import pytest
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
-from ref_builder.repo import Repo
-from ref_builder.resources import RepoSequence
 from ref_builder.otu.create import create_otu
+from ref_builder.otu.isolate import add_genbank_isolate
 from ref_builder.otu.modify import (
     add_segments_to_plan,
     delete_isolate_from_otu,
@@ -21,14 +20,15 @@ from ref_builder.otu.modify import (
 from ref_builder.otu.update import (
     promote_otu_accessions,
 )
-from ref_builder.otu.isolate import add_genbank_isolate
-from ref_builder.utils import IsolateName, IsolateNameType
 from ref_builder.plan import (
     Plan,
+    Segment,
     SegmentName,
     SegmentRule,
-    Segment,
 )
+from ref_builder.repo import Repo
+from ref_builder.resources import RepoSequence
+from ref_builder.utils import IsolateName, IsolateNameType
 
 
 def test_exclude_accessions(scratch_repo: Repo):
@@ -54,19 +54,20 @@ def test_update_representative_isolate(scratch_repo: Repo):
 
     otu_before = scratch_repo.get_otu_by_taxid(taxid)
 
-    repr_isolate_after = None
+    representative_isolate_after = None
+
     for isolate_id in otu_before.isolate_ids:
-        if isolate_id != otu_before.repr_isolate:
-            repr_isolate_after = isolate_id
+        if isolate_id != otu_before.representative_isolate:
+            representative_isolate_after = isolate_id
             break
 
-    set_representative_isolate(scratch_repo, otu_before, repr_isolate_after)
+    set_representative_isolate(scratch_repo, otu_before, representative_isolate_after)
 
     otu_after = scratch_repo.get_otu_by_taxid(taxid)
 
-    assert otu_after.repr_isolate != otu_before.repr_isolate
+    assert otu_after.representative_isolate != otu_before.representative_isolate
 
-    assert otu_after.repr_isolate == repr_isolate_after
+    assert otu_after.representative_isolate == representative_isolate_after
 
 
 class TestSetPlan:
@@ -255,11 +256,11 @@ class TestUpdateRepresentativeIsolateCommand:
 
         otu_before = scratch_repo.get_otu_by_taxid(taxid)
 
-        repr_isolate_after = None
+        representative_isolate_after = None
 
         for isolate_id in otu_before.isolate_ids:
-            if isolate_id != otu_before.repr_isolate:
-                repr_isolate_after = isolate_id
+            if isolate_id != otu_before.representative_isolate:
+                representative_isolate_after = isolate_id
                 break
 
         subprocess.run(
@@ -271,7 +272,7 @@ class TestUpdateRepresentativeIsolateCommand:
             + ["--path", str(scratch_repo.path)]
             + [str(taxid)]
             + ["default"]
-            + [str(repr_isolate_after)],
+            + [str(representative_isolate_after)],
             check=False,
         )
 
@@ -279,20 +280,20 @@ class TestUpdateRepresentativeIsolateCommand:
 
         otu_after = scratch_repo.get_otu_by_taxid(taxid)
 
-        assert otu_after.repr_isolate != otu_before.repr_isolate
+        assert otu_after.representative_isolate != otu_before.representative_isolate
 
-        assert otu_after.repr_isolate == repr_isolate_after
+        assert otu_after.representative_isolate == representative_isolate_after
 
     def test_isolate_name_ok(self, scratch_repo: Repo):
         taxid = 1169032
 
         otu_before = scratch_repo.get_otu_by_taxid(taxid)
 
-        repr_isolate_name_after = None
+        representative_isolate_after = None
 
         for isolate_id in otu_before.isolate_ids:
-            if isolate_id != otu_before.repr_isolate:
-                repr_isolate_name_after = otu_before.get_isolate(isolate_id).name
+            if isolate_id != otu_before.representative_isolate:
+                representative_isolate_after = otu_before.get_isolate(isolate_id).name
                 break
 
         subprocess.run(
@@ -304,7 +305,7 @@ class TestUpdateRepresentativeIsolateCommand:
             + ["--path", str(scratch_repo.path)]
             + [str(taxid)]
             + ["default"]
-            + [str(repr_isolate_name_after)],
+            + [str(representative_isolate_after)],
             check=False,
         )
 
@@ -312,10 +313,10 @@ class TestUpdateRepresentativeIsolateCommand:
 
         otu_after = scratch_repo.get_otu_by_taxid(taxid)
 
-        assert otu_after.repr_isolate != otu_before.repr_isolate
+        assert otu_after.representative_isolate != otu_before.representative_isolate
 
-        assert otu_after.repr_isolate == otu_before.get_isolate_id_by_name(
-            repr_isolate_name_after
+        assert otu_after.representative_isolate == otu_before.get_isolate_id_by_name(
+            representative_isolate_after
         )
 
 
@@ -459,6 +460,6 @@ class TestPromoteAccessions:
 
         otu_after = repo_after.get_otu(otu.id)
 
-        assert otu_after.repr_isolate == otu_before.repr_isolate
+        assert otu_after.representative_isolate == otu_before.representative_isolate
 
         assert otu_after.accessions == {"NC_055390", "NC_055391", "NC_055392"}

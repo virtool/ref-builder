@@ -432,7 +432,7 @@ class OTUFactory(ModelFactory[OTUBase]):
 
     @post_generated
     @classmethod
-    def repr_isolate(cls, isolates: list[RepoIsolate]) -> UUID4:
+    def representative_isolate(cls, isolates: list[RepoIsolate]) -> UUID4:
         """Derive a representative isolate from a list of OTUs."""
         return cls.__faker__.random_element(isolates).id
 

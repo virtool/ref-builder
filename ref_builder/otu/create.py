@@ -3,13 +3,13 @@ import sys
 import structlog
 
 from ref_builder.ncbi.client import NCBIClient
+from ref_builder.otu.isolate import create_sequence_from_record
 from ref_builder.otu.utils import (
     create_plan_from_records,
-    group_genbank_records_by_isolate,
     get_molecule_from_records,
+    group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
-from ref_builder.otu.isolate import create_sequence_from_record
 from ref_builder.plan import extract_segment_name_from_record
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
@@ -98,7 +98,9 @@ def create_otu(
     )
 
     otu.add_isolate(isolate)
-    otu.repr_isolate = repo.set_repr_isolate(otu_id=otu.id, isolate_id=isolate.id)
+    otu.representative_isolate = repo.set_representative_isolate(
+        otu_id=otu.id, isolate_id=isolate.id
+    )
 
     if otu.plan.monopartite:
         record = records[0]

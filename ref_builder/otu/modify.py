@@ -7,13 +7,12 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.utils import DeleteRationale, create_segments_from_records
 from ref_builder.plan import (
     Plan,
-    SegmentRule,
-    SegmentName,
     Segment,
+    SegmentName,
+    SegmentRule,
 )
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU, RepoSequence
-
 
 logger = get_logger("otu.modify")
 
@@ -48,7 +47,6 @@ def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
         isolate_id=isolate_id,
         current_isolate_ids=list[otu.isolate_ids],
     )
-    return
 
 
 def set_plan(
@@ -290,17 +288,17 @@ def set_representative_isolate(
         otu_logger.error("Isolate not found. Please make a new isolate.")
         return None
 
-    if otu.repr_isolate is not None:
-        if otu.repr_isolate == new_representative_isolate.id:
+    if otu.representative_isolate is not None:
+        if otu.representative_isolate == new_representative_isolate.id:
             otu_logger.warning("This isolate is already the representative isolate.")
-            return otu.repr_isolate
+            return otu.representative_isolate
 
         otu_logger.warning(
-            f"Replacing representative isolate {otu.repr_isolate}",
-            representative_isolate_id=str(otu.repr_isolate),
+            f"Replacing representative isolate {otu.representative_isolate}",
+            representative_isolate_id=str(otu.representative_isolate),
         )
 
-    repo.set_repr_isolate(otu.id, new_representative_isolate.id)
+    repo.set_representative_isolate(otu.id, new_representative_isolate.id)
 
     otu_logger.info(
         f"Representative isolate set to {new_representative_isolate.name}.",

@@ -46,7 +46,7 @@ class TestOTU:
 
     def test_no_representative_isolate(self):
         """Test that validation fails if the OTU has no representative isolate."""
-        self.otu.repr_isolate = None
+        self.otu.representative_isolate = None
 
         with pytest.raises(
             ValueError,
@@ -58,7 +58,7 @@ class TestOTU:
         """Test that validation fails if the representative isolate is not in the
         OTU.
         """
-        self.otu.repr_isolate = uuid.uuid4()
+        self.otu.representative_isolate = uuid.uuid4()
 
         with pytest.raises(
             ValueError, match="Representative isolate must be in the OTU"

@@ -28,25 +28,10 @@ from ref_builder.events.base import (
     Event,
     EventData,
     EventQuery,
-    LinkSequenceQuery,
-    RepoQuery,
-    OTUQuery,
     IsolateQuery,
+    OTUQuery,
+    RepoQuery,
     SequenceQuery,
-)
-from ref_builder.events.repo import (
-    CreateRepo,
-    CreateRepoData,
-)
-from ref_builder.events.otu import (
-    CreateOTU,
-    CreateOTUData,
-    CreatePlan,
-    CreatePlanData,
-    ExcludeAccession,
-    ExcludeAccessionData,
-    SetReprIsolate,
-    SetReprIsolateData,
 )
 from ref_builder.events.isolate import (
     CreateIsolate,
@@ -57,6 +42,20 @@ from ref_builder.events.isolate import (
     LinkSequenceData,
     UnlinkSequence,
     UnlinkSequenceData,
+)
+from ref_builder.events.otu import (
+    CreateOTU,
+    CreateOTUData,
+    CreatePlan,
+    CreatePlanData,
+    ExcludeAccession,
+    ExcludeAccessionData,
+    SetRepresentativeIsolate,
+    SetRepresentativeIsolateData,
+)
+from ref_builder.events.repo import (
+    CreateRepo,
+    CreateRepoData,
 )
 from ref_builder.events.sequence import (
     CreateSequence,
@@ -460,17 +459,19 @@ class Repo:
             self.get_otu(otu_id).get_isolate(isolate_id).get_sequence_by_id(sequence_id)
         )
 
-    def set_repr_isolate(self, otu_id: uuid.UUID, isolate_id: uuid.UUID) -> uuid.UUID:
+    def set_representative_isolate(
+        self, otu_id: uuid.UUID, isolate_id: uuid.UUID
+    ) -> uuid.UUID:
         """Set the representative isolate for an OTU."""
         otu = self.get_otu(otu_id)
 
         self._write_event(
-            SetReprIsolate,
-            SetReprIsolateData(isolate_id=isolate_id),
+            SetRepresentativeIsolate,
+            SetRepresentativeIsolateData(isolate_id=isolate_id),
             OTUQuery(otu_id=otu.id),
         )
 
-        return self.get_otu(otu_id).repr_isolate
+        return self.get_otu(otu_id).representative_isolate
 
     def exclude_accession(self, otu_id: uuid.UUID, accession: str) -> set:
         """Exclude an accession for an OTU.
@@ -559,7 +560,7 @@ class Repo:
                 logger.error(e)
 
                 raise TypeError(
-                    f"Event {event_id} {str(type(event))} is not an applicable event."
+                    f"Event {event_id} {type(event)!s} is not an applicable event."
                 )
 
         otu.isolates.sort(
@@ -671,7 +672,7 @@ class EventStore:
                     "DeleteIsolate": DeleteIsolate,
                     "DeleteSequence": DeleteSequence,
                     "CreatePlan": CreatePlan,
-                    "SetReprIsolate": SetReprIsolate,
+                    "SetRepresentativeIsolate": SetRepresentativeIsolate,
                     "ExcludeAccession": ExcludeAccession,
                 }[loaded["type"]]
 
