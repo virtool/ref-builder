@@ -730,7 +730,7 @@ def test_exclude_accession(empty_repo: Repo):
             "query": {
                 "otu_id": str(otu.id),
             },
-            "type": "EditAllowedAccessions",
+            "type": "UpdateAllowedAccessions",
         }
 
     assert empty_repo.get_otu(otu.id).excluded_accessions == {
@@ -775,7 +775,7 @@ class TestExcludeAccessions:
                 "query": {
                     "otu_id": str(otu_after.id),
                 },
-                "type": "EditAllowedAccessions",
+                "type": "UpdateAllowedAccessions",
             }
 
         assert empty_repo.get_otu(otu_after.id).excluded_accessions == {
@@ -851,7 +851,7 @@ class TestAllowAccessions:
                 "query": {
                     "otu_id": str(otu_after.id),
                 },
-                "type": "EditAllowedAccessions",
+                "type": "UpdateAllowedAccessions",
             }
 
         assert otu_after.excluded_accessions == {"TM100023"}
