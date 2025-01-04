@@ -48,8 +48,8 @@ from ref_builder.events.otu import (
     CreateOTUData,
     CreatePlan,
     CreatePlanData,
-    UpdateAllowedAccessions,
-    UpdateAllowedAccessionsData,
+    UpdateExcludedAccessions,
+    UpdateExcludedAccessionsData,
     SetRepresentativeIsolate,
     SetRepresentativeIsolateData,
 )
@@ -490,8 +490,8 @@ class Repo:
             logger.debug("Accession is already excluded.", accession=accession)
         else:
             self._write_event(
-                UpdateAllowedAccessions,
-                UpdateAllowedAccessionsData(
+                UpdateExcludedAccessions,
+                UpdateExcludedAccessionsData(
                     accessions={accession},
                     action=AccessionStatusAction.EXCLUDE,
                 ),
@@ -532,8 +532,8 @@ class Repo:
 
         if excludable_accessions:
             self._write_event(
-                UpdateAllowedAccessions,
-                UpdateAllowedAccessionsData(
+                UpdateExcludedAccessions,
+                UpdateExcludedAccessionsData(
                     accessions=excludable_accessions,
                     action=AccessionStatusAction.EXCLUDE,
                 ),
@@ -570,8 +570,8 @@ class Repo:
 
         if allowable_accessions:
             self._write_event(
-                UpdateAllowedAccessions,
-                UpdateAllowedAccessionsData(
+                UpdateExcludedAccessions,
+                UpdateExcludedAccessionsData(
                     accessions=set(allowable_accessions),
                     action=AccessionStatusAction.ALLOW,
                 ),
@@ -766,7 +766,7 @@ class EventStore:
                     "DeleteSequence": DeleteSequence,
                     "CreatePlan": CreatePlan,
                     "SetRepresentativeIsolate": SetRepresentativeIsolate,
-                    "UpdateAllowedAccessions": UpdateAllowedAccessions,
+                    "UpdateExcludedAccessions": UpdateExcludedAccessions,
                 }[loaded["type"]]
 
                 return cls(**loaded)

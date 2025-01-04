@@ -78,7 +78,7 @@ class SetRepresentativeIsolate(ApplicableEvent):
         return otu
 
 
-class UpdateAllowedAccessionsData(EventData):
+class UpdateExcludedAccessionsData(EventData):
     """The data for an UpdateAllowedAccessions event."""
 
     model_config = ConfigDict(use_enum_values=True)
@@ -91,14 +91,14 @@ class UpdateAllowedAccessionsData(EventData):
         return sorted(accessions)
 
 
-class UpdateAllowedAccessions(ApplicableEvent):
+class UpdateExcludedAccessions(ApplicableEvent):
     """An event that changes the OTU excluded accessions collection.
 
     This event is emitted when Genbank accessions are either
     allowed or disallowed from inclusion in the reference.
     """
 
-    data: UpdateAllowedAccessionsData
+    data: UpdateExcludedAccessionsData
     query: OTUQuery
 
     def apply(self, otu: RepoOTU) -> RepoOTU:
