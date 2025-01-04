@@ -78,7 +78,7 @@ class TestUpdateOTU:
 
         assert (
             otu_before.accessions
-            == otu_before.get_isolate(otu_before.repr_isolate).accessions
+            == otu_before.get_isolate(otu_before.representative_isolate).accessions
             == {"MF062125", "MF062126", "MF062127"}
         )
 
@@ -86,7 +86,7 @@ class TestUpdateOTU:
 
         otu_after = precached_repo.get_otu(otu_before.id)
 
-        assert otu_after.get_isolate(otu_after.repr_isolate).accessions == {
+        assert otu_after.get_isolate(otu_after.representative_isolate).accessions == {
             "NC_055390",
             "NC_055391",
             "NC_055392",
@@ -94,11 +94,11 @@ class TestUpdateOTU:
 
         assert {"MF062125", "MF062126", "MF062127"}.isdisjoint(otu_after.accessions)
 
-        assert otu_after.repr_isolate == otu_before.repr_isolate
+        assert otu_after.representative_isolate == otu_before.representative_isolate
 
         assert (
-            otu_after.get_isolate(otu_before.repr_isolate).accessions
-            != otu_before.get_isolate(otu_before.repr_isolate).accessions
+            otu_after.get_isolate(otu_before.representative_isolate).accessions
+            != otu_before.get_isolate(otu_before.representative_isolate).accessions
         )
 
         assert otu_after.id == otu_before.id

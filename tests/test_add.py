@@ -6,15 +6,15 @@ from click.testing import CliRunner
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
-from ref_builder.cli.otu import otu_create, isolate_create
+from ref_builder.cli.otu import isolate_create, otu_create
 from ref_builder.otu.create import create_otu
-from ref_builder.otu.update import (
-    update_isolate_from_accessions,
-)
 from ref_builder.otu.isolate import (
+    add_and_name_isolate,
     add_genbank_isolate,
     add_unnamed_isolate,
-    add_and_name_isolate,
+)
+from ref_builder.otu.update import (
+    update_isolate_from_accessions,
 )
 from ref_builder.otu.utils import RefSeqConflictError
 from ref_builder.repo import Repo
@@ -82,7 +82,7 @@ class TestCreateOTU:
         )
 
         assert otu.model_dump() == snapshot(
-            exclude=props("id", "isolates", "repr_isolate"),
+            exclude=props("id", "isolates", "representative_isolate"),
         )
 
         # Ensure only one OTU is present in the repository, and it matches the return
@@ -120,7 +120,7 @@ class TestCreateOTU:
 
         assert list(precached_repo.iter_otus())
         assert otu.plan is not None
-        assert otu.repr_isolate is not None
+        assert otu.representative_isolate is not None
 
     def test_otu_create_refseq_autoexclude(
         self,
@@ -202,7 +202,7 @@ class TestCreateOTUCommands:
         otu = otus[0]
 
         assert otu.model_dump() == snapshot(
-            exclude=props("id", "isolates", "repr_isolate"),
+            exclude=props("id", "isolates", "representative_isolate"),
         )
 
     def test_acronym(self, precached_repo: Repo):
@@ -307,7 +307,7 @@ class TestAddIsolate:
 
         otu_after = precached_repo.get_otu_by_taxid(345184)
 
-        assert otu_after.isolate_ids == {otu_after.repr_isolate, isolate.id}
+        assert otu_after.isolate_ids == {otu_after.representative_isolate, isolate.id}
 
         isolate_after = otu_after.get_isolate(isolate.id)
 
@@ -333,7 +333,7 @@ class TestAddIsolate:
 
         otu_after = precached_repo.get_otu_by_taxid(345184)
 
-        assert otu_after.isolate_ids == {otu_after.repr_isolate, isolate.id}
+        assert otu_after.isolate_ids == {otu_after.representative_isolate, isolate.id}
 
         isolate_after = otu_after.get_isolate(isolate.id)
 

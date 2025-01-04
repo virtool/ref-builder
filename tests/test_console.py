@@ -71,7 +71,7 @@ def test_print_otu(snapshot: SnapshotAssertion):
                 ),
             ],
         ),
-        repr_isolate=None,
+        representative_isolate=None,
         taxid=438782,
         isolates=[],
     )
