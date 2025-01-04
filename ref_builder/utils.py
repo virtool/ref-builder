@@ -64,6 +64,11 @@ class Accession:
         return f"{self.key}.{self.version}"
 
 
+class AccessionStatusAction(StrEnum):
+    ALLOW = "allow"
+    EXCLUDE = "exclude"
+
+
 class DataType(StrEnum):
     """Possible data types for a reference repository."""
 
