@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from ref_builder.utils import format_json, pad_zeroes
+from ref_builder.utils import format_json, pad_zeroes, get_accession_key
 from ref_builder.otu.utils import parse_refseq_comment
 
 
@@ -69,3 +69,24 @@ class TestRefSeqCommentParser:
     def test_fail(self):
         with pytest.raises(ValueError, match="Invalid RefSeq comment"):
             parse_refseq_comment("AGSDHJFKLDSFEU")
+
+
+class TestGetAccessionKey:
+    @pytest.mark.parametrize(
+        ("raw_string", "expected_accession"),
+        [
+            ("EF546808", "EF546808"),
+            ("EF546808.1", "EF546808"),
+            ("NC_123456", "NC_123456"),
+            ("NC_123456.1", "NC_123456"),
+        ],
+    )
+    def test_ok(self, raw_string: str, expected_accession: str):
+        assert get_accession_key(raw_string) == expected_accession
+
+    @pytest.mark.parametrize(
+        "raw_string", ["CLOCKTOWER", "AC269481.3.5", "123453.1", "123453"]
+    )
+    def test_fail(self, raw_string: str):
+        with pytest.raises(ValueError):
+            get_accession_key(raw_string)
