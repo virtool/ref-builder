@@ -1,9 +1,10 @@
-from pydantic import UUID4, field_serializer
+from pydantic import ConfigDict, UUID4, field_serializer
 
 from ref_builder.events.base import ApplicableEvent, Event, EventData, OTUQuery
 from ref_builder.models import Molecule
 from ref_builder.plan import Plan
 from ref_builder.resources import RepoOTU
+from ref_builder.utils import AccessionStatusAction
 
 
 class CreateOTUData(EventData):
@@ -80,8 +81,10 @@ class SetRepresentativeIsolate(ApplicableEvent):
 class UpdateAllowedAccessionsData(EventData):
     """The data for an UpdateAllowedAccessions event."""
 
+    model_config = ConfigDict(use_enum_values=True)
+
     accessions: set[str]
-    allow: bool
+    action: AccessionStatusAction
 
     @field_serializer("accessions")
     def serialize_accessions(self, accessions: set[str]) -> list[str]:
@@ -101,7 +104,7 @@ class UpdateAllowedAccessions(ApplicableEvent):
     def apply(self, otu: RepoOTU) -> RepoOTU:
         """Add accession allowance changes to OTU and return."""
 
-        if self.data.allow:
+        if self.data.action == AccessionStatusAction.ALLOW:
             for accession in self.data.accessions:
                 otu.excluded_accessions.discard(accession)
 

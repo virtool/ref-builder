@@ -75,6 +75,7 @@ from ref_builder.resources import (
 )
 from ref_builder.utils import (
     Accession,
+    AccessionStatusAction,
     DataType,
     IsolateName,
     get_accession_key,
@@ -490,7 +491,10 @@ class Repo:
         else:
             self._write_event(
                 UpdateAllowedAccessions,
-                UpdateAllowedAccessionsData(accessions={accession}, allow=False),
+                UpdateAllowedAccessionsData(
+                    accessions={accession},
+                    action=AccessionStatusAction.EXCLUDE,
+                ),
                 OTUQuery(otu_id=otu_id),
             )
 
@@ -531,7 +535,7 @@ class Repo:
                 UpdateAllowedAccessions,
                 UpdateAllowedAccessionsData(
                     accessions=excludable_accessions,
-                    allow=False,
+                    action=AccessionStatusAction.EXCLUDE,
                 ),
                 OTUQuery(otu_id=otu_id),
             )
@@ -569,7 +573,7 @@ class Repo:
                 UpdateAllowedAccessions,
                 UpdateAllowedAccessionsData(
                     accessions=set(allowable_accessions),
-                    allow=True,
+                    action=AccessionStatusAction.ALLOW,
                 ),
                 OTUQuery(otu_id=otu_id),
             )

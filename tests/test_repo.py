@@ -724,7 +724,7 @@ def test_exclude_accession(empty_repo: Repo):
         assert event == {
             "data": {
                 "accessions": ["TMVABC.1"],
-                "allow": False,
+                "action": "exclude",
             },
             "id": 3,
             "query": {
@@ -769,7 +769,7 @@ class TestExcludeAccessions:
             assert event == {
                 "data": {
                     "accessions": ["TM100021", "TM100022", "TM100023"],
-                    "allow": False,
+                    "action": "exclude",
                 },
                 "id": 3,
                 "query": {
@@ -845,7 +845,7 @@ class TestAllowAccessions:
             assert event == {
                 "data": {
                     "accessions": ["TM100021", "TM100022"],
-                    "allow": True,
+                    "action": "allow",
                 },
                 "id": 4,
                 "query": {
