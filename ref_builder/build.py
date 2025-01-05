@@ -3,7 +3,26 @@ from pathlib import Path
 import arrow
 import orjson
 
+from ref_builder.models import Molecule, Strandedness
+from ref_builder.plan import SegmentRule
 from ref_builder.repo import Repo
+
+
+def _get_molecule_string(molecule: Molecule) -> str:
+    """Return a string representation of the molecule."""
+    string = ""
+
+    if molecule.strandedness == Strandedness.SINGLE:
+        string += "ss"
+    else:
+        string += "ds"
+
+    if "DNA" in molecule.type:
+        string += "DNA"
+    else:
+        string += "RNA"
+
+    return string
 
 
 def build_json(indent: bool, output_path: Path, path: Path, version: str) -> None:
@@ -22,17 +41,23 @@ def build_json(indent: bool, output_path: Path, path: Path, version: str) -> Non
         isolates = []
 
         for isolate in otu.isolates:
-            sequences = [
-                {
-                    "_id": sequence.legacy_id or sequence.id,
-                    "accession": str(sequence.accession),
-                    "definition": sequence.definition,
-                    "host": "",
-                    "segment": sequence.segment,
-                    "sequence": sequence.sequence,
-                }
-                for sequence in isolate.sequences
-            ]
+            sequences = []
+
+            for sequence in isolate.sequences:
+                segment_name = otu.plan.get_segment_by_id(sequence.segment).name
+
+                sequences.append(
+                    {
+                        "_id": sequence.legacy_id or str(sequence.id),
+                        "accession": str(sequence.accession),
+                        "definition": sequence.definition,
+                        "host": "",
+                        "segment": "Unnamed"
+                        if segment_name is None
+                        else str(segment_name),
+                        "sequence": sequence.sequence,
+                    }
+                )
 
             isolates.append(
                 {
@@ -41,14 +66,25 @@ def build_json(indent: bool, output_path: Path, path: Path, version: str) -> Non
                     "sequences": sequences,
                     "source_name": isolate.name.value
                     if isolate.name is not None
-                    else None,
-                    "source_type": isolate.name.type
+                    else "unknown",
+                    "source_type": str(isolate.name.type)
                     if isolate.name is not None
-                    else None,
+                    else "unknown",
                 },
             )
 
         isolates.sort(key=lambda x: x["id"])
+
+        molecule = _get_molecule_string(otu.molecule)
+
+        schema = [
+            {
+                "molecule": molecule,
+                "name": str(segment.name) if segment.name else "Unnamed",
+                "required": segment.required == SegmentRule.REQUIRED,
+            }
+            for segment in otu.plan.segments
+        ]
 
         otus.append(
             {
@@ -56,7 +92,7 @@ def build_json(indent: bool, output_path: Path, path: Path, version: str) -> Non
                 "abbreviation": otu.acronym,
                 "isolates": isolates,
                 "name": otu.name,
-                "schema": otu.plan.model_dump(),
+                "schema": schema,
                 "taxid": otu.taxid,
             },
         )

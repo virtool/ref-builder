@@ -50,7 +50,8 @@ class TestOTU:
 
         with pytest.raises(
             ValueError,
-            match="UUID input should be a string, bytes or UUID object.*input_value=None",
+            match="UUID input should be a string, bytes or UUID object.*input_value="
+            "None",
         ):
             assert OTU.model_validate(self.otu.model_dump())
 

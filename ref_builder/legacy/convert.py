@@ -1,14 +1,16 @@
 import json
-import uuid
+from collections import defaultdict
 from pathlib import Path
+from pprint import pprint
 
 from ref_builder.console import console
 from ref_builder.legacy.utils import iter_legacy_otus
 from ref_builder.logs import configure_logger
 from ref_builder.models import Molecule
 from ref_builder.ncbi.client import NCBIClient
+from ref_builder.otu.models import OTU
+from ref_builder.plan import Plan, Segment, SegmentName, SegmentRule, parse_segment_name
 from ref_builder.repo import Repo
-from ref_builder.plan import Plan
 from ref_builder.utils import DataType, IsolateName, IsolateNameType
 
 
@@ -52,45 +54,67 @@ def convert_legacy_repo(name: str, path: Path, target_path: Path) -> None:
             type=record.moltype,
         )
 
-        original_segments = [
-            {**segment, "id": uuid.uuid4()} for segment in otu["schema"]
-        ]
-        plan = Plan.model_validate(
-            {
-                "id": uuid.uuid4(),
-                "segments": original_segments,
-            }
-        )
-
-        try:
-            try:
-                repo_otu = repo.create_otu(
-                    otu["abbreviation"],
-                    otu["_id"],
-                    molecule=molecule,
-                    name=otu["name"],
-                    plan=plan,
-                    taxid=otu["taxid"],
-                )
-            except ValueError as err:
-                if "OTU already exists" in str(err):
-                    console.print(
-                        f"[red]Error:[/red] Already exists: {otu['name']} ({otu['taxid']})",
-                    )
-                    continue
-
-                raise
-        except ValueError as err:
-            if "OTU already exists" in str(err):
-                console.print(
-                    f"[red]Error:[/red] Already exists: {otu['name']} ({otu['taxid']})",
-                )
-                continue
-
-            raise
+        sequences_by_segment = defaultdict(list)
 
         for isolate in otu["isolates"]:
-            if isolate["source_type"] in ("genbank", "refseq"):
+            for legacy_sequence in isolate["sequences"]:
+                sequences_by_segment[legacy_sequence["segment"]].append(legacy_sequence)
+
+        segments = []
+
+        for segment in otu["schema"]:
+            sequences = sequences_by_segment[segment["name"]]
+
+            if segment["name"] in ("Genome", "Partial"):
+                name = None
+            else:
+                try:
+                    name = parse_segment_name(segment["name"])
+                except ValueError:
+                    name = SegmentName(key=segment["name"], prefix=molecule.type)
+
+            lengths = [len(sequence["sequence"]) for sequence in sequences]
+
+            mean_length = sum(lengths) / len(sequences)
+
+            # Calculate tolerance based on min, max, and mean observed lengths.
+            length_tolerance = max(
+                0.01,
+                (
+                    max(mean_length - min(lengths), max(lengths) - mean_length)
+                    / mean_length
+                ),
+            )
+
+            new_segment = Segment.new(
+                length=int(mean_length),
+                length_tolerance=round(length_tolerance, 2),
+                name=name,
+                required=SegmentRule.REQUIRED
+                if segment["required"]
+                else SegmentRule.OPTIONAL,
+            )
+
+            for legacy_sequence in sequences:
+                legacy_sequence["segment"] = new_segment.id
+
+            segments.append(new_segment)
+
+        plan = Plan.new(segments)
+
+        repo_otu = repo.create_otu(
+            otu["abbreviation"],
+            otu["_id"],
+            molecule=molecule,
+            name=otu["name"],
+            plan=plan,
+            taxid=otu["taxid"],
+        )
+
+        default_isolate_ids = []
+
+        for isolate in otu["isolates"]:
+            if isolate["source_type"] in ("genbank", "partial", "refseq", "unknown"):
                 name = None
             else:
                 name = IsolateName(
@@ -104,13 +128,42 @@ def convert_legacy_repo(name: str, path: Path, target_path: Path) -> None:
                 name,
             )
 
-            for sequence in isolate["sequences"]:
-                repo.create_sequence(
+            if isolate["default"]:
+                default_isolate_ids.append(repo_isolate.id)
+
+            for legacy_sequence in isolate["sequences"]:
+                repo_sequence = repo.create_sequence(
+                    repo_otu.id,
+                    legacy_sequence["accession"],
+                    legacy_sequence["definition"],
+                    legacy_sequence["_id"],
+                    legacy_sequence["segment"],
+                    legacy_sequence["sequence"],
+                )
+
+                repo.link_sequence(
                     repo_otu.id,
                     repo_isolate.id,
-                    sequence["accession"],
-                    sequence["definition"],
-                    sequence["_id"],
-                    sequence["segment"],
-                    sequence["sequence"],
+                    repo_sequence.id,
                 )
+
+        if len(default_isolate_ids) > 1:
+            raise ValueError("More than one default isolate found.")
+
+        if default_isolate_ids:
+            repo.set_representative_isolate(repo_otu.id, default_isolate_ids[0])
+        else:
+            raise ValueError("No default isolate found.")
+
+        repo_otu = repo.get_otu(repo_otu.id)
+
+        if not repo_otu:
+            raise ValueError("Could not retrieve OTU from repo.")
+
+        representative_isolate = repo_otu.representative_isolate
+
+        if not repo_otu.representative_isolate:
+            raise ValueError("Could not retrieve representative isolate from OTU.")
+
+        if not repo_otu.get_isolate(representative_isolate):
+            raise ValueError("Could not retrieve representative isolate from OTU.")

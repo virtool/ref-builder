@@ -12,11 +12,9 @@ from ref_builder.otu.utils import (
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
-from ref_builder.plan import extract_segment_name_from_record
 from ref_builder.repo import Repo
-from ref_builder.resources import RepoOTU, RepoIsolate, RepoSequence
+from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
 from ref_builder.utils import IsolateName
-
 
 logger = get_logger("otu.isolate")
 
@@ -41,6 +39,13 @@ def add_genbank_isolate(
 
     if not records:
         return None
+
+    if any(record.refseq for record in records) and not all(
+        record.refseq for record in records
+    ):
+        raise ValueError(
+            "Cannot mix RefSeq and non-RefSeq sequences in multipartite isolate."
+        )
 
     record_bins = group_genbank_records_by_isolate(records)
     if len(record_bins) != 1:
@@ -80,7 +85,7 @@ def add_genbank_isolate(
             repo,
             otu,
             isolate_name,
-            assigned_records=assign_records_to_segments(records, otu.plan),
+            assign_records_to_segments(records, otu.plan),
         )
     except ValueError:
         otu_logger.exception()
@@ -172,11 +177,11 @@ def add_and_name_isolate(
         return create_multipartite_isolate(
             repo,
             otu,
-            isolate_name=isolate_name,
-            assigned_records=assign_records_to_segments(records, otu.plan),
+            isolate_name,
+            assign_records_to_segments(records, otu.plan),
         )
-    except ValueError as e:
-        otu_logger.error(e)
+    except ValueError:
+        otu_logger.exception()
 
     return None
 
@@ -196,10 +201,12 @@ def create_monopartite_isolate(
         taxid=otu.taxid,
     )
 
+    segment = otu.plan.segments[0]
+
     if not check_sequence_length(
         record.sequence,
-        segment_length=otu.plan.segments[0].length,
-        tolerance=otu.plan.segments[0].length_tolerance,
+        segment.length,
+        segment.length_tolerance,
     ):
         isolate_logger.error("Sequence does not conform to plan length.")
         return None
@@ -212,7 +219,7 @@ def create_monopartite_isolate(
         )
     except ValueError as e:
         if "Isolate name already exists" in str(e):
-            logger.error(
+            logger.warning(
                 "OTU already contains isolate with name.",
                 isolate_name=str(isolate_name) if IsolateName is not None else None,
                 otu_name=otu.name,
@@ -222,7 +229,7 @@ def create_monopartite_isolate(
 
         raise
 
-    sequence = create_sequence_from_record(repo, otu, record)
+    sequence = create_sequence_from_record(repo, otu, record, segment.id)
 
     if sequence is None:
         raise ValueError("Sequence could not be created")
@@ -230,17 +237,14 @@ def create_monopartite_isolate(
     repo.link_sequence(otu.id, isolate.id, sequence.id)
 
     if record.refseq:
-        refseq_status, old_accession = parse_refseq_comment(record.comment)
+        _, old_accession = parse_refseq_comment(record.comment)
+
         repo.exclude_accession(
             otu.id,
             old_accession,
         )
 
-    isolate_logger.info(
-        f"{isolate.name} created",
-        isolate_id=str(isolate.id),
-        sequences=str(sequence.accession),
-    )
+    isolate_logger.info("Isolate created", name=str(isolate.name), id=str(isolate.id))
 
     return isolate
 
@@ -262,6 +266,7 @@ def create_multipartite_isolate(
         matching_segment = otu.plan.get_segment_by_id(segment_id)
 
         record = assigned_records[segment_id]
+
         if not check_sequence_length(
             record.sequence,
             segment_length=matching_segment.length,
@@ -269,13 +274,13 @@ def create_multipartite_isolate(
         ):
             isolate_logger.warning(
                 "Sequence does not conform to recommended segment length.",
-                record_accession=record.accession_version,
-                record_data_length=len(record.sequence),
-                segment_id=str(matching_segment.id),
-                segment_name=str(matching_segment.name),
-                segment_length=matching_segment.length,
-                segment_tolerance=matching_segment.length_tolerance,
+                accession=record.accession_version,
+                length=len(record.sequence),
+                segment=(matching_segment.name, matching_segment.id),
+                required_length=matching_segment.length,
+                tolerance=matching_segment.length_tolerance,
             )
+
             return None
 
     try:
@@ -286,45 +291,38 @@ def create_multipartite_isolate(
         )
     except ValueError as e:
         if "Isolate name already exists" in str(e):
-            logger.error(
+            logger.exception(
                 "OTU already contains isolate with name.",
                 isolate_name=str(isolate_name) if IsolateName is not None else None,
                 otu_name=otu.name,
                 taxid=otu.taxid,
             )
+
             return None
 
-        raise e
+        raise
 
     for segment_id in assigned_records:
-        record = assigned_records[segment_id]
-
-        normalized_segment_name = extract_segment_name_from_record(record)
-
         sequence = create_sequence_from_record(
-            repo,
-            otu,
-            record,
-            str(normalized_segment_name),
+            repo, otu, assigned_records[segment_id], segment_id
         )
 
         if sequence is None:
-            raise ValueError("Sequence could not be created")
+            raise ValueError("Sequence could not be created.")
 
         repo.link_sequence(otu.id, isolate.id, sequence.id)
 
-        if record.refseq:
-            refseq_status, old_accession = parse_refseq_comment(record.comment)
+        first_record = next(iter(assigned_records.values()))
+
+        if first_record.refseq:
+            _, old_accession = parse_refseq_comment(first_record.comment)
+
             repo.exclude_accession(
                 otu.id,
                 old_accession,
             )
 
-    isolate_logger.info(
-        f"Isolate created",
-        id=str(isolate.id),
-        accessions=list(isolate.accessions),
-    )
+    isolate_logger.info("Isolate created", name=str(isolate.name), id=str(isolate.id))
 
     return isolate
 
@@ -333,7 +331,7 @@ def create_sequence_from_record(
     repo: Repo,
     otu: RepoOTU,
     record: NCBIGenbank,
-    segment_name: str | None = None,
+    segment_id: UUID,
 ) -> RepoSequence | None:
     """Take a NCBI Nucleotide record and create a new sequence."""
     sequence = repo.create_sequence(
@@ -341,7 +339,7 @@ def create_sequence_from_record(
         accession=record.accession_version,
         definition=record.definition,
         legacy_id=None,
-        segment=segment_name if segment_name is not None else record.source.segment,
+        segment=segment_id,
         sequence=record.sequence,
     )
 

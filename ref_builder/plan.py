@@ -1,7 +1,7 @@
 import re
 from enum import StrEnum
-from warnings import warn
 from uuid import UUID, uuid4
+from warnings import warn
 
 from pydantic import UUID4, BaseModel, ConfigDict, Field, model_validator
 from pydantic.dataclasses import dataclass
@@ -43,20 +43,16 @@ class SegmentName:
         return f"{self.prefix} {self.key}"
 
 
-class SegmentMetadata(BaseModel):
-    """Metadata and expected properties for an included sequence."""
+class Segment(BaseModel):
+    """A segment in a multipartite plan."""
+
+    model_config = ConfigDict(use_enum_values=True)
 
     id: UUID4
     """The unique ID of the segment or monopartite plan."""
 
     length: int
     """The expected length of the sequence"""
-
-
-class Segment(SegmentMetadata):
-    """A segment in a multipartite plan."""
-
-    model_config = ConfigDict(use_enum_values=True)
 
     length_tolerance: float = Field(ge=0.0, le=1.0)
     """The acceptable deviation from the recommended sequence length."""
@@ -108,10 +104,11 @@ class Plan(BaseModel):
     """The unique id number of the multipartite plan"""
 
     segments: list[Segment]
-    """A list of segments"""
+    """A list of segments that define the plan."""
 
     @property
     def monopartite(self) -> bool:
+        """Whether the plan is monopartite."""
         return len(self.segments) == 1
 
     @property

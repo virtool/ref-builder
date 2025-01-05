@@ -1,11 +1,11 @@
 from pydantic import UUID4
 
-from ref_builder.resources import RepoOTU, RepoSequence
 from ref_builder.events.base import (
     ApplicableEvent,
     EventData,
     SequenceQuery,
 )
+from ref_builder.resources import RepoOTU, RepoSequence
 from ref_builder.utils import Accession
 
 
@@ -16,7 +16,7 @@ class CreateSequenceData(EventData):
     accession: Accession
     definition: str
     legacy_id: str | None
-    segment: str
+    segment: UUID4
     sequence: str
 
 

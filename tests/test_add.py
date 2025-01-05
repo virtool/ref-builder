@@ -371,10 +371,10 @@ class TestAddIsolate:
 class TestReplaceIsolateSequences:
     def test_manual_replace_ok(
         self,
-        empty_repo,
-        taxid,
-        original_accessions,
-        refseq_accessions,
+        empty_repo: Repo,
+        taxid: int,
+        original_accessions: list[str],
+        refseq_accessions: list[str],
     ):
         """Test that a requested replacement occurs as expected."""
         create_otu(
@@ -388,7 +388,7 @@ class TestReplaceIsolateSequences:
 
         assert otu_before.accessions == set(original_accessions)
 
-        isolate = list(otu_before.isolates)[0]
+        isolate = next(iter(otu_before.isolates))
 
         update_isolate_from_accessions(
             empty_repo,
@@ -400,7 +400,6 @@ class TestReplaceIsolateSequences:
         otu_after = empty_repo.get_otu(otu_before.id)
 
         assert otu_after.accessions == set(refseq_accessions)
-
         assert otu_after.excluded_accessions == set(original_accessions)
 
     def test_raise_refseq_exception(

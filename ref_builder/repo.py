@@ -21,10 +21,10 @@ from pathlib import Path
 
 import arrow
 from orjson import orjson
-from pydantic import ValidationError
 from structlog import get_logger
 
 from ref_builder.events.base import (
+    ApplicableEvent,
     Event,
     EventData,
     EventQuery,
@@ -307,7 +307,7 @@ class Repo:
         accession: str,
         definition: str,
         legacy_id: str | None,
-        segment: str,
+        segment: uuid.UUID,
         sequence: str,
     ) -> RepoSequence | None:
         """Create and return a new sequence within the given OTU.
@@ -424,18 +424,38 @@ class Repo:
         self, otu_id: uuid.UUID, isolate_id: uuid.UUID, sequence_id: uuid.UUID
     ) -> RepoSequence | None:
         """Link an existing sequence to an existing isolate."""
+        log = logger.bind(otu_id=str(otu_id))
+
         otu = self.get_otu(otu_id)
 
-        otu_logger = logger.bind(otu_id=str(otu_id))
+        if otu is None:
+            log.error("OTU not found.")
+            return None
 
         isolate = otu.get_isolate(isolate_id)
+
         if isolate is None:
-            otu_logger.error("Isolate not found in OTU.", sequence_id=str(isolate_id))
+            log.error("Isolate not found.", isolate_id=str(isolate_id))
+            return None
+
+        if sequence_id in {s.id for s in isolate.sequences}:
+            log.warning(
+                "Sequence is already linked to isolate.", sequence_id=str(sequence_id)
+            )
             return None
 
         sequence = otu.get_sequence_by_id(sequence_id)
+
         if sequence is None:
-            otu_logger.error("Sequence not found in OTU.", sequence_id=str(sequence_id))
+            log.error("Sequence not found.", sequence_id=str(sequence_id))
+            return None
+
+        if sequence.segment in {s.segment for s in isolate.sequences}:
+            log.warning(
+                "Segment is already linked to isolate.",
+                segment_id=str(sequence.segment),
+                sequence_id=str(sequence_id),
+            )
             return None
 
         event = self._write_event(
@@ -447,11 +467,12 @@ class Repo:
             ),
         )
 
-        otu_logger.debug(
-            f"Sequence linked to isolate {isolate.name}",
+        log.debug(
+            "Sequence linked to isolate",
             event_id=event.id,
             sequence_id=str(sequence_id),
             isolate_id=str(isolate_id),
+            isolate_name=str(isolate.name),
             accession=str(sequence.accession),
         )
 
@@ -554,14 +575,12 @@ class Repo:
         for event_id in event_ids[1:]:
             event = self._event_store.read_event(event_id)
 
-            try:
-                otu = event.apply(otu)
-            except ValidationError as e:
-                logger.error(e)
-
+            if not isinstance(event, ApplicableEvent):
                 raise TypeError(
                     f"Event {event_id} {type(event)!s} is not an applicable event."
                 )
+
+            otu = event.apply(otu)
 
         otu.isolates.sort(
             key=lambda i: f"{i.name.type} {i.name.value}"

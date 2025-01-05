@@ -23,6 +23,7 @@ class LegacySourceType(str, Enum):
     GENOTYPE = "genotype"
     SEROTYPE = "serotype"
     STRAIN = "strain"
+    UNKNOWN = "unknown"
     VARIANT = "variant"
 
 
@@ -62,7 +63,17 @@ class LegacyIsolate(BaseModel):
     default: bool
     sequences: Annotated[list[LegacySequence], StringConstraints(min_length=1)]
     source_type: LegacySourceType
-    source_name: Annotated[str, StringConstraints(min_length=1, strip_whitespace=True)]
+    source_name: Annotated[str, StringConstraints(strip_whitespace=True)]
+
+    @model_validator(mode="after")
+    def check_source_name(self: "LegacyIsolate") -> "LegacyIsolate":
+        """Check if the source name is not empty."""
+        if not self.source_name and self.source_type is not LegacySourceType.UNKNOWN:
+            raise ValueError(
+                "Source name cannot be empty unless source type is unknown"
+            )
+
+        return self
 
 
 class LegacySchemaSegment(BaseModel):
@@ -98,25 +109,25 @@ class LegacyOTU(BaseModel):
 
     @field_validator("otu_schema")
     @classmethod
-    def check_schema_molecule(cls, v):
+    def check_schema_molecule(cls, otu_schema: list[LegacySchemaSegment]):
         """Check if all segments in the schema have the same molecule."""
-        molecules = {segment.molecule for segment in v}
+        molecules = {segment.molecule for segment in otu_schema}
 
         if len(molecules) > 1:
             raise ValueError("All segments in a schema must have the same molecule")
 
-        return v
+        return otu_schema
 
     @field_validator("otu_schema")
     @classmethod
-    def check_schema_name(cls, v):
+    def check_schema_names(cls, otu_schema: list[LegacySchemaSegment]):
         """Check if there are duplicate schema segment names."""
-        names = {segment.name for segment in v}
+        names = {segment.name for segment in otu_schema}
 
-        if len(names) != len(v):
+        if len(names) != len(otu_schema):
             raise ValueError("All schema segments must have a unique name")
 
-        return v
+        return otu_schema
 
     @model_validator(mode="after")
     def check_schema_and_sequences(self) -> "LegacyOTU":

@@ -5,12 +5,12 @@ import structlog
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.isolate import create_sequence_from_record
 from ref_builder.otu.utils import (
+    assign_records_to_segments,
     create_plan_from_records,
     get_molecule_from_records,
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
-from ref_builder.plan import extract_segment_name_from_record
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
 
@@ -24,13 +24,13 @@ def create_otu(
     acronym: str,
     ignore_cache: bool = False,
 ) -> RepoOTU | None:
-    """Create a new OTU by taxonomy ID and autogenerate a schema.
+    """Create a new OTU by taxonomy ID.
 
-    Uses the provided accessions to generate a schema and add a first isolate.
+    Uses the provided accessions to generate a plan and add a first isolate.
 
     :param repo: the repository to add the OTU to.
     :param taxid: the taxonomy ID to use.
-    :param accessions: a list of accessions to use for the schema.
+    :param accessions: accessions to build the new otu from
     :param acronym: an alternative name to use during searches.
     :param ignore_cache: whether to ignore the cache.
 
@@ -63,7 +63,7 @@ def create_otu(
 
     if len(binned_records) > 1:
         otu_logger.fatal(
-            "More than one isolate found. Cannot create schema automatically.",
+            "More than one isolate found. Cannot create plan.",
         )
         return None
 
@@ -105,24 +105,21 @@ def create_otu(
     if otu.plan.monopartite:
         record = records[0]
 
-        sequence = create_sequence_from_record(repo, otu, record)
+        sequence = create_sequence_from_record(repo, otu, record, plan.segments[0].id)
 
         repo.link_sequence(otu.id, isolate.id, sequence.id)
 
         if record.refseq:
             _, old_accession = parse_refseq_comment(record.comment)
+
             repo.exclude_accession(
                 otu.id,
                 old_accession,
             )
 
     else:
-        for record in records:
-            normalized_segment_name = extract_segment_name_from_record(record)
-
-            sequence = create_sequence_from_record(
-                repo, otu, record, segment_name=str(normalized_segment_name)
-            )
+        for segment_id, record in assign_records_to_segments(records, plan).items():
+            sequence = create_sequence_from_record(repo, otu, record, segment_id)
 
             repo.link_sequence(otu.id, isolate.id, sequence.id)
 
