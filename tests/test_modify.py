@@ -292,7 +292,7 @@ class TestUpdateRepresentativeIsolateCommand:
             ["ref-builder", "otu", "set-default-isolate"]
             + ["--path", str(scratch_repo.path)]
             + [str(taxid)]
-            + [str(repr_isolate_after)],
+            + [str(representative_isolate_after)],
             check=False,
         )
 
@@ -320,7 +320,7 @@ class TestUpdateRepresentativeIsolateCommand:
             ["ref-builder", "otu", "set-default-isolate"]
             + ["--path", str(scratch_repo.path)]
             + [str(taxid)]
-            + [str(repr_isolate_name_after)],
+            + [str(representative_isolate_after)],
             check=False,
         )
 
@@ -460,14 +460,9 @@ class TestPromoteAccessions:
         assert otu_before.accessions == {"MF062125", "MF062126", "MF062127"}
 
         subprocess.run(
-            [
-                "ref-builder",
-                "otu",
-                "update",
-            ]
-            + ["--path", str(empty_repo.path)]
+            ["ref-builder", "otu", "promote"]
             + [str(2164102)]
-            + ["promote"],
+            + ["--path", str(empty_repo.path)],
             check=False,
         )
 
