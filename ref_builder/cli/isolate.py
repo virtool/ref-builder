@@ -5,7 +5,11 @@ import click
 
 from ref_builder.cli.validate import validate_no_duplicate_accessions
 from ref_builder.options import ignore_cache_option
-from ref_builder.otu.isolate import add_unnamed_isolate, add_and_name_isolate, add_genbank_isolate
+from ref_builder.otu.isolate import (
+    add_unnamed_isolate,
+    add_and_name_isolate,
+    add_genbank_isolate,
+)
 from ref_builder.otu.utils import RefSeqConflictError
 from ref_builder.repo import Repo
 from ref_builder.utils import IsolateNameType, IsolateName
