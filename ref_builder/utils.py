@@ -65,6 +65,8 @@ class Accession:
 
 
 class AccessionStatusAction(StrEnum):
+    """Possible actions that can be taken on the status of an accession."""
+
     ALLOW = "allow"
     EXCLUDE = "exclude"
 
