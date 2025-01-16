@@ -64,8 +64,8 @@ class Accession:
         return f"{self.key}.{self.version}"
 
 
-class AccessionStatusAction(StrEnum):
-    """Possible actions that can be taken on the status of an accession."""
+class ExcludedAccessionAction(StrEnum):
+    """Possible actions that can be taken on the excluded/allowed status of an accession."""
 
     ALLOW = "allow"
     EXCLUDE = "exclude"
@@ -162,4 +162,4 @@ def get_accession_key(raw: str) -> str:
     ) or refseq_accession_params.match(versioned_accession.key):
         return versioned_accession.key
 
-    raise (ValueError(f"Invalid accession key"))
+    raise ValueError("Invalid accession key")

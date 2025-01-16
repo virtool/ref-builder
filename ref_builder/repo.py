@@ -75,7 +75,7 @@ from ref_builder.resources import (
 )
 from ref_builder.utils import (
     Accession,
-    AccessionStatusAction,
+    ExcludedAccessionAction,
     DataType,
     IsolateName,
     get_accession_key,
@@ -493,7 +493,7 @@ class Repo:
                 UpdateExcludedAccessions,
                 UpdateExcludedAccessionsData(
                     accessions={accession},
-                    action=AccessionStatusAction.EXCLUDE,
+                    action=ExcludedAccessionAction.EXCLUDE,
                 ),
                 OTUQuery(otu_id=otu_id),
             )
@@ -535,7 +535,7 @@ class Repo:
                 UpdateExcludedAccessions,
                 UpdateExcludedAccessionsData(
                     accessions=excludable_accessions,
-                    action=AccessionStatusAction.EXCLUDE,
+                    action=ExcludedAccessionAction.EXCLUDE,
                 ),
                 OTUQuery(otu_id=otu_id),
             )
@@ -573,7 +573,7 @@ class Repo:
                 UpdateExcludedAccessions,
                 UpdateExcludedAccessionsData(
                     accessions=set(allowable_accessions),
-                    action=AccessionStatusAction.ALLOW,
+                    action=ExcludedAccessionAction.ALLOW,
                 ),
                 OTUQuery(otu_id=otu_id),
             )
