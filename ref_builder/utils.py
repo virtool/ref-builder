@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -6,6 +7,9 @@ import orjson
 
 ZERO_PADDING_MAX = 99999999
 """The maximum number that can be padded with zeroes in event IDs and filenames."""
+
+genbank_accession_params = re.compile(pattern=r"^[A-Z]{1,2}[0-9]{5,6}$")
+refseq_accession_params = re.compile(pattern=r"^NC_[0-9]{6}$")
 
 
 @dataclass(frozen=True)
@@ -58,6 +62,13 @@ class Accession:
     def __str__(self) -> str:
         """Return the accession as a string."""
         return f"{self.key}.{self.version}"
+
+
+class ExcludedAccessionAction(StrEnum):
+    """Possible actions that can be taken on the excluded/allowed status of an accession."""
+
+    ALLOW = "allow"
+    EXCLUDE = "exclude"
 
 
 class DataType(StrEnum):
@@ -135,3 +146,20 @@ def pad_zeroes(number: int) -> str:
         raise ValueError("Number is too large to pad")
 
     return str(number).zfill(8)
+
+
+def get_accession_key(raw: str) -> str:
+    """Parse a string to check if it follows Genbank or RefSeq accession parameters and
+    return the key part only.
+    """
+    if genbank_accession_params.match(raw) or refseq_accession_params.match(raw):
+        return raw
+
+    versioned_accession = Accession.from_string(raw)
+
+    if genbank_accession_params.match(
+        versioned_accession.key
+    ) or refseq_accession_params.match(versioned_accession.key):
+        return versioned_accession.key
+
+    raise ValueError("Invalid accession key")

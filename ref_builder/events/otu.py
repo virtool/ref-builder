@@ -1,9 +1,10 @@
-from pydantic import UUID4
+from pydantic import ConfigDict, UUID4, field_serializer
 
 from ref_builder.events.base import ApplicableEvent, Event, EventData, OTUQuery
 from ref_builder.models import Molecule
 from ref_builder.plan import Plan
 from ref_builder.resources import RepoOTU
+from ref_builder.utils import ExcludedAccessionAction
 
 
 class CreateOTUData(EventData):
@@ -37,29 +38,6 @@ class CreateOTU(Event):
             plan=self.data.plan,
             taxid=self.data.taxid,
         )
-
-
-class ExcludeAccessionData(EventData):
-    """The data for a :class:`ExcludeAccession` event."""
-
-    accession: str
-
-
-class ExcludeAccession(ApplicableEvent):
-    """An accession exclusion event.
-
-    This event is emitted when a Genbank accession is not going to be allowed in the
-    reference.
-    """
-
-    data: ExcludeAccessionData
-    query: OTUQuery
-
-    def apply(self, otu: RepoOTU) -> RepoOTU:
-        """Add excluded accession to OTU and return."""
-        otu.excluded_accessions.add(self.data.accession)
-
-        return otu
 
 
 class CreatePlanData(EventData):
@@ -96,5 +74,42 @@ class SetRepresentativeIsolate(ApplicableEvent):
     def apply(self, otu: RepoOTU) -> RepoOTU:
         """Update the OTU's representative isolate and return."""
         otu.representative_isolate = self.data.isolate_id
+
+        return otu
+
+
+class UpdateExcludedAccessionsData(EventData):
+    """The data for an UpdateAllowedAccessions event."""
+
+    model_config = ConfigDict(use_enum_values=True)
+
+    accessions: set[str]
+    action: ExcludedAccessionAction
+
+    @field_serializer("accessions")
+    def serialize_accessions(self, accessions: set[str]) -> list[str]:
+        return sorted(accessions)
+
+
+class UpdateExcludedAccessions(ApplicableEvent):
+    """An event that changes the OTU excluded accessions collection.
+
+    This event is emitted when Genbank accessions are either
+    allowed or disallowed from inclusion in the reference.
+    """
+
+    data: UpdateExcludedAccessionsData
+    query: OTUQuery
+
+    def apply(self, otu: RepoOTU) -> RepoOTU:
+        """Add accession allowance changes to OTU and return."""
+
+        if self.data.action == ExcludedAccessionAction.ALLOW:
+            for accession in self.data.accessions:
+                otu.excluded_accessions.discard(accession)
+
+        else:
+            for accession in self.data.accessions:
+                otu.excluded_accessions.add(accession)
 
         return otu

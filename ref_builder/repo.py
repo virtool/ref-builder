@@ -16,7 +16,7 @@ TODO: Check for accession conflicts.
 import shutil
 import uuid
 from collections import defaultdict
-from collections.abc import Generator, Iterator
+from collections.abc import Collection, Generator, Iterator
 from pathlib import Path
 
 import arrow
@@ -48,8 +48,8 @@ from ref_builder.events.otu import (
     CreateOTUData,
     CreatePlan,
     CreatePlanData,
-    ExcludeAccession,
-    ExcludeAccessionData,
+    UpdateExcludedAccessions,
+    UpdateExcludedAccessionsData,
     SetRepresentativeIsolate,
     SetRepresentativeIsolateData,
 )
@@ -75,8 +75,10 @@ from ref_builder.resources import (
 )
 from ref_builder.utils import (
     Accession,
+    ExcludedAccessionAction,
     DataType,
     IsolateName,
+    get_accession_key,
     pad_zeroes,
 )
 
@@ -488,9 +490,100 @@ class Repo:
             logger.debug("Accession is already excluded.", accession=accession)
         else:
             self._write_event(
-                ExcludeAccession,
-                ExcludeAccessionData(accession=accession),
+                UpdateExcludedAccessions,
+                UpdateExcludedAccessionsData(
+                    accessions={accession},
+                    action=ExcludedAccessionAction.EXCLUDE,
+                ),
                 OTUQuery(otu_id=otu_id),
+            )
+
+        return self.get_otu(otu_id).excluded_accessions
+
+    def exclude_accessions(
+        self,
+        otu_id: uuid.UUID,
+        accessions: Collection[str],
+    ) -> set[str]:
+        """Add accessions to OTU's excluded accessions."""
+        otu = self.get_otu(otu_id)
+
+        try:
+            excludable_accessions = {
+                get_accession_key(raw_accession) for raw_accession in accessions
+            }
+        except ValueError:
+            logger.error(
+                "Invalid accession included in set. No changes were made to excluded accessions."
+            )
+            return otu.excluded_accessions
+
+        if (
+            extant_requested_accessions := excludable_accessions
+            & otu.excluded_accessions
+        ):
+            logger.info(
+                "Ignoring already excluded accessions",
+                requested_exclusions=sorted(extant_requested_accessions),
+                old_excluded_accessions=sorted(otu.excluded_accessions),
+            )
+
+            excludable_accessions -= otu.excluded_accessions
+
+        if excludable_accessions:
+            self._write_event(
+                UpdateExcludedAccessions,
+                UpdateExcludedAccessionsData(
+                    accessions=excludable_accessions,
+                    action=ExcludedAccessionAction.EXCLUDE,
+                ),
+                OTUQuery(otu_id=otu_id),
+            )
+
+            logger.info(
+                "Added accessions to excluded accession list.",
+                taxid=otu.taxid,
+                otu_id=str(otu.id),
+                new_excluded_accessions=sorted(excludable_accessions),
+                old_excluded_accessions=sorted(otu.excluded_accessions),
+            )
+
+        return self.get_otu(otu_id).excluded_accessions
+
+    def allow_accessions(
+        self,
+        otu_id: uuid.UUID,
+        accessions: Collection[str],
+    ) -> set[str]:
+        """Remove accessions from OTU's excluded accessions."""
+        otu = self.get_otu(otu_id)
+
+        allowable_accessions = set(accessions)
+
+        if redundant_accessions := allowable_accessions - otu.excluded_accessions:
+            logger.debug(
+                "Ignoring non-excluded accessions",
+                non_excluded_accessions=sorted(redundant_accessions),
+            )
+
+            allowable_accessions = allowable_accessions - redundant_accessions
+
+        if allowable_accessions:
+            self._write_event(
+                UpdateExcludedAccessions,
+                UpdateExcludedAccessionsData(
+                    accessions=set(allowable_accessions),
+                    action=ExcludedAccessionAction.ALLOW,
+                ),
+                OTUQuery(otu_id=otu_id),
+            )
+
+            logger.info(
+                "Removed accessions from excluded accession list.",
+                taxid=otu.taxid,
+                otu_id=str(otu.id),
+                excluded_accessions=sorted(otu.excluded_accessions),
+                new_excluded_accessions=sorted(allowable_accessions),
             )
 
         return self.get_otu(otu_id).excluded_accessions
@@ -673,7 +766,7 @@ class EventStore:
                     "DeleteSequence": DeleteSequence,
                     "CreatePlan": CreatePlan,
                     "SetRepresentativeIsolate": SetRepresentativeIsolate,
-                    "ExcludeAccession": ExcludeAccession,
+                    "UpdateExcludedAccessions": UpdateExcludedAccessions,
                 }[loaded["type"]]
 
                 return cls(**loaded)
@@ -700,7 +793,7 @@ class EventStore:
         with open(self.path / f"{pad_zeroes(event_id)}.json", "wb") as f:
             f.write(
                 orjson.dumps(
-                    event.model_dump(by_alias=True),
+                    event.model_dump(by_alias=True, mode="json"),
                     f,
                 ),
             )
