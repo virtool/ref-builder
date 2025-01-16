@@ -9,6 +9,7 @@ from ref_builder.otu.create import create_otu
 from ref_builder.otu.isolate import add_genbank_isolate
 from ref_builder.otu.modify import (
     add_segments_to_plan,
+    allow_accessions_into_otu,
     delete_isolate_from_otu,
     exclude_accessions_from_otu,
     rename_plan_segment,
@@ -46,6 +47,30 @@ def test_exclude_accessions(scratch_repo: Repo):
     otu_after = scratch_repo.get_otu_by_taxid(taxid)
 
     assert otu_after.excluded_accessions == {"DQ178608", "DQ178609"}
+
+
+def test_allow_accessions(scratch_repo: Repo):
+    taxid = 345184
+
+    exclude_accessions_from_otu(
+        scratch_repo,
+        otu=scratch_repo.get_otu_by_taxid(taxid),
+        accessions={"DQ178608", "DQ178609"},
+    )
+
+    otu_before = scratch_repo.get_otu_by_taxid(taxid)
+
+    assert otu_before.excluded_accessions == {"DQ178608", "DQ178609"}
+
+    allow_accessions_into_otu(
+        scratch_repo,
+        otu=otu_before,
+        accessions={"DQ178608"},
+    )
+
+    otu_after = scratch_repo.get_otu_by_taxid(taxid)
+
+    assert otu_after.excluded_accessions == {"DQ178609"}
 
 
 def test_update_representative_isolate(scratch_repo: Repo):
