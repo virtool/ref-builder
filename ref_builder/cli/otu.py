@@ -150,7 +150,7 @@ def otu_promote_accessions(
     type=str,
     required=True,
 )
-def otu_exclude_accession(
+def otu_exclude_accessions(
     path: Path,
     taxid: int,
     accessions_: list[str],
