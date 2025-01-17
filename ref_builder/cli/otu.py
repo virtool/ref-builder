@@ -219,6 +219,7 @@ def otu_set_representative_isolate(
     is_flag=True,
     help="Set additional segments as fully optional",
 )
+@path_option
 @ignore_cache_option
 def plan_extend_segment_list(
     path: Path,
