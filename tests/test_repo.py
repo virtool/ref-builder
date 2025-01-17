@@ -813,6 +813,29 @@ class TestExcludeAccessions:
 
         assert otu_after.excluded_accessions == mock_accessions | {"TM100024"}
 
+    def test_fail(self, initialized_repo: Repo):
+        """Test that an extant accession cannot be added to the excluded accessions."""
+        otu_before = initialized_repo.get_otu_by_taxid(12242)
+
+        assert otu_before.excluded_accessions == set()
+
+        extant_accession = next(iter(otu_before.accessions))
+
+        initialized_repo.exclude_accessions(otu_before.id, {extant_accession})
+
+        otu_after = initialized_repo.get_otu_by_taxid(12242)
+
+        assert otu_after.excluded_accessions == set()
+
+        with open(
+            initialized_repo.path.joinpath(
+                "src", f"0000000{initialized_repo.last_id}.json"
+            )
+        ) as f:
+            event = orjson.loads(f.read())
+
+            assert event["type"] != "UpdateExcludedAccessions"
+
 
 class TestAllowAccessions:
     """Test that accessions allowed back into the OTU are no longer contained
