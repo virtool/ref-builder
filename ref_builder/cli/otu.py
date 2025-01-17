@@ -10,10 +10,11 @@ from ref_builder.console import print_otu, print_otu_list
 from ref_builder.options import ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.modify import (
-    exclude_accessions_from_otu,
-    set_representative_isolate,
     add_segments_to_plan,
+    allow_accessions_into_otu,
+    exclude_accessions_from_otu,
     rename_plan_segment,
+    set_representative_isolate,
 )
 from ref_builder.otu.update import auto_update_otu, promote_otu_accessions
 from ref_builder.plan import SegmentRule, SegmentName
@@ -168,6 +169,37 @@ def otu_exclude_accessions(
         sys.exit(1)
 
     exclude_accessions_from_otu(repo, otu_, accessions_)
+
+
+@otu.command(name="allow-accessions")  # type: ignore
+@path_option
+@ignore_cache_option
+@click.argument("TAXID", type=int)
+@click.argument(
+    "accessions_",
+    metavar="ACCESSIONS",
+    nargs=-1,
+    type=str,
+    required=True,
+)
+def otu_allow_accessions(
+    path: Path,
+    taxid: int,
+    accessions_: list[str],
+) -> None:
+    """Allow the given excluded accessions back into the OTU.
+
+    Any duplicate accessions will be ignored. Only one exclusion per unique accession
+    will be made.
+    """
+    repo = Repo(path)
+    otu_ = repo.get_otu_by_taxid(taxid)
+
+    if otu_ is None:
+        click.echo(f"OTU {taxid} not found.", err=True)
+        sys.exit(1)
+
+    allow_accessions_into_otu(repo, otu_, set(accessions_))
 
 
 @otu.command(name="set-default-isolate")  # type: ignore
