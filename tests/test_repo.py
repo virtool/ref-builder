@@ -653,6 +653,21 @@ class TestGetIsolate:
             in isolate_ids
         )
 
+    def test_get_isolate_id_from_shortcode(self, initialized_repo: Repo):
+        """Test that getting an isolate ID by a truncated 8-character portion returns the expected ID."""
+        otu = next(initialized_repo.iter_otus())
+
+        isolate_ids = {isolate.id for isolate in otu.isolates}
+
+        for isolate_id in isolate_ids:
+            retrieved_isolate_id = otu.get_isolate_id_from_shortcode(
+                str(isolate_id)[:7]
+            )
+
+            assert retrieved_isolate_id is not None
+
+            assert retrieved_isolate_id in otu.isolate_ids
+
     def test_get_with_unnamed_isolate(self, initialized_repo: Repo):
         """Test that getting an OTU with an unnamed isolate ID behaves as expected."""
         otu = next(initialized_repo.iter_otus())
