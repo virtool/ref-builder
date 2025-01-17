@@ -1,10 +1,10 @@
 import sys
 from pathlib import Path
-from uuid import UUID
 
 import click
 
 from ref_builder.cli.validate import validate_no_duplicate_accessions
+from ref_builder.cli.utils import get_isolate_id_from_key
 from ref_builder.options import path_option, ignore_cache_option
 from ref_builder.otu.isolate import (
     add_unnamed_isolate,
@@ -105,6 +105,7 @@ def isolate_create(
         click.echo(e, err=True)
         sys.exit(1)
 
+
 @isolate.command(name="remove")  # type: ignore
 @click.option("--taxid", type=int, required=True)
 @click.argument("ISOLATE_KEY", type=str)
@@ -118,18 +119,7 @@ def isolate_remove(path: Path, taxid: int, isolate_key: str) -> None:
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
-    try:
-        isolate_id = UUID(isolate_key)
-    except ValueError:
-        parts = isolate_key.split(" ")
-        try:
-            isolate_name = IsolateName(IsolateNameType(parts[0].lower()), parts[1])
-        except ValueError:
-            click.echo(f'Error: "{isolate_key}" is not a valid isolate name.', err=True)
-            sys.exit(1)
-
-        isolate_id = otu_.get_isolate_id_by_name(isolate_name)
-
+    isolate_id = get_isolate_id_from_key(otu=otu_, isolate_key=isolate_key)
     if isolate_id is None:
         click.echo("Isolate could not be found in this OTU.", err=True)
         sys.exit(1)

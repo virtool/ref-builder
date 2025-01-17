@@ -6,6 +6,7 @@ import click
 import structlog
 
 from ref_builder.cli.validate import validate_no_duplicate_accessions
+from ref_builder.cli.utils import get_isolate_id_from_key
 from ref_builder.console import print_otu, print_otu_list
 from ref_builder.options import ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu
@@ -18,7 +19,6 @@ from ref_builder.otu.modify import (
 from ref_builder.otu.update import auto_update_otu, promote_otu_accessions
 from ref_builder.plan import SegmentRule, SegmentName
 from ref_builder.repo import Repo
-from ref_builder.utils import IsolateNameType, IsolateName
 
 logger = structlog.get_logger()
 
@@ -179,24 +179,13 @@ def otu_set_representative_isolate(
 ) -> None:
     """Update the OTU with a new representative isolate."""
     repo = Repo(path)
-    otu_ = repo.get_otu_by_taxid(taxid)
 
+    otu_ = repo.get_otu_by_taxid(taxid)
     if otu_ is None:
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
-    try:
-        isolate_id = UUID(isolate_key)
-    except ValueError:
-        parts = isolate_key.split(" ")
-        try:
-            isolate_name = IsolateName(IsolateNameType(parts[0].lower()), parts[1])
-        except ValueError:
-            click.echo(f'Error: "{isolate_key}" is not a valid isolate name.', err=True)
-            sys.exit(1)
-
-        isolate_id = otu_.get_isolate_id_by_name(isolate_name)
-
+    isolate_id = get_isolate_id_from_key(otu=otu_, isolate_key=isolate_key)
     if isolate_id is None:
         click.echo("Isolate could not be found in this OTU.", err=True)
         sys.exit(1)
