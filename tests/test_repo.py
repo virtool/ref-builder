@@ -880,21 +880,17 @@ class TestExcludeAccessions:
 
         del event["timestamp"]
 
-        assert (
-            event.data.accessions
-            == ["TM100024"]
-            == {
-                "data": {
-                    "accessions": ["TM100024"],
-                    "action": "exclude",
-                },
-                "id": 4,
-                "query": {
-                    "otu_id": str(otu_id),
-                },
-                "type": "UpdateExcludedAccessions",
-            }
-        )
+        assert event == {
+            "data": {
+                "accessions": ["TM100024"],
+                "action": "exclude",
+            },
+            "id": 4,
+            "query": {
+                "otu_id": str(otu_id),
+            },
+            "type": "UpdateExcludedAccessions",
+        }
 
 
 class TestAllowAccessions:
