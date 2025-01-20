@@ -848,6 +848,54 @@ class TestExcludeAccessions:
 
         assert not empty_repo.path.joinpath("src", "00000004.json").exists()
 
+    def test_already_excluded_partial_ok(self, empty_repo):
+        """Test that a partially redundant list of exclusions creates
+        a new event with the redundant accession omitted."""
+        otu_id = init_otu(empty_repo).id
+
+        mock_accessions = {"TM100021", "TM100022", "TM100023"}
+
+        empty_repo.exclude_accessions(otu_id, mock_accessions)
+
+        assert empty_repo.last_id == 3
+
+        otu_before = empty_repo.get_otu(otu_id)
+
+        assert otu_before.excluded_accessions == mock_accessions
+
+        empty_repo.exclude_accessions(otu_id, {"TM100023", "TM100024"})
+
+        otu_after = empty_repo.get_otu(otu_id)
+
+        assert otu_after.excluded_accessions == otu_before.excluded_accessions | {
+            "TM100024"
+        }
+
+        assert empty_repo.last_id == 4
+
+        with open(
+            empty_repo.path.joinpath("src", f"{empty_repo.last_id:08}.json")
+        ) as f:
+            event = orjson.loads(f.read())
+
+        del event["timestamp"]
+
+        assert (
+            event.data.accessions
+            == ["TM100024"]
+            == {
+                "data": {
+                    "accessions": ["TM100024"],
+                    "action": "exclude",
+                },
+                "id": 4,
+                "query": {
+                    "otu_id": str(otu_id),
+                },
+                "type": "UpdateExcludedAccessions",
+            }
+        )
+
 
 class TestAllowAccessions:
     """Test that accessions allowed back into the OTU are no longer contained
