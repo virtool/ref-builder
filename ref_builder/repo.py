@@ -518,6 +518,13 @@ class Repo:
             )
             return otu.excluded_accessions
 
+        if unremovable_accessions := excludable_accessions.intersection(otu.accessions):
+            logger.warning(
+                "Accessions currently in OTU cannot be removed.",
+                unremovable_accessions=sorted(unremovable_accessions),
+            )
+            excludable_accessions -= unremovable_accessions
+
         if (
             extant_requested_accessions := excludable_accessions
             & otu.excluded_accessions
@@ -547,6 +554,8 @@ class Repo:
                 new_excluded_accessions=sorted(excludable_accessions),
                 old_excluded_accessions=sorted(otu.excluded_accessions),
             )
+        else:
+            logger.warning("No excludable accessions were given.")
 
         return self.get_otu(otu_id).excluded_accessions
 
