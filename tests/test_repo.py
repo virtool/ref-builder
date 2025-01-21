@@ -653,16 +653,16 @@ class TestGetIsolate:
             in isolate_ids
         )
 
-    def test_get_isolate_id_from_shortcode(self, initialized_repo: Repo):
-        """Test that getting an isolate ID by a truncated 8-character portion returns the expected ID."""
+    def test_get_isolate_id_by_partial(self, initialized_repo: Repo):
+        """Test that getting an isolate ID starting witha truncated 8-character portion
+        always returns an ID.
+        """
         otu = next(initialized_repo.iter_otus())
 
         isolate_ids = {isolate.id for isolate in otu.isolates}
 
         for isolate_id in isolate_ids:
-            retrieved_isolate_id = otu.get_isolate_id_from_shortcode(
-                str(isolate_id)[:7]
-            )
+            retrieved_isolate_id = otu.get_isolate_id_by_partial(str(isolate_id)[:7])
 
             assert retrieved_isolate_id is not None
 

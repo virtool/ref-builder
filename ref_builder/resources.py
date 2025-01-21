@@ -330,13 +330,13 @@ class RepoOTU(BaseModel):
 
         return None
 
-    def get_isolate_id_from_shortcode(self, shortcode: str):
-        """Get the isolate ID that starts with the passed ``shortcode``.
+    def get_isolate_id_by_partial(self, id_part: str):
+        """Return the first isolate ID starting with the string ``id_part``.
 
         Returns None if no such isolate exists.
         """
         for isolate_id in self.isolate_ids:
-            if str(isolate_id).startswith(shortcode):
+            if str(isolate_id).startswith(id_part):
                 return isolate_id
 
         return None
