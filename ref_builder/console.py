@@ -22,6 +22,10 @@ def print_otu(otu: RepoOTU) -> None:
     :param otu: The OTU to print.
 
     """
+    id_to_segment_name_table = {
+        str(segment.id): segment.name for segment in otu.plan.segments
+    }
+
     console.print(f"[bold][underline]{otu.name}[/bold][/underline]")
     console.line()
 
@@ -101,9 +105,11 @@ def print_otu(otu: RepoOTU) -> None:
         isolate_table.add_column("DEFINITION")
 
         for sequence in sorted(isolate.sequences, key=lambda s: s.accession):
+            segment_name = id_to_segment_name_table[sequence.segment]
+
             isolate_table.add_row(
                 _render_nucleotide_link(str(sequence.accession)),
-                sequence.segment,
+                "N/A" if segment_name is None else str(segment_name),
                 sequence.definition,
             )
 
