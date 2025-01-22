@@ -769,9 +769,7 @@ class TestExcludeAccessions:
 
         assert empty_repo.last_id == 3
 
-        with open(
-            empty_repo.path.joinpath("src", f"{empty_repo.last_id:08}.json")
-        ) as f:
+        with open(empty_repo.path / "src" / f"{empty_repo.last_id:08}.json") as f:
             event = orjson.loads(f.read())
 
         del event["timestamp"]
@@ -818,7 +816,7 @@ class TestExcludeAccessions:
         assert initialized_repo.last_id == 5
 
         with open(
-            initialized_repo.path.joinpath("src", f"{initialized_repo.last_id:08}.json")
+            initialized_repo.path / "src" / f"{initialized_repo.last_id:08}.json"
         ) as f:
             event = orjson.loads(f.read())
 
