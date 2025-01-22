@@ -708,49 +708,6 @@ class TestGetIsolate:
         assert isolate_unnamed_after.accessions == {"EMPTY1", "EMPTY2"}
 
 
-def test_exclude_accession(empty_repo: Repo):
-    """Test that excluding an accession from an OTU writes the expected event file and
-    returns the expected OTU objects.
-    """
-    otu = init_otu(empty_repo)
-
-    assert empty_repo.last_id == 2
-
-    empty_repo.exclude_accession(otu.id, "TMVABC.1")
-
-    assert empty_repo.last_id == 3
-
-    with open(empty_repo.path.joinpath("src", f"{empty_repo.last_id:08}.json")) as f:
-        event = orjson.loads(f.read())
-
-    del event["timestamp"]
-
-    assert event == {
-        "data": {
-            "accessions": ["TMVABC.1"],
-            "action": "exclude",
-        },
-        "id": 3,
-        "query": {
-            "otu_id": str(otu.id),
-        },
-        "type": "UpdateExcludedAccessions",
-    }
-
-    assert empty_repo.get_otu(otu.id).excluded_accessions == {
-        "TMVABC.1",
-    }
-
-    empty_repo.exclude_accession(otu.id, "ABTV")
-
-    assert empty_repo.last_id == 4
-
-    assert empty_repo.get_otu(otu.id).excluded_accessions == {
-        "TMVABC.1",
-        "ABTV",
-    }
-
-
 class TestExcludeAccessions:
     """Test that accessions can be excluded from future fetches."""
 
