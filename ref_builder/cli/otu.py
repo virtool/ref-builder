@@ -6,7 +6,7 @@ import click
 import structlog
 
 from ref_builder.cli.validate import validate_no_duplicate_accessions
-from ref_builder.console import print_otu, print_otu_list
+from ref_builder.console import print_otu, print_otu_list, print_raw_otu
 from ref_builder.options import ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.modify import (
@@ -75,8 +75,13 @@ def otu_create(
 
 @otu.command(name="get")
 @click.argument("IDENTIFIER", type=str)
+@click.option(
+    "--json",
+    is_flag=True,
+    help="Output in JSON form",
+)
 @path_option
-def otu_get(identifier: str, path: Path) -> None:
+def otu_get(identifier: str, path: Path, json: bool) -> None:
     """Get an OTU by its unique ID or taxonomy ID."""
     try:
         identifier = int(identifier)
@@ -88,7 +93,10 @@ def otu_get(identifier: str, path: Path) -> None:
         click.echo("OTU not found.", err=True)
         sys.exit(1)
 
-    print_otu(otu_)
+    if json:
+        print_raw_otu(otu_)
+    else:
+        print_otu(otu_)
 
 
 @otu.command(name="list")
