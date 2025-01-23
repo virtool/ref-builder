@@ -84,7 +84,7 @@ def test_print_otu(snapshot: SnapshotAssertion):
                 definition=fake.sentence(),
                 legacy_id=None,
                 sequence=fake.sequence(),
-                segment=str(segment.name),
+                segment=str(segment.id),
             )
             for segment in otu.plan.segments
         ]
