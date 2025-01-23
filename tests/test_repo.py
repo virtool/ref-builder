@@ -708,83 +708,79 @@ class TestGetIsolate:
         assert isolate_unnamed_after.accessions == {"EMPTY1", "EMPTY2"}
 
 
-def test_exclude_accession(empty_repo: Repo):
-    """Test that excluding an accession from an OTU writes the expected event file and
-    returns the expected OTU objects.
-    """
-    otu = init_otu(empty_repo)
+class TestExcludeAccessions:
+    """Test that accessions can be excluded from future fetches."""
 
-    empty_repo.exclude_accession(otu.id, "TMVABC.1")
+    def test_ok(self, empty_repo: Repo):
+        otu_init = init_otu(empty_repo)
 
-    with open(empty_repo.path.joinpath("src", "00000003.json")) as f:
-        event = orjson.loads(f.read())
+        assert not otu_init.excluded_accessions
+
+        mock_accessions = {"TM100021", "TM100022", "TM100023"}
+
+        empty_repo.exclude_accessions(otu_init.id, mock_accessions)
+
+        otu_first_exclusion = empty_repo.get_otu(otu_init.id)
+
+        assert otu_first_exclusion.excluded_accessions == mock_accessions
+
+        assert empty_repo.last_id == 3
+
+        with open(empty_repo.path / "src" / f"{empty_repo.last_id:08}.json") as f:
+            event = orjson.loads(f.read())
 
         del event["timestamp"]
 
         assert event == {
             "data": {
-                "accessions": ["TMVABC.1"],
+                "accessions": ["TM100021", "TM100022", "TM100023"],
                 "action": "exclude",
             },
             "id": 3,
             "query": {
-                "otu_id": str(otu.id),
+                "otu_id": str(otu_first_exclusion.id),
             },
             "type": "UpdateExcludedAccessions",
         }
 
-    assert empty_repo.get_otu(otu.id).excluded_accessions == {
-        "TMVABC.1",
-    }
+        empty_repo.exclude_accessions(otu_init.id, {"TM100024"})
 
-    empty_repo.exclude_accession(otu.id, "ABTV")
+        otu_second_exclusion = empty_repo.get_otu(otu_init.id)
 
-    assert empty_repo.get_otu(otu.id).excluded_accessions == {
-        "TMVABC.1",
-        "ABTV",
-    }
-
-
-class TestExcludeAccessions:
-    """Test that accessions can be excluded from future fetches."""
-
-    def test_ok(self, empty_repo: Repo):
-        otu_before = init_otu(empty_repo)
-
-        assert not otu_before.excluded_accessions
-
-        empty_repo.exclude_accessions(
-            otu_before.id, {"TM100021.1", "TM100022", "TM100023.1"}
+        assert (
+            otu_second_exclusion.excluded_accessions
+            == otu_first_exclusion.excluded_accessions | {"TM100024"}
         )
 
-        otu_after = empty_repo.get_otu(otu_before.id)
+        assert empty_repo.last_id == 4
 
-        assert otu_after.excluded_accessions == {"TM100021", "TM100022", "TM100023"}
+    def test_extant_fail(self, initialized_repo: Repo):
+        """Test that an extant accession cannot be added to the excluded accessions."""
+        otu_before = initialized_repo.get_otu_by_taxid(12242)
 
-        with open(empty_repo.path.joinpath("src", "00000003.json")) as f:
+        assert initialized_repo.last_id == 5
+
+        assert otu_before.excluded_accessions == set()
+
+        extant_accession = next(iter(otu_before.accessions))
+
+        initialized_repo.exclude_accessions(otu_before.id, {extant_accession})
+
+        otu_after = initialized_repo.get_otu_by_taxid(12242)
+
+        assert otu_after.excluded_accessions == set()
+
+        assert initialized_repo.last_id == 5
+
+        with open(
+            initialized_repo.path / "src" / f"{initialized_repo.last_id:08}.json"
+        ) as f:
             event = orjson.loads(f.read())
 
-            del event["timestamp"]
+        assert event["type"] != "UpdateExcludedAccessions"
 
-            assert event == {
-                "data": {
-                    "accessions": ["TM100021", "TM100022", "TM100023"],
-                    "action": "exclude",
-                },
-                "id": 3,
-                "query": {
-                    "otu_id": str(otu_after.id),
-                },
-                "type": "UpdateExcludedAccessions",
-            }
-
-        assert empty_repo.get_otu(otu_after.id).excluded_accessions == {
-            "TM100021",
-            "TM100022",
-            "TM100023",
-        }
-
-    def test_events(self, empty_repo):
+    def test_already_excluded_fail(self, empty_repo):
+        """Test that an attempted redundant exclusion does not create a new event."""
         otu_id = init_otu(empty_repo).id
 
         assert not empty_repo.get_otu(otu_id).excluded_accessions
@@ -792,6 +788,8 @@ class TestExcludeAccessions:
         mock_accessions = {"TM100021", "TM100022", "TM100023"}
 
         empty_repo.exclude_accessions(otu_id, mock_accessions)
+
+        assert empty_repo.last_id == 3
 
         assert empty_repo.path.joinpath("src", "00000003.json").exists()
 
@@ -801,17 +799,53 @@ class TestExcludeAccessions:
 
         assert otu_before.excluded_accessions == mock_accessions
 
+        assert empty_repo.last_id == 3
+
         assert not empty_repo.path.joinpath("src", "00000004.json").exists()
 
-        assert empty_repo.exclude_accessions(
-            otu_id, {"TM100024"}
-        ) == mock_accessions | {"TM100024"}
+    def test_already_excluded_partial_ok(self, empty_repo):
+        """Test that a partially redundant list of exclusions creates
+        a new event with the redundant accession omitted."""
+        otu_id = init_otu(empty_repo).id
+
+        mock_accessions = {"TM100021", "TM100022", "TM100023"}
+
+        empty_repo.exclude_accessions(otu_id, mock_accessions)
+
+        assert empty_repo.last_id == 3
+
+        otu_before = empty_repo.get_otu(otu_id)
+
+        assert otu_before.excluded_accessions == mock_accessions
+
+        empty_repo.exclude_accessions(otu_id, {"TM100023", "TM100024"})
 
         otu_after = empty_repo.get_otu(otu_id)
 
-        assert empty_repo.path.joinpath("src", "00000004.json").exists()
+        assert otu_after.excluded_accessions == otu_before.excluded_accessions | {
+            "TM100024"
+        }
 
-        assert otu_after.excluded_accessions == mock_accessions | {"TM100024"}
+        assert empty_repo.last_id == 4
+
+        with open(
+            empty_repo.path.joinpath("src", f"{empty_repo.last_id:08}.json")
+        ) as f:
+            event = orjson.loads(f.read())
+
+        del event["timestamp"]
+
+        assert event == {
+            "data": {
+                "accessions": ["TM100024"],
+                "action": "exclude",
+            },
+            "id": 4,
+            "query": {
+                "otu_id": str(otu_id),
+            },
+            "type": "UpdateExcludedAccessions",
+        }
 
 
 class TestAllowAccessions:
