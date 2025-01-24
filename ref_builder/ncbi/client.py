@@ -188,6 +188,9 @@ class NCBIClient:
 
             result = Entrez.read(handle)
 
+            if not result["IdList"]:
+                break
+
             result_count = int(result["Count"])
 
             accessions += result["IdList"]
