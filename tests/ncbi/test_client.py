@@ -119,7 +119,7 @@ class TestFetchAccessionsByTaxid:
             "JQ821386.1",
         ]
 
-    def test_non_existent(self):
+    def test_nonexistent_fail(self):
         """Test that the client returns an empty list when the taxid does not exist."""
         assert NCBIClient.fetch_accessions_by_taxid(99999999) == []
 
