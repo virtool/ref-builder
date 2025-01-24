@@ -1,7 +1,7 @@
 import pytest
 from syrupy import SnapshotAssertion
 
-from ref_builder.ncbi.client import NCBIClient
+from ref_builder.ncbi.client import NCBIClient, NuccoreSearchTerms
 
 
 class TestFetchGenbank:
@@ -128,6 +128,40 @@ class TestFetchAccessionsByTaxid:
         is long enough to force pagination.
         """
         assert len(NCBIClient.fetch_accessions_by_taxid(12585)) > 1000
+
+    def test_esearch_limit(self):
+        """Test that narrow search terms fetch a smaller subset of accessions
+        than wide search terms.
+        """
+        taxid = 12232
+
+        segment_length = 9591
+
+        wide_filtered_accessions = set(
+            NCBIClient.fetch_accessions_by_taxid(
+                taxid,
+                terms=NuccoreSearchTerms(
+                    sequence_min_length=segment_length - 6,
+                    sequence_max_length=segment_length + 6,
+                ),
+            )
+        )
+
+        assert wide_filtered_accessions
+
+        narrow_filtered_accessions = set(
+            NCBIClient.fetch_accessions_by_taxid(
+                taxid,
+                terms=NuccoreSearchTerms(
+                    sequence_min_length=segment_length - 1,
+                    sequence_max_length=segment_length + 1,
+                ),
+            )
+        )
+
+        assert narrow_filtered_accessions.issubset(wide_filtered_accessions)
+
+        assert wide_filtered_accessions - narrow_filtered_accessions
 
 
 class TestFetchTaxonomy:
