@@ -23,15 +23,11 @@ from ref_builder.utils import Accession, IsolateName
 logger = get_logger("otu.update")
 
 
-def auto_update_otu(
-    repo: Repo,
-    otu: RepoOTU,
-    ignore_cache: bool = False,
-) -> None:
+def auto_update_otu(repo: Repo, otu: RepoOTU) -> None:
     """Fetch a full list of Nucleotide accessions associated with the OTU
     and pass the list to the add method.
     """
-    ncbi = NCBIClient(ignore_cache)
+    ncbi = NCBIClient(False)
 
     otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
@@ -43,12 +39,7 @@ def auto_update_otu(
     )
 
     if fetch_list:
-        logger.debug(
-            f"Fetching {len(fetch_list)} records",
-            blocked_accessions=sorted(otu.blocked_accessions),
-            fetch_list=fetch_list,
-        )
-
+        otu_logger.info("Syncing OTU with Genbank.")
         update_otu_with_accessions(repo, otu, fetch_list)
     else:
         otu_logger.info("OTU is up to date.")

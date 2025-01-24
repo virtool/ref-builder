@@ -3,29 +3,29 @@ from pathlib import Path
 from uuid import UUID
 
 import click
-from click import Context
 import structlog
+from click import Context
 
 from ref_builder.cli.validate import validate_no_duplicate_accessions
 from ref_builder.console import print_otu, print_otu_list
 from ref_builder.options import ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.isolate import (
-    add_unnamed_isolate,
     add_and_name_isolate,
     add_genbank_isolate,
+    add_unnamed_isolate,
 )
 from ref_builder.otu.modify import (
-    exclude_accessions_from_otu,
-    set_representative_isolate,
     add_segments_to_plan,
+    exclude_accessions_from_otu,
     resize_monopartite_plan,
+    set_representative_isolate,
 )
 from ref_builder.otu.update import auto_update_otu, promote_otu_accessions
 from ref_builder.otu.utils import RefSeqConflictError
-from ref_builder.plan import SegmentRule, SegmentName
+from ref_builder.plan import SegmentName, SegmentRule
 from ref_builder.repo import Repo
-from ref_builder.utils import IsolateNameType, IsolateName
+from ref_builder.utils import IsolateName, IsolateNameType
 
 logger = structlog.get_logger()
 
@@ -104,6 +104,22 @@ def otu_list(path: Path) -> None:
     print_otu_list(Repo(path).iter_minimal_otus())
 
 
+@otu.command(name="fetch")
+@click.argument("TAXID", type=int)
+@path_option
+def otu_fetch(path: Path, taxid: int) -> None:
+    """Fetch all new isolates for an OTU."""
+    repo = Repo(path)
+
+    otu_ = repo.get_otu_by_taxid(taxid)
+
+    if otu_ is None:
+        click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
+        sys.exit(1)
+
+    auto_update_otu(repo, otu_)
+
+
 @otu.group(invoke_without_command=True)
 @click.argument("TAXID", type=int)
 @path_option
@@ -124,24 +140,6 @@ def update(ctx: Context, path: Path, taxid: int) -> None:
 
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
-
-
-@update.command(name="automatic")  # type: ignore
-@ignore_cache_option
-@click.pass_context
-def otu_auto_update(ctx: Context, ignore_cache: bool) -> None:
-    """Automatically update an OTU with the latest data from NCBI."""
-    repo = ctx.obj["REPO"]
-    taxid = ctx.obj["TAXID"]
-
-    otu_ = repo.get_otu_by_taxid(taxid)
-
-    if otu_ is None:
-        click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
-        click.echo(f'Run "virtool otu create {taxid} --autofill" instead.')
-        sys.exit(1)
-
-    auto_update_otu(repo, otu_, ignore_cache=ignore_cache)
 
 
 @update.command(name="promote")  # type: ignore
