@@ -81,8 +81,10 @@ def print_otu(otu: RepoOTU) -> None:
 
     for isolate in otu.isolates:
         console.line()
-        console.print(str(isolate.name)) if isolate.name is not None else console.print(
-            "[UNNAMED]",
+        console.print(
+            Text(str(isolate.name))
+        ) if isolate.name is not None else console.print(
+            "[italic]Unnamed[/italic]",
         )
         console.line()
 
