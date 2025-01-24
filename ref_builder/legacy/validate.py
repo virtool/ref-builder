@@ -70,9 +70,9 @@ def handle_validation_error(
                 "enum": handle_enum,
                 "int_type": handle_int_type,
                 "missing": handle_missing,
-                "string_type": handle_str_type,
                 "string_pattern_mismatch": handle_string_pattern_mismatch,
                 "string_too_short": handle_string_too_short,
+                "string_type": handle_str_type,
                 "too_short": handle_too_short,
                 "value_error": handle_value_error,
             }[error_type]

@@ -230,7 +230,7 @@ class TestIsolate:
         """Test that an invalid source type raises a ValueError when auto-fix is
         disabled.
         """
-        legacy_otu["isolates"][0]["source_type"] = "unknown"
+        legacy_otu["isolates"][0]["source_type"] = "invalid"
 
         otu_result = validate_legacy_otu(
             fix,
@@ -241,8 +241,8 @@ class TestIsolate:
         assert otu_result.handler_results == [
             ErrorHandledResult(
                 "[bold]source_type[/bold] must be one of [u]'clone', 'culture', "
-                "'isolate', 'genbank', 'genotype', 'serotype', 'strain' or "
-                "'variant'[/u], but is [u]'unknown'[/u].",
+                "'isolate', 'genbank', 'genotype', 'serotype', 'strain', 'unknown' or "
+                "'variant'[/u], but is [u]'invalid'[/u].",
                 fix,
             ),
         ]
@@ -250,7 +250,7 @@ class TestIsolate:
         if fix:
             assert otu_result.repaired_otu["isolates"][0]["source_type"] == "isolate"
         else:
-            assert otu_result.repaired_otu["isolates"][0]["source_type"] == "unknown"
+            assert otu_result.repaired_otu["isolates"][0]["source_type"] == "invalid"
 
     @pytest.mark.ncbi()
     @pytest.mark.parametrize("fix", [True, False], ids=["fix", "no_fix"])
@@ -260,8 +260,11 @@ class TestIsolate:
         legacy_otu: dict,
         scratch_ncbi_client: NCBIClient,
     ):
-        """Test that an isolate with an empty source name raises a ValueError when
-        autofix is disabled.
+        """Test handling of empty source names.
+
+        Test that:
+        * Is fixed via NCBI when auto-fix is enabled.
+        * Raises a ValueError when auto-fix is disabled.
         """
         legacy_otu["isolates"][0]["source_name"] = ""
 
@@ -273,8 +276,8 @@ class TestIsolate:
 
         assert otu_result.handler_results == [
             ErrorHandledResult(
-                "[bold]source_name[/bold] must be a string with a minimum length of 1. "
-                "it currently has a length of [u]0[/u].",
+                "[bold]source_name[/bold] cannot be empty unless source type is "
+                "unknown.",
                 fix,
             ),
         ]
@@ -301,12 +304,10 @@ class TestIsolate:
             bad_ncbi_client,
             legacy_otu,
         )
-
         assert otu_result.handler_results == [
             ErrorHandledResult(
-                "[bold]source_name[/bold] must be a string with a minimum length of 1. "
-                "it currently has a length of [u]0[/u]. we could not find a source "
-                "name on genbank.",
+                "[bold]source_name[/bold] cannot be empty unless source type is "
+                "unknown. we could not find a source name on genbank.",
                 False,
             ),
         ]

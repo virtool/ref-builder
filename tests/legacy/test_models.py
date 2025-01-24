@@ -69,17 +69,8 @@ class TestIsolate:
 
         assert (
             "Input should be 'clone', 'culture', 'isolate', 'genbank', 'genotype', "
-            "'serotype', 'strain' or 'variant'" in str(e.value)
+            "'serotype', 'strain', 'unknown' or 'variant'" in str(e.value)
         )
-
-    def test_source_name_empty(self, _example_isolate: dict):
-        """Test that an isolate with an empty source name raises a ValueError."""
-        _example_isolate["source_name"] = ""
-
-        with pytest.raises(ValueError) as e:
-            LegacyIsolate(**_example_isolate)
-
-        assert "String should have at least 1 character" in str(e.value)
 
     def test_too_few_sequences(self, _example_isolate: dict):
         """Test that an isolate with no sequences raises a ValueError."""
@@ -136,7 +127,9 @@ class TestSequence:
         )
 
 
-class TestOTU:
+class TestLegacyOTU:
+    """Test the LegacyOTU model."""
+
     def test_ok(self, _example_otu: dict):
         """Test that a valid OTU passes and whitespace is stripped."""
         otu = LegacyOTU(**_example_otu)

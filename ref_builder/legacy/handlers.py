@@ -299,4 +299,33 @@ def handle_value_error(ctx: HandleErrorContext) -> ErrorHandledResult:
     :param ctx: the error context
     :return: the error handling result
     """
+    if "Source name cannot be empty unless source type is unknown" in str(ctx.error):
+        basis = (
+            "[bold]source_name[/bold] cannot be empty unless source type is unknown."
+        )
+
+        if not ctx.fix:
+            return ErrorHandledResult(basis)
+
+        isolate_index = ctx.error["loc"][1]
+        isolate = ctx.otu["isolates"][isolate_index]
+
+        genbank_records = ctx.ncbi_client.fetch_genbank_records(
+            [s["accession"] for s in isolate["sequences"]],
+        )
+
+        if not genbank_records:
+            return ErrorHandledResult(
+                f"{basis} we could not find a source name on genbank."
+            )
+
+        source = extract_isolate_source(genbank_records)
+
+        ctx.update_isolate(
+            isolate_index,
+            {"source_name": source.name, "source_type": source.type.lower()},
+        )
+
+        return ErrorHandledResult(basis, True)
+
     return ErrorHandledResult(str(ctx.error["ctx"]["error"]))

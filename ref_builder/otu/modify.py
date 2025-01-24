@@ -5,7 +5,11 @@ from pydantic import ValidationError
 from structlog import get_logger
 
 from ref_builder.ncbi.client import NCBIClient
-from ref_builder.otu.utils import DeleteRationale, create_segments_from_records
+from ref_builder.otu.utils import (
+    DeleteRationale,
+    assign_records_to_segments,
+    create_segments_from_records,
+)
 from ref_builder.plan import (
     Plan,
     Segment,
@@ -245,21 +249,26 @@ def replace_sequence_in_otu(
         isolate_id,
         sequence_id,
     ) = otu.get_sequence_id_hierarchy_from_accession(replaced_accession)
+
     if sequence_id is None:
         logger.error("This sequence does not exist in this OTU.")
         return None
 
     isolate = otu.get_isolate(isolate_id)
 
-    records = ncbi.fetch_genbank_records([new_accession])
-    record = records[0]
+    record = ncbi.fetch_genbank_records([new_accession])[0]
+
+    if record.source.segment:
+        segment_id, _ = next(iter(assign_records_to_segments([record], otu.plan)))
+    else:
+        segment_id = otu.plan.segments[0].id
 
     new_sequence = repo.create_sequence(
         otu.id,
         accession=record.accession_version,
         definition=record.definition,
         legacy_id=None,
-        segment=record.source.segment,
+        segment=segment_id,
         sequence=record.sequence,
     )
 

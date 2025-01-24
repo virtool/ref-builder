@@ -122,7 +122,7 @@ def create_plan_from_records(
     binned_records = group_genbank_records_by_isolate(records)
     if len(binned_records) > 1:
         logger.fatal(
-            "More than one isolate found. Cannot create schema automatically.",
+            "More than one isolate found. Cannot create plan.",
             bins=binned_records,
         )
         return None
@@ -294,6 +294,6 @@ def assign_records_to_segments(
 
     for segment in plan.required_segments:
         if segment.id not in assigned_records:
-            raise ValueError("Missing one or more required segments")
+            raise ValueError("Missing one or more required segments.")
 
     return assigned_records

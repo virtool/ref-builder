@@ -4,7 +4,7 @@ import rich.console
 from rich.table import Table
 
 from ref_builder.models import OTUMinimal
-from ref_builder.plan import Plan, SegmentRule
+from ref_builder.plan import SegmentRule
 from ref_builder.resources import RepoOTU
 
 
@@ -51,36 +51,45 @@ def print_otu(otu: RepoOTU) -> None:
     console.print(table)
 
     console.line()
-    console.print("[bold]SCHEMA[/bold]")
+    console.print("[bold]PLAN[/bold]")
     console.line()
 
-    schema_table = Table(box=None)
+    plan_table = Table(box=None)
 
-    schema_table.add_column("SEGMENT")
-    schema_table.add_column("REQUIRED")
-    schema_table.add_column("LENGTH")
-    schema_table.add_column("TOLERANCE")
+    plan_table.add_column("NAME")
+    plan_table.add_column("REQUIRED")
+    plan_table.add_column("LENGTH")
+    plan_table.add_column("TOLERANCE")
+    plan_table.add_column("ID")
 
     if not otu.plan.monopartite:
         for segment in otu.plan.segments:
-            schema_table.add_row(
+            plan_table.add_row(
                 str(segment.name),
                 "[red]Yes[/red]"
                 if segment.required == SegmentRule.REQUIRED
                 else "[grey]No[/grey]",
                 str(segment.length),
                 str(segment.length_tolerance),
+                str(segment.id),
             )
     else:
         monopartite_segment = otu.plan.segments[0]
-        schema_table.add_row(
-            monopartite_segment.name if monopartite_segment.name is not None else "N/A",
+
+        segment_name = (
+            monopartite_segment.name
+            if monopartite_segment.name is not None
+            else "Unnamed"
+        )
+
+        plan_table.add_row(
+            segment_name,
             "[red]Yes[/red]",
             str(monopartite_segment.length),
             str(monopartite_segment.length_tolerance),
         )
 
-    console.print(schema_table)
+    console.print(plan_table)
 
     console.line()
     console.print("[bold]ISOLATES[/bold]")
@@ -97,13 +106,15 @@ def print_otu(otu: RepoOTU) -> None:
         )
 
         isolate_table.add_column("ACCESSION", width=max_accession_length)
+        isolate_table.add_column("LENGTH")
         isolate_table.add_column("SEGMENT", min_width=max_segment_name_length)
         isolate_table.add_column("DEFINITION")
 
         for sequence in sorted(isolate.sequences, key=lambda s: s.accession):
             isolate_table.add_row(
                 _render_nucleotide_link(str(sequence.accession)),
-                sequence.segment,
+                str(len(sequence.sequence)),
+                str(otu.plan.get_segment_by_id(sequence.segment).name),
                 sequence.definition,
             )
 

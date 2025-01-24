@@ -307,7 +307,7 @@ class SequenceFactory(ModelFactory[RepoSequence]):
     legacy_id = Use(__faker__.legacy_id)
     """Generate an 8-character unique identifier as used in virtool-cli."""
 
-    segment = Use(__faker__.segment)
+    segment = Use(__faker__.uuid4)
     """Generate a quasi-realistic mock segment string."""
 
     sequence = Use(__faker__.sequence)
@@ -410,8 +410,7 @@ class OTUFactory(ModelFactory[OTUBase]):
 
         for _ in range(cls.__faker__.random_int(2, 5)):
             sequences = [
-                SequenceFactory.build(segment=str(segment.name))
-                for segment in plan.segments
+                SequenceFactory.build(segment=segment.id) for segment in plan.segments
             ]
 
             isolates.append(IsolateFactory.build(sequences=sequences))

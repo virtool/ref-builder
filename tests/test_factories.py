@@ -1,5 +1,6 @@
 """Tests for data factories used in testing."""
 
+import uuid
 from uuid import uuid4
 
 from ref_builder.ncbi.models import NCBISource
@@ -22,7 +23,7 @@ def test_ncbi_source_factory():
     )
 
 
-def test_ncib_genbank_factory():
+def test_ncbi_genbank_factory():
     """Test that NCBIGenbankFactory creates valid fake Genbank records."""
     for dummy_record in NCBIGenbankFactory.coverage():
         assert RepoSequence(
@@ -30,7 +31,7 @@ def test_ncib_genbank_factory():
             accession=Accession.from_string(dummy_record.accession_version),
             definition=dummy_record.definition,
             legacy_id=None,
-            segment=dummy_record.source.segment,
+            segment=uuid.uuid4(),
             sequence=dummy_record.sequence,
         )
 

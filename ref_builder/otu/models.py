@@ -94,7 +94,7 @@ class OTUBase(BaseModel):
     """The name of the OTU (eg. TMV for Tobacco mosaic virus)"""
 
     plan: Plan
-    """The schema of the OTU"""
+    """The plan for the OTU."""
 
     representative_isolate: UUID4 | None
     """The UUID of the representative isolate of this OTU"""

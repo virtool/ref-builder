@@ -31,7 +31,9 @@ class RepoSettings(BaseModel):
     """The default settings of a Virtool reference repository."""
 
     default_segment_length_tolerance: float = Field(0.03, ge=0.0, le=1.0)
-    """The deviation a sequence is allowed from its plan segment's length before it fails validation."""
+    """The deviation a sequence is allowed from its plan segment's length before it
+    fails validation.
+    """
 
 
 class RepoSequence(BaseModel):
@@ -55,7 +57,7 @@ class RepoSequence(BaseModel):
     sequence: str
     """The sequence."""
 
-    segment: str
+    segment: UUID4
     """The sequence segment."""
 
     @field_validator("accession", mode="before")
@@ -72,13 +74,13 @@ class RepoSequence(BaseModel):
 
     @field_serializer("accession")
     @classmethod
-    def serialize_accession(self, accession: Accession) -> str:
+    def serialize_accession(cls: "RepoSequence", accession: Accession) -> str:
         """Serialize the accession to a string."""
         return str(accession)
 
 
-class IsolateSnapshot(BaseModel):
-    """Represents the metadata of an isolate as would exist in snapshot file data."""
+class RepoIsolate(BaseModel):
+    """Represents an isolate in a Virtool reference repository."""
 
     id: UUID4
     """The isolate id."""
@@ -92,42 +94,9 @@ class IsolateSnapshot(BaseModel):
     name: IsolateName | None
     """The isolate's source name metadata."""
 
-    @field_serializer("name")
-    def serialize_name(self, name: IsolateName | None) -> dict[str, str] | None:
-        """Serialize the isolate name."""
-        if name is None:
-            return None
-
-        return {
-            "type": name.type,
-            "value": name.value,
-        }
-
-    @field_validator("name", mode="before")
-    @classmethod
-    def convert_name(
-        cls: "RepoIsolate",
-        value: dict | IsolateName | None,
-    ) -> IsolateName | None:
-        """Convert the name to an IsolateName object."""
-        if value is None:
-            return value
-
-        if isinstance(value, IsolateName):
-            return value
-
-        if isinstance(value, dict):
-            return IsolateName(**value)
-
-        raise ValueError(f"Invalid type for name: {type(value)}")
-
-
-class RepoIsolate(IsolateSnapshot):
-    """Represents an isolate in a Virtool reference repository."""
-
     sequences: list[RepoSequence]
 
-    _sequences_by_accession: dict[str, RepoSequence] = {}
+    _sequences_by_accession: dict[str, RepoSequence]
     """A dictionary of sequences indexed by accession"""
 
     def __init__(self, **data) -> None:
@@ -208,6 +177,35 @@ class RepoIsolate(IsolateSnapshot):
 
         return None
 
+    @field_validator("name", mode="before")
+    @classmethod
+    def convert_name(
+        cls: "RepoIsolate",
+        value: dict | IsolateName | None,
+    ) -> IsolateName | None:
+        """Convert the name to an IsolateName object."""
+        if value is None:
+            return value
+
+        if isinstance(value, IsolateName):
+            return value
+
+        if isinstance(value, dict):
+            return IsolateName(**value)
+
+        raise ValueError(f"Invalid type for name: {type(value)}")
+
+    @field_serializer("name")
+    def serialize_name(self, name: IsolateName | None) -> dict[str, str] | None:
+        """Serialize the isolate name."""
+        if name is None:
+            return None
+
+        return {
+            "type": name.type,
+            "value": name.value,
+        }
+
 
 class RepoOTU(BaseModel):
     """Represents an OTU in a Virtool reference repository."""
@@ -234,7 +232,7 @@ class RepoOTU(BaseModel):
     """The type of molecular information contained in this OTU."""
 
     plan: Plan
-    """The schema of the OTU"""
+    """The plan."""
 
     taxid: int
     """The NCBI Taxonomy id for this OTU."""

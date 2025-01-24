@@ -28,7 +28,7 @@ def initialized_repo(empty_repo: Repo):
         ),
         name="Tobacco mosaic virus",
         plan=Plan.new(
-            segments=[
+            [
                 Segment.new(
                     length=150,
                     length_tolerance=empty_repo.settings.default_segment_length_tolerance,
@@ -44,7 +44,7 @@ def initialized_repo(empty_repo: Repo):
         "TMVABC.1",
         "TMV",
         None,
-        "RNA",
+        otu.plan.segments[0].id,
         "ACGT",
     )
 
@@ -394,7 +394,7 @@ def test_create_sequence(empty_repo: Repo):
         "TMVABC.1",
         "TMV",
         None,
-        "RNA",
+        otu.plan.segments[0].id,
         "ACGT",
     )
 
@@ -405,7 +405,7 @@ def test_create_sequence(empty_repo: Repo):
         accession=Accession(key="TMVABC", version=1),
         definition="TMV",
         legacy_id=None,
-        segment="RNA",
+        segment=otu.plan.segments[0].id,
         sequence="ACGT",
     )
 
@@ -420,7 +420,7 @@ def test_create_sequence(empty_repo: Repo):
             "accession": {"key": "TMVABC", "version": 1},
             "definition": "TMV",
             "legacy_id": None,
-            "segment": "RNA",
+            "segment": str(otu.plan.segments[0].id),
             "sequence": "ACGT",
         },
         "id": 3,
@@ -464,12 +464,14 @@ class TestGetOTU:
             plan=monopartite_plan,
         )
 
+        segment_id = otu.plan.segments[0].id
+
         sequence_1 = empty_repo.create_sequence(
             otu.id,
             "TMVABC.1",
             "TMV",
             None,
-            "RNA",
+            segment_id,
             "ACGT",
         )
 
@@ -486,7 +488,7 @@ class TestGetOTU:
             "TMVABCB.1",
             "TMV",
             None,
-            "RNA",
+            segment_id,
             "ACGTGGAGAGACC",
         )
 
@@ -511,7 +513,7 @@ class TestGetOTU:
                         accession=Accession(key="TMVABC", version=1),
                         definition="TMV",
                         legacy_id=None,
-                        segment="RNA",
+                        segment=segment_id,
                         sequence="ACGT",
                     ),
                 ],
@@ -526,7 +528,7 @@ class TestGetOTU:
                         accession=Accession(key="TMVABCB", version=1),
                         definition="TMV",
                         legacy_id=None,
-                        segment="RNA",
+                        segment=segment_id,
                         sequence="ACGTGGAGAGACC",
                     ),
                 ],
@@ -551,7 +553,7 @@ class TestGetOTU:
                     id=monopartite_plan.id,
                     segments=[
                         Segment(
-                            id=monopartite_plan.segments[0].id,
+                            id=segment_id,
                             length=150,
                             length_tolerance=empty_repo.settings.default_segment_length_tolerance,
                             name=None,
@@ -583,7 +585,7 @@ class TestGetOTU:
             "TMVABCB.1",
             "TMV",
             None,
-            "RNA",
+            otu.plan.segments[0].id,
             "ACGTGGAGAGACC",
         )
 
@@ -610,7 +612,7 @@ class TestGetOTU:
             "TMVABCB.1",
             "TMV",
             None,
-            "RNA",
+            otu.plan.segments[0].id,
             "ACGTGGAGAGACC",
         )
 
@@ -664,17 +666,8 @@ class TestGetIsolate:
             accession="EMPTY1.1",
             definition="TMV B",
             legacy_id=None,
-            segment="RNA A",
+            segment=otu.plan.segments[0].id,
             sequence="GACCACGTGGAGA",
-        )
-
-        sequence_2_1 = initialized_repo.create_sequence(
-            otu.id,
-            accession="EMPTY2.1",
-            definition="TMV A",
-            legacy_id=None,
-            segment="RNA B",
-            sequence="ACTAAGAGAAAAA",
         )
 
         isolate_unnamed = initialized_repo.create_isolate(
@@ -687,25 +680,16 @@ class TestGetIsolate:
             otu.id, isolate_unnamed.id, sequence_id=sequence_1_1.id
         )
 
-        initialized_repo.link_sequence(
-            otu.id, isolate_unnamed.id, sequence_id=sequence_2_1.id
-        )
-
         otu_after = next(initialized_repo.iter_otus())
 
         assert len(otu_after.isolate_ids) == len(otu.isolate_ids) + 1
-
-        assert "EMPTY1" in otu_after.accessions
-
-        assert "EMPTY2" in otu_after.accessions
-
+        assert otu_after.accessions == {"TMVABC", "EMPTY1"}
         assert otu_after.isolate_ids == {isolate_before.id, isolate_unnamed.id}
 
         isolate_unnamed_after = otu_after.get_isolate(isolate_unnamed.id)
 
         assert isolate_unnamed_after.name is None
-
-        assert isolate_unnamed_after.accessions == {"EMPTY1", "EMPTY2"}
+        assert isolate_unnamed_after.accessions == {"EMPTY1"}
 
 
 class TestExcludeAccessions:
@@ -955,7 +939,7 @@ def test_replace_sequence(initialized_repo: Repo):
         "TMVABCC.1",
         "TMV edit",
         None,
-        "RNA",
+        otu_before.plan.segments[0].id,
         "ACGTGGAGAGACCA",
     )
 
