@@ -79,6 +79,8 @@ def print_otu(otu: RepoOTU) -> None:
     console.line()
     console.print("[bold]ISOLATES[/bold]")
 
+    index_by_segment_id = {segment.id: i for i, segment in enumerate(otu.plan.segments)}
+
     for isolate in otu.isolates:
         console.line()
         console.print(
@@ -97,11 +99,14 @@ def print_otu(otu: RepoOTU) -> None:
         isolate_table.add_column("SEGMENT", min_width=max_segment_name_length)
         isolate_table.add_column("DEFINITION")
 
-        for sequence in sorted(isolate.sequences, key=lambda s: s.accession):
+        for sequence in sorted(
+            isolate.sequences,
+            key=lambda s: index_by_segment_id[s.segment],
+        ):
             isolate_table.add_row(
                 _render_nucleotide_link(str(sequence.accession)),
                 str(len(sequence.sequence)),
-                str(otu.plan.get_segment_by_id(sequence.segment).name),
+                str(otu.plan.get_segment_by_id(sequence.segment).name or "Unnamed"),
                 sequence.definition,
             )
 
