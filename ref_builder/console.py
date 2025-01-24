@@ -2,6 +2,7 @@ from collections.abc import Iterator
 
 import rich.console
 from rich.table import Table
+from rich.text import Text
 
 from ref_builder.models import OTUMinimal
 from ref_builder.plan import SegmentRule
@@ -22,7 +23,7 @@ def print_otu(otu: RepoOTU) -> None:
     :param otu: The OTU to print.
 
     """
-    console.print(f"[bold][underline]{otu.name}[/bold][/underline]")
+    console.print(Text(otu.name, style="bold underline"))
     console.line()
 
     table = Table(
