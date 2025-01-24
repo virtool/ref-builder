@@ -73,7 +73,7 @@ def build_json(indent: bool, output_path: Path, path: Path, version: str) -> Non
                 },
             )
 
-        isolates.sort(key=lambda x: x["id"])
+        isolates.sort(key=lambda x: x["source_type"] + x["source_name"])
 
         molecule = _get_molecule_string(otu.molecule)
 
