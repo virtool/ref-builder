@@ -197,7 +197,7 @@ class NCBIClient:
 
             base_logger.debug(
                 "Large fetch. May take longer than expected...",
-                result_count=int(result["Count"]),
+                result_count=result_count,
                 page=page,
                 page_size=ESEARCH_PAGE_SIZE,
                 taxid=taxid,
