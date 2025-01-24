@@ -123,6 +123,12 @@ class TestFetchAccessionsByTaxid:
         """Test that the client returns an empty list when the taxid does not exist."""
         assert NCBIClient.fetch_accessions_by_taxid(99999999) == []
 
+    def test_giant_ok(self):
+        """Test that the client returns a list of results when the accession list
+        is long enough to force pagination.
+        """
+        assert len(NCBIClient.fetch_accessions_by_taxid(12585)) > 1000
+
 
 class TestFetchTaxonomy:
     @pytest.mark.ncbi()
