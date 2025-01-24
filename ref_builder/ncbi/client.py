@@ -187,14 +187,22 @@ class NCBIClient:
         return []
 
     @staticmethod
-    def fetch_accessions_by_taxid(taxid: int) -> list[str]:
+    def fetch_accessions_by_taxid(
+        taxid: int,
+        terms: NuccoreSearchTerms | None = None,
+    ) -> list[str]:
         """Fetch all accessions associated with the given ``taxid``.
 
         :param taxid: A Taxonomy ID
+        :param terms: A dataclass containing scope limiting terms for this Entrez search
         :return: A list of Genbank accessions
         """
         page = 1
         accessions = []
+
+        search_term = f"txid{taxid}[orgn]"
+        if terms is not None:
+            search_term += f" AND {terms.generate_filter_string()}"
 
         # If there are more than 1000 accessions, we need to paginate.
         while True:
@@ -203,7 +211,7 @@ class NCBIClient:
             with log_http_error():
                 handle = Entrez.esearch(
                     db=NCBIDatabase.NUCCORE,
-                    term=f"txid{taxid}[orgn]",
+                    term=search_term,
                     idtype="acc",
                     retstart=retstart,
                     retmax=ESEARCH_PAGE_SIZE,
