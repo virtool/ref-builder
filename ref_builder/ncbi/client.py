@@ -175,21 +175,33 @@ class NCBIClient:
 
         # If there are more than 1000 accessions, we need to paginate.
         while True:
+            retstart = (page - 1) * ESEARCH_PAGE_SIZE
+
             with log_http_error():
                 handle = Entrez.esearch(
                     db=NCBIDatabase.NUCCORE,
                     term=f"txid{taxid}[orgn]",
                     idtype="acc",
-                    retstart=(page - 1) * ESEARCH_PAGE_SIZE,
+                    retstart=retstart,
                     retmax=ESEARCH_PAGE_SIZE,
                 )
 
             result = Entrez.read(handle)
 
+            result_count = int(result["Count"])
+
             accessions += result["IdList"]
 
-            if int(result["Count"]) <= ESEARCH_PAGE_SIZE:
+            if result_count - retstart <= ESEARCH_PAGE_SIZE:
                 break
+
+            base_logger.debug(
+                "Large fetch. May take longer than expected...",
+                result_count=int(result["Count"]),
+                page=page,
+                page_size=ESEARCH_PAGE_SIZE,
+                taxid=taxid,
+            )
 
             page += 1
 
