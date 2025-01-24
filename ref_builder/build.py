@@ -61,7 +61,7 @@ def build_json(indent: bool, output_path: Path, path: Path, version: str) -> Non
 
             isolates.append(
                 {
-                    "id": isolate.legacy_id or isolate.id,
+                    "id": isolate.legacy_id or str(isolate.id),
                     "default": isolate.id == otu.representative_isolate,
                     "sequences": sequences,
                     "source_name": isolate.name.value
