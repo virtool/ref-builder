@@ -3,6 +3,7 @@
 import os
 from collections.abc import Collection
 from contextlib import contextmanager
+from dataclasses import dataclass
 from enum import StrEnum
 from http import HTTPStatus
 from urllib.error import HTTPError
@@ -27,6 +28,8 @@ base_logger = get_logger("ncbi")
 ESEARCH_PAGE_SIZE = 1000
 """The number of results to fetch per page in an Entrez esearch query."""
 
+MAX_SEQUENCE_LENGTH = 999999
+
 
 class GenbankRecordKey(StrEnum):
     """Genbank record keys."""
@@ -38,6 +41,26 @@ class GenbankRecordKey(StrEnum):
     LENGTH = "GBSeq_length"
     PRIMARY_ACCESSION = "GBSeq_primary-accession"
     SEQUENCE = "GBSeq_sequence"
+
+
+@dataclass
+class NuccoreSearchTerms:
+    sequence_min_length: int = 0
+
+    sequence_max_length: int = MAX_SEQUENCE_LENGTH
+
+    def generate_filter_string(self) -> str:
+        """Return a term filter for the current search terms."""
+        if self.sequence_min_length > 0:
+            if self.sequence_max_length < MAX_SEQUENCE_LENGTH:
+                return f'"{self.sequence_min_length}"[SLEN] : "{self.sequence_max_length}"[SLEN]'
+
+            return f'"{self.sequence_min_length}"[SLEN]'
+
+        if self.sequence_max_length < MAX_SEQUENCE_LENGTH:
+            return f'"{self.sequence_max_length}"[SLEN]'
+
+        return ""
 
 
 class NCBIClient:
