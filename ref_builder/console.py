@@ -63,31 +63,15 @@ def print_otu(otu: RepoOTU) -> None:
     plan_table.add_column("TOLERANCE")
     plan_table.add_column("ID")
 
-    if not otu.plan.monopartite:
-        for segment in otu.plan.segments:
-            plan_table.add_row(
-                str(segment.name),
-                "[red]Yes[/red]"
-                if segment.required == SegmentRule.REQUIRED
-                else "[grey]No[/grey]",
-                str(segment.length),
-                str(segment.length_tolerance),
-                str(segment.id),
-            )
-    else:
-        monopartite_segment = otu.plan.segments[0]
-
-        segment_name = (
-            monopartite_segment.name
-            if monopartite_segment.name is not None
-            else "Unnamed"
-        )
-
+    for segment in otu.plan.segments:
         plan_table.add_row(
-            segment_name,
-            "[red]Yes[/red]",
-            str(monopartite_segment.length),
-            str(monopartite_segment.length_tolerance),
+            str("Unnamed" if segment.name is None else segment.name),
+            "[red]Yes[/red]"
+            if segment.required == SegmentRule.REQUIRED
+            else "[grey]No[/grey]",
+            str(segment.length),
+            str(segment.length_tolerance),
+            str(segment.id),
         )
 
     console.print(plan_table)
