@@ -60,7 +60,7 @@ def add_genbank_isolate(
         otu_logger.warning(
             e,
             isolate_name=str(isolate_name),
-            isolate_records=sorted(isolate_records.keys()),
+            accessions=sorted(isolate_records.keys()),
         )
         return None
 
