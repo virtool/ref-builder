@@ -31,12 +31,9 @@ def auto_update_otu(
 
     log = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
-    accessions = ncbi.fetch_accessions_by_taxid(otu.taxid)
+    accessions = ncbi.filter_accessions(ncbi.fetch_accessions_by_taxid(otu.taxid))
 
-    fetch_list = sorted(
-        {Accession.from_string(accession).key for accession in accessions}
-        - otu.blocked_accessions
-    )
+    fetch_list = sorted({accession.key for accession in accessions} - otu.blocked_accessions)
 
     if fetch_list:
         log.info("Syncing OTU with Genbank.")
@@ -78,7 +75,11 @@ def update_isolate_from_records(
     if len(records) == 1:
         assigned = {otu.plan.segments[0].id: records[0]}
     else:
-        assigned = assign_records_to_segments(records, otu.plan)
+        try:
+            assigned = assign_records_to_segments(records, otu.plan)
+        except ValueError as exc:
+            logger.error(exc)
+            return None
 
     for segment_id, record in assigned.items():
         _, accession = parse_refseq_comment(record.comment)
@@ -179,11 +180,8 @@ def promote_otu_accessions(
 
     log.debug("Checking for promotable records.", accessions=sorted(otu.accessions))
 
-    accessions = ncbi.fetch_accessions_by_taxid(otu.taxid)
-    fetch_list = sorted(
-        set(Accession.from_string(accession).key for accession in accessions)
-        - otu.blocked_accessions
-    )
+    accessions = ncbi.filter_accessions(ncbi.fetch_accessions_by_taxid(otu.taxid))
+    fetch_list = sorted({accession.key for accession in accessions} - otu.blocked_accessions)
 
     if fetch_list:
         records = ncbi.fetch_genbank_records(fetch_list)
@@ -239,7 +237,11 @@ def promote_otu_accessions_from_records(
             f"Promoting {isolate.name}", predecessor_accessions=isolate.accessions
         )
 
-        promoted_isolate = update_isolate_from_records(repo, otu, isolate_id, records)
+        try:
+            promoted_isolate = update_isolate_from_records(repo, otu, isolate_id, records)
+        except ValueError as e:
+            logger.exception(e)
+            continue
 
         otu_logger.debug(
             f"{isolate.name} sequences promoted using RefSeq data",
