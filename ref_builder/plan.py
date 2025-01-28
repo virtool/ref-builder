@@ -3,7 +3,14 @@ from enum import StrEnum
 from uuid import UUID, uuid4
 from warnings import warn
 
-from pydantic import UUID4, BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    UUID4,
+    field_validator,
+    model_validator,
+)
 from pydantic.dataclasses import dataclass
 
 from ref_builder.ncbi.models import NCBIGenbank, NCBISourceMolType
@@ -95,6 +102,15 @@ class Segment(BaseModel):
             name=extract_segment_name_from_record(record),
             required=required,
         )
+
+    @classmethod
+    @field_validator("required")
+    def convert_segment_rule(cls, value: str | SegmentRule):
+        """Convert segment rule to enum if string."""
+        if isinstance(value, SegmentRule):
+            return value
+
+        return SegmentRule(value)
 
 
 class Plan(BaseModel):
