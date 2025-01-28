@@ -60,7 +60,7 @@ def create_segments_from_records(
     segments = []
 
     if len(records) > 1 and not all(r.source.segment for r in records):
-        raise ValueError("Segment name found for multipartite OTU segment.")
+        raise ValueError("Segment name not found for multipartite OTU segment.")
 
     return [
         Segment.from_record(record, length_tolerance, rule)
@@ -228,15 +228,23 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
 def assign_records_to_segments(
     records: list[NCBIGenbank], plan: Plan
 ) -> dict[UUID, NCBIGenbank]:
-    """Assign genbank records segment IDs based on the passed.
+    """Assign genbank records segment IDs based on the passed plan.
 
     Assignment is based on segment naming. The function tries to normalize the segment
-    name from Genbank and match it with a segment in the plan. If a match is found, the
+    name from the Genbank source table and match it with a segment in the plan. If a
+    match to the normalized segment name is found in the plan, the record is assigned to
+    the segment.
+
+    Exceptions are raised when:
+
+    * More than one segment is unnamed. Monopartite plans are allowed one unnamed
+      segment.
+    * A segment name is found in the records that doesn't exist in the plan.
+    * A segment name is required by the plan but not found in the records.
+    * There are duplicate segment names in the records.1
 
     The assigned segments are returned as a dictionary with segment IDs as records keyed
     by segment IDs.
-
-    This function does
 
     :param records: A list of Genbank records.
     :param plan: A plan.
