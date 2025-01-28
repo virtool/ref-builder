@@ -183,8 +183,8 @@ def create_isolate(
     try:
         isolate = repo.create_isolate(
             otu.id,
-            None,
-            isolate_name,
+            legacy_id=None,
+            name=isolate_name,
         )
     except ValueError as e:
         if "Isolate name already exists" in str(e):
@@ -221,7 +221,7 @@ def create_sequence_from_record(
     segment_id: UUID,
 ) -> RepoSequence | None:
     """Take a NCBI Nucleotide record and create a new sequence."""
-    sequence = repo.create_sequence(
+    return repo.create_sequence(
         otu.id,
         accession=record.accession_version,
         definition=record.definition,
@@ -229,5 +229,3 @@ def create_sequence_from_record(
         segment=segment_id,
         sequence=record.sequence,
     )
-
-    return sequence

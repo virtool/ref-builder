@@ -4,25 +4,19 @@ from uuid import UUID
 
 import click
 import structlog
-from click import Context
 
 from ref_builder.cli.validate import validate_no_duplicate_accessions
 from ref_builder.console import print_otu, print_otu_list
 from ref_builder.options import ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu
-from ref_builder.otu.isolate import (
-    add_and_name_isolate,
-    add_genbank_isolate,
-    add_unnamed_isolate,
-)
 from ref_builder.otu.modify import (
     add_segments_to_plan,
+    allow_accessions_into_otu,
     exclude_accessions_from_otu,
-    resize_monopartite_plan,
+    rename_plan_segment,
     set_representative_isolate,
 )
 from ref_builder.otu.update import auto_update_otu, promote_otu_accessions
-from ref_builder.otu.utils import RefSeqConflictError
 from ref_builder.plan import SegmentName, SegmentRule
 from ref_builder.repo import Repo
 from ref_builder.utils import IsolateName, IsolateNameType
@@ -104,143 +98,48 @@ def otu_list(path: Path) -> None:
     print_otu_list(Repo(path).iter_minimal_otus())
 
 
-@otu.command(name="fetch")
+@otu.command(name="update")
+@ignore_cache_option
+@click.pass_context
 @click.argument("TAXID", type=int)
-@path_option
-def otu_fetch(path: Path, taxid: int) -> None:
-    """Fetch all new isolates for an OTU."""
+def otu_auto_update(path: Path, taxid: int, ignore_cache: bool) -> None:
+    """Update an OTU with the latest data from NCBI."""
     repo = Repo(path)
-
     otu_ = repo.get_otu_by_taxid(taxid)
 
     if otu_ is None:
         click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
+        click.echo(f'Run "virtool otu create {taxid} --autofill" instead.')
         sys.exit(1)
 
-    auto_update_otu(repo, otu_)
+    auto_update_otu(repo, otu_, ignore_cache=ignore_cache)
 
 
-@otu.group(invoke_without_command=True)
-@click.argument("TAXID", type=int)
+@otu.command(name="promote")
 @path_option
-@click.pass_context
-def update(ctx: Context, path: Path, taxid: int) -> None:
-    """Update the specified OTU with new data."""
-    repo = Repo(path)
-
-    ctx.ensure_object(dict)
-    ctx.obj = {
-        "REPO": repo,
-        "TAXID": taxid,
-    }
-
-    if not repo.get_otu_id_by_taxid(taxid):
-        click.echo(f"OTU {taxid} not found.", err=True)
-        sys.exit(1)
-
-    if ctx.invoked_subcommand is None:
-        click.echo(ctx.get_help())
-
-
-@update.command(name="promote")  # type: ignore
 @ignore_cache_option
-@click.pass_context
+@click.argument("TAXID", type=int)
 def otu_promote_accessions(
-    ctx: Context,
+    path: Path,
+    taxid: int,
     ignore_cache: bool,
 ) -> None:
-    """Promote all RefSeq accessions within this OTU."""
-    repo = ctx.obj["REPO"]
+    """Promote all RefSeq accessions within an OTU."""
+    repo = Repo(path)
+    otu_ = repo.get_otu_by_taxid(taxid)
 
-    otu_ = repo.get_otu_by_taxid(ctx.obj["TAXID"])
+    if otu_ is None:
+        click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
+        click.echo(f'Run "virtool otu create {taxid} --autofill" instead.')
+        sys.exit(1)
 
     promote_otu_accessions(repo, otu_, ignore_cache)
 
 
-@update.command(name="isolate")  # type: ignore
-@click.argument(
-    "accessions_",
-    callback=validate_no_duplicate_accessions,
-    metavar="ACCESSIONS",
-    nargs=-1,
-    type=str,
-    required=True,
-)
-@click.option(
-    "--unnamed",
-    is_flag=True,
-    default=False,
-    help="ignore isolate names in Genbank sources",
-)
-@click.option(
-    "--name",
-    type=(IsolateNameType, str),
-    help='an overriding name for the isolate, e.g. "isolate ARWV1"',
-)
+@otu.command(name="exclude-accessions")  # type: ignore
+@path_option
 @ignore_cache_option
-@click.pass_context
-def isolate_create(
-    ctx: Context,
-    accessions_: list[str],
-    ignore_cache: bool,
-    name: tuple[IsolateNameType, str] | None,
-    unnamed: bool,
-) -> None:
-    """Create a new isolate using the given accessions."""
-    repo = ctx.obj["REPO"]
-    taxid = ctx.obj["TAXID"]
-
-    otu_ = repo.get_otu_by_taxid(taxid)
-    if otu_ is None:
-        click.echo(f"OTU {taxid} not found.", err=True)
-        sys.exit(1)
-
-    if unnamed:
-        add_unnamed_isolate(
-            repo,
-            otu_,
-            accessions_,
-            ignore_cache=ignore_cache,
-        )
-
-    if name is not None:
-        isolate_name_type, isolate_name_value = name
-        isolate_name_ = IsolateName(type=isolate_name_type, value=isolate_name_value)
-
-        try:
-            add_and_name_isolate(
-                repo,
-                otu_,
-                accessions_,
-                ignore_cache=ignore_cache,
-                isolate_name=isolate_name_,
-            )
-        except RefSeqConflictError as err:
-            click.echo(
-                f"{err.isolate_name} already exists, but RefSeq items may be "
-                "promotable.",
-            )
-            sys.exit(1)
-
-    try:
-        add_genbank_isolate(
-            repo,
-            otu_,
-            accessions_,
-            ignore_cache=ignore_cache,
-        )
-    except RefSeqConflictError as err:
-        click.echo(
-            f"{err.isolate_name} already exists, but RefSeq items may be promotable,",
-        )
-        sys.exit(1)
-
-    except ValueError as e:
-        click.echo(e, err=True)
-        sys.exit(1)
-
-
-@update.command(name="exclude")  # type: ignore
+@click.argument("TAXID", type=int)
 @click.argument(
     "accessions_",
     metavar="ACCESSIONS",
@@ -248,9 +147,9 @@ def isolate_create(
     type=str,
     required=True,
 )
-@click.pass_context
-def accession_exclude(
-    ctx: Context,
+def otu_exclude_accessions(
+    path: Path,
+    taxid: int,
     accessions_: list[str],
 ) -> None:
     """Exclude the given accessions from this OTU.
@@ -258,9 +157,7 @@ def accession_exclude(
     Any duplicate accessions will be ignored. Only one exclusion per unique accession
     will be made.
     """
-    repo = ctx.obj["REPO"]
-    taxid = ctx.obj["TAXID"]
-
+    repo = Repo(path)
     otu_ = repo.get_otu_by_taxid(taxid)
 
     if otu_ is None:
@@ -270,22 +167,52 @@ def accession_exclude(
     exclude_accessions_from_otu(repo, otu_, accessions_)
 
 
-@update.command(name="default")  # type: ignore
-@click.argument("ISOLATE_KEY", type=str)
-@click.pass_context
-def otu_set_representative_isolate(
-    ctx: Context,
-    isolate_key: str,
+@otu.command(name="allow-accessions")  # type: ignore
+@path_option
+@ignore_cache_option
+@click.argument("TAXID", type=int)
+@click.argument(
+    "accessions_",
+    metavar="ACCESSIONS",
+    nargs=-1,
+    type=str,
+    required=True,
+)
+def otu_allow_accessions(
+    path: Path,
+    taxid: int,
+    accessions_: list[str],
 ) -> None:
-    """Update the OTU with a new representative isolate."""
-    taxid = ctx.obj["TAXID"]
+    """Allow the given excluded accessions back into the OTU.
 
-    repo = ctx.obj["REPO"]
-
+    Any duplicate accessions will be ignored. Only one exclusion per unique accession
+    will be made.
+    """
+    repo = Repo(path)
     otu_ = repo.get_otu_by_taxid(taxid)
 
     if otu_ is None:
-        click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
+        click.echo(f"OTU {taxid} not found.", err=True)
+        sys.exit(1)
+
+    allow_accessions_into_otu(repo, otu_, set(accessions_))
+
+
+@otu.command(name="set-default-isolate")  # type: ignore
+@path_option
+@click.argument("TAXID", type=int)
+@click.argument("ISOLATE_KEY", type=str)
+def otu_set_representative_isolate(
+    path: Path,
+    taxid: int,
+    isolate_key: str,
+) -> None:
+    """Update the OTU with a new representative isolate."""
+    repo = Repo(path)
+    otu_ = repo.get_otu_by_taxid(taxid)
+
+    if otu_ is None:
+        click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
     try:
@@ -307,13 +234,8 @@ def otu_set_representative_isolate(
     set_representative_isolate(repo, otu_, isolate_id)
 
 
-@update.group()
-@click.pass_context
-def plan(ctx: Context) -> None:
-    """Add to and replace isolate plans for this OTU."""
-
-
-@plan.command(name="extend")
+@otu.command(name="extend-plan")
+@click.argument("TAXID", type=int)
 @click.argument(
     "accessions_",
     metavar="ACCESSIONS",
@@ -326,19 +248,19 @@ def plan(ctx: Context) -> None:
     is_flag=True,
     help="Set additional segments as fully optional",
 )
-@click.pass_context
+@path_option
 @ignore_cache_option
 def plan_extend_segment_list(
-    ctx: Context,
+    path: Path,
+    taxid: int,
     accessions_: list[str],
     optional: bool,
     ignore_cache: bool,
 ) -> None:
     """Add recommended or optional segments to the OTU plan."""
-    repo = ctx.obj["REPO"]
-    taxid = ctx.obj["TAXID"]
-
+    repo = Repo(path)
     otu_ = repo.get_otu_by_taxid(taxid)
+
     if otu_ is None:
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
@@ -355,52 +277,34 @@ def plan_extend_segment_list(
         click.echo(e, err=True)
 
 
-@plan.command(name="multipartite")
+@otu.command(name="rename-plan-segment")
+@click.argument("TAXID", type=int)
+@click.argument("SEGMENT_ID", type=str)
 @click.argument(
-    "accessions_",
-    metavar="ACCESSIONS",
-    nargs=-1,
+    "segment_name_",
+    metavar="SEGMENT_NAME",
+    nargs=2,
     type=str,
     required=True,
 )
-@click.option(
-    "--name",
-    type=(str, str),
-    help='a name for the originalsegment, e.g. "RNA A"',
-)
-@click.option(
-    "--optional",
-    is_flag=True,
-    help="Set additional segments as fully optional",
-)
-@click.pass_context
-@ignore_cache_option
-def plan_resize_monopartite(
-    ctx: Context,
-    name: tuple[str, str],
-    accessions_: list[str],
-    optional: bool,
-    ignore_cache: bool,
+@path_option
+def plan_rename_segment(
+    path: Path, taxid: int, segment_id: str, segment_name_: tuple[str, str]
 ) -> None:
-    """Change a monopartite OTU plan to a multipartite plan."""
-    repo = ctx.obj["REPO"]
-    taxid = ctx.obj["TAXID"]
-
-    prefix, key = name
-
+    """Give an unnamed segment a name."""
+    repo = Repo(path)
     otu_ = repo.get_otu_by_taxid(taxid)
+
     if otu_ is None:
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
     try:
-        resize_monopartite_plan(
+        rename_plan_segment(
             repo,
             otu_,
-            name=SegmentName(prefix=prefix, key=key),
-            rule=SegmentRule.OPTIONAL if optional else SegmentRule.RECOMMENDED,
-            accessions=accessions_,
-            ignore_cache=ignore_cache,
+            segment_id=UUID(segment_id),
+            segment_name=SegmentName(segment_name_[0], segment_name_[1]),
         )
     except ValueError as e:
         click.echo(e, err=True)
