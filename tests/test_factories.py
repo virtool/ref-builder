@@ -3,6 +3,8 @@
 import uuid
 from uuid import uuid4
 
+from syrupy import SnapshotAssertion
+
 from ref_builder.ncbi.models import NCBISource
 from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
 from ref_builder.utils import Accession
@@ -15,25 +17,35 @@ from tests.fixtures.factories import (
 )
 
 
-def test_ncbi_source_factory():
+def test_ncbi_source_factory(
+    ncbi_source_factory: NCBISourceFactory, snapshot: SnapshotAssertion
+):
     """Test that NCBISourceFactory creates valid mock NCBISource objects."""
     assert all(
         isinstance(dummy_source, NCBISource)
-        for dummy_source in NCBISourceFactory.coverage()
+        for dummy_source in ncbi_source_factory.coverage()
     )
 
 
-def test_ncbi_genbank_factory():
+def test_ncbi_genbank_factory(
+    ncbi_genbank_factory: NCBIGenbankFactory, snapshot: SnapshotAssertion
+):
     """Test that NCBIGenbankFactory creates valid fake Genbank records."""
-    for dummy_record in NCBIGenbankFactory.coverage():
-        assert RepoSequence(
+    records = list(ncbi_genbank_factory.coverage())
+
+    assert [
+        RepoSequence(
             id=uuid4(),
-            accession=Accession.from_string(dummy_record.accession_version),
-            definition=dummy_record.definition,
+            accession=Accession.from_string(record.accession_version),
+            definition=record.definition,
             legacy_id=None,
             segment=uuid.uuid4(),
-            sequence=dummy_record.sequence,
+            sequence=record.sequence,
         )
+        for record in records
+    ]
+
+    assert [record.model_dump() for record in records] == snapshot
 
 
 def test_sequence_factory(sequence_factory: SequenceFactory):

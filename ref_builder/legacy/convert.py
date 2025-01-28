@@ -1,14 +1,12 @@
 import json
 from collections import defaultdict
 from pathlib import Path
-from pprint import pprint
 
 from ref_builder.console import console
 from ref_builder.legacy.utils import iter_legacy_otus
 from ref_builder.logs import configure_logger
 from ref_builder.models import Molecule
 from ref_builder.ncbi.client import NCBIClient
-from ref_builder.otu.models import OTU
 from ref_builder.plan import Plan, Segment, SegmentName, SegmentRule, parse_segment_name
 from ref_builder.repo import Repo
 from ref_builder.utils import DataType, IsolateName, IsolateNameType

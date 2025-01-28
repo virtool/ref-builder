@@ -7,12 +7,10 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.isolate import (
     assign_records_to_segments,
-    create_monopartite_isolate,
-    create_multipartite_isolate,
+    create_isolate,
 )
 from ref_builder.otu.utils import (
     DeleteRationale,
-    check_isolate_size,
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
@@ -24,12 +22,10 @@ logger = get_logger("otu.update")
 
 
 def auto_update_otu(repo: Repo, otu: RepoOTU) -> None:
-    """Fetch a full list of Nucleotide accessions associated with the OTU
-    and pass the list to the add method.
-    """
+    """Fetch new accessions for the OTU and create isolates as possible."""
     ncbi = NCBIClient(False)
 
-    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
+    log = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
     accessions = ncbi.fetch_accessions_by_taxid(otu.taxid)
 
@@ -39,10 +35,10 @@ def auto_update_otu(repo: Repo, otu: RepoOTU) -> None:
     )
 
     if fetch_list:
-        otu_logger.info("Syncing OTU with Genbank.")
+        log.info("Syncing OTU with Genbank.")
         update_otu_with_accessions(repo, otu, fetch_list)
     else:
-        otu_logger.info("OTU is up to date.")
+        log.info("OTU is up to date.")
 
 
 def update_isolate_from_accessions(
@@ -59,9 +55,9 @@ def update_isolate_from_accessions(
 
     ncbi = NCBIClient(ignore_cache)
 
-    new_records = ncbi.fetch_genbank_records(accessions)
-
-    return update_isolate_from_records(repo, otu, isolate_id, new_records)
+    return update_isolate_from_records(
+        repo, otu, isolate_id, ncbi.fetch_genbank_records(accessions)
+    )
 
 
 def update_isolate_from_records(
@@ -81,7 +77,7 @@ def update_isolate_from_records(
         assigned = assign_records_to_segments(records, otu.plan)
 
     for segment_id, record in assigned.items():
-        status, accession = parse_refseq_comment(record.comment)
+        _, accession = parse_refseq_comment(record.comment)
 
         if accession in isolate.accessions:
             old_sequence = isolate.get_sequence_by_accession(accession)
@@ -127,112 +123,44 @@ def update_otu_with_accessions(
     otu: RepoOTU,
     accessions: list,
     ignore_cache: bool = False,
-) -> None:
+) -> list[IsolateName]:
     """Take a list of accessions, filter for eligible accessions and
     add new sequences to the OTU.
     """
-    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
+    log = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
     ncbi = NCBIClient(ignore_cache)
 
-    otu_logger.info(
-        "Fetching records",
+    log.info(
+        "Fetching records.",
         count=len(accessions),
         fetch_list=sorted(accessions),
     )
 
     records = ncbi.fetch_genbank_records(accessions)
 
-    promoted_accessions = promote_otu_accessions(repo, otu, ignore_cache)
-    if promoted_accessions:
+    if promote_otu_accessions(repo, otu, ignore_cache):
         otu = repo.get_otu(otu.id)
-
-    refseq_records, non_refseq_records = _bin_refseq_records(records)
-
-    # Add remaining RefSeq records first
-    otu = repo.get_otu(otu.id)
-    file_records_into_otu(repo, otu, refseq_records)
-
-    # Add non-RefSeq records last.
-    otu = repo.get_otu(otu.id)
-    file_records_into_otu(repo, otu, non_refseq_records)
-
-
-def file_records_into_otu(
-    repo: Repo,
-    otu: RepoOTU,
-    records: list[NCBIGenbank],
-) -> list[IsolateName]:
-    """Create isolates from a list of GenBank records.
-
-    If an isolate candidate does not match the plan, the records are not added.
-    """
-    otu_logger = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
-
-    record_bins = group_genbank_records_by_isolate(records)
-
-    otu_logger.debug(
-        "Found potential new isolates",
-        count=len(record_bins),
-        names=[str(isolate_name) for isolate_name in record_bins],
-    )
 
     new_isolate_names = []
 
-    for isolate_name in record_bins:
-        isolate_records = record_bins[isolate_name]
+    for divided_records in (
+        [record for record in records if record.refseq],
+        [record for record in records if not record.refseq],
+    ):
+        otu = repo.get_otu(otu.id)
 
-        try:
-            check_isolate_size(plan=otu.plan, isolate_count=len(isolate_records))
-        except ValueError as e:
-            otu_logger.warning(
-                e,
-                isolate_name=str(isolate_name),
-                isolate_records=[str(accession) for accession in isolate_records],
-            )
-            continue
-
-        if otu.plan.monopartite:
-            isolate = create_monopartite_isolate(
-                repo,
-                otu,
-                isolate_name,
-                record=list(isolate_records.values())[0],
+        for isolate_name, isolate_records in group_genbank_records_by_isolate(
+            divided_records
+        ).items():
+            isolate = create_isolate(
+                repo, otu, isolate_name, list(isolate_records.values())
             )
 
-            if isolate is not None:
-                new_isolate_names.append(isolate_name)
+            if isolate:
+                new_isolate_names.append(isolate.name)
 
-        else:
-            assigned_records = None
-            try:
-                assigned_records = assign_records_to_segments(
-                    list(isolate_records.values()), otu.plan
-                )
-
-            except ValueError as e:
-                otu_logger.error(e)
-
-            if assigned_records:
-                isolate = create_multipartite_isolate(
-                    repo,
-                    otu,
-                    isolate_name,
-                    assigned_records,
-                )
-
-                new_isolate_names.append(isolate_name)
-
-    if new_isolate_names:
-        otu_logger.info(
-            "New isolates added",
-            new_isolates=[str(isolate_name) for isolate_name in new_isolate_names],
-        )
-
-        return new_isolate_names
-
-    otu_logger.info("No new isolates added.")
-    return []
+    return new_isolate_names
 
 
 def promote_otu_accessions(
@@ -243,11 +171,9 @@ def promote_otu_accessions(
     """
     ncbi = NCBIClient(ignore_cache)
 
-    otu_logger = logger.bind(otu_id=otu.id, taxid=otu.taxid)
+    log = logger.bind(otu_id=otu.id, taxid=otu.taxid)
 
-    otu_logger.debug(
-        "Checking for promotable records", accessions=sorted(otu.accessions)
-    )
+    log.debug("Checking for promotable records.", accessions=sorted(otu.accessions))
 
     accessions = ncbi.fetch_accessions_by_taxid(otu.taxid)
     fetch_list = sorted(
@@ -258,14 +184,14 @@ def promote_otu_accessions(
     if fetch_list:
         records = ncbi.fetch_genbank_records(fetch_list)
 
-        otu_logger.debug(
+        log.debug(
             "New accessions found. Checking for promotable records.",
             fetch_list=fetch_list,
         )
 
         return promote_otu_accessions_from_records(repo, otu, records)
 
-    otu_logger.info("Records are already up to date.")
+    log.info("Records are already up to date.")
 
 
 def promote_otu_accessions_from_records(
@@ -283,7 +209,7 @@ def promote_otu_accessions_from_records(
     promoted_isolates = defaultdict(list)
 
     for record in refseq_records:
-        status, predecessor_accession = parse_refseq_comment(record.comment)
+        _, predecessor_accession = parse_refseq_comment(record.comment)
 
         if predecessor_accession in otu.accessions:
             otu_logger.debug(

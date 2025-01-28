@@ -71,8 +71,6 @@ class AccessionProvider(BaseProvider):
 
     def genbank_accessions(self, count: int) -> list[str]:
         """Return a list of pseudorandom, consecutive accession numbers."""
-        # accessions = []
-
         if self.random_int(0, 10) > 6:
             prefix = self.random_uppercase_letter()
 
@@ -99,12 +97,9 @@ class AccessionProvider(BaseProvider):
 
     def refseq_accessions(self, count: int) -> list[str]:
         """Return a list of pseudorandom, consecutive RefSeq accession numbers."""
-
         first_number = self.random_int(0, 999999 - count)
 
-        accessions = [f"NC_{(first_number + i):06d}" for i in range(count)]
-
-        return accessions
+        return [f"NC_{(first_number + i):06d}" for i in range(count)]
 
 
 class BusinessProvider(BaseProvider):
@@ -209,8 +204,8 @@ class OrganismProvider(BaseProvider):
                 return self.host_adjective_noun_virus_organism()
             case 2:
                 return self.host_noun_virus_organism()
-
-        return self.host_part_and_descriptor_virus_organism()
+            case _:
+                return self.host_part_and_descriptor_virus_organism()
 
 
 class SegmentProvider(BaseProvider):
@@ -218,19 +213,22 @@ class SegmentProvider(BaseProvider):
 
     def segment_delimiter(self) -> str:
         """Return a segment delimiter."""
-        return self.random_element({" ", "-", "_"})
+        return self.random_element([" ", "-", "_"])
 
     def segment_prefix(self) -> str:
         """Return a segment prefix."""
-        return self.random_element({"DNA", "RNA"})
+        return self.random_element(["DNA", "RNA", "Segment"])
 
     def segment_key(self) -> str:
         """Return a segment key denoting the key identifier
         in the segment.
         """
-        return self.random_element(
-            {"1", "2", "A", "B", "C", "L", "N", "M", "R", "S", "U3"},
-        )
+        key = self.bothify("?#").upper()
+
+        if key[1] == "0" or self.random_int(0, 3) == 2:
+            return key[0]
+
+        return key
 
     def segment(self) -> str:
         """Return a segment name."""

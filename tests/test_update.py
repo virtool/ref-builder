@@ -91,20 +91,14 @@ class TestUpdateOTU:
             "NC_055391",
             "NC_055392",
         }
-
         assert {"MF062125", "MF062126", "MF062127"}.isdisjoint(otu_after.accessions)
-
         assert otu_after.representative_isolate == otu_before.representative_isolate
-
         assert (
             otu_after.get_isolate(otu_before.representative_isolate).accessions
             != otu_before.get_isolate(otu_before.representative_isolate).accessions
         )
-
         assert otu_after.id == otu_before.id
-
         assert otu_after.isolate_ids.issuperset(otu_before.isolate_ids)
-
         assert otu_after.excluded_accessions == {"MF062125", "MF062126", "MF062127"}
 
         assert otu_after.accessions == {

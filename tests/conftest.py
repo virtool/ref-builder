@@ -22,12 +22,21 @@ from ref_builder.resources import RepoOTU
 from ref_builder.utils import Accession, DataType
 from tests.fixtures.factories import (
     IsolateFactory,
+    NCBIGenbankFactory,
+    NCBISourceFactory,
     OTUFactory,
+    OTUMinimalFactory,
     PlanFactory,
     SequenceFactory,
 )
 
 configure_logger(True)
+
+
+@pytest.fixture(autouse=True)
+def _seed_factories() -> None:
+    """Seed the ModelFactory with a fixed seed."""
+    ModelFactory.seed_random(1)
 
 
 @pytest.fixture()
@@ -221,8 +230,6 @@ def indexable_otus() -> list[RepoOTU]:
     """A list of eight OTUs for use in Snapshotter testing."""
 
     class RepoOTUFactory(ModelFactory[RepoOTU]):
-        __model__ = RepoOTU
-
         plan = Use(PlanFactory.build)
 
         @classmethod
@@ -250,11 +257,22 @@ def indexable_otus() -> list[RepoOTU]:
     return otus
 
 
-sequence_factory = register_fixture(SequenceFactory)
-"""Fixture for generating RepoSequence instances."""
-
 isolate_factory = register_fixture(IsolateFactory)
-"""Fixture for generating IsolateBase instances."""
+"""Fixture for a factory that generates Isolate instances."""
+
+ncbi_genbank_factory = register_fixture(NCBIGenbankFactory)
+"""Fixture for a factory that generates NCBIGenbank instances."""
+
+ncbi_source_factory = register_fixture(NCBISourceFactory)
+"""Fixture for a factory that generates NCBISource instances."""
 
 otu_factory = register_fixture(OTUFactory)
-"""Fixture for generating OTUBase instances."""
+"""Fixture for a factory that generates OTU instances."""
+
+otu_minimal_factory = register_fixture(OTUMinimalFactory)
+
+plan_factory = register_fixture(PlanFactory)
+"""Fixture for generating Plan instances."""
+
+sequence_factory = register_fixture(SequenceFactory)
+"""Fixture for a factory that generates RepoSequence instances."""

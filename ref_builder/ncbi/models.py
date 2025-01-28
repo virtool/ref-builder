@@ -13,7 +13,7 @@ from pydantic import (
     model_validator,
 )
 
-from ref_builder.models import MolType, Strandedness, Topology
+from ref_builder.models import Molecule, MolType, Strandedness, Topology
 
 
 class NCBIDatabase(StrEnum):
@@ -48,6 +48,25 @@ class NCBISourceMolType(StrEnum):
     TRANSCRIBED_RNA = "transcribed RNA"
     VIRAL_CRNA = "viral cRNA"
     OTHER_RNA = "other RNA"
+
+    @classmethod
+    def from_molecule(cls: type, molecule: Molecule) -> "NCBISourceMolType":
+        """Return a NCBI moltype value that matches the passed ref-builder molecule."""
+        match molecule.type:
+            case MolType.DNA:
+                return NCBISourceMolType.GENOMIC_DNA
+            case MolType.RNA:
+                return NCBISourceMolType.GENOMIC_RNA
+            case MolType.CRNA:
+                return NCBISourceMolType.VIRAL_CRNA
+            case MolType.MRNA:
+                return NCBISourceMolType.MRNA
+            case MolType.TRNA:
+                return NCBISourceMolType.TRANSCRIBED_RNA
+            case _:
+                raise ValueError(
+                    f"Molecule cannot be matched to NCBISourceMolType: {molecule.type}"
+                )
 
 
 class NCBISource(BaseModel):
