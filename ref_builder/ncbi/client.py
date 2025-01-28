@@ -41,26 +41,6 @@ class GenbankRecordKey(StrEnum):
     SEQUENCE = "GBSeq_sequence"
 
 
-@dataclass
-class NuccoreSearchTerms:
-    sequence_min_length: int = 0
-
-    sequence_max_length: int = 0
-
-    def generate_filter_string(self) -> str:
-        """Return a term filter for the current search terms."""
-        if self.sequence_min_length > 0:
-            if self.sequence_max_length > 0:
-                return f'"{self.sequence_min_length}"[SLEN] : "{self.sequence_max_length}"[SLEN]'
-
-            return f'"{self.sequence_min_length}"[SLEN]'
-
-        if self.sequence_max_length > 0:
-            return f'"{self.sequence_max_length}"[SLEN]'
-
-        return ""
-
-
 class NCBIClient:
     """A client for fetching, caching, and validating data from NCBI databases."""
 
@@ -187,20 +167,24 @@ class NCBIClient:
     @staticmethod
     def fetch_accessions_by_taxid(
         taxid: int,
-        terms: NuccoreSearchTerms | None = None,
+        sequence_min_length: int = 0,
+        sequence_max_length: int = 0,
     ) -> list[str]:
         """Fetch all accessions associated with the given ``taxid``.
 
         :param taxid: A Taxonomy ID
-        :param terms: A dataclass containing scope limiting terms for this Entrez search
+        :param sequence_min_length: The minimum length of a fetched sequence.
+        :param sequence_max_length: The maximum length of a fetched sequence.
         :return: A list of Genbank accessions
         """
         page = 1
         accessions = []
 
         term = f"txid{taxid}[orgn]"
-        if terms is not None:
-            term += f" AND {terms.generate_filter_string()}"
+        if sequence_min_length > 0 and sequence_max_length > 0:
+            term += " AND " + NCBIClient.generate_sequence_length_filter_string(
+                sequence_min_length, sequence_max_length,
+            )
 
         # If there are more than 1000 accessions, we need to paginate.
         while True:
@@ -411,6 +395,23 @@ class NCBIClient:
         logger.warning("Suggested spelling not found.")
 
         return None
+
+    @staticmethod
+    def generate_sequence_length_filter_string(min_length: int = 0, max_length: int = 0) -> str:
+        """Return a term filter string delimiting a given length range.
+
+        Returns an empty string if not given a min or max length parameter.
+        """
+        if min_length > 0:
+            if min_length > 0:
+                return f'"{min_length}"[SLEN] : "{max_length}"[SLEN]'
+
+            return f'"{min_length}"[SLEN]'
+
+        if max_length > 0:
+            return f'"{max_length}"[SLEN]'
+
+        return ""
 
 
 @contextmanager

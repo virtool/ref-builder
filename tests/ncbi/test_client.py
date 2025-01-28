@@ -1,8 +1,7 @@
 import pytest
 from syrupy import SnapshotAssertion
 
-from ref_builder.ncbi.client import NCBIClient, NuccoreSearchTerms
-from ref_builder.otu.utils import check_sequence_length
+from ref_builder.ncbi.client import NCBIClient
 
 
 class TestFetchGenbank:
@@ -141,10 +140,8 @@ class TestFetchAccessionsByTaxid:
         wide_filtered_accessions = set(
             uncached_ncbi_client.fetch_accessions_by_taxid(
                 taxid,
-                terms=NuccoreSearchTerms(
-                    sequence_min_length=segment_length - 6,
-                    sequence_max_length=segment_length + 6,
-                ),
+                sequence_min_length=segment_length - 6,
+                sequence_max_length=segment_length + 6,
             )
         )
 
@@ -158,10 +155,8 @@ class TestFetchAccessionsByTaxid:
         narrow_filtered_accessions = set(
             NCBIClient.fetch_accessions_by_taxid(
                 taxid,
-                terms=NuccoreSearchTerms(
-                    sequence_min_length=segment_length - 1,
-                    sequence_max_length=segment_length + 1,
-                ),
+                sequence_min_length=segment_length - 1,
+                sequence_max_length=segment_length + 1,
             )
         )
 
