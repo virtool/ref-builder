@@ -66,22 +66,12 @@ def check_isolate_size(
 
 def get_segments_min_length(segments: list[Segment]) -> int:
     """Return the shortest minimum length from a list of segments."""
-    shortest_segment = segments[0]
-    for segment in segments:
-        if segment.length < shortest_segment.length:
-            shortest_segment = segment
-
-    return shortest_segment.min_length
+    return min(segments, key=lambda s: s.length).min_length
 
 
 def get_segments_max_length(segments: list[Segment]) -> int:
     """Return the longest maximum length from a list of segments."""
-    longest_segment = segments[0]
-    for segment in segments:
-        if segment.length > longest_segment.length:
-            longest_segment = segment
-
-    return longest_segment.max_length
+    return max(segments, key=lambda s: s.length).max_length
 
 
 def check_sequence_length(sequence: str, segment_length: int, tolerance: float) -> bool:
