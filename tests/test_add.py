@@ -6,7 +6,8 @@ from click.testing import CliRunner
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
-from ref_builder.cli.otu import isolate_create, otu_create
+from ref_builder.cli.otu import otu_create
+from ref_builder.cli.isolate import isolate_create
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.isolate import (
     add_and_name_isolate,
