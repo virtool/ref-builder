@@ -47,17 +47,17 @@ class GenbankRecordKey(StrEnum):
 class NuccoreSearchTerms:
     sequence_min_length: int = 0
 
-    sequence_max_length: int = MAX_SEQUENCE_LENGTH
+    sequence_max_length: int = 0
 
     def generate_filter_string(self) -> str:
         """Return a term filter for the current search terms."""
         if self.sequence_min_length > 0:
-            if self.sequence_max_length < MAX_SEQUENCE_LENGTH:
+            if self.sequence_max_length > 0:
                 return f'"{self.sequence_min_length}"[SLEN] : "{self.sequence_max_length}"[SLEN]'
 
             return f'"{self.sequence_min_length}"[SLEN]'
 
-        if self.sequence_max_length < MAX_SEQUENCE_LENGTH:
+        if self.sequence_max_length > 0:
             return f'"{self.sequence_max_length}"[SLEN]'
 
         return ""
@@ -200,9 +200,9 @@ class NCBIClient:
         page = 1
         accessions = []
 
-        search_term = f"txid{taxid}[orgn]"
+        term = f"txid{taxid}[orgn]"
         if terms is not None:
-            search_term += f" AND {terms.generate_filter_string()}"
+            term += f" AND {terms.generate_filter_string()}"
 
         # If there are more than 1000 accessions, we need to paginate.
         while True:
@@ -211,7 +211,7 @@ class NCBIClient:
             with log_http_error():
                 handle = Entrez.esearch(
                     db=NCBIDatabase.NUCCORE,
-                    term=search_term,
+                    term=term,
                     idtype="acc",
                     retstart=retstart,
                     retmax=ESEARCH_PAGE_SIZE,
