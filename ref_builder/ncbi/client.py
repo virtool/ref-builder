@@ -28,8 +28,6 @@ base_logger = get_logger("ncbi")
 ESEARCH_PAGE_SIZE = 1000
 """The number of results to fetch per page in an Entrez esearch query."""
 
-MAX_SEQUENCE_LENGTH = 999999
-
 
 class GenbankRecordKey(StrEnum):
     """Genbank record keys."""
