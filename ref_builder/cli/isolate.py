@@ -1,11 +1,17 @@
 import sys
 from pathlib import Path
+from uuid import UUID
 
 import click
 
 from ref_builder.cli.validate import validate_no_duplicate_accessions
-from ref_builder.options import ignore_cache_option
-from ref_builder.otu.isolate import add_unnamed_isolate, add_and_name_isolate, add_genbank_isolate
+from ref_builder.options import path_option, ignore_cache_option
+from ref_builder.otu.isolate import (
+    add_unnamed_isolate,
+    add_and_name_isolate,
+    add_genbank_isolate,
+)
+from ref_builder.otu.modify import delete_isolate_from_otu
 from ref_builder.otu.utils import RefSeqConflictError
 from ref_builder.repo import Repo
 from ref_builder.utils import IsolateNameType, IsolateName
@@ -37,6 +43,7 @@ def isolate() -> None:
     type=(IsolateNameType, str),
     help='an overriding name for the isolate, e.g. "isolate ARWV1"',
 )
+@path_option
 @ignore_cache_option
 def isolate_create(
     path: Path,
@@ -97,3 +104,35 @@ def isolate_create(
     except ValueError as e:
         click.echo(e, err=True)
         sys.exit(1)
+
+
+@isolate.command(name="delete")  # type: ignore
+@click.option("--taxid", type=int, required=True)
+@click.argument("ISOLATE_KEY", type=str)
+@path_option
+def isolate_delete(path: Path, taxid: int, isolate_key: str) -> None:
+    """Remove isolate"""
+    repo = Repo(path)
+
+    otu_ = repo.get_otu_by_taxid(taxid)
+    if otu_ is None:
+        click.echo(f"OTU {taxid} not found.", err=True)
+        sys.exit(1)
+
+    try:
+        isolate_id = UUID(isolate_key)
+    except ValueError:
+        parts = isolate_key.split(" ")
+        try:
+            isolate_name = IsolateName(IsolateNameType(parts[0].lower()), parts[1])
+        except ValueError:
+            click.echo(f'Error: "{isolate_key}" is not a valid isolate name.', err=True)
+            sys.exit(1)
+
+        isolate_id = otu_.get_isolate_id_by_name(isolate_name)
+
+    if isolate_id is None:
+        click.echo("Isolate could not be found in this OTU.", err=True)
+        sys.exit(1)
+
+    delete_isolate_from_otu(repo, otu_, isolate_id)
