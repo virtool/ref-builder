@@ -98,15 +98,13 @@ def otu_list(path: Path) -> None:
     print_otu_list(Repo(path).iter_minimal_otus())
 
 
-@otu.command(name="update", )  # type: ignore
+@otu.command(
+    name="update",
+)  # type: ignore
 @ignore_cache_option
 @click.pass_context
 @click.argument("TAXID", type=int)
-def otu_auto_update(
-    path: Path,
-    taxid: int,
-    ignore_cache: bool
-) -> None:
+def otu_auto_update(path: Path, taxid: int, ignore_cache: bool) -> None:
     """Update an OTU with the latest data from NCBI."""
     repo = Repo(path)
     otu_ = repo.get_otu_by_taxid(taxid)
@@ -293,10 +291,7 @@ def plan_extend_segment_list(
 )
 @path_option
 def plan_rename_segment(
-    path: Path,
-    taxid: int,
-    segment_id: str,
-    segment_name_: tuple[str, str]
+    path: Path, taxid: int, segment_id: str, segment_name_: tuple[str, str]
 ) -> None:
     """Give an unnamed segment a name."""
     repo = Repo(path)
