@@ -2,6 +2,7 @@ import pytest
 from syrupy import SnapshotAssertion
 
 from ref_builder.ncbi.client import NCBIClient, NuccoreSearchTerms
+from ref_builder.otu.utils import check_sequence_length
 
 
 class TestFetchGenbank:
@@ -129,7 +130,7 @@ class TestFetchAccessionsByTaxid:
         """
         assert len(NCBIClient.fetch_accessions_by_taxid(12585)) > 1000
 
-    def test_esearch_limit(self):
+    def test_esearch_limit(self, uncached_ncbi_client: NCBIClient):
         """Test that narrow search terms fetch a smaller subset of accessions
         than wide search terms.
         """
@@ -138,7 +139,7 @@ class TestFetchAccessionsByTaxid:
         segment_length = 9591
 
         wide_filtered_accessions = set(
-            NCBIClient.fetch_accessions_by_taxid(
+            uncached_ncbi_client.fetch_accessions_by_taxid(
                 taxid,
                 terms=NuccoreSearchTerms(
                     sequence_min_length=segment_length - 6,
@@ -147,7 +148,12 @@ class TestFetchAccessionsByTaxid:
             )
         )
 
-        assert wide_filtered_accessions
+        assert all(
+            [
+                segment_length - 6 <= len(record.sequence) <= segment_length + 6
+                for record in uncached_ncbi_client.fetch_genbank_records(wide_filtered_accessions)
+            ]
+        )
 
         narrow_filtered_accessions = set(
             NCBIClient.fetch_accessions_by_taxid(
@@ -157,6 +163,13 @@ class TestFetchAccessionsByTaxid:
                     sequence_max_length=segment_length + 1,
                 ),
             )
+        )
+
+        assert all(
+            [
+                segment_length - 1 <= len(record.sequence) <= segment_length + 1
+                for record in uncached_ncbi_client.fetch_genbank_records(narrow_filtered_accessions)
+            ]
         )
 
         assert narrow_filtered_accessions.issubset(wide_filtered_accessions)
