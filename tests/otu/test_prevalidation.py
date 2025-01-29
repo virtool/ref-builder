@@ -39,12 +39,6 @@ class TestAssignRecordsToSegments:
 
         assigned_records = assign_records_to_segments(records, otu.plan)
 
-       assert sorted(
-            assigned_records.values(), key=lambda r: r.accession
-        ) == snapshot(exclude=props("id"))
-            segment.id for segment in otu.plan.required_segments
-        }
-
         assert sorted(
             assigned_records.values(), key=lambda r: r.accession
         ) == snapshot(exclude=props("id"))
