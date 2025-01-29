@@ -96,16 +96,6 @@ class Segment(BaseModel):
             required=required,
         )
 
-    @property
-    def min_length(self):
-        """The minimum acceptable length of a sequence matching this segment."""
-        return int(self.length * (1.0 - self.length_tolerance))
-
-    @property
-    def max_length(self):
-        """The maximum acceptable length of a sequence matching this segment."""
-        return int(self.length * (1.0 + self.length_tolerance))
-
 
 class Plan(BaseModel):
     """The segments required for an isolate in a given OTU."""
