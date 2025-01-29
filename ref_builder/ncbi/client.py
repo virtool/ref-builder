@@ -3,6 +3,7 @@
 import os
 from collections.abc import Collection
 from contextlib import contextmanager
+from dataclasses import dataclass
 from enum import StrEnum
 from http import HTTPStatus
 from urllib.error import HTTPError
@@ -164,14 +165,27 @@ class NCBIClient:
         return []
 
     @staticmethod
-    def fetch_accessions_by_taxid(taxid: int) -> list[str]:
+    def fetch_accessions_by_taxid(
+        taxid: int,
+        sequence_min_length: int = 0,
+        sequence_max_length: int = 0,
+    ) -> list[str]:
         """Fetch all accessions associated with the given ``taxid``.
 
         :param taxid: A Taxonomy ID
+        :param sequence_min_length: The minimum length of a fetched sequence.
+        :param sequence_max_length: The maximum length of a fetched sequence.
         :return: A list of Genbank accessions
         """
         page = 1
         accessions = []
+
+        term = f"txid{taxid}[orgn]"
+        if sequence_min_length > 0 and sequence_max_length > 0:
+            term += " AND " + NCBIClient.generate_sequence_length_filter_string(
+                sequence_min_length,
+                sequence_max_length,
+            )
 
         # If there are more than 1000 accessions, we need to paginate.
         while True:
@@ -180,7 +194,7 @@ class NCBIClient:
             with log_http_error():
                 handle = Entrez.esearch(
                     db=NCBIDatabase.NUCCORE,
-                    term=f"txid{taxid}[orgn]",
+                    term=term,
                     idtype="acc",
                     retstart=retstart,
                     retmax=ESEARCH_PAGE_SIZE,
@@ -382,6 +396,25 @@ class NCBIClient:
         logger.warning("Suggested spelling not found.")
 
         return None
+
+    @staticmethod
+    def generate_sequence_length_filter_string(
+        min_length: int = 0, max_length: int = 0
+    ) -> str:
+        """Return a term filter string delimiting a given length range.
+
+        Returns an empty string if not given a min or max length parameter.
+        """
+        if min_length > 0:
+            if min_length > 0:
+                return f'"{min_length}"[SLEN] : "{max_length}"[SLEN]'
+
+            return f'"{min_length}"[SLEN]'
+
+        if max_length > 0:
+            return f'"{max_length}"[SLEN]'
+
+        return ""
 
 
 @contextmanager

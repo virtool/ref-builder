@@ -119,7 +119,7 @@ class TestFetchAccessionsByTaxid:
             "JQ821386.1",
         ]
 
-    def test_non_existent(self):
+    def test_nonexistent(self):
         """Test that the client returns an empty list when the taxid does not exist."""
         assert NCBIClient.fetch_accessions_by_taxid(99999999) == []
 
@@ -128,6 +128,52 @@ class TestFetchAccessionsByTaxid:
         is long enough to force pagination.
         """
         assert len(NCBIClient.fetch_accessions_by_taxid(12585)) > 1000
+
+    def test_esearch_limit(self, uncached_ncbi_client: NCBIClient):
+        """Test that narrow search terms fetch a smaller subset of accessions
+        than wide search terms.
+        """
+        taxid = 12232
+
+        segment_length = 9591
+
+        wide_filtered_accessions = set(
+            uncached_ncbi_client.fetch_accessions_by_taxid(
+                taxid,
+                sequence_min_length=segment_length - 6,
+                sequence_max_length=segment_length + 6,
+            )
+        )
+
+        assert all(
+            [
+                segment_length - 6 <= len(record.sequence) <= segment_length + 6
+                for record in uncached_ncbi_client.fetch_genbank_records(
+                    wide_filtered_accessions
+                )
+            ]
+        )
+
+        narrow_filtered_accessions = set(
+            NCBIClient.fetch_accessions_by_taxid(
+                taxid,
+                sequence_min_length=segment_length - 1,
+                sequence_max_length=segment_length + 1,
+            )
+        )
+
+        assert all(
+            [
+                segment_length - 1 <= len(record.sequence) <= segment_length + 1
+                for record in uncached_ncbi_client.fetch_genbank_records(
+                    narrow_filtered_accessions
+                )
+            ]
+        )
+
+        assert narrow_filtered_accessions.issubset(wide_filtered_accessions)
+
+        assert wide_filtered_accessions - narrow_filtered_accessions
 
 
 class TestFetchTaxonomy:
