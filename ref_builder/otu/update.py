@@ -147,16 +147,25 @@ def update_otu_with_accessions(
     if promote_otu_accessions(repo, otu, ignore_cache):
         otu = repo.get_otu(otu.id)
 
+    if records:
+        return update_otu_with_records(repo, otu, records)
+
+
+def update_otu_with_records(
+    repo: Repo,
+    otu: RepoOTU,
+    records: list,
+):
     new_isolate_names = []
 
     for divided_records in (
-        [record for record in records if record.refseq],
-        [record for record in records if not record.refseq],
+            [record for record in records if record.refseq],
+            [record for record in records if not record.refseq],
     ):
         otu = repo.get_otu(otu.id)
 
         for isolate_name, isolate_records in group_genbank_records_by_isolate(
-            divided_records
+                divided_records
         ).items():
             isolate = create_isolate(
                 repo, otu, isolate_name, list(isolate_records.values())
