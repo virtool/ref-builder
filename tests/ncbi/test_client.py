@@ -148,7 +148,9 @@ class TestFetchAccessionsByTaxid:
         assert all(
             [
                 segment_length - 6 <= len(record.sequence) <= segment_length + 6
-                for record in uncached_ncbi_client.fetch_genbank_records(wide_filtered_accessions)
+                for record in uncached_ncbi_client.fetch_genbank_records(
+                    wide_filtered_accessions
+                )
             ]
         )
 
@@ -163,7 +165,9 @@ class TestFetchAccessionsByTaxid:
         assert all(
             [
                 segment_length - 1 <= len(record.sequence) <= segment_length + 1
-                for record in uncached_ncbi_client.fetch_genbank_records(narrow_filtered_accessions)
+                for record in uncached_ncbi_client.fetch_genbank_records(
+                    narrow_filtered_accessions
+                )
             ]
         )
 

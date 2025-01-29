@@ -183,7 +183,8 @@ class NCBIClient:
         term = f"txid{taxid}[orgn]"
         if sequence_min_length > 0 and sequence_max_length > 0:
             term += " AND " + NCBIClient.generate_sequence_length_filter_string(
-                sequence_min_length, sequence_max_length,
+                sequence_min_length,
+                sequence_max_length,
             )
 
         # If there are more than 1000 accessions, we need to paginate.
@@ -397,7 +398,9 @@ class NCBIClient:
         return None
 
     @staticmethod
-    def generate_sequence_length_filter_string(min_length: int = 0, max_length: int = 0) -> str:
+    def generate_sequence_length_filter_string(
+        min_length: int = 0, max_length: int = 0
+    ) -> str:
         """Return a term filter string delimiting a given length range.
 
         Returns an empty string if not given a min or max length parameter.
