@@ -1,5 +1,6 @@
 import pytest
 from syrupy import SnapshotAssertion
+from syrupy.filters import props
 
 from ref_builder.ncbi.models import NCBISourceMolType
 from ref_builder.otu.utils import assign_records_to_segments
@@ -42,9 +43,9 @@ class TestAssignRecordsToSegments:
             segment.id for segment in otu.plan.required_segments
         }
 
-        assert assigned_records == snapshot
+        assert assigned_records == snapshot(exclude=props("id"))
 
-    def test_fail(
+    def test_names_not_in_plan(
         self,
         ncbi_genbank_factory: NCBIGenbankFactory,
         scratch_repo: Repo,
@@ -61,4 +62,4 @@ class TestAssignRecordsToSegments:
         with pytest.raises(ValueError, match="Segment names not found in plan:") as e:
             assign_records_to_segments(records, otu.plan)
 
-        assert str(e.value) == snapshot
+        assert str(e.value) == snapshot(exclude=props("id"))

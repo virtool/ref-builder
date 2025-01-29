@@ -1,8 +1,8 @@
 # serializer version: 1
-# name: TestAssignRecordsToSegments.test_fail[223262]
+# name: TestAssignRecordsToSegments.test_names_not_in_plan[223262]
   'Segment names not found in plan: DNA G, RNA N5.'
 # ---
-# name: TestAssignRecordsToSegments.test_fail[3158377]
+# name: TestAssignRecordsToSegments.test_names_not_in_plan[3158377]
   'Segment names not found in plan: DNA G, RNA A, RNA N5, Segment I3, Segment W4, Segment X.'
 # ---
 # name: TestAssignRecordsToSegments.test_ok[223262]
