@@ -1,42 +1,63 @@
 import pytest
+from syrupy import SnapshotAssertion
+from syrupy.filters import props
 
+from ref_builder.ncbi.models import NCBISourceMolType
 from ref_builder.otu.utils import assign_records_to_segments
 from ref_builder.repo import Repo
-from tests.fixtures.factories import NCBIGenbankFactory
+from tests.fixtures.factories import NCBIGenbankFactory, NCBISourceFactory
 
 
 @pytest.mark.parametrize("taxid", [223262, 3158377])
 class TestAssignRecordsToSegments:
-    """Test whether a list of records accurately maps to the segment list of a
-    multipartite OTU's plan.
-    """
+    """Test whether a list of records can be assigned to plan segments."""
 
-    def test_ok(self, scratch_repo: Repo, taxid: int):
+    def test_ok(
+        self,
+        ncbi_genbank_factory: NCBIGenbankFactory,
+        ncbi_source_factory: NCBISourceFactory,
+        scratch_repo: Repo,
+        snapshot: SnapshotAssertion,
+        taxid: int,
+    ):
         """Test that a list of records generated to match the OTU plan
         can pass assign_records_to_segments().
         """
         otu = scratch_repo.get_otu_by_taxid(taxid)
 
-        mock_records = NCBIGenbankFactory.build_from_metadata(
-            plan=otu.plan,
-            moltype=otu.molecule.type,
-            name=otu.name,
-            taxid=otu.taxid,
+        records = [
+            ncbi_genbank_factory.build(
+                source=ncbi_source_factory.build(
+                    mol_type=NCBISourceMolType.from_molecule(otu.molecule),
+                    segment=str(segment.name),
+                    organism=otu.name,
+                    taxid=otu.taxid,
+                )
+            )
+            for segment in otu.plan.required_segments
+        ]
+
+        assigned_records = assign_records_to_segments(records, otu.plan)
+
+        assert sorted(assigned_records.values(), key=lambda r: r.accession) == snapshot(
+            exclude=props("id")
         )
 
-        assigned_records = assign_records_to_segments(mock_records, otu.plan)
-
-        assert assigned_records.keys() == {
-            segment.id for segment in otu.plan.required_segments
-        }
-
-    def test_fail(self, scratch_repo: Repo, taxid: int):
+    def test_names_not_in_plan(
+        self,
+        ncbi_genbank_factory: NCBIGenbankFactory,
+        scratch_repo: Repo,
+        snapshot: SnapshotAssertion,
+        taxid: int,
+    ):
         """Test that a randomly generated list of records raises an appropriate
         ValueError.
         """
         otu = scratch_repo.get_otu_by_taxid(taxid)
 
-        mock_records = NCBIGenbankFactory.batch(len(otu.plan.required_segments))
+        records = ncbi_genbank_factory.batch(len(otu.plan.required_segments))
 
-        with pytest.raises(ValueError, match="Missing one or more required segments"):
-            assign_records_to_segments(mock_records, otu.plan)
+        with pytest.raises(ValueError, match="Segment names not found in plan:") as e:
+            assign_records_to_segments(records, otu.plan)
+
+        assert str(e.value) == snapshot(exclude=props("id"))

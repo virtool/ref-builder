@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from ref_builder.utils import format_json, pad_zeroes, get_accession_key
 from ref_builder.otu.utils import parse_refseq_comment
+from ref_builder.utils import format_json, get_accession_key, pad_zeroes
 
 
 class TestPadZeroes:

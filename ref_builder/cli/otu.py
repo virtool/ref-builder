@@ -17,9 +17,9 @@ from ref_builder.otu.modify import (
     set_representative_isolate,
 )
 from ref_builder.otu.update import auto_update_otu, promote_otu_accessions
-from ref_builder.plan import SegmentRule, SegmentName
+from ref_builder.plan import SegmentName, SegmentRule
 from ref_builder.repo import Repo
-from ref_builder.utils import IsolateNameType, IsolateName
+from ref_builder.utils import IsolateName, IsolateNameType
 
 logger = structlog.get_logger()
 
@@ -98,9 +98,7 @@ def otu_list(path: Path) -> None:
     print_otu_list(Repo(path).iter_minimal_otus())
 
 
-@otu.command(
-    name="update",
-)  # type: ignore
+@otu.command(name="update")
 @ignore_cache_option
 @click.pass_context
 @click.argument("TAXID", type=int)
@@ -117,7 +115,7 @@ def otu_auto_update(path: Path, taxid: int, ignore_cache: bool) -> None:
     auto_update_otu(repo, otu_, ignore_cache=ignore_cache)
 
 
-@otu.command(name="promote")  # type: ignore
+@otu.command(name="promote")
 @path_option
 @ignore_cache_option
 @click.argument("TAXID", type=int)

@@ -220,19 +220,23 @@ def determine_segment_prefix(moltype: NCBISourceMolType) -> str:
     raise ValueError(f"{moltype} may not be a valid NCBISourceMolType.")
 
 
-def parse_segment_name(raw: str) -> SegmentName:
-    """Parse a SegmentName from a raw string."""
-    segment_name_parse = COMPLEX_NAME_PATTERN.fullmatch(raw)
+def parse_segment_name(string: str) -> SegmentName | None:
+    """Parse a SegmentName from a string.
+
+    Returns none if no segment name is found in the string.
+    """
+    segment_name_parse = COMPLEX_NAME_PATTERN.fullmatch(string)
+
     if segment_name_parse:
         return SegmentName(
             prefix=segment_name_parse.group(1),
             key=segment_name_parse.group(2),
         )
 
-    raise ValueError(f"{raw} is not a valid segment name")
+    return None
 
 
-def extract_segment_name_from_record(record: NCBIGenbank) -> SegmentName:
+def extract_segment_name_from_record(record: NCBIGenbank) -> SegmentName | None:
     """Get a segment name from a Genbank record."""
     if SIMPLE_NAME_PATTERN.fullmatch(record.source.segment):
         return SegmentName(

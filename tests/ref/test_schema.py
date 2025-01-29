@@ -91,86 +91,78 @@ class TestPlan:
         assert auto_plan_from_json == auto_plan
 
 
-class TestSegmentNameParser:
+class TestParseSegmentName:
     """Test segment name normalization."""
 
-    @pytest.mark.parametrize(
-        ("expected_result", "test_strings"),
-        [
-            (SegmentName(prefix="DNA", key="A"), ["DNA A", "DNA_A", "DNA-A"]),
-            (SegmentName(prefix="RNA", key="BN"), ["RNA BN", "RNA_BN", "RNA-BN"]),
-            (SegmentName(prefix="DNA", key="U3"), ["DNA U3", "DNA U3", "DNA-U3"]),
-        ],
-    )
-    def test_ok(self, expected_result: str, test_strings: list[str]):
+    @pytest.mark.parametrize("delimiter", [" ", "_", "-"])
+    @pytest.mark.parametrize("key", ["A", "BN", "U3"])
+    @pytest.mark.parametrize("prefix", ["DNA", "RNA"])
+    def test_ok(self, delimiter: str, key: str, prefix: str):
         """Test that parse_segment_name() correctly parses prefix-key segment names."""
-        assert (
-            parse_segment_name(test_strings[0])
-            == parse_segment_name(test_strings[1])
-            == parse_segment_name(test_strings[2])
-            == expected_result
+        assert parse_segment_name(f"{prefix}{delimiter}{key}") == SegmentName(
+            prefix=prefix, key=key
         )
 
     @pytest.mark.parametrize(
-        "fail_case",
+        "string",
         ["", "*V/", "51f9a0bc-7b3b-434f-bf4c-f7abaa015b8d"],
     )
-    def test_fail(self, fail_case: str):
+    def test_none(self, string: str) -> None:
         """Test that parse_segment_name() returns expected ValueError for bad input."""
-        with pytest.raises(
-            ValueError,
-            match=r"\s* is not a valid segment name$",
-        ):
-            parse_segment_name(fail_case)
+        assert parse_segment_name(string) is None
 
+
+class TestExtractSegmentNameFromRecord:
+    @pytest.mark.parametrize("key", ["1", "A", "BN", "U3"])
     @pytest.mark.parametrize(
-        ("expected_result", "test_name", "test_moltype"),
-        [
-            (SegmentName(prefix="DNA", key="A"), "A", NCBISourceMolType.GENOMIC_DNA),
-            (SegmentName(prefix="RNA", key="BN"), "BN", NCBISourceMolType.GENOMIC_RNA),
-            (SegmentName(prefix="DNA", key="U3"), "U3", NCBISourceMolType.GENOMIC_DNA),
-        ],
+        "mol_type", [NCBISourceMolType.GENOMIC_RNA, NCBISourceMolType.GENOMIC_DNA]
     )
-    def test_parse_from_record_ok(
+    def test_ok(
         self,
-        expected_result: SegmentName,
-        test_name: str,
-        test_moltype: NCBISourceMolType,
-    ):
+        key: str,
+        mol_type: NCBISourceMolType,
+        ncbi_genbank_factory: NCBIGenbankFactory,
+        ncbi_source_factory: NCBISourceFactory,
+    ) -> None:
         """Test that a full segment name can be parsed
         when the source table segment field contains a key with no prefix.
         """
-        dummy_record = NCBIGenbankFactory.build(
-            source=NCBISourceFactory.build(
-                mol_type=test_moltype,
-                segment=test_name,
+        record = ncbi_genbank_factory.build(
+            source=ncbi_source_factory.build(
+                mol_type=mol_type,
+                segment=key,
             ),
         )
 
-        assert extract_segment_name_from_record(dummy_record) == expected_result
+        match mol_type:
+            case NCBISourceMolType.GENOMIC_DNA:
+                suffix = "DNA"
+            case NCBISourceMolType.GENOMIC_RNA:
+                suffix = "RNA"
+            case _:
+                raise ValueError(f"{mol_type} may not be a valid NCBISourceMolType.")
 
+        assert extract_segment_name_from_record(record) == SegmentName(
+            prefix=suffix, key=key
+        )
+
+    @pytest.mark.parametrize("key", ["", "V#", "51f9a0bc-7b3b-434f-bf4c-f7abaa015b8d"])
     @pytest.mark.parametrize(
-        ("test_name", "test_moltype"),
-        [
-            ("", NCBISourceMolType.GENOMIC_DNA),
-            ("V#", NCBISourceMolType.GENOMIC_RNA),
-            ("51f9a0bc-7b3b-434f-bf4c-f7abaa015b8d", NCBISourceMolType.GENOMIC_DNA),
-        ],
+        "mol_type", [NCBISourceMolType.GENOMIC_RNA, NCBISourceMolType.GENOMIC_DNA]
     )
     def test_parse_from_record_fail(
         self,
-        test_name: str,
-        test_moltype: NCBISourceMolType,
+        key: str,
+        mol_type: NCBISourceMolType,
+        ncbi_genbank_factory: NCBIGenbankFactory,
+        ncbi_source_factory: NCBISourceFactory,
     ):
-        """Test that get_multipartite_segment_name()
-        does not return an invalid segment name.
-        """
-        dummy_record = NCBIGenbankFactory.build(
-            source=NCBISourceFactory.build(
-                mol_type=test_moltype,
-                segment=test_name,
+        """Test that ``None`` is returned if no segment name is found."""
+        record = ncbi_genbank_factory.build(
+            source=ncbi_source_factory.build(
+                mol_type=mol_type,
+                segment=key,
             ),
         )
 
-        with pytest.raises(ValueError, match=r"\s* is not a valid segment name$"):
-            extract_segment_name_from_record(dummy_record)
+        assert extract_segment_name_from_record(record) is None
