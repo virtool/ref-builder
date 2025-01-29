@@ -21,7 +21,11 @@ from ref_builder.utils import Accession, IsolateName
 logger = get_logger("otu.update")
 
 
-def auto_update_otu(repo: Repo, otu: RepoOTU) -> None:
+def auto_update_otu(
+    repo: Repo,
+    otu: RepoOTU,
+    ignore_cache: bool = False,
+) -> None:
     """Fetch new accessions for the OTU and create isolates as possible."""
     ncbi = NCBIClient(False)
 
@@ -36,7 +40,7 @@ def auto_update_otu(repo: Repo, otu: RepoOTU) -> None:
 
     if fetch_list:
         log.info("Syncing OTU with Genbank.")
-        update_otu_with_accessions(repo, otu, fetch_list)
+        update_otu_with_accessions(repo, otu, fetch_list, ignore_cache)
     else:
         log.info("OTU is up to date.")
 
