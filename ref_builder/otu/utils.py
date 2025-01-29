@@ -1,5 +1,5 @@
 import re
-from collections import defaultdict
+from collections import Counter, defaultdict
 from enum import StrEnum
 from uuid import UUID
 
@@ -16,7 +16,7 @@ from ref_builder.plan import (
 )
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
-logger = structlog.get_logger("otu.utils")
+logger = structlog.get_logger()
 
 
 class DeleteRationale(StrEnum):
@@ -35,7 +35,7 @@ class RefSeqConflictError(ValueError):
         isolate_id: UUID,
         isolate_name: IsolateName,
         accessions: list[str],
-    ):
+    ) -> None:
         super().__init__(message)
 
         self.isolate_id = isolate_id
@@ -43,25 +43,6 @@ class RefSeqConflictError(ValueError):
         self.isolate_name = isolate_name
 
         self.accessions = accessions
-
-
-def check_isolate_size(
-    plan: Plan,
-    isolate_count: int,
-) -> bool:
-    """Return True if the size of the proposed isolate matches the isolate plan."""
-    if plan.monopartite:
-        if isolate_count > 1:
-            raise ValueError("Too many segments in monopartite isolate.")
-        return True
-
-    if isolate_count == len(plan.required_segments):
-        return True
-
-    raise ValueError(
-        f"The plan requires {len(plan.required_segments)} segments: "
-        + f"{[str(segment.name) for segment in plan.segments]}"
-    )
 
 
 def get_segments_min_length(segments: list[Segment]) -> int:
@@ -92,19 +73,13 @@ def create_segments_from_records(
     """Return a list of SegmentPlans."""
     segments = []
 
-    for record in sorted(records, key=lambda record: record.accession):
-        if not record.source.segment:
-            raise ValueError("No segment name found for multipartite OTU segment.")
+    if len(records) > 1 and not all(r.source.segment for r in records):
+        raise ValueError("Segment name not found for multipartite OTU segment.")
 
-        segments.append(
-            Segment.from_record(
-                record=record,
-                length_tolerance=length_tolerance,
-                required=rule,
-            ),
-        )
-
-    return segments
+    return [
+        Segment.from_record(record, length_tolerance, rule)
+        for record in sorted(records, key=lambda r: r.accession)
+    ]
 
 
 def create_plan_from_records(
@@ -116,87 +91,64 @@ def create_plan_from_records(
     if len(records) == 1:
         record = records[0]
 
-        segment_name = None
-        try:
-            segment_name = extract_segment_name_from_record(record)
-        except ValueError:
-            pass
-
         return Plan.new(
             segments=[
                 Segment.new(
                     length=len(record.sequence),
                     length_tolerance=length_tolerance,
-                    name=segment_name,
+                    name=extract_segment_name_from_record(record),
                     required=SegmentRule.REQUIRED,
                 )
             ]
         )
 
-    binned_records = group_genbank_records_by_isolate(records)
-    if len(binned_records) > 1:
-        logger.fatal(
-            "More than one isolate found. Cannot create plan.",
-            bins=binned_records,
-        )
+    if len(group_genbank_records_by_isolate(records)) > 1:
+        logger.warning("More than one isolate found. Cannot create plan.")
         return None
 
+    if segments is None:
+        segments = create_segments_from_records(
+            records,
+            rule=SegmentRule.REQUIRED,
+            length_tolerance=length_tolerance,
+        )
+
     if segments is not None:
-        return Plan.new(segments=segments)
-
-    segments = create_segments_from_records(
-        records,
-        rule=SegmentRule.REQUIRED,
-        length_tolerance=length_tolerance,
-    )
-
-    if segments:
         return Plan.new(segments=segments)
 
     return None
 
 
 def fetch_records_from_accessions(
-    requested_accessions: list | set,
+    accessions: list | set,
     blocked_accessions: set,
     ignore_cache: bool = False,
 ) -> list[NCBIGenbank]:
-    """Take a list of requested accessions, remove blocked accessions
-    and fetch records using the remaining accessions.
+    """Fetch Genbank records from a list of accessions.
 
-    Return a list of records.
+    Don't fetch accessions in ``blocked_accessions``.
+
+    :param accessions: A list of accessions to fetch.
+    :param blocked_accessions: A set of accessions to ignore.
     """
-    fetch_logger = logger.bind(
-        requested=sorted(requested_accessions),
+    log = logger.bind(
+        requested=sorted(accessions),
         blocked=sorted(blocked_accessions),
     )
 
-    ncbi = NCBIClient(ignore_cache)
+    eligible = set(accessions) - blocked_accessions
 
-    try:
-        fetch_set = set(requested_accessions) - blocked_accessions
-        if not fetch_set:
-            fetch_logger.error(
-                "None of the requested accessions were eligible for inclusion"
-            )
-
-            return []
-
-    except ValueError:
-        fetch_logger.error(
-            "Could not create a new isolate using the requested accessions",
-        )
+    if not eligible:
+        log.error("None of the requested accessions were eligible for inclusion.")
         return []
 
-    fetch_logger.info(
-        "Fetching accessions",
-        count=len(fetch_set),
-        fetch_list=sorted(fetch_set),
+    log.debug(
+        "Fetching accessions.",
+        accessions=sorted(eligible),
+        count=len(eligible),
     )
 
-    records = ncbi.fetch_genbank_records(fetch_set)
-
-    return records
+    return NCBIClient(ignore_cache).fetch_genbank_records(eligible)
 
 
 def get_molecule_from_records(records: list[NCBIGenbank]) -> Molecule:
@@ -261,11 +213,9 @@ def parse_refseq_comment(comment: str) -> tuple[str, str]:
     if not comment:
         raise ValueError("Empty comment")
 
-    refseq_pattern = re.compile(r"^(\w+ REFSEQ): [\w ]+. [\w ]+ ([\w]+).")
+    pattern = re.compile(r"^(\w+ REFSEQ): [\w ]+. [\w ]+ (\w+).")
 
-    match = refseq_pattern.search(comment)
-
-    if match:
+    if match := pattern.search(comment):
         return match.group(1), match.group(2)
 
     raise ValueError("Invalid RefSeq comment")
@@ -292,22 +242,75 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
 def assign_records_to_segments(
     records: list[NCBIGenbank], plan: Plan
 ) -> dict[UUID, NCBIGenbank]:
-    """Return a dictionary of records keyed by segment UUID, else raise a ValueError."""
-    assigned_records = {}
+    """Assign genbank records segment IDs based on the passed plan.
 
-    unassigned_segments = plan.segments.copy()
+    Assignment is based on segment naming. The function tries to normalize the segment
+    name from the Genbank source table and match it with a segment in the plan. If a
+    match to the normalized segment name is found in the plan, the record is assigned to
+    the segment.
 
-    for record in records:
-        normalized_segment_name = extract_segment_name_from_record(record)
+    Exceptions are raised when:
 
-        for segment in unassigned_segments:
-            if segment.name == normalized_segment_name:
-                assigned_records[segment.id] = record
-                unassigned_segments.remove(segment)
-                break
+    * More than one segment is unnamed. Monopartite plans are allowed one unnamed
+      segment.
+    * A segment name is found in the records that doesn't exist in the plan.
+    * A segment name is required by the plan but not found in the records.
+    * There are duplicate segment names in the records.1
 
-    for segment in plan.required_segments:
-        if segment.id not in assigned_records:
-            raise ValueError("Missing one or more required segments.")
+    The assigned segments are returned as a dictionary with segment IDs as records keyed
+    by segment IDs.
 
-    return assigned_records
+    :param records: A list of Genbank records.
+    :param plan: A plan.
+    :return: A dictionary of segment IDs as keys and records as values.
+    """
+    unassigned_segments = {segment.name: segment for segment in plan.segments}
+
+    seen_segment_names = Counter(
+        extract_segment_name_from_record(record) for record in records
+    )
+
+    if seen_segment_names.total() > 1 and seen_segment_names[None]:
+        raise ValueError(
+            "If a segment has no name, it must be the only segment. Only monopartite "
+            "plans may have unnamed segments."
+        )
+
+    duplicate_segment_names = [
+        segment_name for segment_name, count in seen_segment_names.items() if count > 1
+    ]
+
+    if duplicate_segment_names:
+        # This also covers monopartite plans. Duplicate `None` segment names will be
+        # caught here.
+        joined = ", ".join(sorted(str(n) for n in duplicate_segment_names))
+        raise ValueError(f"Duplicate segment names found in records: {joined}.")
+
+    segment_names_not_in_plan = [
+        segment_name
+        for segment_name in seen_segment_names
+        if segment_name not in unassigned_segments
+    ]
+
+    if segment_names_not_in_plan:
+        # This also covers monopartite plans. Plans are guaranteed to only one `None`
+        # segment name and only when they are monopartite.
+        joined = ", ".join(sorted(str(n) for n in segment_names_not_in_plan))
+        raise ValueError(f"Segment names not found in plan: {joined}.")
+
+    segment_names_not_in_records = [
+        segment.name
+        for segment in plan.segments
+        if segment.name not in seen_segment_names
+    ]
+
+    if segment_names_not_in_records:
+        raise ValueError(
+            "Required segment names not found in records: ",
+            f"{segment_names_not_in_records}",
+        )
+
+    return {
+        unassigned_segments[extract_segment_name_from_record(record)].id: record
+        for record in records
+    }

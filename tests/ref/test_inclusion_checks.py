@@ -1,84 +1,19 @@
-from uuid import UUID
-
 import pytest
 from faker import Faker
 
-from ref_builder.resources import RepoOTU
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.isolate import (
-    create_monopartite_isolate,
-    create_multipartite_isolate,
+    create_isolate,
 )
-from ref_builder.otu.utils import check_sequence_length, IsolateName, IsolateNameType
+from ref_builder.otu.utils import IsolateName, IsolateNameType, check_sequence_length
+from ref_builder.repo import Repo
+from ref_builder.resources import RepoOTU
 from tests.fixtures.factories import NCBIGenbankFactory, NCBISourceFactory
 from tests.fixtures.providers import AccessionProvider, SequenceProvider
-
 
 faker = Faker()
 faker.add_provider(AccessionProvider)
 faker.add_provider(SequenceProvider)
-
-
-def create_mock_record(
-    otu: RepoOTU,
-    sequence_length: int,
-) -> NCBIGenbank:
-    """Generate a single mock Genbank record capable of passing the inclusion check
-    on a given monopartite OTU.
-
-    :param otu: A monopartite OTU that the generated record must match.
-    :param sequence_length: The length of the mock sequence.
-    """
-    if not otu.plan.monopartite:
-        raise ValueError("Basis OTU must be monopartite")
-
-    mock_record_source = NCBISourceFactory.build(
-        taxid=otu.taxid,
-        organism=otu.name,
-    )
-
-    mock_record = NCBIGenbankFactory.build(
-        accession=faker.genbank_accession(),
-        source=mock_record_source,
-        sequence=faker.sequence(min=sequence_length, max=sequence_length),
-    )
-
-    return mock_record
-
-
-def create_mock_isolate_records(
-    otu: RepoOTU,
-    sequence_length_multiplier: float = 1.0,
-) -> dict[UUID, NCBIGenbank]:
-    """Generate a collection of mock Genbank records capable of passing the isolate inclusion checks
-    on a given multipartite OTU, as long as sequence_length_multiplier is 1.0.
-    Builds one mock record per segment.
-
-    :param otu: A monopartite OTU that the generated record must match.
-    :param sequence_length_multiplier: A float multiplier for the generated mock sequence length.
-    """
-    mock_assigned_records = {}
-
-    accession_starter = 100000
-
-    for i in range(len(otu.plan.required_segments)):
-        segment = otu.plan.required_segments[i]
-
-        mock_record_source = NCBISourceFactory.build(
-            taxid=otu.taxid,
-            organism=otu.name,
-            segment=str(segment.name),
-        )
-
-        sequence_length = int(segment.length * sequence_length_multiplier)
-
-        mock_assigned_records[segment.id] = NCBIGenbankFactory.build(
-            accession=f"AB{accession_starter + i}",
-            source=mock_record_source,
-            sequence=faker.sequence(min=sequence_length, max=sequence_length),
-        )
-
-    return mock_assigned_records
 
 
 class TestSequenceLengthCheck:
@@ -124,117 +59,101 @@ class TestSequenceLengthCheck:
             assert not check_sequence_length(fake_sequence, 1000, tolerance)
 
 
-class TestAddMonopartiteIsolate:
-    """Test that new monopartite isolates follow plan length limits."""
-
-    @pytest.mark.parametrize("sequence_length_multiplier", [1.0, 1.03, 0.98])
-    def test_ok(self, scratch_repo, sequence_length_multiplier: float):
-        """Test that sequences within recommended length tolerance
-        are added without issue."""
-        otu_before = scratch_repo.get_otu_by_taxid(270478)
-
-        mock_record = create_mock_record(
-            otu_before,
-            int(otu_before.plan.segments[0].length * sequence_length_multiplier),
-        )
-
-        assert mock_record
-
-        mock_isolate = create_monopartite_isolate(
-            scratch_repo,
-            otu_before,
-            isolate_name=IsolateName(type=IsolateNameType.ISOLATE, value="mock"),
-            record=mock_record,
-        )
-
-        otu_after = scratch_repo.get_otu_by_taxid(270478)
-
-        assert mock_isolate.id in otu_after.isolate_ids
-
-        assert mock_record.accession in otu_after.accessions
-
-    @pytest.mark.parametrize("sequence_length_multiplier", [0.5, 1.035, 20.0])
-    def test_fail(self, scratch_repo, sequence_length_multiplier: float):
-        """Test that sequences that exceed recommended length tolerance
-        are automatically rejected.
-        """
-        otu_before = scratch_repo.get_otu_by_taxid(270478)
-
-        mock_record = create_mock_record(
-            otu_before,
-            int(otu_before.plan.segments[0].length * sequence_length_multiplier),
-        )
-
-        assert mock_record
-
-        mock_isolate = create_monopartite_isolate(
-            scratch_repo,
-            otu_before,
-            isolate_name=IsolateName(type=IsolateNameType.ISOLATE, value="mock"),
-            record=mock_record,
-        )
-
-        assert mock_isolate is None
-
-        otu_after = scratch_repo.get_otu_by_taxid(270478)
-
-        assert mock_record.accession not in otu_after.accessions
-
-
 class TestAddMultipartiteIsolate:
     """Test that new multipartite isolates follow plan length limits."""
 
+    @pytest.fixture(autouse=True)
+    def _setup(
+        self,
+        ncbi_genbank_factory: NCBIGenbankFactory,
+        ncbi_source_factory: NCBISourceFactory,
+    ):
+        def func(
+            otu: RepoOTU,
+            sequence_length_multiplier: float = 1.0,
+        ) -> list[NCBIGenbank]:
+            """Generate a collection of mock Genbank records capable of passing the isolate inclusion checks
+            on a given multipartite OTU, as long as sequence_length_multiplier is 1.0.
+            Builds one mock record per segment.
+
+            :param otu: A monopartite OTU that the generated record must match.
+            :param sequence_length_multiplier: A float multiplier for the generated mock sequence length.
+            """
+            records = []
+
+            accession_starter = 100000
+
+            for i in range(len(otu.plan.required_segments)):
+                segment = otu.plan.required_segments[i]
+
+                source = ncbi_source_factory.build(
+                    taxid=otu.taxid,
+                    organism=otu.name,
+                    segment=str(segment.name),
+                )
+
+                sequence_length = int(segment.length * sequence_length_multiplier)
+
+                records.append(
+                    ncbi_genbank_factory.build(
+                        accession=f"AB{accession_starter + i}",
+                        sequence=faker.sequence(
+                            min=sequence_length, max=sequence_length
+                        ),
+                        source=source,
+                    )
+                )
+
+            return records
+
+        self.create_mock_isolate_records = func
+
     @pytest.mark.parametrize("sequence_length_multiplier", [1.0, 1.03, 0.98])
-    def test_ok(self, scratch_repo, sequence_length_multiplier: float):
+    def test_ok(self, scratch_repo: Repo, sequence_length_multiplier: float):
         """Test that sequences within recommended length tolerance
-        are added without issue."""
+        are added without issue.
+        """
         otu_before = scratch_repo.get_otu_by_taxid(3158377)
 
-        mock_assigned_records = create_mock_isolate_records(
+        records = self.create_mock_isolate_records(
             otu_before,
             sequence_length_multiplier,
         )
 
-        assert mock_assigned_records
-
-        mock_isolate = create_multipartite_isolate(
+        isolate = create_isolate(
             scratch_repo,
             otu_before,
-            isolate_name=IsolateName(type=IsolateNameType.ISOLATE, value="mock"),
-            assigned_records=mock_assigned_records,
+            IsolateName(type=IsolateNameType.ISOLATE, value="mock"),
+            records,
         )
 
         otu_after = scratch_repo.get_otu_by_taxid(3158377)
 
-        assert mock_isolate.id in otu_after.isolate_ids
-
-        assert mock_isolate.accessions.issubset(otu_after.accessions)
+        assert isolate.id in otu_after.isolate_ids
+        assert isolate.accessions.issubset(otu_after.accessions)
 
     @pytest.mark.parametrize("sequence_length_multiplier", [0.5, 1.035, 20.0])
-    def test_fail(self, scratch_repo, sequence_length_multiplier: float):
-        """Test that sequences that exceed recommended length tolerance
-        are automatically rejected.
+    def test_fail(self, scratch_repo: Repo, sequence_length_multiplier: float):
+        """Test that sequences that exceed recommended length tolerance are
+        automatically rejected.
         """
         otu_before = scratch_repo.get_otu_by_taxid(3158377)
 
-        mock_assigned_records = create_mock_isolate_records(
+        records = self.create_mock_isolate_records(
             otu_before,
             sequence_length_multiplier,
         )
 
-        assert mock_assigned_records
-
-        mock_isolate = create_multipartite_isolate(
+        isolate = create_isolate(
             scratch_repo,
             otu_before,
-            isolate_name=IsolateName(type=IsolateNameType.ISOLATE, value="mock"),
-            assigned_records=mock_assigned_records,
+            IsolateName(type=IsolateNameType.ISOLATE, value="mock"),
+            records,
         )
 
-        assert mock_isolate is None
+        assert isolate is None
 
         otu_after = scratch_repo.get_otu_by_taxid(3158377)
 
         assert otu_after.isolate_ids == otu_before.isolate_ids
-
         assert otu_after.accessions == otu_before.accessions

@@ -1,10 +1,9 @@
 """Factories for generating quasi-realistic NCBISource and NCBIGenbank data."""
 
-from faker import Faker
+from faker.providers import lorem
 from polyfactory import PostGenerated, Use
 from polyfactory.decorators import post_generated
 from polyfactory.factories.pydantic_factory import ModelFactory
-from polyfactory.pytest_plugin import register_fixture
 from pydantic.v1 import UUID4
 
 from ref_builder.models import MolType, OTUMinimal
@@ -33,32 +32,20 @@ DNA_MOLTYPES = {
 }
 """NCBISourceMolTypes that map to MolType.DNA"""
 
-RANDOM_SEED = 21
-"""Factory random seed"""
+
+ModelFactory.__faker__.add_provider(AccessionProvider)
+ModelFactory.__faker__.add_provider(BusinessProvider)
+ModelFactory.__faker__.add_provider(OrganismProvider)
+ModelFactory.__faker__.add_provider(SegmentProvider)
+ModelFactory.__faker__.add_provider(SequenceProvider)
+ModelFactory.__faker__.add_provider(lorem)
 
 
 class NCBISourceFactory(ModelFactory[NCBISource]):
     """NCBISource Factory with quasi-realistic data."""
 
-    __faker__ = Faker()
-    __random_seed__ = 10
-    __faker__.add_provider(OrganismProvider)
-    __faker__.add_provider(SegmentProvider)
-
-    @classmethod
-    def taxid(cls) -> int:
-        """Taxon ID faker."""
-        return cls.__faker__.random_int(1000, 999999)
-
-    @classmethod
-    def organism(cls) -> str:
-        """Organism name faker."""
-        return cls.__faker__.organism()
-
-    @classmethod
-    def host(cls) -> str:
-        """Pathogen host name faker."""
-        return cls.__faker__.host().capitalize()
+    host = Use(ModelFactory.__faker__.host)
+    """A fake host name for the virus."""
 
     @classmethod
     def isolate(cls) -> str:
@@ -82,23 +69,27 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
 
         return ""
 
+    organism = Use(ModelFactory.__faker__.organism)
+    """A fake name for the virus."""
+
+    taxid = Use(ModelFactory.__faker__.random_int, min=1000, max=999999)
+
     @classmethod
     def segment(cls) -> str:
         """Raw segment name faker."""
         if cls.__faker__.boolean(80):
             return (
-                cls.__faker__.segment_prefix()
-                + cls.__faker__.segment_delimiter()
-                + cls.__faker__.segment_key()
+                f"{cls.__faker__.segment_prefix()}"
+                f"{cls.__faker__.segment_delimiter()}"
+                f"{cls.__faker__.segment_key()}"
             )
-
         return cls.__faker__.segment_key()
 
     @classmethod
     def clone(cls) -> str:
         """Raw clone name faker."""
-        delimiter = cls.__faker__.random_element(["-", "_", " ", "/"])
         if cls.__faker__.boolean(10):
+            delimiter = cls.__faker__.random_element(["-", "_", " ", "/"])
             return delimiter.join(cls.__faker__.words(2))
 
         return ""
@@ -106,16 +97,14 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
     @classmethod
     def strain(cls) -> str:
         """Raw strain name faker."""
-        delimiter = cls.__faker__.random_element(["-", "_", " ", "/"])
         if cls.__faker__.boolean(10):
+            delimiter = cls.__faker__.random_element(["-", "_", " ", "/"])
             return delimiter.join(cls.__faker__.words(2))
 
         return ""
 
-    @classmethod
-    def proviral(cls) -> bool:
-        """Pseudorandom proviral flag."""
-        return cls.__faker__.boolean(5)
+    proviral = Use(ModelFactory.__faker__.boolean, chance_of_getting_true=5)
+    """Pseudorandom proviral flag for DNA records only."""
 
     @post_generated
     @classmethod
@@ -150,39 +139,16 @@ class NCBISourceFactory(ModelFactory[NCBISource]):
 class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
     """NCBIGenbank Factory with quasi-realistic data."""
 
-    __faker__ = Faker()
-    __faker__.add_provider(AccessionProvider)
-    __faker__.add_provider(SequenceProvider)
+    source = Use(NCBISourceFactory.build)
 
-    source = NCBISourceFactory
-
-    @classmethod
-    def accession(cls) -> str:
-        """Raw accession faker."""
-        return cls.__faker__.accession()
-
-    @classmethod
-    def sequence(cls) -> str:
-        """Sequence faker."""
-        return cls.__faker__.sequence()
+    accession = Use(ModelFactory.__faker__.accession)
+    """A fake accession that conforms to NCBI standards."""
 
     @post_generated
     @classmethod
     def accession_version(cls, accession: str) -> str:
         """Raw accession_version faker."""
         return f"{accession}.{cls.__faker__.random_int(1, 3)}"
-
-    @post_generated
-    @classmethod
-    def organism(cls, source: NCBISource) -> str:
-        """Match organism field to source.organism."""
-        return source.organism
-
-    @post_generated
-    @classmethod
-    def taxid(cls, source: NCBISource) -> int:
-        """Match taxid field to source.taxid."""
-        return source.taxid
 
     @post_generated
     @classmethod
@@ -205,56 +171,22 @@ class NCBIGenbankFactory(ModelFactory[NCBIGenbank]):
                 f"Source moltype {source.mol_type} cannot be matched to MolType",
             ) from err
 
-    @staticmethod
-    def build_from_metadata(
-        plan: Plan,
-        moltype: MolType,
-        name: str,
-        taxid: int,
-    ) -> list[NCBIGenbank]:
-        """Return a list of mock records matching given OTU metadata."""
-        source_moltype = None
+    @post_generated
+    @classmethod
+    def organism(cls, source: NCBISource) -> str:
+        """Organism faker."""
+        return source.organism
 
-        match moltype:
-            case MolType.DNA:
-                source_moltype = NCBISourceMolType.GENOMIC_DNA
-            case MolType.RNA:
-                source_moltype = NCBISourceMolType.GENOMIC_RNA
-            case MolType.CRNA:
-                source_moltype = NCBISourceMolType.VIRAL_CRNA
-            case MolType.MRNA:
-                source_moltype = NCBISourceMolType.MRNA
-            case MolType.TRNA:
-                source_moltype = NCBISourceMolType.TRANSCRIBED_RNA
+    @classmethod
+    def sequence(cls) -> str:
+        """Sequence faker."""
+        return cls.__faker__.sequence()
 
-        if source_moltype is None:
-            raise ValueError(
-                f"MolType {moltype} cannot be matched to NCBISourceMolType"
-            )
-
-        if plan.monopartite:
-            source = NCBISourceFactory.build(
-                moltype=source_moltype,
-                organism=name,
-                segment="",
-                taxid=taxid,
-            )
-
-            return [NCBIGenbankFactory.build(source=source)]
-
-        mock_records = []
-
-        for segment in plan.required_segments:
-            source = NCBISourceFactory.build(
-                moltype=source_moltype,
-                organism=name,
-                segment=str(segment.name),
-                taxid=taxid,
-            )
-
-            mock_records.append(NCBIGenbankFactory.build(source=source))
-
-        return mock_records
+    @post_generated
+    @classmethod
+    def taxid(cls, source: NCBISource) -> int:
+        """Match taxid field to source.taxid."""
+        return source.taxid
 
 
 def derive_acronym(_: str, values: dict[str, str]) -> str:
@@ -266,14 +198,9 @@ def derive_acronym(_: str, values: dict[str, str]) -> str:
 class SegmentFactory(ModelFactory[Segment]):
     """Segment Factory with quasi-realistic data."""
 
-    __faker__ = Faker()
+    ModelFactory.__faker__.add_provider(SequenceProvider)
 
-    __faker__.add_provider(SequenceProvider)
-    __faker__.add_provider(SegmentProvider)
-
-    __random_seed__ = RANDOM_SEED
-
-    length = Use(__faker__.sequence_length)
+    length = Use(ModelFactory.__faker__.sequence_length)
     """Generate a quasi-realistic length for a sequence."""
 
     @classmethod
@@ -291,44 +218,34 @@ class SegmentFactory(ModelFactory[Segment]):
 class SequenceFactory(ModelFactory[RepoSequence]):
     """Sequence factory with quasi-realistic data."""
 
-    __faker__ = Faker()
-
-    __faker__.add_provider(AccessionProvider)
-    __faker__.add_provider(BusinessProvider)
-    __faker__.add_provider(SegmentProvider)
-    __faker__.add_provider(SequenceProvider)
-
-    id = Use(__faker__.uuid4, cast_to=None)
+    id = Use(ModelFactory.__faker__.uuid4)
     """Generate a UUID."""
 
-    definition = Use(__faker__.sentence)
+    definition = Use(ModelFactory.__faker__.sentence)
     """Generate a mock sentence to serve as the definition field."""
 
-    legacy_id = Use(__faker__.legacy_id)
+    legacy_id = Use(ModelFactory.__faker__.legacy_id)
     """Generate an 8-character unique identifier as used in virtool-cli."""
 
-    segment = Use(__faker__.uuid4)
+    segment = Use(ModelFactory.__faker__.uuid4)
     """Generate a quasi-realistic mock segment string."""
 
-    sequence = Use(__faker__.sequence)
+    sequence = Use(ModelFactory.__faker__.sequence)
     """Generate a quasi-realistic mock genomic sequence."""
 
     @classmethod
     def accession(cls) -> Accession:
         """Generate a quasi-realistic accession."""
-        return Accession(key=cls.__faker__.accession(), version=1)
+        ModelFactory.__faker__.add_provider(AccessionProvider)
+        return Accession(key=ModelFactory.__faker__.accession(), version=1)
 
 
 class PlanFactory(ModelFactory[Plan]):
-    """A Polyfactory that generates valid instwances of :class:`Plan`.
+    """A Polyfactory that generates valid instances of :class:`Plan`.
 
     The factory generates a random number of segments, with a 75% chance of generating a
     monopartite plan.
     """
-
-    __faker__ = Faker()
-
-    __random_seed__ = RANDOM_SEED
 
     @classmethod
     def segments(cls) -> list[Segment]:
@@ -352,15 +269,12 @@ class PlanFactory(ModelFactory[Plan]):
 class IsolateFactory(ModelFactory[IsolateBase]):
     """Isolate factory with quasi-realistic data."""
 
-    __faker__ = Faker()
+    ModelFactory.__faker__.add_provider(BusinessProvider)
 
-    __faker__.add_provider(AccessionProvider)
-    __faker__.add_provider(BusinessProvider)
-
-    id = Use(__faker__.uuid4, cast_to=None)
+    id = Use(ModelFactory.__faker__.uuid4, cast_to=None)
     """Generate a UUID."""
 
-    legacy_id = Use(__faker__.legacy_id)
+    legacy_id = Use(ModelFactory.__faker__.legacy_id)
     """Generate an 8-character unique identifier as used in virtool-cli."""
 
     @classmethod
@@ -385,14 +299,8 @@ class IsolateFactory(ModelFactory[IsolateBase]):
 class OTUFactory(ModelFactory[OTUBase]):
     """OTU Factory with quasi-realistic data."""
 
-    __faker__ = Faker()
-
-    __faker__.add_provider(AccessionProvider)
-    __faker__.add_provider(BusinessProvider)
-    __faker__.add_provider(OrganismProvider)
-    __faker__.add_provider(SequenceProvider)
-
-    __random_seed__ = RANDOM_SEED
+    ModelFactory.__faker__.add_provider(BusinessProvider)
+    ModelFactory.__faker__.add_provider(OrganismProvider)
 
     acronym = PostGenerated(derive_acronym)
     """Generate an acronym for the OTU derived from its name."""
@@ -417,13 +325,13 @@ class OTUFactory(ModelFactory[OTUBase]):
 
         return isolates
 
-    id = Use(__faker__.uuid4, cast_to=None)
+    id = Use(ModelFactory.__faker__.uuid4, cast_to=None)
     """Generate a UUID."""
 
-    legacy_id = Use(__faker__.legacy_id)
+    legacy_id = Use(ModelFactory.__faker__.legacy_id)
     """Generate an 8-character unique identifier as used in virtool-cli."""
 
-    name = Use(__faker__.organism)
+    name = Use(ModelFactory.__faker__.organism)
     """Generate a realistic name for a plant virus."""
 
     plan = Use(PlanFactory.build)
@@ -441,36 +349,24 @@ class OTUFactory(ModelFactory[OTUBase]):
         """Derive a list of sequences from a list of isolates."""
         return [sequence for isolate in isolates for sequence in isolate.sequences]
 
-    @classmethod
-    def taxid(cls) -> int:
-        """Generate a realistic taxonomy ID."""
-        return cls.__faker__.random_int(1000, 999999)
+    taxid = Use(ModelFactory.__faker__.random_int, min=1000, max=999999)
+    """A realistic taxonomy ID."""
 
 
-@register_fixture
 class OTUMinimalFactory(ModelFactory[OTUMinimal]):
     """OTUMinimal Factory with quasi-realistic data."""
 
-    __faker__ = Faker()
-    __faker__.add_provider(BusinessProvider)
-    __faker__.add_provider(OrganismProvider)
-
-    __random_seed__ = 20
+    ModelFactory.__faker__.add_provider(BusinessProvider)
+    ModelFactory.__faker__.add_provider(OrganismProvider)
 
     acronym = PostGenerated(derive_acronym)
     """An acronym for the OTU derived from its name."""
 
-    @classmethod
-    def legacy_id(cls) -> str:
-        """Generate a realistic 8-character ``legacy_id`` for the OTU."""
-        return cls.__faker__.legacy_id()
+    legacy_id = Use(ModelFactory.__faker__.legacy_id)
+    """Generate a realistic 8-character ``legacy_id`` for the OTU."""
 
-    @classmethod
-    def name(cls) -> str:
-        """Generate a realistic name for the OTU."""
-        return cls.__faker__.organism()
+    name = Use(ModelFactory.__faker__.organism)
+    """Generate a realistic name for the OTU."""
 
-    @classmethod
-    def taxid(cls) -> int:
-        """Generate a realistic taxonomy ID."""
-        return cls.__faker__.random_int(1000, 999999)
+    taxid = Use(ModelFactory.__faker__.random_int, min=1000, max=999999)
+    """A realistic taxonomy ID."""
