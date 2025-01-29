@@ -100,7 +100,7 @@ def otu_list(path: Path) -> None:
 
 @otu.command(name="update")
 @ignore_cache_option
-@click.pass_context
+@path_option
 @click.argument("TAXID", type=int)
 def otu_auto_update(path: Path, taxid: int, ignore_cache: bool) -> None:
     """Update an OTU with the latest data from NCBI."""
