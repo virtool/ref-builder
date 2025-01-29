@@ -71,15 +71,14 @@ def create_segments_from_records(
     records: list[NCBIGenbank], rule: SegmentRule, length_tolerance: float
 ) -> list[Segment]:
     """Return a list of SegmentPlans."""
-    segments = []
-
     if len(records) > 1 and not all(r.source.segment for r in records):
         raise ValueError("Segment name not found for multipartite OTU segment.")
 
-    return [
-        Segment.from_record(record, length_tolerance, rule)
-        for record in sorted(records, key=lambda r: r.accession)
+    segments = [
+        Segment.from_record(record, length_tolerance, rule) for record in records
     ]
+
+    return sorted(segments, key=lambda s: str(s.name if s.name else "Unnamed"))
 
 
 def create_plan_from_records(
