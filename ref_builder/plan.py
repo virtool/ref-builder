@@ -1,12 +1,11 @@
 import re
 from enum import StrEnum
 from uuid import UUID, uuid4
-from warnings import warn
 
 from pydantic import UUID4, BaseModel, ConfigDict, Field, model_validator
 from pydantic.dataclasses import dataclass
 
-from ref_builder.ncbi.models import NCBIGenbank, NCBISourceMolType
+from ref_builder.ncbi.models import NCBIGenbank
 
 SIMPLE_NAME_PATTERN = re.compile(r"([A-Za-z0-9])+")
 """Regex pattern for parsing segment name strings with no prefix."""
@@ -135,14 +134,6 @@ class Plan(BaseModel):
         return Plan(id=uuid4(), segments=segments)
 
     @model_validator(mode="after")
-    def check_required_segments(self) -> "Plan":
-        """Check that there is at least one required segment."""
-        if not self.required_segments:
-            warn("Warning: Plan contains no required segments.")
-
-        return self
-
-    @model_validator(mode="after")
     def check_naming(self) -> "Plan":
         """Check that all segments have non-None, unique names if the plan is
         multipartite.
@@ -150,7 +141,7 @@ class Plan(BaseModel):
         if self.monopartite:
             return self
 
-        names = [segment.name for segment in self.segments if segment.name]
+        names = [segment.name for segment in self.segments]
 
         if any(name is None for name in names):
             raise ValueError("All segments must have a name in a multipartite plan.")
@@ -173,51 +164,6 @@ class Plan(BaseModel):
                 return segment
 
         return None
-
-    def get_segment_by_key(self, name_key: str) -> Segment | None:
-        """Get the segment with the given ``name_key``.
-
-        Return the segment with the matching SegmentName.key it exists,
-        otherwise return None.
-        """
-        for segment in self.segments:
-            if segment.name.key == name_key:
-                return segment
-
-        return None
-
-
-def determine_segment_prefix(moltype: NCBISourceMolType) -> str:
-    """Return an acceptable SegmentName prefix corresponding to
-    the given NCBISourceMolType.
-    """
-    if moltype in (
-        NCBISourceMolType.GENOMIC_DNA,
-        NCBISourceMolType.OTHER_DNA,
-        NCBISourceMolType.UNASSIGNED_DNA,
-    ):
-        return "DNA"
-
-    prefix = None
-
-    match moltype:
-        case NCBISourceMolType.GENOMIC_RNA:
-            prefix = "RNA"
-        case NCBISourceMolType.MRNA:
-            prefix = "mRNA"
-        case NCBISourceMolType.TRNA:
-            prefix = "tRNA"
-        case NCBISourceMolType.TRANSCRIBED_RNA:
-            prefix = "RNA"
-        case NCBISourceMolType.VIRAL_CRNA:
-            prefix = "cRNA"
-        case NCBISourceMolType.OTHER_RNA:
-            prefix = "RNA"
-
-    if prefix:
-        return prefix
-
-    raise ValueError(f"{moltype} may not be a valid NCBISourceMolType.")
 
 
 def parse_segment_name(string: str) -> SegmentName | None:

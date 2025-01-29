@@ -2,10 +2,54 @@ import pytest
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
+from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBISourceMolType
-from ref_builder.otu.utils import assign_records_to_segments
+from ref_builder.otu.utils import assign_records_to_segments, create_plan_from_records
+from ref_builder.plan import (
+    Plan,
+)
 from ref_builder.repo import Repo
 from tests.fixtures.factories import NCBIGenbankFactory, NCBISourceFactory
+from tests.fixtures.utils import uuid_matcher
+
+
+class TestCreatePlanFromRecords:
+    """Test `create_plan_from_records` function."""
+
+    def test_monopartite(
+        self,
+        scratch_ncbi_client: NCBIClient,
+        snapshot: SnapshotAssertion,
+    ):
+        """Test that a monopartite plan is created from a single Genbank record."""
+        records = scratch_ncbi_client.fetch_genbank_records(["NC_024301"])
+
+        plan = create_plan_from_records(records, length_tolerance=0.03)
+
+        assert isinstance(plan, Plan)
+        assert plan.model_dump() == snapshot(matcher=uuid_matcher)
+
+    def test_multipartite(
+        self,
+        scratch_ncbi_client: NCBIClient,
+        snapshot: SnapshotAssertion,
+    ):
+        """Test that a multipartite plan is created from multiple Genbank records."""
+        records = scratch_ncbi_client.fetch_genbank_records(
+            [
+                "NC_010314",
+                "NC_010315",
+                "NC_010316",
+                "NC_010317",
+                "NC_010318",
+                "NC_010319",
+            ]
+        )
+
+        plan = create_plan_from_records(records, length_tolerance=0.03)
+
+        assert isinstance(plan, Plan)
+        assert plan.model_dump() == snapshot(matcher=uuid_matcher)
 
 
 @pytest.mark.parametrize("taxid", [223262, 3158377])

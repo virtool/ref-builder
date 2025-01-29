@@ -1,0 +1,42 @@
+# serializer version: 1
+# name: TestPlan.test_new
+  dict({
+    'id': UUID,
+    'segments': list([
+      dict({
+        'id': UUID,
+        'length': 100,
+        'length_tolerance': 0.01,
+        'name': dict({
+          'key': 'A',
+          'prefix': 'DNA',
+        }),
+        'required': 'required',
+      }),
+      dict({
+        'id': UUID,
+        'length': 200,
+        'length_tolerance': 0.02,
+        'name': dict({
+          'key': 'B',
+          'prefix': 'DNA',
+        }),
+        'required': 'required',
+      }),
+    ]),
+  })
+# ---
+# name: TestPlan.test_ok
+  dict({
+    'id': UUID,
+    'segments': list([
+      dict({
+        'id': UUID,
+        'length': 100,
+        'length_tolerance': 0.01,
+        'name': None,
+        'required': 'required',
+      }),
+    ]),
+  })
+# ---
