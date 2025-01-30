@@ -52,9 +52,7 @@ def batch_update_repo(
     repo: Repo,
     ignore_cache: bool = False,
 ):
-    """Update all OTUS.
-
-    TO BE IMPLEMENTED.
+    """Fetch new accessions for all OTUs in the repo and create isolates as possible.
     """
     repo_logger = logger.bind(path=str(repo.path))
 
@@ -75,6 +73,30 @@ def batch_update_repo(
     logger.info("New accessions found.", accession_count=len(taxid_new_accession_index))
 
     indexed_records = batch_fetch_new_records(fetch_set, ignore_cache)
+
+    if not indexed_records:
+        logger.info("No valid accessions found.")
+        return None
+
+    logger.info("Checking new records against OTUs.", otu_count=len(taxid_new_accession_index))
+
+    for taxid in taxid_new_accession_index:
+        otu_records = []
+
+        for accession in taxid_new_accession_index[taxid]:
+            if (record := indexed_records.get(accession)) is not None:
+                otu_records.append(record)
+
+        if not otu_records:
+            continue
+
+        update_otu_with_records(
+            repo,
+            otu=repo.get_otu_by_taxid(taxid),
+            records=otu_records,
+        )
+
+    repo_logger.info("Batch update complete.")
 
 
 def batch_fetch_new_accessions(
