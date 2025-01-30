@@ -1,12 +1,12 @@
 # serializer version: 1
 # name: TestPrintOTUList.test_ok
   '''
-   NAME                       ACRONYM  TAXID   ID                                 
-   Maize bunchy top virus     MBTV     30724   cd613e30-d8f1-4adf-91b7-584a2265b… 
-   Garlic leaf crumple virus  GLCV     24406   6ec9d286-63ca-428d-95f4-b3b2e4b06… 
-   Tomato leafroll virus      TLV      243081  025b413f-8a9a-421e-a648-a7dd06839… 
-   Garlic leaf crumple virus  GLCV     533380  75a89294-c2cd-489a-b802-08a9ad45f… 
-   Squash tatter leaf virus   STLV     385957  3099fdf5-ab99-454a-a901-e35cd47d3… 
+  [1mNAME                       ACRONYM  TAXID   ID                                  [0m
+  Maize bunchy top virus     MBTV     30724   cd613e30-d8f1-4adf-91b7-584a2265b1f5
+  Garlic leaf crumple virus  GLCV     24406   6ec9d286-63ca-428d-95f4-b3b2e4b06ce6
+  Tomato leafroll virus      TLV      243081  025b413f-8a9a-421e-a648-a7dd06839eb9
+  Garlic leaf crumple virus  GLCV     533380  75a89294-c2cd-489a-b802-08a9ad45f23d
+  Squash tatter leaf virus   STLV     385957  3099fdf5-ab99-454a-a901-e35cd47d380d
   
   '''
 # ---
