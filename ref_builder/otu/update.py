@@ -1,5 +1,5 @@
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Collection, Iterable
 from uuid import UUID
 
 from structlog import get_logger
@@ -24,6 +24,7 @@ from ref_builder.utils import Accession, IsolateName
 logger = get_logger("otu.update")
 
 OTU_FEEDBACK_INTERVAL = 100
+RECORD_FETCH_LIMIT = 500
 
 
 def auto_update_otu(
@@ -112,6 +113,33 @@ def batch_update_repo(
         return None
 
     logger.info("New accessions found.", accession_count=len(taxid_new_accession_index))
+
+    # batch_fetch_new_records()
+
+
+def batch_fetch_new_records(
+    accessions: Collection[str],
+    ignore_cache: bool = False,
+) -> dict[str, NCBIGenbank]:
+    """Download a batch of records and return in a dictionary indexed by accession."""
+    if not accessions:
+        return {}
+
+    ncbi = NCBIClient(ignore_cache)
+
+    if len(accessions) > RECORD_FETCH_LIMIT:
+        # chunking TBI
+        records = ncbi.fetch_genbank_records(accessions)
+
+    else:
+        records = ncbi.fetch_genbank_records(accessions)
+
+    if records:
+        return {record.accession: record for record in records}
+
+    logger.info("No valid records found.")
+
+    return {}
 
 
 def update_isolate_from_accessions(
