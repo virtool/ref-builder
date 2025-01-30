@@ -24,7 +24,7 @@ from ref_builder.utils import Accession, IsolateName
 logger = get_logger("otu.update")
 
 OTU_FEEDBACK_INTERVAL = 100
-RECORD_FETCH_LIMIT = 500
+RECORD_FETCH_LIMIT = 25
 
 
 def auto_update_otu(
@@ -127,15 +127,23 @@ def batch_fetch_new_records(
 
     ncbi = NCBIClient(ignore_cache)
 
-    if len(accessions) > RECORD_FETCH_LIMIT:
-        # chunking TBI
-        records = ncbi.fetch_genbank_records(accessions)
+    fetch_list = list(accessions)
 
-    else:
-        records = ncbi.fetch_genbank_records(accessions)
+    indexed_records = {}
+    for iterator in range(len(fetch_list)):
+        logger.info("Fetching records...", page=iterator, page_size=RECORD_FETCH_LIMIT)
+        chunked_records = ncbi.fetch_genbank_records(
+            fetch_list[
+                ((iterator - 1) * RECORD_FETCH_LIMIT):(iterator * RECORD_FETCH_LIMIT)
+            ],
+        )
 
-    if records:
-        return {record.accession: record for record in records}
+        indexed_records.update(
+            {record.accession: record for record in chunked_records}
+        )
+
+    if indexed_records:
+        return indexed_records
 
     logger.info("No valid records found.")
 
