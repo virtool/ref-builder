@@ -1,4 +1,5 @@
 from collections import defaultdict
+from collections.abc import Iterable
 from uuid import UUID
 
 from structlog import get_logger
@@ -11,6 +12,8 @@ from ref_builder.otu.isolate import (
 )
 from ref_builder.otu.utils import (
     DeleteRationale,
+    get_segments_min_length,
+    get_segments_max_length,
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
@@ -40,6 +43,45 @@ def auto_update_otu(
         update_otu_with_accessions(repo, otu, fetch_list, ignore_cache)
     else:
         log.info("OTU is up to date.")
+
+
+def batch_fetch_new_accessions(
+    otu_iterable: Iterable[RepoOTU],
+    ignore_cache: bool = False,
+) -> dict[int, set[str]]:
+    ncbi = NCBIClient(ignore_cache)
+
+    otu_counter = 0
+
+    taxid_accession_index = {}
+
+    for otu in otu_iterable:
+        otu_logger = logger.bind(taxid=otu.taxid, name=otu.name)
+
+        otu_counter += 1
+
+        raw_accessions = ncbi.fetch_accessions_by_taxid(
+            otu.taxid,
+            sequence_min_length=get_segments_min_length(otu.plan.segments),
+            sequence_max_length=get_segments_max_length(otu.plan.segments),
+        )
+
+        otu_accessions = ncbi.filter_accessions(raw_accessions)
+
+        otu_fetch_set = {
+                            accession.key for accession in otu_accessions
+                        } - otu.blocked_accessions
+
+        if otu_fetch_set:
+            otu_logger.debug(
+                "Potential accessions found.",
+                accession_count=len(otu_fetch_set),
+                otu_counter=otu_counter,
+            )
+
+            taxid_accession_index[otu.taxid] = otu_fetch_set
+
+    return taxid_accession_index
 
 
 def batch_update_repo(
