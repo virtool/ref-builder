@@ -136,18 +136,6 @@ def format_json(path: Path) -> None:
         f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2))
 
 
-def pad_zeroes(number: int) -> str:
-    """Pad a number with zeroes to make it 8 characters long.
-
-    :param number: the number to pad
-    :return: the padded number
-    """
-    if number > ZERO_PADDING_MAX:
-        raise ValueError("Number is too large to pad")
-
-    return str(number).zfill(8)
-
-
 def get_accession_key(raw: str) -> str:
     """Parse a string to check if it follows Genbank or RefSeq accession parameters and
     return the key part only.
@@ -163,3 +151,31 @@ def get_accession_key(raw: str) -> str:
         return versioned_accession.key
 
     raise ValueError("Invalid accession key")
+
+
+def generate_natural_sort_key(string: str) -> list[int | str]:
+    """Generate a natural order sorting key for a string.
+
+    This list: ["1", "10", "2"] will be sorted as ["1", "2", "10"], as opposed to
+    lexographical order, which would result in ["1", "10", "2"].
+
+    :param string: the string to convert to a sorting key
+    :return: the sorting key
+    """
+
+    def _convert(string_: str) -> int | str:
+        return int(string_) if string_.isdigit() else string_.lower()
+
+    return [_convert(c) for c in re.split("([0-9]+)", string)]
+
+
+def pad_zeroes(number: int) -> str:
+    """Pad a number with zeroes to make it 8 characters long.
+
+    :param number: the number to pad
+    :return: the padded number
+    """
+    if number > ZERO_PADDING_MAX:
+        raise ValueError("Number is too large to pad")
+
+    return str(number).zfill(8)
