@@ -119,31 +119,24 @@ def print_otu_list(otus: Iterator[OTUMinimal]) -> None:
     :param otus: The OTUs to print.
 
     """
-    table = Table(
-        box=None,
-    )
+    rows = [(otu.name, otu.acronym, str(otu.taxid), str(otu.id)) for otu in otus]
 
-    table.add_column("NAME")
-    table.add_column("ACRONYM")
-    table.add_column("TAXID")
-    table.add_column("ID")
-
-    added_rows = False
-
-    for otu in otus:
-        table.add_row(
-            otu.name,
-            otu.acronym,
-            str(otu.taxid),
-            str(otu.id),
-        )
-
-        added_rows = True
-
-    if added_rows:
-        console.print(table)
-    else:
+    if not rows:
         console.print("No OTUs found")
+        return
+
+    raw_headers = ("NAME", "ACRONYM", "TAXID", "ID")
+    col_widths = [max(len(row[i]) for row in rows + [raw_headers]) for i in range(4)]
+
+    # Define a row format based on column widths
+    row_format = "  ".join(f"{{:<{w}}}" for w in col_widths)
+
+    # Header without bold.
+    header_text = row_format.format(*raw_headers)
+
+    # Apply ANSI bold code and print.
+    print(f"\033[1m{header_text}\033[0m")  # noqa: T201
+    print("\n".join([row_format.format(*row) for row in rows]))  # noqa: T201
 
 
 console = rich.console.Console()
