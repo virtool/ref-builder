@@ -68,9 +68,13 @@ def batch_update_repo(
         logger.info("OTUs are up to date.")
         return None
 
+    fetch_set = set()
+    for taxid in taxid_new_accession_index:
+        fetch_set.update(taxid_new_accession_index[taxid])
+
     logger.info("New accessions found.", accession_count=len(taxid_new_accession_index))
 
-    # batch_fetch_new_records()
+    indexed_records = batch_fetch_new_records(fetch_set, ignore_cache)
 
 
 def batch_fetch_new_accessions(
