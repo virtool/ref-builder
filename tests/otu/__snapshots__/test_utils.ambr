@@ -41,30 +41,10 @@
     'segments': list([
       dict({
         'id': UUID,
-        'length': 1090,
+        'length': 1015,
         'length_tolerance': 0.03,
         'name': dict({
-          'key': 'N',
-          'prefix': 'DNA',
-        }),
-        'required': 'required',
-      }),
-      dict({
-        'id': UUID,
-        'length': 1057,
-        'length_tolerance': 0.03,
-        'name': dict({
-          'key': 'U3',
-          'prefix': 'DNA',
-        }),
-        'required': 'required',
-      }),
-      dict({
-        'id': UUID,
-        'length': 1087,
-        'length_tolerance': 0.03,
-        'name': dict({
-          'key': 'S',
+          'key': 'C',
           'prefix': 'DNA',
         }),
         'required': 'required',
@@ -81,10 +61,10 @@
       }),
       dict({
         'id': UUID,
-        'length': 1015,
+        'length': 1090,
         'length_tolerance': 0.03,
         'name': dict({
-          'key': 'C',
+          'key': 'N',
           'prefix': 'DNA',
         }),
         'required': 'required',
@@ -95,6 +75,26 @@
         'length_tolerance': 0.03,
         'name': dict({
           'key': 'R',
+          'prefix': 'DNA',
+        }),
+        'required': 'required',
+      }),
+      dict({
+        'id': UUID,
+        'length': 1087,
+        'length_tolerance': 0.03,
+        'name': dict({
+          'key': 'S',
+          'prefix': 'DNA',
+        }),
+        'required': 'required',
+      }),
+      dict({
+        'id': UUID,
+        'length': 1057,
+        'length_tolerance': 0.03,
+        'name': dict({
+          'key': 'U3',
           'prefix': 'DNA',
         }),
         'required': 'required',

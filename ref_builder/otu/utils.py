@@ -14,7 +14,12 @@ from ref_builder.plan import (
     SegmentRule,
     extract_segment_name_from_record,
 )
-from ref_builder.utils import Accession, IsolateName, IsolateNameType
+from ref_builder.utils import (
+    Accession,
+    IsolateName,
+    IsolateNameType,
+    generate_natural_sort_key,
+)
 
 logger = structlog.get_logger()
 
@@ -78,7 +83,7 @@ def create_segments_from_records(
         Segment.from_record(record, length_tolerance, rule) for record in records
     ]
 
-    return sorted(segments, key=lambda s: str(s.name if s.name else "Unnamed"))
+    return sorted(segments, key=lambda s: generate_natural_sort_key(str(s.name)))
 
 
 def create_plan_from_records(
