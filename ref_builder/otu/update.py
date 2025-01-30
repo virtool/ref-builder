@@ -42,6 +42,29 @@ def auto_update_otu(
         log.info("OTU is up to date.")
 
 
+def batch_update_repo(
+    repo: Repo,
+    ignore_cache: bool = False,
+):
+    """Update all OTUS.
+
+    TO BE IMPLEMENTED.
+    """
+    repo_logger = logger.bind(path=str(repo.path))
+
+    repo_logger.info("Starting batch update...")
+
+    taxid_new_accession_index = batch_fetch_new_accessions(
+        repo.iter_otus(), ignore_cache
+    )
+
+    if not taxid_new_accession_index:
+        logger.info("OTUs are up to date.")
+        return None
+
+    logger.info("New accessions found.", accession_count=len(taxid_new_accession_index))
+
+
 def update_isolate_from_accessions(
     repo: Repo,
     otu: RepoOTU,
