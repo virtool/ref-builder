@@ -229,11 +229,11 @@ class Index:
 
     def iter_minimal_otus(self) -> Iterator[OTUMinimal]:
         """Iterate over minimal representations of all OTUs in the index."""
-        cursor = self.con.execute(
+        rows = self.con.execute(
             "SELECT acronym, id, legacy_id, name, taxid FROM otus ORDER BY name",
-        )
+        ).fetchall()
 
-        for row in cursor:
+        for row in rows:
             yield OTUMinimal(
                 acronym=row[0],
                 id=UUID(row[1]),
