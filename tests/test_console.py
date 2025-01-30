@@ -1,3 +1,4 @@
+import pytest
 from faker import Faker
 from syrupy import SnapshotAssertion
 
@@ -14,13 +15,15 @@ class TestPrintOTUList:
     """Tests for the ``print_otu_list`` function."""
 
     def test_ok(
-        self, otu_minimal_factory: OTUMinimalFactory, snapshot: SnapshotAssertion
+        self,
+        capsys: pytest.CaptureFixture,
+        otu_minimal_factory: OTUMinimalFactory,
+        snapshot: SnapshotAssertion,
     ) -> None:
         """Test that listed OTUs are printed."""
-        with console.capture() as capture:
-            print_otu_list(otu_minimal_factory.build() for _ in range(5))
+        print_otu_list(otu_minimal_factory.build() for _ in range(5))
 
-        assert capture.get() == snapshot
+        assert capsys.readouterr().out == snapshot
 
     def test_empty(self) -> None:
         """Test that an empty list of OTUs is printed."""

@@ -21,3 +21,84 @@
     NCBIGenbank(accession='NC_934447', accession_version='NC_934447.2', strandedness=<Strandedness.DOUBLE: 'double'>, moltype=<MolType.DNA: 'DNA'>, topology=<Topology.CIRCULAR: 'circular'>, definition='GOsuddzxpnRRJzwTwNWL', organism='abaca bunchy top virus', sequence='GGTABATTTTGTTANGCAACGTTGACCBAATATSATGAMCAAATGARKATGCCCGTAARCGATAGGYVTTCCGYGAACGTTAGWTCAGATCAGCTCCCCAAACCGCCTGTCAGCTNCTCAATAGCMTGACCTTNCAGGCTHYTGCANTAAGTCACACATCCCTCGGCCGRTDCAATGCCAGGASYTCGCGGCGGTTCTBATGTGTDCGYAABGCTGTCRTACGGAGTGGAAGGTCCAGHCGSNHGACMTCCNTCGTACGAGCNTGGAGSTTGTGGTGATTGAAACCHCATNCTCGTGAGKVAMGTTCTGACSACTAGCACAACTGCTCCATCCGTAWTWATCAGTNACAACCYMTAGTTTATGGTCCRTCAAATGCTTGASCAACGATTVATHTGCGCGTMGGTGCCCGAAAAACAATYTCGCCGTGATNTGGTACCTGCTCTCGGGCGGATAAGAGGTCGGGAGGCGCTCACVCTGGGTCCCTGTTTATYGTNGT', source=NCBISource(taxid=3158377, organism='abaca bunchy top virus', mol_type=<NCBISourceMolType.GENOMIC_DNA: 'genomic DNA'>, isolate='Johnson_GN', host='squash', segment='DNA M', strain='tell-rest', clone='', proviral=False, macronuclear=False, focus=False, transgenic=False), comment='VqinUmRJuheyLPVpuaZg', refseq=True),
   ])
 # ---
+# name: TestCreatePlanFromRecords.test_monopartite
+  dict({
+    'id': UUID,
+    'segments': list([
+      dict({
+        'id': UUID,
+        'length': 7424,
+        'length_tolerance': 0.03,
+        'name': None,
+        'required': 'required',
+      }),
+    ]),
+  })
+# ---
+# name: TestCreatePlanFromRecords.test_multipartite
+  dict({
+    'id': UUID,
+    'segments': list([
+      dict({
+        'id': UUID,
+        'length': 1090,
+        'length_tolerance': 0.03,
+        'name': dict({
+          'key': 'N',
+          'prefix': 'DNA',
+        }),
+        'required': 'required',
+      }),
+      dict({
+        'id': UUID,
+        'length': 1057,
+        'length_tolerance': 0.03,
+        'name': dict({
+          'key': 'U3',
+          'prefix': 'DNA',
+        }),
+        'required': 'required',
+      }),
+      dict({
+        'id': UUID,
+        'length': 1087,
+        'length_tolerance': 0.03,
+        'name': dict({
+          'key': 'S',
+          'prefix': 'DNA',
+        }),
+        'required': 'required',
+      }),
+      dict({
+        'id': UUID,
+        'length': 1074,
+        'length_tolerance': 0.03,
+        'name': dict({
+          'key': 'M',
+          'prefix': 'DNA',
+        }),
+        'required': 'required',
+      }),
+      dict({
+        'id': UUID,
+        'length': 1015,
+        'length_tolerance': 0.03,
+        'name': dict({
+          'key': 'C',
+          'prefix': 'DNA',
+        }),
+        'required': 'required',
+      }),
+      dict({
+        'id': UUID,
+        'length': 1099,
+        'length_tolerance': 0.03,
+        'name': dict({
+          'key': 'R',
+          'prefix': 'DNA',
+        }),
+        'required': 'required',
+      }),
+    ]),
+  })
+# ---
