@@ -39,7 +39,9 @@ def auto_update_otu(
 
     accessions = ncbi.filter_accessions(ncbi.fetch_accessions_by_taxid(otu.taxid))
 
-    fetch_list = sorted({accession.key for accession in accessions} - otu.blocked_accessions)
+    fetch_list = sorted(
+        {accession.key for accession in accessions} - otu.blocked_accessions
+    )
 
     if fetch_list:
         log.info("Syncing OTU with Genbank.")
@@ -52,8 +54,7 @@ def batch_update_repo(
     repo: Repo,
     ignore_cache: bool = False,
 ):
-    """Fetch new accessions for all OTUs in the repo and create isolates as possible.
-    """
+    """Fetch new accessions for all OTUs in the repo and create isolates as possible."""
     repo_logger = logger.bind(path=str(repo.path))
 
     repo_logger.info("Starting batch update...")
@@ -78,7 +79,9 @@ def batch_update_repo(
         logger.info("No valid accessions found.")
         return None
 
-    logger.info("Checking new records against OTUs.", otu_count=len(taxid_new_accession_index))
+    logger.info(
+        "Checking new records against OTUs.", otu_count=len(taxid_new_accession_index)
+    )
 
     for taxid in taxid_new_accession_index:
         otu_records = []
@@ -117,7 +120,8 @@ def batch_fetch_new_accessions(
 
         if otu_counter % OTU_FEEDBACK_INTERVAL == 0:
             otu_logger.info(
-                "Fetching accession updates...", otu_counter=otu_counter,
+                "Fetching accession updates...",
+                otu_counter=otu_counter,
             )
 
         raw_accessions = ncbi.fetch_accessions_by_taxid(
@@ -129,8 +133,8 @@ def batch_fetch_new_accessions(
         otu_accessions = ncbi.filter_accessions(raw_accessions)
 
         otu_fetch_set = {
-                            accession.key for accession in otu_accessions
-                        } - otu.blocked_accessions
+            accession.key for accession in otu_accessions
+        } - otu.blocked_accessions
 
         if otu_fetch_set:
             otu_logger.debug(
@@ -161,13 +165,11 @@ def batch_fetch_new_records(
         logger.info("Fetching records...", page=iterator, page_size=RECORD_FETCH_LIMIT)
         chunked_records = ncbi.fetch_genbank_records(
             fetch_list[
-                ((iterator - 1) * RECORD_FETCH_LIMIT):(iterator * RECORD_FETCH_LIMIT)
+                ((iterator - 1) * RECORD_FETCH_LIMIT) : (iterator * RECORD_FETCH_LIMIT)
             ],
         )
 
-        indexed_records.update(
-            {record.accession: record for record in chunked_records}
-        )
+        indexed_records.update({record.accession: record for record in chunked_records})
 
     if indexed_records:
         return indexed_records
@@ -294,13 +296,13 @@ def update_otu_with_records(
     new_isolate_names = []
 
     for divided_records in (
-            [record for record in records if record.refseq],
-            [record for record in records if not record.refseq],
+        [record for record in records if record.refseq],
+        [record for record in records if not record.refseq],
     ):
         otu = repo.get_otu(otu.id)
 
         for isolate_name, isolate_records in group_genbank_records_by_isolate(
-                divided_records
+            divided_records
         ).items():
             isolate = create_isolate(
                 repo, otu, isolate_name, list(isolate_records.values())
@@ -325,7 +327,9 @@ def promote_otu_accessions(
     log.debug("Checking for promotable records.", accessions=sorted(otu.accessions))
 
     accessions = ncbi.filter_accessions(ncbi.fetch_accessions_by_taxid(otu.taxid))
-    fetch_list = sorted({accession.key for accession in accessions} - otu.blocked_accessions)
+    fetch_list = sorted(
+        {accession.key for accession in accessions} - otu.blocked_accessions
+    )
 
     if fetch_list:
         records = ncbi.fetch_genbank_records(fetch_list)
@@ -382,7 +386,9 @@ def promote_otu_accessions_from_records(
         )
 
         try:
-            promoted_isolate = update_isolate_from_records(repo, otu, isolate_id, records)
+            promoted_isolate = update_isolate_from_records(
+                repo, otu, isolate_id, records
+            )
         except ValueError as e:
             logger.exception(e)
             continue
