@@ -3,7 +3,6 @@
 import os
 from collections.abc import Collection
 from contextlib import contextmanager
-from dataclasses import dataclass
 from enum import StrEnum
 from http import HTTPStatus
 from urllib.error import HTTPError
@@ -396,6 +395,19 @@ class NCBIClient:
         logger.warning("Suggested spelling not found.")
 
         return None
+
+    @staticmethod
+    def filter_accessions(raw_accessions: Collection[str]) -> set:
+        """Filter raw eSearch accession list and return a set of compliant Nucleotide accessions."""
+        valid_accessions = set()
+        for accession in raw_accessions:
+            try:
+                nuccore_accession = Accession.from_string(accession)
+                valid_accessions.add(nuccore_accession)
+            except ValueError:
+                pass
+
+        return valid_accessions
 
     @staticmethod
     def generate_sequence_length_filter_string(

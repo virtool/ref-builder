@@ -2,6 +2,7 @@ import pytest
 from syrupy import SnapshotAssertion
 
 from ref_builder.ncbi.client import NCBIClient
+from ref_builder.utils import Accession
 
 
 class TestFetchGenbank:
@@ -214,3 +215,11 @@ def test_fetch_spelling():
         NCBIClient.fetch_spelling(name="Angelica bush stunt virus")
         == "angelica bushy stunt virus"
     )
+
+
+def test_filter_accessions():
+    """Test that accession filter only allows valid versioned accessions to pass."""
+    assert NCBIClient.filter_accessions(
+        ["friday", "paella", "111", "NC_038797.1", "NO_000001"]
+    ) == {Accession("NC_038797", 1)}
+    
