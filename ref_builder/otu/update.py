@@ -103,6 +103,7 @@ def batch_fetch_new_accessions(
     otu_iterable: Iterable[RepoOTU],
     ignore_cache: bool = False,
 ) -> dict[int, set[str]]:
+    """Check OTU iterator for new accessions and return results indexed by taxid."""
     ncbi = NCBIClient(ignore_cache)
 
     otu_counter = 0
