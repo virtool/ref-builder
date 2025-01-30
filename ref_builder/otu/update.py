@@ -23,6 +23,8 @@ from ref_builder.utils import Accession, IsolateName
 
 logger = get_logger("otu.update")
 
+OTU_FEEDBACK_INTERVAL = 100
+
 
 def auto_update_otu(
     repo: Repo,
@@ -60,6 +62,11 @@ def batch_fetch_new_accessions(
 
         otu_counter += 1
 
+        if otu_counter % OTU_FEEDBACK_INTERVAL == 0:
+            otu_logger.info(
+                "Fetching accession updates...", otu_counter=otu_counter,
+            )
+
         raw_accessions = ncbi.fetch_accessions_by_taxid(
             otu.taxid,
             sequence_min_length=get_segments_min_length(otu.plan.segments),
@@ -80,6 +87,7 @@ def batch_fetch_new_accessions(
             )
 
             taxid_accession_index[otu.taxid] = otu_fetch_set
+
 
     return taxid_accession_index
 
