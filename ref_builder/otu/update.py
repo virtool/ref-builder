@@ -291,8 +291,11 @@ def update_otu_with_accessions(
 def update_otu_with_records(
     repo: Repo,
     otu: RepoOTU,
-    records: list,
+    records: list[NCBIGenbank],
 ):
+    """Take a list of downloaded NCBI Genbank records, filter for eligible records
+    and add new sequences to the OTU.
+    """
     new_isolate_names = []
 
     for divided_records in (
