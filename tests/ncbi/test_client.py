@@ -222,4 +222,3 @@ def test_filter_accessions():
     assert NCBIClient.filter_accessions(
         ["friday", "paella", "111", "NC_038797.1", "NO_000001"]
     ) == {Accession("NC_038797", 1)}
-    
