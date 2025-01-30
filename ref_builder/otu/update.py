@@ -88,7 +88,6 @@ def batch_fetch_new_accessions(
 
             taxid_accession_index[otu.taxid] = otu_fetch_set
 
-
     return taxid_accession_index
 
 
