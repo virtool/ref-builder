@@ -1,5 +1,5 @@
 from collections import defaultdict
-from collections.abc import Collection, Iterable
+from collections.abc import Collection, Iterable, Iterator
 from uuid import UUID
 
 from structlog import get_logger
@@ -161,13 +161,9 @@ def batch_fetch_new_records(
     fetch_list = list(accessions)
 
     indexed_records = {}
-    for iterator in range(len(fetch_list)):
-        logger.info("Fetching records...", page=iterator, page_size=RECORD_FETCH_LIMIT)
-        chunked_records = ncbi.fetch_genbank_records(
-            fetch_list[
-                ((iterator - 1) * RECORD_FETCH_LIMIT) : (iterator * RECORD_FETCH_LIMIT)
-            ],
-        )
+    for fetch_list_chunk in iter_fetch_list(fetch_list, RECORD_FETCH_LIMIT):
+        logger.info("Fetching records...")
+        chunked_records = ncbi.fetch_genbank_records(fetch_list_chunk)
 
         indexed_records.update({record.accession: record for record in chunked_records})
 
@@ -413,6 +409,14 @@ def promote_otu_accessions_from_records(
         otu_logger.debug("All accessions are up to date")
 
     return promoted_accessions
+
+
+def iter_fetch_list(fetch_list: list[str], page_size=RECORD_FETCH_LIMIT) -> Iterator[list[str]]:
+    """Divide a list of accessions and yield in pages."""
+    page_count = len(fetch_list) // page_size + int(len(fetch_list) % page_size != 0)
+
+    for iterator in range(page_count):
+        yield fetch_list[iterator*page_size:(iterator+1)*page_size]
 
 
 def _bin_refseq_records(
