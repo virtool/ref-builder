@@ -19,12 +19,15 @@ from ref_builder.otu.utils import (
 )
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU
-from ref_builder.utils import Accession, IsolateName
+from ref_builder.utils import IsolateName
 
 logger = get_logger("otu.update")
 
 OTU_FEEDBACK_INTERVAL = 100
-RECORD_FETCH_LIMIT = 25
+"""A default interval for batch OTU feedback."""
+
+RECORD_FETCH_CHUNK_SIZE = 25
+"""A default chunk size for NCBI EFetch calls."""
 
 
 def auto_update_otu(
@@ -52,6 +55,7 @@ def auto_update_otu(
 
 def batch_update_repo(
     repo: Repo,
+    chunk_size: int = RECORD_FETCH_CHUNK_SIZE,
     ignore_cache: bool = False,
 ):
     """Fetch new accessions for all OTUs in the repo and create isolates as possible."""
@@ -73,7 +77,11 @@ def batch_update_repo(
 
     logger.info("New accessions found.", accession_count=len(taxid_new_accession_index))
 
-    indexed_records = batch_fetch_new_records(fetch_set, ignore_cache)
+    indexed_records = batch_fetch_new_records(
+        fetch_set,
+        chunk_size=chunk_size,
+        ignore_cache=ignore_cache,
+    )
 
     if not indexed_records:
         logger.info("No valid accessions found.")
@@ -146,6 +154,7 @@ def batch_fetch_new_accessions(
 
 def batch_fetch_new_records(
     accessions: Collection[str],
+    chunk_size: int = RECORD_FETCH_CHUNK_SIZE,
     ignore_cache: bool = False,
 ) -> dict[str, NCBIGenbank]:
     """Download a batch of records and return in a dictionary indexed by accession."""
@@ -157,7 +166,7 @@ def batch_fetch_new_records(
     fetch_list = list(accessions)
 
     indexed_records = {}
-    for fetch_list_chunk in iter_fetch_list(fetch_list, RECORD_FETCH_LIMIT):
+    for fetch_list_chunk in iter_fetch_list(fetch_list, chunk_size):
         chunked_records = ncbi.fetch_genbank_records(fetch_list_chunk)
 
         indexed_records.update({record.accession: record for record in chunked_records})
@@ -404,7 +413,7 @@ def promote_otu_accessions_from_records(
     return promoted_accessions
 
 
-def iter_fetch_list(fetch_list: list[str], page_size=RECORD_FETCH_LIMIT) -> Iterator[list[str]]:
+def iter_fetch_list(fetch_list: list[str], page_size=RECORD_FETCH_CHUNK_SIZE) -> Iterator[list[str]]:
     """Divide a list of accessions and yield in pages."""
     page_count = len(fetch_list) // page_size + int(len(fetch_list) % page_size != 0)
 
