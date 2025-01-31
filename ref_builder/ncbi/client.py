@@ -402,8 +402,7 @@ class NCBIClient:
         valid_accessions = set()
         for accession in raw_accessions:
             try:
-                nuccore_accession = Accession.from_string(accession)
-                valid_accessions.add(nuccore_accession)
+                valid_accessions.add(Accession.from_string(accession))
             except ValueError:
                 pass
 
