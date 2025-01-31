@@ -20,6 +20,7 @@ from ref_builder.otu.update import (
     auto_update_otu,
     batch_update_repo,
     promote_otu_accessions,
+    RECORD_FETCH_CHUNK_SIZE,
 )
 from ref_builder.plan import SegmentName, SegmentRule
 from ref_builder.repo import Repo
@@ -109,7 +110,10 @@ def otu_batch_auto_update(path: Path, ignore_cache: bool) -> None:
     """Update all OTUs with the latest data from NCBI."""
     repo = Repo(path)
 
-    batch_update_repo(repo, ignore_cache)
+    batch_update_repo(
+        repo,
+        ignore_cache=ignore_cache,
+    )
 
 
 @otu.command(name="update")
