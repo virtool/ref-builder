@@ -93,7 +93,9 @@ def batch_update_repo(
 
     for taxid, accessions in taxid_new_accession_index.items():
         otu_records = [
-            record for accession in accessions if (record := indexed_records.get(accession)) is not None
+            record
+            for accession in accessions
+            if (record := indexed_records.get(accession)) is not None
         ]
 
         if not otu_records:
@@ -413,12 +415,15 @@ def promote_otu_accessions_from_records(
     return promoted_accessions
 
 
-def iter_fetch_list(fetch_list: list[str], page_size=RECORD_FETCH_CHUNK_SIZE) -> Iterator[list[str]]:
+def iter_fetch_list(
+    fetch_list: list[str], page_size=RECORD_FETCH_CHUNK_SIZE
+) -> Iterator[list[str]]:
     """Divide a list of accessions and yield in pages."""
+    page_size = max(1, page_size)
     page_count = len(fetch_list) // page_size + int(len(fetch_list) % page_size != 0)
 
     for iterator in range(page_count):
-        yield fetch_list[iterator*page_size:(iterator+1)*page_size]
+        yield fetch_list[iterator * page_size : (iterator + 1) * page_size]
 
 
 def _bin_refseq_records(
