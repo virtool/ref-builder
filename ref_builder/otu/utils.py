@@ -13,6 +13,7 @@ from ref_builder.plan import (
     Segment,
     SegmentRule,
     extract_segment_name_from_record,
+    extract_segment_name_from_record_with_plan,
 )
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 
@@ -187,7 +188,7 @@ def group_genbank_records_by_isolate(
 
     for record in records:
         try:
-            isolate_name = _get_isolate_name(record)
+            isolate_name = _extract_isolate_name_from_record(record)
 
             if isolate_name is None:
                 logger.debug(
@@ -221,7 +222,7 @@ def parse_refseq_comment(comment: str) -> tuple[str, str]:
     raise ValueError("Invalid RefSeq comment")
 
 
-def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
+def _extract_isolate_name_from_record(record: NCBIGenbank) -> IsolateName | None:
     """Get the isolate name from a Genbank record."""
     if record.source.model_fields_set.intersection(
         {IsolateNameType.ISOLATE, IsolateNameType.STRAIN, IsolateNameType.CLONE},
@@ -264,10 +265,8 @@ def assign_records_to_segments(
     :param plan: A plan.
     :return: A dictionary of segment IDs as keys and records as values.
     """
-    unassigned_segments = {segment.name: segment for segment in plan.segments}
-
     seen_segment_names = Counter(
-        extract_segment_name_from_record(record) for record in records
+        extract_segment_name_from_record_with_plan(record, plan) for record in records
     )
 
     if seen_segment_names.total() > 1 and seen_segment_names[None]:
@@ -275,6 +274,8 @@ def assign_records_to_segments(
             "If a segment has no name, it must be the only segment. Only monopartite "
             "plans may have unnamed segments."
         )
+
+    unassigned_segments = {segment.name: segment for segment in plan.segments}
 
     duplicate_segment_names = [
         segment_name for segment_name, count in seen_segment_names.items() if count > 1
@@ -311,6 +312,8 @@ def assign_records_to_segments(
         )
 
     return {
-        unassigned_segments[extract_segment_name_from_record(record)].id: record
+        unassigned_segments[
+            extract_segment_name_from_record_with_plan(record, plan)
+        ].id: record
         for record in records
     }

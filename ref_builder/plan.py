@@ -1,5 +1,7 @@
 import re
+from contextlib import suppress
 from enum import StrEnum
+from typing import Optional
 from uuid import UUID, uuid4
 
 from pydantic import UUID4, BaseModel, ConfigDict, Field, model_validator
@@ -40,6 +42,22 @@ class SegmentName:
     def __str__(self) -> str:
         """Return the segment name as a formatted string."""
         return f"{self.prefix} {self.key}"
+
+    @classmethod
+    def from_string(cls: type, string: str) -> Optional["SegmentName"]:
+        """Create a SegmentName from a string.
+
+        Return None if the string does not match the expected format.
+        """
+        segment_name_parse = COMPLEX_NAME_PATTERN.fullmatch(string)
+
+        if segment_name_parse:
+            return SegmentName(
+                prefix=segment_name_parse.group(1),
+                key=segment_name_parse.group(2),
+            )
+
+        return None
 
 
 class Segment(BaseModel):
@@ -166,28 +184,67 @@ class Plan(BaseModel):
         return None
 
 
-def parse_segment_name(string: str) -> SegmentName | None:
-    """Parse a SegmentName from a string.
-
-    Returns none if no segment name is found in the string.
-    """
-    segment_name_parse = COMPLEX_NAME_PATTERN.fullmatch(string)
-
-    if segment_name_parse:
-        return SegmentName(
-            prefix=segment_name_parse.group(1),
-            key=segment_name_parse.group(2),
-        )
-
-    return None
-
-
 def extract_segment_name_from_record(record: NCBIGenbank) -> SegmentName | None:
-    """Get a segment name from a Genbank record."""
+    """Extract a segment name from a Genbank record.
+
+    This parsing function should be used when creating new OTUs where no plan is
+    available. Parsing segment names for existing OTUs should use plans to better infer
+    segment names.
+
+    First, try to parse the segment name from the ``segment`` field in the source table.
+    If that fails, use the record moltype as a prefix and the segment as a key.
+
+    If no segment name can be extracted, `None` is returned.
+
+    :param record: A Genbank record.
+    :return: A segment name or `None`.
+    """
+    if (name := SegmentName.from_string(record.source.segment)) is not None:
+        return name
+
     if SIMPLE_NAME_PATTERN.fullmatch(record.source.segment):
         return SegmentName(
             prefix=record.moltype,
             key=record.source.segment,
         )
 
-    return parse_segment_name(record.source.segment)
+    return None
+
+
+def extract_segment_name_from_record_with_plan(
+    record: NCBIGenbank, plan: Plan
+) -> SegmentName | None:
+    """Extract a segment name from a Genbank record using an OTU plan.
+
+    If the segment name can be parsed normally (eg. DNA A), it is returned. If there is
+    no delimiter or the prefix is missing, the function tries to match the segment name
+    with a segment in the plan.
+
+    If no segment name can be extracted, `None` is returned.
+
+    :param record: A Genbank record.
+    :param plan: A plan.
+    :return: A segment name or `None`.
+    """
+    if (segment_name := SegmentName.from_string(record.source.segment)) is not None:
+        return segment_name
+
+    plan_keys_and_prefixes = {
+        segment.name.key: segment.name.prefix for segment in plan.segments
+    }
+
+    # Handle no delimiter.
+    for prefix in plan_keys_and_prefixes.values():
+        if record.source.segment.casefold().startswith(prefix.casefold()):
+            return SegmentName(
+                prefix=prefix, key=record.source.segment[len(prefix) :].strip()
+            )
+
+    # Handle no prefix.
+    with suppress(KeyError):
+        return SegmentName(
+            prefix=plan_keys_and_prefixes[record.source.segment],
+            key=record.source.segment,
+        )
+
+    return None
