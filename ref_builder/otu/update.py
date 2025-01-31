@@ -83,12 +83,10 @@ def batch_update_repo(
         "Checking new records against OTUs.", otu_count=len(taxid_new_accession_index)
     )
 
-    for taxid in taxid_new_accession_index:
-        otu_records = []
-
-        for accession in taxid_new_accession_index[taxid]:
-            if (record := indexed_records.get(accession)) is not None:
-                otu_records.append(record)
+    for taxid, accessions in taxid_new_accession_index.items():
+        otu_records = [
+            record for accession in accessions if (record := indexed_records.get(accession)) is not None
+        ]
 
         if not otu_records:
             continue
@@ -103,7 +101,7 @@ def batch_update_repo(
 
 
 def batch_fetch_new_accessions(
-    otu_iterable: Iterable[RepoOTU],
+    otus: Iterable[RepoOTU],
     ignore_cache: bool = False,
 ) -> dict[int, set[str]]:
     """Check OTU iterator for new accessions and return results indexed by taxid."""
@@ -113,7 +111,7 @@ def batch_fetch_new_accessions(
 
     taxid_accession_index = {}
 
-    for otu in otu_iterable:
+    for otu in otus:
         otu_logger = logger.bind(taxid=otu.taxid, name=otu.name)
 
         otu_counter += 1
@@ -130,20 +128,18 @@ def batch_fetch_new_accessions(
             sequence_max_length=get_segments_max_length(otu.plan.segments),
         )
 
-        otu_accessions = ncbi.filter_accessions(raw_accessions)
-
-        otu_fetch_set = {
-            accession.key for accession in otu_accessions
+        accessions_to_fetch = {
+            accession.key for accession in ncbi.filter_accessions(raw_accessions)
         } - otu.blocked_accessions
 
-        if otu_fetch_set:
+        if accessions_to_fetch:
             otu_logger.debug(
                 "Potential accessions found.",
-                accession_count=len(otu_fetch_set),
+                accession_count=len(accessions_to_fetch),
                 otu_counter=otu_counter,
             )
 
-            taxid_accession_index[otu.taxid] = otu_fetch_set
+            taxid_accession_index[otu.taxid] = accessions_to_fetch
 
     return taxid_accession_index
 
@@ -162,15 +158,12 @@ def batch_fetch_new_records(
 
     indexed_records = {}
     for fetch_list_chunk in iter_fetch_list(fetch_list, RECORD_FETCH_LIMIT):
-        logger.info("Fetching records...")
         chunked_records = ncbi.fetch_genbank_records(fetch_list_chunk)
 
         indexed_records.update({record.accession: record for record in chunked_records})
 
     if indexed_records:
         return indexed_records
-
-    logger.info("No valid records found.")
 
     return {}
 
@@ -210,8 +203,8 @@ def update_isolate_from_records(
     else:
         try:
             assigned = assign_records_to_segments(records, otu.plan)
-        except ValueError as exc:
-            logger.error(exc)
+        except ValueError:
+            logger.exception()
             return None
 
     for segment_id, record in assigned.items():
@@ -323,7 +316,7 @@ def promote_otu_accessions(
 
     log = logger.bind(otu_id=otu.id, taxid=otu.taxid)
 
-    log.debug("Checking for promotable records.", accessions=sorted(otu.accessions))
+    log.info("Checking for promotable sequences.")
 
     accessions = ncbi.filter_accessions(ncbi.fetch_accessions_by_taxid(otu.taxid))
     fetch_list = sorted(
@@ -388,8 +381,8 @@ def promote_otu_accessions_from_records(
             promoted_isolate = update_isolate_from_records(
                 repo, otu, isolate_id, records
             )
-        except ValueError as e:
-            logger.exception(e)
+        except ValueError:
+            logger.exception()
             continue
 
         otu_logger.debug(
