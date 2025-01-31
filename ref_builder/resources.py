@@ -139,8 +139,6 @@ class RepoIsolate(BaseModel):
         self._sequences_by_accession[sequence.accession.key] = sequence
         self._sequences_by_id[sequence.id] = sequence
 
-        self._update_sequence_lookups()
-
     def delete_sequence(self, sequence_id: UUID) -> None:
         """Delete a sequence from a given isolate."""
         sequence = self.get_sequence_by_id(sequence_id)
