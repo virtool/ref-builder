@@ -95,6 +95,7 @@ class RepoIsolate(BaseModel):
     """The isolate's source name metadata."""
 
     sequences: list[RepoSequence]
+    """A list of sequences contained by this isolate."""
 
     @property
     def accessions(self) -> set[str]:
