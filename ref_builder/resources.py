@@ -137,7 +137,11 @@ class RepoIsolate(BaseModel):
         """Return a sequence with the given accession if it exists in the isolate,
         else None.
         """
-        return {sequence.accession.key: sequence for sequence in self.sequences}.get(accession)
+        for sequence in self.sequences:
+            if sequence.accession.key == accession:
+                return sequence
+
+        return None
 
     def get_sequence_by_id(self, sequence_id: UUID) -> RepoSequence | None:
         """Return a sequence with the given ID if it exists in the isolate,
