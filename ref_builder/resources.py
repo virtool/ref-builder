@@ -147,11 +147,8 @@ class RepoIsolate(BaseModel):
         """Return a sequence with the given ID if it exists in the isolate,
         else None.
         """
-        if sequence_id not in self.sequence_ids:
-            return None
-
         for sequence in self.sequences:
-            if sequence.id:
+            if sequence.id == sequence_id:
                 return sequence
 
         return None
