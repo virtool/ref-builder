@@ -97,19 +97,9 @@ class RepoIsolate(BaseModel):
     sequences: list[RepoSequence]
 
     @property
-    def _sequences_by_accession(self) -> dict[str, RepoSequence]:
-        """A dictionary of sequences indexed by accession"""
-        return {sequence.accession.key: sequence for sequence in self.sequences}
-
-    @property
-    def _sequences_by_id(self) -> dict[UUID, RepoSequence]:
-        """A dictionary of sequences indexed by ID"""
-        return {sequence.id: sequence for sequence in self.sequences}
-
-    @property
     def accessions(self) -> set[str]:
         """A set of accession numbers for sequences in the isolate."""
-        return set(self._sequences_by_accession.keys())
+        return {sequence.accession.key for sequence in self.sequences}
 
     @property
     def sequence_ids(self) -> set[UUID]:
@@ -147,7 +137,7 @@ class RepoIsolate(BaseModel):
         """Return a sequence with the given accession if it exists in the isolate,
         else None.
         """
-        return self._sequences_by_accession.get(accession)
+        return {sequence.accession.key: sequence for sequence in self.sequences}.get(accession)
 
     def get_sequence_by_id(self, sequence_id: UUID) -> RepoSequence | None:
         """Return a sequence with the given ID if it exists in the isolate,
