@@ -30,7 +30,7 @@ def otu() -> None:
 
 
 @otu.command(name="create")
-@click.argument("TAXID", type=int)
+@click.option("--taxid", type=int)
 @click.argument(
     "accessions_",
     callback=validate_no_duplicate_accessions,
@@ -60,17 +60,18 @@ def otu_create(
         click.echo("Duplicate accessions were provided.", err=True)
         sys.exit(1)
 
-    try:
-        create_otu(
-            repo,
-            taxid,
-            accessions_,
-            acronym=acronym,
-            ignore_cache=ignore_cache,
-        )
-    except ValueError as e:
-        click.echo(e, err=True)
-        sys.exit(1)
+    if taxid:
+        try:
+            create_otu(
+                repo,
+                taxid,
+                accessions_,
+                acronym=acronym,
+                ignore_cache=ignore_cache,
+            )
+        except ValueError as e:
+            click.echo(e, err=True)
+            sys.exit(1)
 
 
 @otu.command(name="get")
