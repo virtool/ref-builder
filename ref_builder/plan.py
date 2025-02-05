@@ -202,6 +202,14 @@ def extract_segment_name_from_record(record: NCBIGenbank) -> SegmentName | None:
     if (name := SegmentName.from_string(record.source.segment)) is not None:
         return name
 
+    # Handles common cases without delimiters
+    for moltype_prefix in ["DNA", "RNA"]:
+        if record.source.segment.startswith(moltype_prefix):
+            return SegmentName(
+                prefix=record.moltype,
+                key=record.source.segment[3:].strip(),
+            )
+
     if SIMPLE_NAME_PATTERN.fullmatch(record.source.segment):
         return SegmentName(
             prefix=record.moltype,
