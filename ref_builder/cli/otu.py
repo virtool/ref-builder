@@ -8,7 +8,7 @@ import structlog
 from ref_builder.cli.validate import validate_no_duplicate_accessions
 from ref_builder.console import print_otu, print_otu_list
 from ref_builder.options import ignore_cache_option, path_option
-from ref_builder.otu.create import create_otu
+from ref_builder.otu.create import create_otu, create_otu_without_taxid
 from ref_builder.otu.modify import (
     add_segments_to_plan,
     allow_accessions_into_otu,
@@ -71,6 +71,18 @@ def otu_create(
             )
         except ValueError as e:
             click.echo(e, err=True)
+            sys.exit(1)
+
+    else:
+        try:
+            create_otu_without_taxid(
+                repo,
+                accessions_,
+                acronym=acronym,
+                ignore_cache=ignore_cache,
+            )
+        except ValueError as e:
+            click.error(e, err=True)
             sys.exit(1)
 
 
