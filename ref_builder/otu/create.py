@@ -1,5 +1,3 @@
-import sys
-
 import structlog
 
 from ref_builder.ncbi.client import NCBIClient
@@ -78,7 +76,7 @@ def create_otu(
         otu_logger.fatal("Could not create plan from records.")
         return None
 
-    try:
+    with repo.use_transaction():
         otu = repo.create_otu(
             acronym=acronym,
             legacy_id=None,
@@ -87,47 +85,46 @@ def create_otu(
             plan=plan,
             taxid=taxid,
         )
-    except ValueError as e:
-        otu_logger.fatal(e)
-        sys.exit(1)
 
-    isolate = repo.create_isolate(
-        otu_id=otu.id,
-        legacy_id=None,
-        name=next(iter(binned_records.keys())) if binned_records else None,
-    )
+        isolate = repo.create_isolate(
+            otu_id=otu.id,
+            legacy_id=None,
+            name=next(iter(binned_records.keys())) if binned_records else None,
+        )
 
-    otu.add_isolate(isolate)
-    otu.representative_isolate = repo.set_representative_isolate(
-        otu_id=otu.id, isolate_id=isolate.id
-    )
+        otu.add_isolate(isolate)
+        otu.representative_isolate = repo.set_representative_isolate(
+            otu_id=otu.id, isolate_id=isolate.id
+        )
 
-    if otu.plan.monopartite:
-        record = records[0]
+        if otu.plan.monopartite:
+            record = records[0]
 
-        sequence = create_sequence_from_record(repo, otu, record, plan.segments[0].id)
-
-        repo.link_sequence(otu.id, isolate.id, sequence.id)
-
-        if record.refseq:
-            _, old_accession = parse_refseq_comment(record.comment)
-
-            repo.exclude_accession(
-                otu.id,
-                old_accession,
+            sequence = create_sequence_from_record(
+                repo, otu, record, plan.segments[0].id
             )
-
-    else:
-        for segment_id, record in assign_records_to_segments(records, plan).items():
-            sequence = create_sequence_from_record(repo, otu, record, segment_id)
 
             repo.link_sequence(otu.id, isolate.id, sequence.id)
 
             if record.refseq:
                 _, old_accession = parse_refseq_comment(record.comment)
+
                 repo.exclude_accession(
                     otu.id,
                     old_accession,
                 )
+
+        else:
+            for segment_id, record in assign_records_to_segments(records, plan).items():
+                sequence = create_sequence_from_record(repo, otu, record, segment_id)
+
+                repo.link_sequence(otu.id, isolate.id, sequence.id)
+
+                if record.refseq:
+                    _, old_accession = parse_refseq_comment(record.comment)
+                    repo.exclude_accession(
+                        otu.id,
+                        old_accession,
+                    )
 
     return repo.get_otu(otu.id)

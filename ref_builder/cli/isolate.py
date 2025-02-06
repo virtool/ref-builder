@@ -4,22 +4,26 @@ from uuid import UUID
 
 import click
 
+from ref_builder.cli.utils import pass_repo
 from ref_builder.cli.validate import validate_no_duplicate_accessions
-from ref_builder.options import path_option, ignore_cache_option
+from ref_builder.options import ignore_cache_option, path_option
 from ref_builder.otu.isolate import (
-    add_unnamed_isolate,
     add_and_name_isolate,
     add_genbank_isolate,
+    add_unnamed_isolate,
 )
 from ref_builder.otu.modify import delete_isolate_from_otu
 from ref_builder.otu.utils import RefSeqConflictError
-from ref_builder.repo import Repo
-from ref_builder.utils import IsolateNameType, IsolateName
+from ref_builder.repo import Repo, locked_repo
+from ref_builder.utils import IsolateName, IsolateNameType
 
 
 @click.group(name="isolate")
-def isolate() -> None:
+@click.pass_context
+@path_option
+def isolate(ctx: click.Context, path: Path) -> None:
     """Manage isolates."""
+    ctx.obj = ctx.with_resource(locked_repo(path))
 
 
 @isolate.command(name="create")  # type: ignore
@@ -43,78 +47,75 @@ def isolate() -> None:
     type=(IsolateNameType, str),
     help='an overriding name for the isolate, e.g. "isolate ARWV1"',
 )
-@path_option
 @ignore_cache_option
+@pass_repo
 def isolate_create(
-    path: Path,
     accessions_: list[str],
     ignore_cache: bool,
-    taxid: int,
     name: tuple[IsolateNameType, str] | None,
+    repo: Repo,
+    taxid: int,
     unnamed: bool,
 ) -> None:
     """Create a new isolate using the given accessions."""
-    repo = Repo(path)
-
     otu_ = repo.get_otu_by_taxid(taxid)
+
     if otu_ is None:
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
     if unnamed:
-        add_unnamed_isolate(
-            repo,
-            otu_,
-            accessions_,
-            ignore_cache=ignore_cache,
-        )
+        with repo.use_transaction():
+            add_unnamed_isolate(
+                repo,
+                otu_,
+                accessions_,
+                ignore_cache=ignore_cache,
+            )
 
     if name is not None:
         isolate_name_type, isolate_name_value = name
         isolate_name_ = IsolateName(type=isolate_name_type, value=isolate_name_value)
 
         try:
-            add_and_name_isolate(
-                repo,
-                otu_,
-                accessions_,
-                ignore_cache=ignore_cache,
-                isolate_name=isolate_name_,
-            )
-        except RefSeqConflictError as err:
+            with repo.use_transaction():
+                add_and_name_isolate(
+                    repo,
+                    otu_,
+                    accessions_,
+                    ignore_cache=ignore_cache,
+                    isolate_name=isolate_name_,
+                )
+        except RefSeqConflictError as e:
             click.echo(
-                f"{err.isolate_name} already exists, but RefSeq items may be "
+                f"{e.isolate_name} already exists, but RefSeq items may be "
                 "promotable.",
             )
             sys.exit(1)
 
     try:
-        add_genbank_isolate(
-            repo,
-            otu_,
-            accessions_,
-            ignore_cache=ignore_cache,
-        )
-    except RefSeqConflictError as err:
+        with repo.use_transaction():
+            add_genbank_isolate(
+                repo,
+                otu_,
+                accessions_,
+                ignore_cache=ignore_cache,
+            )
+    except RefSeqConflictError as e:
         click.echo(
-            f"{err.isolate_name} already exists, but RefSeq items may be promotable,",
+            f"{e.isolate_name} already exists, but RefSeq items may be promotable,",
         )
-        sys.exit(1)
-
-    except ValueError as e:
-        click.echo(e, err=True)
         sys.exit(1)
 
 
 @isolate.command(name="delete")  # type: ignore
 @click.option("--taxid", type=int, required=True)
 @click.argument("ISOLATE_KEY", type=str)
-@path_option
-def isolate_delete(path: Path, taxid: int, isolate_key: str) -> None:
-    """Remove isolate"""
-    repo = Repo(path)
-
+@pass_repo
+def isolate_delete(isolate_key: str, repo: Repo, taxid: int) -> None:
+    """Delete isolate."""
     otu_ = repo.get_otu_by_taxid(taxid)
+
     if otu_ is None:
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)

@@ -190,24 +190,10 @@ def group_genbank_records_by_isolate(
     isolates = defaultdict(dict)
 
     for record in records:
-        try:
-            isolate_name = _get_isolate_name(record)
+        isolate_name = _get_isolate_name(record)
 
-            if isolate_name is None:
-                logger.debug(
-                    "RefSeq record does not contain sufficient source data "
-                    " for automatic inclusion. Add this record manually.",
-                    accession=record.accession,
-                    definition=record.definition,
-                    source_data=record.source,
-                )
-                continue
-
-            versioned_accession = Accession.from_string(record.accession_version)
-            isolates[isolate_name][versioned_accession] = record
-
-        except ValueError:
-            continue
+        versioned_accession = Accession.from_string(record.accession_version)
+        isolates[isolate_name][versioned_accession] = record
 
     return isolates
 
@@ -237,10 +223,7 @@ def _get_isolate_name(record: NCBIGenbank) -> IsolateName | None:
                     value=record.source.model_dump()[source_type],
                 )
 
-    if record.refseq:
-        return None
-
-    raise ValueError("Record does not contain sufficient source data for inclusion.")
+    return None
 
 
 def assign_records_to_segments(

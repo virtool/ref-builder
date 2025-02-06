@@ -69,15 +69,16 @@ def add_genbank_isolate(
                 )
             return None
 
-    try:
-        return create_isolate(
-            repo,
-            otu,
-            isolate_name,
-            records,
-        )
-    except ValueError:
-        otu_logger.exception()
+    with repo.use_transaction():
+        try:
+            return create_isolate(
+                repo,
+                otu,
+                isolate_name,
+                records,
+            )
+        except ValueError:
+            otu_logger.exception()
 
     return None
 
@@ -122,12 +123,15 @@ def add_and_name_isolate(
 
     Download the GenBank records and pass the isolate name and records to the add method.
     """
-    if records := fetch_records_from_accessions(
+    records = fetch_records_from_accessions(
         accessions, otu.blocked_accessions, ignore_cache
-    ):
-        return create_isolate(repo, otu, isolate_name, records)
+    )
 
-    return None
+    if not records:
+        return None
+
+    with repo.lock(), repo.use_transaction():
+        return create_isolate(repo, otu, isolate_name, records)
 
 
 def create_isolate(

@@ -6,8 +6,8 @@ from click.testing import CliRunner
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
-from ref_builder.cli.otu import otu_create
 from ref_builder.cli.isolate import isolate_create
+from ref_builder.cli.otu import otu
 from ref_builder.otu.create import create_otu
 from ref_builder.otu.isolate import (
     add_and_name_isolate,
@@ -32,11 +32,11 @@ def run_create_otu_command(
         [
             "ref-builder",
             "otu",
+            "--path",
+            str(path),
             "create",
             str(taxid),
             *accessions,
-            "--path",
-            str(path),
             "--acronym",
             acronym,
         ],
@@ -44,22 +44,43 @@ def run_create_otu_command(
     )
 
 
-def run_update_otu_command(taxid: int, path: Path):
-    subprocess.run(
-        ["ref-builder", "otu", "update"] + [str(taxid)] + ["--path", str(path)],
-        check=False,
-    )
-
-
 class TestCreateOTU:
+    @pytest.mark.parametrize(
+        ("taxid", "accessions"),
+        [(1278205, ["NC_020160"]), (345184, ["DQ178610", "DQ178611"])],
+    )
+    def test_ok(
+        self,
+        taxid: int,
+        accessions: list[str],
+        precached_repo: Repo,
+    ):
+        """Test that an OTU can be created."""
+        assert list(precached_repo.iter_otus()) == []
+
+        with precached_repo.lock():
+            otu_ = create_otu(
+                precached_repo,
+                taxid,
+                accessions,
+                "",
+            )
+
+        assert list(precached_repo.iter_otus()) == [otu_]
+        assert otu_.plan.monopartite == (len(accessions) == 1)
+        assert len(otu_.plan.segments) == len(accessions)
+        assert otu_.accessions == set(accessions)
+        assert otu_.representative_isolate == otu_.isolates[0].id
+
     def test_duplicate_accessions(self, precached_repo: Repo):
         """Test that an error is raised when duplicate accessions are provided."""
         runner = CliRunner()
         result = runner.invoke(
-            otu_create,
+            otu,
             [
                 "--path",
                 str(precached_repo.path),
+                "create",
                 "1169032",
                 "MK431779",
                 "MK431779",
@@ -69,119 +90,101 @@ class TestCreateOTU:
         assert result.exit_code == 2
         assert "Duplicate accessions are not allowed." in result.output
 
-    def test_empty_success(
+    def test_empty_repo(
         self,
         precached_repo: Repo,
         snapshot: SnapshotAssertion,
     ):
         """Test that an OTU can be created in an empty repository."""
-        otu = create_otu(
-            precached_repo,
-            345184,
-            ["DQ178610", "DQ178611"],
-            "",
-        )
-
-        assert otu.model_dump() == snapshot(
-            exclude=props("id", "isolates", "representative_isolate"),
-        )
-
-        # Ensure only one OTU is present in the repository, and it matches the return
-        # value of the creation function.
-        assert list(precached_repo.iter_otus()) == [otu]
-
-    def test_create_duplicate_fail(self, scratch_repo: Repo):
-        """Test that an OTU with the same Taxonomy ID cannot be created."""
-        with pytest.raises(ValueError):
-            create_otu(
-                scratch_repo,
+        with precached_repo.lock():
+            otu_ = create_otu(
+                precached_repo,
                 345184,
                 ["DQ178610", "DQ178611"],
                 "",
             )
 
-    @pytest.mark.parametrize(
-        ("taxid", "accessions"),
-        [(1278205, ["NC_020160"]), (345184, ["DQ178610", "DQ178611"])],
-    )
-    def test_otu_create(
-        self,
-        taxid: int,
-        accessions: list[str],
-        precached_repo: Repo,
-    ):
-        assert list(precached_repo.iter_otus()) == []
-
-        otu = create_otu(
-            precached_repo,
-            taxid,
-            accessions,
-            "",
+        assert otu_.model_dump() == snapshot(
+            exclude=props("id", "isolates", "representative_isolate"),
         )
 
-        assert list(precached_repo.iter_otus())
-        assert otu.plan is not None
-        assert otu.representative_isolate is not None
+        # Ensure only one OTU is present in the repository, and it matches the return
+        # value of the creation function.
+        assert list(precached_repo.iter_otus()) == [otu_]
 
-    def test_otu_create_refseq_autoexclude(
-        self,
-        precached_repo: Repo,
-        snapshot: SnapshotAssertion,
-    ):
-        """Test that the superceded accessions included in RefSeq metadata
-        are automatically added to the OTU's excluded accessions list.
+    def test_duplicate_taxid(self, precached_repo: Repo):
+        """Test that an OTU with the same taxid cannot be created."""
+        accessions = ["DQ178610", "DQ178611"]
+        taxid = 345184
+
+        with precached_repo.lock():
+            create_otu(precached_repo, taxid, accessions, "")
+
+        with (
+            pytest.raises(
+                ValueError,
+                match="Taxonomy ID 345184 has already been added to this reference.",
+            ),
+            precached_repo.lock(),
+        ):
+            create_otu(precached_repo, taxid, accessions, "")
+
+    def test_refseq_autoexclude(self, precached_repo: Repo):
+        """Test that the superceded accessions included in RefSeq metadata are
+        automatically added to the OTU's excluded accessions list.
         """
-        otu = create_otu(
-            precached_repo,
-            3158377,
-            [
-                "NC_010314",
-                "NC_010316",
-                "NC_010315",
-                "NC_010317",
-                "NC_010318",
-                "NC_010319",
-            ],
-            "",
-        )
+        with precached_repo.lock():
+            otu_ = create_otu(
+                precached_repo,
+                3158377,
+                [
+                    "NC_010314",
+                    "NC_010316",
+                    "NC_010315",
+                    "NC_010317",
+                    "NC_010318",
+                    "NC_010319",
+                ],
+                "",
+            )
 
-        assert (
-            otu.excluded_accessions
-            == {
-                "EF546808",
-                "EF546809",
-                "EF546810",
-                "EF546811",
-                "EF546812",
-                "EF546813",
-            }
-            == snapshot
-        )
+        assert otu_.excluded_accessions == {
+            "EF546808",
+            "EF546809",
+            "EF546810",
+            "EF546811",
+            "EF546812",
+            "EF546813",
+        }
 
-    def test_otu_create_with_acronym_auto(self, precached_repo: Repo):
-        otu = create_otu(
-            precached_repo,
-            132477,
-            ["NC_013006"],
-            "",
-        )
+    def test_acronym_auto(self, precached_repo: Repo) -> None:
+        """Test that the auto-generated acronym is correct."""
+        with precached_repo.lock():
+            otu_ = create_otu(
+                precached_repo,
+                132477,
+                ["NC_013006"],
+                "",
+            )
 
-        assert otu.acronym == "KLV"
+        assert otu_.acronym == "KLV"
 
-    def test_otu_create_with_acronym_manual(self, precached_repo: Repo):
-        otu = create_otu(
-            precached_repo,
-            1441799,
-            ["NC_023881"],
-            "FBNSV",
-        )
+    def test_acronym_manual(self, precached_repo: Repo) -> None:
+        """Test the acronym can be set manually."""
+        with precached_repo.lock():
+            otu_ = create_otu(
+                precached_repo,
+                1441799,
+                ["NC_023881"],
+                "FBNSV",
+            )
 
-        assert otu.acronym == "FBNSV"
+        assert otu_.acronym == "FBNSV"
 
 
 class TestCreateOTUCommands:
     @pytest.mark.parametrize(
-        "taxid, accessions",
+        ("taxid", "accessions"),
         [(1278205, ["NC_020160"]), (345184, ["DQ178610", "DQ178611"])],
     )
     def test_ok(
@@ -191,6 +194,7 @@ class TestCreateOTUCommands:
         precached_repo: Repo,
         snapshot: SnapshotAssertion,
     ):
+        """Test that an OTU can be created using the command line interface."""
         run_create_otu_command(
             taxid=taxid,
             path=precached_repo.path,
@@ -200,9 +204,7 @@ class TestCreateOTUCommands:
         otus = list(Repo(precached_repo.path).iter_otus())
 
         assert len(otus) == 1
-        otu = otus[0]
-
-        assert otu.model_dump() == snapshot(
+        assert otus[0].model_dump() == snapshot(
             exclude=props("id", "isolates", "representative_isolate"),
         )
 
@@ -222,18 +224,22 @@ class TestCreateOTUCommands:
 
 
 class TestAddIsolate:
-    def test_add_multipartite(self, precached_repo: Repo):
-        otu_before = create_otu(
-            precached_repo, 2164102, ["MF062136", "MF062137", "MF062138"], acronym=""
-        )
+    def test_multipartite(self, precached_repo: Repo):
+        with precached_repo.lock():
+            otu_before = create_otu(
+                precached_repo,
+                2164102,
+                ["MF062136", "MF062137", "MF062138"],
+                acronym="",
+            )
 
         assert otu_before.accessions == {"MF062136", "MF062137", "MF062138"}
-
         assert len(otu_before.isolate_ids) == 1
 
-        isolate = add_genbank_isolate(
-            precached_repo, otu_before, ["MF062125", "MF062126", "MF062127"]
-        )
+        with precached_repo.lock():
+            isolate = add_genbank_isolate(
+                precached_repo, otu_before, ["MF062125", "MF062126", "MF062127"]
+            )
 
         otu_after = precached_repo.get_otu(otu_before.id)
 
@@ -267,18 +273,23 @@ class TestAddIsolate:
         assert result.exit_code == 2
         assert "Duplicate accessions are not allowed." in result.output
 
-    def test_genbank_ok(self, precached_repo: Repo):
+    def test_genbank(self, precached_repo: Repo):
         """Test that add_genbank_isolate() adds an isolate with a correctly parsed
         name.
         """
         isolate_1_accessions = ["DQ178610", "DQ178611"]
         isolate_2_accessions = ["DQ178613", "DQ178614"]
 
-        otu = create_otu(precached_repo, 345184, isolate_1_accessions, acronym="")
+        with precached_repo.lock():
+            otu_before = create_otu(
+                precached_repo, 345184, isolate_1_accessions, acronym=""
+            )
 
-        assert otu.accessions == set(isolate_1_accessions)
+            assert otu_before.accessions == set(isolate_1_accessions)
 
-        isolate = add_genbank_isolate(precached_repo, otu, isolate_2_accessions)
+            isolate = add_genbank_isolate(
+                precached_repo, otu_before, isolate_2_accessions
+            )
 
         otu_after = precached_repo.get_otu_by_taxid(345184)
 
@@ -289,22 +300,23 @@ class TestAddIsolate:
         isolate_after = otu_after.get_isolate(isolate.id)
 
         assert isolate_after.accessions == set(isolate_2_accessions)
-
         assert isolate_after.name == IsolateName(
             IsolateNameType.ISOLATE,
             "Douglas Castle",
         )
 
-    def test_ignore_name_ok(self, precached_repo: Repo):
-        """Test that add_unnamed_isolate() adds the correct isolate with its name set to None."""
+    def test_ignore_name(self, precached_repo: Repo):
+        """Test that add_unnamed_isolate() adds the isolate with a ``None`` name."""
         isolate_1_accessions = ["DQ178610", "DQ178611"]
         isolate_2_accessions = ["DQ178613", "DQ178614"]
 
-        otu = create_otu(precached_repo, 345184, isolate_1_accessions, acronym="")
+        with precached_repo.lock():
+            otu = create_otu(precached_repo, 345184, isolate_1_accessions, acronym="")
 
         assert otu.accessions == set(isolate_1_accessions)
 
-        isolate = add_unnamed_isolate(precached_repo, otu, isolate_2_accessions)
+        with precached_repo.lock(), precached_repo.use_transaction():
+            isolate = add_unnamed_isolate(precached_repo, otu, isolate_2_accessions)
 
         otu_after = precached_repo.get_otu_by_taxid(345184)
 
@@ -313,15 +325,15 @@ class TestAddIsolate:
         isolate_after = otu_after.get_isolate(isolate.id)
 
         assert isolate_after.name is None
-
         assert isolate_after.accessions == {"DQ178613", "DQ178614"}
 
-    def test_add_and_name_ok(self, precached_repo: Repo):
+    def test_add_and_name_isolate(self, precached_repo: Repo):
         """Test that add_and_name_isolate() creates an isolate with the correct name."""
         isolate_1_accessions = ["DQ178610", "DQ178611"]
         isolate_2_accessions = ["DQ178613", "DQ178614"]
 
-        otu = create_otu(precached_repo, 345184, isolate_1_accessions, acronym="")
+        with precached_repo.lock():
+            otu = create_otu(precached_repo, 345184, isolate_1_accessions, acronym="")
 
         assert otu.accessions == set(isolate_1_accessions)
 
@@ -346,20 +358,20 @@ class TestAddIsolate:
         assert isolate_after.accessions == {"DQ178613", "DQ178614"}
 
     def test_conflict_fail(self, precached_repo: Repo):
-        """Test that an isolate cannot be added to an OTU
-        if both its name and its accessions are already contained.
+        """Test that an isolate cannot be added to an OTU if both its name and its
+        accessions are already contained.
         """
-        taxid = 2164102
         accessions = ["MF062136", "MF062137", "MF062138"]
 
-        otu = create_otu(
-            precached_repo,
-            taxid,
-            accessions,
-            "",
-        )
+        with precached_repo.lock():
+            otu = create_otu(
+                precached_repo,
+                2164102,
+                accessions,
+                "",
+            )
 
-        assert add_genbank_isolate(precached_repo, otu, accessions) is None
+            assert add_genbank_isolate(precached_repo, otu, accessions) is None
 
 
 @pytest.mark.parametrize(
@@ -378,12 +390,13 @@ class TestReplaceIsolateSequences:
         refseq_accessions: list[str],
     ):
         """Test that a requested replacement occurs as expected."""
-        create_otu(
-            empty_repo,
-            taxid,
-            accessions=original_accessions,
-            acronym="",
-        )
+        with empty_repo.lock():
+            create_otu(
+                empty_repo,
+                taxid,
+                accessions=original_accessions,
+                acronym="",
+            )
 
         otu_before = empty_repo.get_otu_by_taxid(taxid)
 
@@ -391,12 +404,13 @@ class TestReplaceIsolateSequences:
 
         isolate = next(iter(otu_before.isolates))
 
-        update_isolate_from_accessions(
-            empty_repo,
-            otu_before,
-            isolate.name,
-            refseq_accessions,
-        )
+        with empty_repo.lock(), empty_repo.use_transaction():
+            update_isolate_from_accessions(
+                empty_repo,
+                otu_before,
+                isolate.name,
+                refseq_accessions,
+            )
 
         otu_after = empty_repo.get_otu(otu_before.id)
 
@@ -405,7 +419,7 @@ class TestReplaceIsolateSequences:
 
     def test_raise_refseq_exception(
         self,
-        empty_repo,
+        empty_repo: Repo,
         taxid: int,
         original_accessions: list[str],
         refseq_accessions: list[str],
@@ -413,12 +427,13 @@ class TestReplaceIsolateSequences:
         """Test that attempting to add an isolate with RefSeq accessions
         raises RefSeqConflictError
         """
-        create_otu(
-            empty_repo,
-            taxid,
-            accessions=original_accessions,
-            acronym="",
-        )
+        with empty_repo.lock():
+            create_otu(
+                empty_repo,
+                taxid,
+                accessions=original_accessions,
+                acronym="",
+            )
 
         otu_before = empty_repo.get_otu_by_taxid(taxid)
 

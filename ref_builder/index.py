@@ -5,6 +5,7 @@ import sqlite3
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
+from pprint import pprint
 from typing import Any
 from uuid import UUID
 
@@ -59,14 +60,6 @@ class Index:
         self.con.execute("PRAGMA journal_mode = WAL")
         self.con.execute("PRAGMA synchronous = NORMAL")
 
-        self.con.execute(
-            """
-            CREATE TABLE IF NOT EXISTS at_event (
-                id INTEGER PRIMARY KEY,
-                at_event INTEGER
-            );
-            """,
-        )
 
         self.con.execute(
             """
@@ -302,7 +295,6 @@ class Index:
         updated.
 
         Only sequences that have changed will be updated.
-
         """
         sequence_ids = {
             str(seq.id) for isolate in otu.isolates for seq in isolate.sequences
@@ -369,6 +361,36 @@ class Index:
                 otu.taxid,
             ),
         )
+
+        self.con.commit()
+
+    def prune(self, event_id: int) -> None:
+        """Rollback the index to a previous event.
+
+        * Deletes all events after the given event ID.
+        * Deletes all OTU snapshots that have ``at_event`` later than ``event_id``.
+
+        Removed snapshots will be automatically updated next time an OTU is fetched from
+        the repository.
+
+        :param event_id: the event ID to rollback to
+
+        """
+        self.con.execute(
+            """
+            DELETE FROM events WHERE at_event > ?
+            """,
+            (event_id,),
+        )
+
+        result = self.con.execute(
+            """
+            DELETE FROM otus WHERE at_event > ?
+            """,
+            (event_id,),
+        )
+
+        pprint(result)
 
         self.con.commit()
 

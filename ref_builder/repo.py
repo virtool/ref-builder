@@ -17,12 +17,17 @@ import shutil
 import uuid
 from collections import defaultdict
 from collections.abc import Collection, Generator, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 import arrow
-from orjson import orjson
 from structlog import get_logger
 
+from ref_builder.errors import (
+    LockRequiredError,
+    TransactionExistsError,
+    TransactionRequiredError,
+)
 from ref_builder.events.base import (
     ApplicableEvent,
     Event,
@@ -48,10 +53,10 @@ from ref_builder.events.otu import (
     CreateOTUData,
     CreatePlan,
     CreatePlanData,
-    UpdateExcludedAccessions,
-    UpdateExcludedAccessionsData,
     SetRepresentativeIsolate,
     SetRepresentativeIsolateData,
+    UpdateExcludedAccessions,
+    UpdateExcludedAccessionsData,
 )
 from ref_builder.events.repo import (
     CreateRepo,
@@ -64,6 +69,7 @@ from ref_builder.events.sequence import (
     DeleteSequenceData,
 )
 from ref_builder.index import Index
+from ref_builder.lock import Lock
 from ref_builder.models import Molecule, OTUMinimal
 from ref_builder.plan import Plan
 from ref_builder.resources import (
@@ -73,13 +79,14 @@ from ref_builder.resources import (
     RepoSequence,
     RepoSettings,
 )
+from ref_builder.store import EventStore
+from ref_builder.transaction import AbortTransactionError, Transaction
 from ref_builder.utils import (
     Accession,
-    ExcludedAccessionAction,
     DataType,
+    ExcludedAccessionAction,
     IsolateName,
     get_accession_key,
-    pad_zeroes,
 )
 
 logger = get_logger("repo")
@@ -93,7 +100,7 @@ class Repo:
         self.path = path
         """The path to the repo directory."""
 
-        self._event_store = EventStore(self.path / "src")
+        self._event_store = EventStore(self.path)
         """The event store of the event sourced repository."""
 
         self._index = Index(self.path / ".cache" / "index.db")
@@ -102,6 +109,17 @@ class Repo:
         It allows fast lookup of OTUs be key fields, fetching of complete OTU state,
         and the events associated with a given OTU ID.
         """
+
+        self._lock = Lock(self.path)
+        """A lock for the repository."""
+
+        self._transaction: Transaction | None = None
+        """The current transaction, if one is active."""
+
+        with open(self.path / "head") as f:
+            self._head_id = int(f.read())
+
+        self._prune()
 
         # Populate the index if it is empty.
         if not self._index.otu_ids:
@@ -147,22 +165,32 @@ class Repo:
 
         repo_id = uuid.uuid4()
 
-        _src = EventStore(path / "src")
-        _src.write_event(
-            CreateRepo,
-            CreateRepoData(
-                id=repo_id,
-                data_type=data_type,
-                name=name,
-                organism=organism,
-                settings=RepoSettings(
-                    default_segment_length_tolerance=default_segment_length_tolerance
+        event = EventStore(path).write_event(
+            CreateRepo(
+                id=1,
+                data=CreateRepoData(
+                    id=repo_id,
+                    data_type=data_type,
+                    name=name,
+                    organism=organism,
+                    settings=RepoSettings(
+                        default_segment_length_tolerance=default_segment_length_tolerance
+                    ),
                 ),
-            ),
-            RepoQuery(repository_id=repo_id),
+                query=RepoQuery(repository_id=repo_id),
+                timestamp=arrow.utcnow().naive,
+            )
         )
 
+        with open(path / "head", "w") as f:
+            f.write(str(event.id))
+
         return Repo(path)
+
+    @property
+    def head_id(self) -> int:
+        """The id of the validated event most recently  added to the repository."""
+        return self._head_id
 
     @property
     def last_id(self) -> int:
@@ -187,11 +215,58 @@ class Repo:
 
         raise ValueError("No repository creation event found")
 
+    @contextmanager
+    def lock(self) -> Iterator[None]:
+        """Lock the repository.
+
+        This prevents read and write access from  other ``ref-builder`` processes.
+        """
+        self._lock.lock()
+
+        try:
+            yield
+        finally:
+            self._lock.unlock()
+
+    @contextmanager
+    def use_transaction(self) -> Generator[Transaction, None, None]:
+        """Lock the repository during modification.
+
+        This prevents writes from  other ``ref-builder`` processes.
+        """
+        if self._transaction:
+            raise TransactionExistsError
+
+        if not self._lock.locked:
+            raise LockRequiredError
+
+        self._transaction = Transaction()
+
+        try:
+            yield self._transaction
+        except Exception as e:
+            self.prune()
+
+            if not isinstance(e, AbortTransactionError):
+                raise
+        else:
+            self._transaction = None
+
+            with open(self.path / "head", "w") as f:
+                f.write(str(self.last_id))
+
+    def prune(self) -> None:
+        """Prune an events ahead of the head.
+
+        This removes the events from the store and updates the index accordingly.
+        """
+        self._index.prune(self.head_id)
+        self._event_store.prune(self.head_id)
+
     def iter_minimal_otus(self) -> Iterator[OTUMinimal]:
         """Iterate over minimal representations of the OTUs in the repository.
 
         This is more performant than iterating over full OTUs.
-
         """
         return self._index.iter_minimal_otus()
 
@@ -202,16 +277,17 @@ class Repo:
 
     def iter_otus_from_events(self) -> Iterator[RepoOTU]:
         """Iterate over the OTUs, bypassing the index."""
-        events_by_otu = defaultdict(list)
+        event_ids_by_otu = defaultdict(list)
 
         for event in self._event_store.iter_events():
-            otu_id = event.query.model_dump().get("otu_id")
+            if hasattr(event.query, "otu_id"):
+                event_ids_by_otu[event.query.otu_id].append(event.id)
 
-            if otu_id is not None:
-                events_by_otu[otu_id].append(event.id)
-
-        for otu_id in events_by_otu:
-            yield self._rehydrate_otu(events_by_otu[otu_id])
+        for otu_id in event_ids_by_otu:
+            yield self._rehydrate_otu(
+                self._event_store.read_event(event_id)
+                for event_id in event_ids_by_otu[otu_id]
+            )
 
     def create_otu(
         self,
@@ -235,12 +311,11 @@ class Repo:
         if legacy_id and self._index.get_id_by_legacy_id(legacy_id):
             raise ValueError(f"An OTU with the legacy ID '{legacy_id}' already exists")
 
-        otu_logger = logger.bind(taxid=taxid, name=name, legacy_id=legacy_id)
-        otu_logger.info(f"Creating new OTU for Taxonomy ID {taxid}...")
+        logger.info("Creating new OTU.", taxid=taxid, name=name)
 
         otu_id = uuid.uuid4()
 
-        event = self._write_event(
+        self._write_event(
             CreateOTU,
             CreateOTUData(
                 id=otu_id,
@@ -253,8 +328,6 @@ class Repo:
             ),
             OTUQuery(otu_id=otu_id),
         )
-
-        otu_logger.debug("OTU written", event_id=event.id, otu_id=str(otu_id))
 
         return self.get_otu(otu_id)
 
@@ -533,11 +606,16 @@ class Repo:
             excludable_accessions = {
                 get_accession_key(raw_accession) for raw_accession in accessions
             }
-        except ValueError:
-            logger.error(
-                "Invalid accession included in set. No changes were made to excluded accessions."
-            )
-            return otu.excluded_accessions
+        except ValueError as e:
+            if "Invalid accession key" in str(e):
+                logger.warning(
+                    "Invalid accession included in set. No changes were made to "
+                    "excluded accessions."
+                )
+
+                return otu.excluded_accessions
+
+            raise
 
         if unremovable_accessions := excludable_accessions.intersection(otu.accessions):
             logger.warning(
@@ -632,7 +710,12 @@ class Repo:
         if event_index_item is None:
             return None
 
-        otu = self._rehydrate_otu(event_index_item.event_ids)
+        events = (
+            self._event_store.read_event(event_id)
+            for event_id in event_index_item.event_ids
+        )
+
+        otu = self._rehydrate_otu(events)
 
         self._index.upsert_otu(otu, self.last_id)
 
@@ -663,23 +746,20 @@ class Repo:
         """
         return self._index.get_id_by_taxid(taxid)
 
-    def _rehydrate_otu(self, event_ids: list[int]) -> RepoOTU:
-        event = self._event_store.read_event(event_ids[0])
+    def _rehydrate_otu(self, events: Iterator[Event]) -> RepoOTU:
+        event = next(events)
 
         if isinstance(event, CreateOTU):
             otu = event.apply()
         else:
             raise TypeError(
-                f"The first event ({event_ids[0]}) for an OTU is not a CreateOTU "
-                "event",
+                f"The first event ({event}) for an OTU is not a CreateOTU " "event",
             )
 
-        for event_id in event_ids[1:]:
-            event = self._event_store.read_event(event_id)
-
+        for event in events:
             if not isinstance(event, ApplicableEvent):
                 raise TypeError(
-                    f"Event {event_id} {type(event)!s} is not an applicable event."
+                    f"Event {event.id} {event.type} is not an applicable event."
                 )
 
             otu = event.apply(otu)
@@ -695,137 +775,41 @@ class Repo:
 
         return otu
 
-    def _write_event(self, cls, data, query):
-        event = self._event_store.write_event(cls, data, query)
+    def _prune(self) -> None:
+        """Prune events beyond the ID in the head file."""
+        head_path = self.path / "head"
 
-        if hasattr(query, "otu_id"):
-            self._index.add_event_id(event.id, query.otu_id)
+        if not head_path.exists():
+            return
 
-        return event
+        with open(head_path) as f:
+            head_id = int(f.read())
 
+        self._event_store.prune(head_id)
 
-class EventStore:
-    """Interface for the event store."""
+    def _write_event(self, cls: type[Event], data: EventData, query: EventQuery):
+        """Write an event to the repository."""
+        if self._transaction is None:
+            raise TransactionRequiredError
 
-    def __init__(self, path: Path) -> None:
-        """Create a new instance of the event store.
-
-        If no store exists at ``path``, a new store will be created.
-
-        :param path: the path to the event store directory
-
-        """
-        path.mkdir(exist_ok=True)
-
-        self.path = path
-        """The path to the event store directory."""
-
-        self.last_id = 0
-        """The id of the latest event."""
-
-        # Check that all events are present and set .last_id to the latest event.
-        for event_id in self.event_ids:
-            if event_id - self.last_id != 1:
-                raise ValueError("Event IDs are not sequential.")
-
-            self.last_id = event_id
-
-    @property
-    def event_ids(self) -> list:
-        event_ids = []
-
-        for event_path in self.path.iterdir():
-            try:
-                event_ids.append(int(event_path.stem))
-            except ValueError:
-                continue
-
-        event_ids.sort()
-
-        return event_ids
-
-    def iter_events(
-        self,
-        start: int = 1,
-    ) -> Generator[Event, None, None]:
-        """Yield all events in the event store.
-
-        Events are yielded by ascending event ID, which corresponds to the order in
-        which they were written.
-
-        Optionally, the starting event ID can be specified using the ``start``
-        parameter.
-
-        :param start: the event ID to start from
-        :return: a generator of events
-
-        """
-        if start < 1:
-            raise IndexError("Start event ID cannot be less than 1")
-
-        if not Path(self.path / f"{pad_zeroes(start)}.json").exists():
-            raise IndexError(f"Event {start} not found in event store")
-
-        for event_id in range(start, self.last_id + 1):
-            try:
-                yield self.read_event(event_id)
-            except FileNotFoundError:
-                break
-
-    def read_event(self, event_id: int) -> Event:
-        """Read the event with the given ``event_id``.
-
-        :param event_id: the ID of the event to read
-        :return: the event
-
-        """
-        with open(self.path / f"{pad_zeroes(event_id)}.json", "rb") as f:
-            loaded = orjson.loads(f.read())
-
-            try:
-                cls = {
-                    "CreateRepo": CreateRepo,
-                    "CreateOTU": CreateOTU,
-                    "CreateIsolate": CreateIsolate,
-                    "CreateSequence": CreateSequence,
-                    "LinkSequence": LinkSequence,
-                    "UnlinkSequence": UnlinkSequence,
-                    "DeleteIsolate": DeleteIsolate,
-                    "DeleteSequence": DeleteSequence,
-                    "CreatePlan": CreatePlan,
-                    "SetRepresentativeIsolate": SetRepresentativeIsolate,
-                    "UpdateExcludedAccessions": UpdateExcludedAccessions,
-                }[loaded["type"]]
-
-                return cls(**loaded)
-
-            except KeyError:
-                raise ValueError(f"Unknown event type: {loaded['type']}")
-
-    def write_event(
-        self,
-        cls: type[Event],
-        data: EventData,
-        query: EventQuery,
-    ) -> Event:
-        """Write a new event to the repository."""
-        event_id = self.last_id + 1
-
-        event = cls(
-            id=event_id,
-            data=data,
-            query=query,
-            timestamp=arrow.utcnow().naive,
+        event = self._event_store.write_event(
+            cls(
+                id=self.last_id + 1,
+                data=data,
+                query=query,
+                timestamp=arrow.utcnow().naive,
+            )
         )
 
-        with open(self.path / f"{pad_zeroes(event_id)}.json", "wb") as f:
-            f.write(
-                orjson.dumps(
-                    event.model_dump(by_alias=True, mode="json"),
-                    f,
-                ),
-            )
-
-        self.last_id = event_id
+        if hasattr(event.query, "otu_id"):
+            self._index.add_event_id(event.id, event.query.otu_id)
 
         return event
+
+
+@contextmanager
+def locked_repo(path: Path) -> Generator[Repo, None, None]:
+    repo = Repo(path)
+
+    with repo.lock():
+        yield repo

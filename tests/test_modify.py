@@ -33,16 +33,17 @@ from ref_builder.utils import IsolateName, IsolateNameType
 
 
 def test_exclude_accessions(scratch_repo: Repo):
-    """Test accession exclusion function"""
+    """Test accession exclusion."""
     taxid = 345184
 
     otu_before = scratch_repo.get_otu_by_taxid(taxid)
 
     assert not otu_before.excluded_accessions
 
-    exclude_accessions_from_otu(
-        scratch_repo, otu_before, accessions=["DQ178608", "DQ178609"]
-    )
+    with scratch_repo.lock():
+        exclude_accessions_from_otu(
+            scratch_repo, otu_before, accessions=["DQ178608", "DQ178609"]
+        )
 
     otu_after = scratch_repo.get_otu_by_taxid(taxid)
 
@@ -52,21 +53,23 @@ def test_exclude_accessions(scratch_repo: Repo):
 def test_allow_accessions(scratch_repo: Repo):
     taxid = 345184
 
-    exclude_accessions_from_otu(
-        scratch_repo,
-        otu=scratch_repo.get_otu_by_taxid(taxid),
-        accessions={"DQ178608", "DQ178609"},
-    )
+    with scratch_repo.lock():
+        exclude_accessions_from_otu(
+            scratch_repo,
+            otu=scratch_repo.get_otu_by_taxid(taxid),
+            accessions={"DQ178608", "DQ178609"},
+        )
 
     otu_before = scratch_repo.get_otu_by_taxid(taxid)
 
     assert otu_before.excluded_accessions == {"DQ178608", "DQ178609"}
 
-    allow_accessions_into_otu(
-        scratch_repo,
-        otu=otu_before,
-        accessions={"DQ178608"},
-    )
+    with scratch_repo.lock():
+        allow_accessions_into_otu(
+            scratch_repo,
+            otu=otu_before,
+            accessions={"DQ178608"},
+        )
 
     otu_after = scratch_repo.get_otu_by_taxid(taxid)
 
@@ -86,7 +89,10 @@ def test_update_representative_isolate(scratch_repo: Repo):
             representative_isolate_after = isolate_id
             break
 
-    set_representative_isolate(scratch_repo, otu_before, representative_isolate_after)
+    with scratch_repo.lock():
+        set_representative_isolate(
+            scratch_repo, otu_before, representative_isolate_after
+        )
 
     otu_after = scratch_repo.get_otu_by_taxid(taxid)
 

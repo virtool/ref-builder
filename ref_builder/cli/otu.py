@@ -5,6 +5,7 @@ from uuid import UUID
 import click
 import structlog
 
+from ref_builder.cli.utils import pass_repo
 from ref_builder.cli.validate import validate_no_duplicate_accessions
 from ref_builder.console import print_otu, print_otu_list
 from ref_builder.options import ignore_cache_option, path_option
@@ -18,15 +19,18 @@ from ref_builder.otu.modify import (
 )
 from ref_builder.otu.update import auto_update_otu, promote_otu_accessions
 from ref_builder.plan import SegmentName, SegmentRule
-from ref_builder.repo import Repo
+from ref_builder.repo import Repo, locked_repo
 from ref_builder.utils import IsolateName, IsolateNameType
 
 logger = structlog.get_logger()
 
 
 @click.group(name="otu")
-def otu() -> None:
+@path_option
+@click.pass_context
+def otu(ctx: click.Context, path: Path) -> None:
     """Manage OTUs."""
+    ctx.obj = ctx.with_resource(locked_repo(path))
 
 
 @otu.command(name="create")
@@ -40,13 +44,13 @@ def otu() -> None:
     required=True,
 )
 @click.option("--acronym", type=str, default="")
+@pass_repo
 @ignore_cache_option
-@path_option
 def otu_create(
+    repo: Repo,
     accessions_: list[str],
     acronym: str,
     ignore_cache: bool,
-    path: Path,
     taxid: int,
 ) -> None:
     """Create a new OTU.
@@ -54,35 +58,25 @@ def otu_create(
     OTUs are created from a list of accessions and a taxonomy ID. The associated Genbank
     records are fetched and used to create the first isolate and a plan.
     """
-    repo = Repo(path)
-
-    if len(accessions_) != len(set(accessions_)):
-        click.echo("Duplicate accessions were provided.", err=True)
-        sys.exit(1)
-
-    try:
-        create_otu(
-            repo,
-            taxid,
-            accessions_,
-            acronym=acronym,
-            ignore_cache=ignore_cache,
-        )
-    except ValueError as e:
-        click.echo(e, err=True)
-        sys.exit(1)
+    create_otu(
+        repo,
+        taxid,
+        accessions_,
+        acronym=acronym,
+        ignore_cache=ignore_cache,
+    )
 
 
 @otu.command(name="get")
 @click.argument("IDENTIFIER", type=str)
-@path_option
-def otu_get(identifier: str, path: Path) -> None:
+@pass_repo
+def otu_get(repo: Repo, identifier: str) -> None:
     """Get an OTU by its unique ID or taxonomy ID."""
     try:
         identifier = int(identifier)
-        otu_ = Repo(path).get_otu_by_taxid(identifier)
+        otu_ = repo.get_otu_by_taxid(identifier)
     except ValueError:
-        otu_ = Repo(path).get_otu(UUID(identifier))
+        otu_ = repo.get_otu(UUID(identifier))
 
     if otu_ is None:
         click.echo("OTU not found.", err=True)
@@ -92,53 +86,43 @@ def otu_get(identifier: str, path: Path) -> None:
 
 
 @otu.command(name="list")
-@path_option
-def otu_list(path: Path) -> None:
+@pass_repo
+def otu_list(repo: Repo) -> None:
     """List all OTUs in the repository."""
-    print_otu_list(Repo(path).iter_minimal_otus())
+    print_otu_list(repo.iter_minimal_otus())
 
 
 @otu.command(name="update")
-@ignore_cache_option
-@path_option
 @click.argument("TAXID", type=int)
-def otu_auto_update(path: Path, taxid: int, ignore_cache: bool) -> None:
+@ignore_cache_option
+@pass_repo
+def otu_auto_update(repo: Repo, taxid: int, ignore_cache: bool) -> None:
     """Update an OTU with the latest data from NCBI."""
-    repo = Repo(path)
     otu_ = repo.get_otu_by_taxid(taxid)
 
     if otu_ is None:
         click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
-        click.echo(f'Run "virtool otu create {taxid} --autofill" instead.')
         sys.exit(1)
 
     auto_update_otu(repo, otu_, ignore_cache=ignore_cache)
 
 
 @otu.command(name="promote")
-@path_option
-@ignore_cache_option
 @click.argument("TAXID", type=int)
-def otu_promote_accessions(
-    path: Path,
-    taxid: int,
-    ignore_cache: bool,
-) -> None:
+@ignore_cache_option
+@pass_repo
+def otu_promote_accessions(repo: Repo, taxid: int, ignore_cache: bool) -> None:
     """Promote all RefSeq accessions within an OTU."""
-    repo = Repo(path)
     otu_ = repo.get_otu_by_taxid(taxid)
 
     if otu_ is None:
         click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
-        click.echo(f'Run "virtool otu create {taxid} --autofill" instead.')
         sys.exit(1)
 
     promote_otu_accessions(repo, otu_, ignore_cache)
 
 
 @otu.command(name="exclude-accessions")  # type: ignore
-@path_option
-@ignore_cache_option
 @click.argument("TAXID", type=int)
 @click.argument(
     "accessions_",
@@ -147,17 +131,18 @@ def otu_promote_accessions(
     type=str,
     required=True,
 )
+@ignore_cache_option
+@pass_repo
 def otu_exclude_accessions(
-    path: Path,
-    taxid: int,
+    repo: Repo,
     accessions_: list[str],
+    taxid: int,
 ) -> None:
     """Exclude the given accessions from this OTU.
 
     Any duplicate accessions will be ignored. Only one exclusion per unique accession
     will be made.
     """
-    repo = Repo(path)
     otu_ = repo.get_otu_by_taxid(taxid)
 
     if otu_ is None:
@@ -168,8 +153,6 @@ def otu_exclude_accessions(
 
 
 @otu.command(name="allow-accessions")  # type: ignore
-@path_option
-@ignore_cache_option
 @click.argument("TAXID", type=int)
 @click.argument(
     "accessions_",
@@ -178,17 +161,18 @@ def otu_exclude_accessions(
     type=str,
     required=True,
 )
+@ignore_cache_option
+@pass_repo
 def otu_allow_accessions(
-    path: Path,
-    taxid: int,
     accessions_: list[str],
+    repo: Repo,
+    taxid: int,
 ) -> None:
     """Allow the given excluded accessions back into the OTU.
 
     Any duplicate accessions will be ignored. Only one exclusion per unique accession
     will be made.
     """
-    repo = Repo(path)
     otu_ = repo.get_otu_by_taxid(taxid)
 
     if otu_ is None:
@@ -199,16 +183,14 @@ def otu_allow_accessions(
 
 
 @otu.command(name="set-default-isolate")  # type: ignore
-@path_option
 @click.argument("TAXID", type=int)
 @click.argument("ISOLATE_KEY", type=str)
 def otu_set_representative_isolate(
-    path: Path,
-    taxid: int,
     isolate_key: str,
+    repo: Repo,
+    taxid: int,
 ) -> None:
     """Update the OTU with a new representative isolate."""
-    repo = Repo(path)
     otu_ = repo.get_otu_by_taxid(taxid)
 
     if otu_ is None:
@@ -219,6 +201,7 @@ def otu_set_representative_isolate(
         isolate_id = UUID(isolate_key)
     except ValueError:
         parts = isolate_key.split(" ")
+
         try:
             isolate_name = IsolateName(IsolateNameType(parts[0].lower()), parts[1])
         except ValueError:
@@ -248,24 +231,23 @@ def otu_set_representative_isolate(
     is_flag=True,
     help="Set additional segments as fully optional",
 )
-@path_option
 @ignore_cache_option
+@pass_repo
 def plan_extend_segment_list(
-    path: Path,
-    taxid: int,
     accessions_: list[str],
-    optional: bool,
     ignore_cache: bool,
+    repo: Repo,
+    taxid: int,
+    optional: bool,
 ) -> None:
     """Add recommended or optional segments to the OTU plan."""
-    repo = Repo(path)
     otu_ = repo.get_otu_by_taxid(taxid)
 
     if otu_ is None:
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
-    try:
+    with repo.use_transaction():
         add_segments_to_plan(
             repo,
             otu_,
@@ -273,8 +255,6 @@ def plan_extend_segment_list(
             accessions=accessions_,
             ignore_cache=ignore_cache,
         )
-    except ValueError as e:
-        click.echo(e, err=True)
 
 
 @otu.command(name="rename-plan-segment")
@@ -287,24 +267,23 @@ def plan_extend_segment_list(
     type=str,
     required=True,
 )
-@path_option
+@pass_repo
 def plan_rename_segment(
-    path: Path, taxid: int, segment_id: str, segment_name_: tuple[str, str]
+    repo: Repo,
+    segment_id: str,
+    segment_name_: tuple[str, str],
+    taxid: int,
 ) -> None:
     """Give an unnamed segment a name."""
-    repo = Repo(path)
     otu_ = repo.get_otu_by_taxid(taxid)
 
     if otu_ is None:
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
-    try:
-        rename_plan_segment(
-            repo,
-            otu_,
-            segment_id=UUID(segment_id),
-            segment_name=SegmentName(segment_name_[0], segment_name_[1]),
-        )
-    except ValueError as e:
-        click.echo(e, err=True)
+    rename_plan_segment(
+        repo,
+        otu_,
+        segment_id=UUID(segment_id),
+        segment_name=SegmentName(segment_name_[0], segment_name_[1]),
+    )
