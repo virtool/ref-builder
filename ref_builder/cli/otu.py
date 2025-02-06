@@ -8,7 +8,7 @@ import structlog
 from ref_builder.cli.validate import validate_no_duplicate_accessions
 from ref_builder.console import print_otu, print_otu_list
 from ref_builder.options import ignore_cache_option, path_option
-from ref_builder.otu.create import create_otu, create_otu_without_taxid
+from ref_builder.otu.create import create_otu_with_taxid, create_otu_without_taxid
 from ref_builder.otu.modify import (
     add_segments_to_plan,
     allow_accessions_into_otu,
@@ -62,7 +62,7 @@ def otu_create(
 
     if taxid:
         try:
-            create_otu(
+            create_otu_with_taxid(
                 repo,
                 taxid,
                 accessions_,
