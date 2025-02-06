@@ -84,6 +84,16 @@ def create_otu_without_taxid(
     acronym: str,
     ignore_cache: bool = False,
 ) -> RepoOTU | None:
+    """Create a new OTU from a list of accessions.
+
+    Uses the provided accessions to generate a plan and add a first isolate.
+
+    :param repo: the repository to add the OTU to.
+    :param accessions: accessions to build the new otu from
+    :param acronym: an alternative name to use during searches.
+    :param ignore_cache: whether to ignore the cache.
+
+    """
     ncbi = NCBIClient(ignore_cache)
 
     records = ncbi.fetch_genbank_records(accessions)
@@ -129,6 +139,7 @@ def write_otu(
     acronym: str,
     isolate_name: IsolateName | None,
 ) -> RepoOTU | None:
+    """Create a new OTU from an NCBI Taxonomy record and a list of Nucleotide records."""
     otu_logger = logger.bind(taxid=taxonomy.id)
 
     plan = create_plan_from_records(
