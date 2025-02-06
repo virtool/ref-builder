@@ -179,6 +179,18 @@ class TestCreateOTU:
 
         assert otu.acronym == "FBNSV"
 
+    def test_create_without_taxid_ok(self, precached_repo):
+        assert (
+            create_otu_without_taxid(
+                precached_repo, accessions=["DQ178610", "DQ178611"], acronym=""
+            ).taxid
+            == 345184
+        )
+
+        otu = precached_repo.get_otu_by_taxid(345184)
+
+        assert otu is not None
+
 
 class TestCreateOTUCommands:
     @pytest.mark.parametrize(
@@ -206,6 +218,33 @@ class TestCreateOTUCommands:
         assert otu.model_dump() == snapshot(
             exclude=props("id", "isolates", "representative_isolate"),
         )
+
+    @pytest.mark.parametrize(
+        "taxid, accessions",
+        [(1278205, ["NC_020160"]), (345184, ["DQ178610", "DQ178611"])],
+    )
+    def test_without_taxid_ok(
+        self,
+        taxid: int,
+        accessions: list[str],
+        precached_repo: Repo,
+    ):
+        subprocess.run(
+            [
+                "ref-builder",
+                "otu",
+                "create",
+                *accessions,
+                "--path",
+                str(precached_repo.path),
+            ],
+            check=False,
+        )
+
+        otus = list(Repo(precached_repo.path).iter_otus())
+
+        assert len(otus) == 1
+        assert otus[0].taxid == taxid
 
     def test_acronym(self, precached_repo: Repo):
         """Test if the --acronym option works as planned."""
@@ -275,7 +314,9 @@ class TestAddIsolate:
         isolate_1_accessions = ["DQ178610", "DQ178611"]
         isolate_2_accessions = ["DQ178613", "DQ178614"]
 
-        otu = create_otu_with_taxid(precached_repo, 345184, isolate_1_accessions, acronym="")
+        otu = create_otu_with_taxid(
+            precached_repo, 345184, isolate_1_accessions, acronym=""
+        )
 
         assert otu.accessions == set(isolate_1_accessions)
 
@@ -301,7 +342,9 @@ class TestAddIsolate:
         isolate_1_accessions = ["DQ178610", "DQ178611"]
         isolate_2_accessions = ["DQ178613", "DQ178614"]
 
-        otu = create_otu_with_taxid(precached_repo, 345184, isolate_1_accessions, acronym="")
+        otu = create_otu_with_taxid(
+            precached_repo, 345184, isolate_1_accessions, acronym=""
+        )
 
         assert otu.accessions == set(isolate_1_accessions)
 
@@ -322,7 +365,9 @@ class TestAddIsolate:
         isolate_1_accessions = ["DQ178610", "DQ178611"]
         isolate_2_accessions = ["DQ178613", "DQ178614"]
 
-        otu = create_otu_with_taxid(precached_repo, 345184, isolate_1_accessions, acronym="")
+        otu = create_otu_with_taxid(
+            precached_repo, 345184, isolate_1_accessions, acronym=""
+        )
 
         assert otu.accessions == set(isolate_1_accessions)
 
