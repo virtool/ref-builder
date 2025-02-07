@@ -157,9 +157,10 @@ def update_otu_with_accessions(
         for isolate_name, isolate_records in group_genbank_records_by_isolate(
             divided_records
         ).items():
-            isolate = create_isolate(
-                repo, otu, isolate_name, list(isolate_records.values())
-            )
+            with repo.use_transaction():
+                isolate = create_isolate(
+                    repo, otu, isolate_name, list(isolate_records.values())
+                )
 
             if isolate:
                 new_isolate_names.append(isolate.name)
