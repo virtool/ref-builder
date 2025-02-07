@@ -86,28 +86,30 @@ def update_isolate_from_records(
         if accession in isolate.accessions:
             old_sequence = isolate.get_sequence_by_accession(accession)
 
-            new_sequence = repo.create_sequence(
-                otu.id,
-                accession=record.accession_version,
-                definition=record.definition,
-                legacy_id=None,
-                segment=segment_id,
-                sequence=record.sequence,
-            )
+            # Use one transaction per sequence
+            with repo.use_transaction():
+                new_sequence = repo.create_sequence(
+                    otu.id,
+                    accession=record.accession_version,
+                    definition=record.definition,
+                    legacy_id=None,
+                    segment=segment_id,
+                    sequence=record.sequence,
+                )
 
-            if new_sequence is None:
-                logger.error("Isolate update failed when creating new sequence.")
-                return None
+                if new_sequence is None:
+                    logger.error("Isolate update failed when creating new sequence.")
+                    return None
 
-            repo.replace_sequence(
-                otu.id,
-                isolate.id,
-                new_sequence.id,
-                replaced_sequence_id=old_sequence.id,
-                rationale=DeleteRationale.REFSEQ,
-            )
+                repo.replace_sequence(
+                    otu.id,
+                    isolate.id,
+                    new_sequence.id,
+                    replaced_sequence_id=old_sequence.id,
+                    rationale=DeleteRationale.REFSEQ,
+                )
 
-            repo.exclude_accession(otu.id, old_sequence.accession.key)
+                repo.exclude_accession(otu.id, old_sequence.accession.key)
 
     otu = repo.get_otu(otu.id)
     isolate = otu.get_isolate(isolate_id)

@@ -75,7 +75,8 @@ def set_plan(
     log = logger.bind(name=otu.name, taxid=otu.taxid, plan=plan.model_dump())
 
     try:
-        repo.set_plan(otu.id, plan)
+        with repo.use_transaction():
+            repo.set_plan(otu.id, plan)
     except ValueError:
         log.exception()
         return None
@@ -91,19 +92,20 @@ def set_plan_length_tolerances(
     """Sets a plan's length tolerances to a new float value."""
     if otu.plan.monopartite:
         try:
-            repo.set_plan(
-                otu.id,
-                plan=Plan.new(
-                    segments=[
-                        Segment.new(
-                            length=otu.plan.segments[0].length,
-                            length_tolerance=tolerance,
-                            name=None,
-                            required=SegmentRule.REQUIRED,
-                        )
-                    ]
-                ),
-            )
+            with repo.use_transaction():
+                repo.set_plan(
+                    otu.id,
+                    plan=Plan.new(
+                        segments=[
+                            Segment.new(
+                                length=otu.plan.segments[0].length,
+                                length_tolerance=tolerance,
+                                name=None,
+                                required=SegmentRule.REQUIRED,
+                            )
+                        ]
+                    ),
+                )
         except (ValueError, ValidationError) as e:
             logger.error(
                 e,
@@ -177,8 +179,7 @@ def rename_plan_segment(
         if segment.id == segment_id:
             segment.name = segment_name
 
-            with repo.use_transaction():
-                return set_plan(repo, otu, modified_plan)
+            return set_plan(repo, otu, modified_plan)
 
     log.error("Segment with requested ID not found.")
 
@@ -261,22 +262,23 @@ def replace_sequence_in_otu(
     else:
         segment_id = otu.plan.segments[0].id
 
-    new_sequence = repo.create_sequence(
-        otu.id,
-        accession=record.accession_version,
-        definition=record.definition,
-        legacy_id=None,
-        segment=segment_id,
-        sequence=record.sequence,
-    )
+    with repo.use_transaction():
+        new_sequence = repo.create_sequence(
+            otu.id,
+            accession=record.accession_version,
+            definition=record.definition,
+            legacy_id=None,
+            segment=segment_id,
+            sequence=record.sequence,
+        )
 
-    repo.replace_sequence(
-        otu.id,
-        isolate_id=isolate.id,
-        sequence_id=new_sequence.id,
-        replaced_sequence_id=sequence_id,
-        rationale="Requested by user",
-    )
+        repo.replace_sequence(
+            otu.id,
+            isolate_id=isolate.id,
+            sequence_id=new_sequence.id,
+            replaced_sequence_id=sequence_id,
+            rationale="Requested by user",
+        )
 
     if new_sequence is not None:
         logger.info(
