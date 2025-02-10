@@ -18,7 +18,7 @@ def _render_nucleotide_link(accession: str) -> str:
 
 
 def print_raw_otu(otu: RepoOTU) -> None:
-    console.print(otu.model_dump_json(indent=2))
+    console.print(otu.model_dump_json())
 
 
 def print_otu(otu: RepoOTU) -> None:
