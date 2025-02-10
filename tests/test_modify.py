@@ -287,18 +287,19 @@ class TestUpdateRepresentativeIsolateCommand:
 
         otu_before = scratch_repo.get_otu_by_taxid(taxid)
 
-        representative_isolate_after = None
-
+        other_isolate_id = None
         for isolate_id in otu_before.isolate_ids:
             if isolate_id != otu_before.representative_isolate:
-                representative_isolate_after = isolate_id
+                other_isolate_id = isolate_id
                 break
 
+        assert type(other_isolate_id) is UUID
+
         subprocess.run(
-            ["ref-builder", "otu", "set-default-isolate"]
+            ["ref-builder", "otu"]
             + ["--path", str(scratch_repo.path)]
-            + [str(taxid)]
-            + [str(representative_isolate_after)],
+            + ["set-default-isolate"]
+            + [str(taxid), str(other_isolate_id)],
             check=False,
         )
 
@@ -308,7 +309,7 @@ class TestUpdateRepresentativeIsolateCommand:
 
         assert otu_after.representative_isolate != otu_before.representative_isolate
 
-        assert otu_after.representative_isolate == representative_isolate_after
+        assert otu_after.representative_isolate == other_isolate_id
 
     def test_isolate_name_ok(self, scratch_repo: Repo):
         taxid = 1169032
@@ -323,8 +324,9 @@ class TestUpdateRepresentativeIsolateCommand:
                 break
 
         subprocess.run(
-            ["ref-builder", "otu", "set-default-isolate"]
+            ["ref-builder", "otu"]
             + ["--path", str(scratch_repo.path)]
+            + ["set-default-isolate"]
             + [str(taxid)]
             + [str(representative_isolate_after)],
             check=False,
@@ -466,9 +468,8 @@ class TestPromoteAccessions:
         assert otu_before.accessions == {"MF062125", "MF062126", "MF062127"}
 
         subprocess.run(
-            ["ref-builder", "otu", "promote"]
-            + [str(2164102)]
-            + ["--path", str(empty_repo.path)],
+            ["ref-builder", "otu", "--path", str(empty_repo.path)]
+            + ["promote", str(2164102)],
             check=False,
         )
 
