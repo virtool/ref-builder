@@ -104,7 +104,8 @@ def otu_auto_update(repo: Repo, taxid: int, ignore_cache: bool) -> None:
         click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
         sys.exit(1)
 
-    auto_update_otu(repo, otu_, ignore_cache=ignore_cache)
+    with repo.lock():
+        auto_update_otu(repo, otu_, ignore_cache=ignore_cache)
 
 
 @otu.command(name="promote")
@@ -164,8 +165,8 @@ def otu_exclude_accessions(
 @ignore_cache_option
 @pass_repo
 def otu_allow_accessions(
-    accessions_: list[str],
     repo: Repo,
+    accessions_: list[str],
     taxid: int,
 ) -> None:
     """Allow the given excluded accessions back into the OTU.
@@ -185,9 +186,10 @@ def otu_allow_accessions(
 @otu.command(name="set-default-isolate")  # type: ignore
 @click.argument("TAXID", type=int)
 @click.argument("ISOLATE_KEY", type=str)
+@pass_repo
 def otu_set_representative_isolate(
-    isolate_key: str,
     repo: Repo,
+    isolate_key: str,
     taxid: int,
 ) -> None:
     """Update the OTU with a new representative isolate."""
@@ -234,9 +236,9 @@ def otu_set_representative_isolate(
 @ignore_cache_option
 @pass_repo
 def plan_extend_segment_list(
+    repo: Repo,
     accessions_: list[str],
     ignore_cache: bool,
-    repo: Repo,
     taxid: int,
     optional: bool,
 ) -> None:

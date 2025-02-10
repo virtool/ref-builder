@@ -50,10 +50,10 @@ def isolate(ctx: click.Context, path: Path) -> None:
 @ignore_cache_option
 @pass_repo
 def isolate_create(
+    repo: Repo,
     accessions_: list[str],
     ignore_cache: bool,
     name: tuple[IsolateNameType, str] | None,
-    repo: Repo,
     taxid: int,
     unnamed: bool,
 ) -> None:
@@ -72,6 +72,7 @@ def isolate_create(
                 accessions_,
                 ignore_cache=ignore_cache,
             )
+        sys.exit(1)
 
     if name is not None:
         isolate_name_type, isolate_name_value = name
@@ -86,6 +87,8 @@ def isolate_create(
                     ignore_cache=ignore_cache,
                     isolate_name=isolate_name_,
                 )
+            sys.exit(1)
+
         except RefSeqConflictError as e:
             click.echo(
                 f"{e.isolate_name} already exists, but RefSeq items may be "
@@ -112,7 +115,7 @@ def isolate_create(
 @click.option("--taxid", type=int, required=True)
 @click.argument("ISOLATE_KEY", type=str)
 @pass_repo
-def isolate_delete(isolate_key: str, repo: Repo, taxid: int) -> None:
+def isolate_delete(repo: Repo, isolate_key: str, taxid: int) -> None:
     """Delete isolate."""
     otu_ = repo.get_otu_by_taxid(taxid)
 
