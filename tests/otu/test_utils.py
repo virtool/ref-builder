@@ -111,10 +111,9 @@ class TestAssignRecordsToSegments:
             str(otu.plan.get_segment_by_id(segment_id).name): {
                 "accession_version": assigned_records[segment_id].accession,
                 "source_segment": assigned_records[segment_id].source.segment,
-            } for segment_id in assigned_records
-        } == snapshot(
-            exclude=props("id")
-        )
+            }
+            for segment_id in assigned_records
+        } == snapshot(exclude=props("id"))
 
     def test_names_not_in_plan(
         self,
