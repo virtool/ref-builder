@@ -16,12 +16,13 @@ class TestUpdateOTU:
         snapshot: SnapshotAssertion,
     ):
         """Test automatic update behaviour."""
-        otu_before = create_otu(
-            precached_repo,
-            2164102,
-            ["NC_055390", "NC_055391", "NC_055392"],
-            "",
-        )
+        with precached_repo.lock():
+            otu_before = create_otu(
+                precached_repo,
+                2164102,
+                ["NC_055390", "NC_055391", "NC_055392"],
+                "",
+            )
 
         assert otu_before.accessions == {"NC_055390", "NC_055391", "NC_055392"}
 
@@ -34,7 +35,8 @@ class TestUpdateOTU:
             "MF062127",
         }
 
-        auto_update_otu(precached_repo, otu_before)
+        with precached_repo.lock():
+            auto_update_otu(precached_repo, otu_before)
 
         otu_after = precached_repo.get_otu(otu_before.id)
 
@@ -69,12 +71,13 @@ class TestUpdateOTU:
         snapshot: SnapshotAssertion,
     ):
         """Test that automatic update replaces superceded accessions with RefSeq versions."""
-        otu_before = create_otu(
-            precached_repo,
-            2164102,
-            ["MF062125", "MF062126", "MF062127"],
-            "",
-        )
+        with precached_repo.lock():
+            otu_before = create_otu(
+                precached_repo,
+                2164102,
+                ["MF062125", "MF062126", "MF062127"],
+                "",
+            )
 
         assert (
             otu_before.accessions
@@ -82,7 +85,8 @@ class TestUpdateOTU:
             == {"MF062125", "MF062126", "MF062127"}
         )
 
-        auto_update_otu(precached_repo, otu_before)
+        with precached_repo.lock():
+            auto_update_otu(precached_repo, otu_before)
 
         otu_after = precached_repo.get_otu(otu_before.id)
 

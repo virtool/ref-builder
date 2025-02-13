@@ -141,6 +141,10 @@ def scratch_repo(tmp_path: Path, scratch_event_store_data: dict[str, dict]) -> R
         with open(src_path / filename, "wb") as f:
             f.write(orjson.dumps(scratch_event_store_data[filename]))
 
+    head = int(max(scratch_event_store_data.keys()).split(".json")[0])
+    with open(path / "head", "w") as f:
+        f.write(str(head))
+
     (path / ".cache").mkdir(parents=True)
 
     return Repo(path)
@@ -198,12 +202,15 @@ def scratch_event_store_data(
                 "",
             )
 
-            with temp_scratch_repo.use_transaction():
-                update_otu_with_accessions(
-                    repo=temp_scratch_repo,
-                    otu=otu,
-                    accessions=otu_contents.contents,
-                )
+            fetch_set = set(otu_contents.contents) - otu.blocked_accessions
+            if not fetch_set:
+                continue
+
+            update_otu_with_accessions(
+                repo=temp_scratch_repo,
+                otu=otu,
+                accessions=list(fetch_set),
+            )
 
     scratch_src = {}
 

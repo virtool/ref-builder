@@ -191,6 +191,9 @@ def group_genbank_records_by_isolate(
 
     for record in records:
         isolate_name = _get_isolate_name(record)
+        if isolate_name is None:
+            # Assume this is a monopartite OTU and do not group.
+            continue
 
         versioned_accession = Accession.from_string(record.accession_version)
         isolates[isolate_name][versioned_accession] = record

@@ -116,8 +116,11 @@ class Repo:
         self._transaction: Transaction | None = None
         """The current transaction, if one is active."""
 
-        with open(self.path / "head") as f:
-            self._head_id = int(f.read())
+        try:
+            with open(self.path / "head") as f:
+                self._head_id = int(f.read())
+        except FileNotFoundError:
+            self._head_id = self.last_id
 
         self._prune()
 

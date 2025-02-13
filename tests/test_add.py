@@ -404,7 +404,7 @@ class TestReplaceIsolateSequences:
 
         isolate = next(iter(otu_before.isolates))
 
-        with empty_repo.lock(), empty_repo.use_transaction():
+        with empty_repo.lock():
             update_isolate_from_accessions(
                 empty_repo,
                 otu_before,

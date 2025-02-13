@@ -131,8 +131,8 @@ class TestSetPlan:
                 required=SegmentRule.OPTIONAL,
             ),
         )
-
-        set_plan(scratch_repo, otu_before, new_plan)
+        with scratch_repo.lock():
+            set_plan(scratch_repo, otu_before, new_plan)
 
         assert type(new_plan) is Plan
 
@@ -152,12 +152,13 @@ class TestSetPlan:
 
         assert otu_before.plan.get_segment_by_id(first_segment_id).name != new_name
 
-        rename_plan_segment(
-            scratch_repo,
-            otu_before,
-            segment_id=first_segment_id,
-            segment_name=SegmentName(prefix="RNA", key="TestName"),
-        )
+        with scratch_repo.lock():
+            rename_plan_segment(
+                scratch_repo,
+                otu_before,
+                segment_id=first_segment_id,
+                segment_name=SegmentName(prefix="RNA", key="TestName"),
+            )
 
         otu_after = scratch_repo.get_otu_by_taxid(223262)
 
@@ -200,23 +201,25 @@ class TestSetPlan:
         snapshot: SnapshotAssertion,
     ):
         """Test the addition of segments to an OTU plan."""
-        otu_before = create_otu(
-            precached_repo,
-            2164102,
-            accessions,
-            acronym="",
-        )
+        with precached_repo.lock():
+            otu_before = create_otu(
+                precached_repo,
+                2164102,
+                accessions,
+                acronym="",
+            )
 
         original_plan = otu_before.plan
 
         assert type(original_plan) is Plan
 
-        expanded_plan = add_segments_to_plan(
-            precached_repo,
-            otu_before,
-            rule=SegmentRule.OPTIONAL,
-            accessions=["MF062138"],
-        )
+        with precached_repo.lock():
+            expanded_plan = add_segments_to_plan(
+                precached_repo,
+                otu_before,
+                rule=SegmentRule.OPTIONAL,
+                accessions=["MF062138"],
+            )
 
         assert len(expanded_plan.segments) == len(original_plan.segments) + 1
 
@@ -238,12 +241,13 @@ class TestSetPlan:
         assert otu_before.plan.monopartite
 
         with pytest.raises(ValueError):
-            add_segments_to_plan(
-                scratch_repo,
-                otu_before,
-                rule=SegmentRule.OPTIONAL,
-                accessions=["NC_010620"],
-            )
+            with scratch_repo.lock():
+                add_segments_to_plan(
+                    scratch_repo,
+                    otu_before,
+                    rule=SegmentRule.OPTIONAL,
+                    accessions=["NC_010620"],
+                )
 
     @pytest.mark.parametrize("tolerance", [0.05, 0.5, 1.0])
     def test_set_length_tolerances_ok(self, scratch_repo: Repo, tolerance: float):
@@ -255,7 +259,8 @@ class TestSetPlan:
             == scratch_repo.settings.default_segment_length_tolerance
         )
 
-        set_plan_length_tolerances(scratch_repo, otu_before, tolerance)
+        with scratch_repo.lock():
+            set_plan_length_tolerances(scratch_repo, otu_before, tolerance)
 
         otu_after = scratch_repo.get_otu(otu_before.id)
 
@@ -271,7 +276,8 @@ class TestSetPlan:
             == scratch_repo.settings.default_segment_length_tolerance
         )
 
-        set_plan_length_tolerances(scratch_repo, otu_before, bad_tolerance)
+        with scratch_repo.lock():
+            set_plan_length_tolerances(scratch_repo, otu_before, bad_tolerance)
 
         otu_after = scratch_repo.get_otu(otu_before.id)
 
@@ -287,18 +293,19 @@ class TestUpdateRepresentativeIsolateCommand:
 
         otu_before = scratch_repo.get_otu_by_taxid(taxid)
 
-        representative_isolate_after = None
-
+        other_isolate_id = None
         for isolate_id in otu_before.isolate_ids:
             if isolate_id != otu_before.representative_isolate:
-                representative_isolate_after = isolate_id
+                other_isolate_id = isolate_id
                 break
 
+        assert type(other_isolate_id) is UUID
+
         subprocess.run(
-            ["ref-builder", "otu", "set-default-isolate"]
+            ["ref-builder", "otu"]
             + ["--path", str(scratch_repo.path)]
-            + [str(taxid)]
-            + [str(representative_isolate_after)],
+            + ["set-default-isolate"]
+            + [str(taxid), str(other_isolate_id)],
             check=False,
         )
 
@@ -308,7 +315,7 @@ class TestUpdateRepresentativeIsolateCommand:
 
         assert otu_after.representative_isolate != otu_before.representative_isolate
 
-        assert otu_after.representative_isolate == representative_isolate_after
+        assert otu_after.representative_isolate == other_isolate_id
 
     def test_isolate_name_ok(self, scratch_repo: Repo):
         taxid = 1169032
@@ -323,8 +330,9 @@ class TestUpdateRepresentativeIsolateCommand:
                 break
 
         subprocess.run(
-            ["ref-builder", "otu", "set-default-isolate"]
+            ["ref-builder", "otu"]
             + ["--path", str(scratch_repo.path)]
+            + ["set-default-isolate"]
             + [str(taxid)]
             + [str(representative_isolate_after)],
             check=False,
@@ -354,7 +362,8 @@ class TestDeleteIsolate:
 
         assert type(isolate_id) is UUID
 
-        delete_isolate_from_otu(scratch_repo, otu_before, isolate_id)
+        with scratch_repo.lock():
+            delete_isolate_from_otu(scratch_repo, otu_before, isolate_id)
 
         otu_after = scratch_repo.get_otu_by_taxid(taxid)
 
@@ -370,12 +379,13 @@ class TestDeleteIsolate:
 class TestReplaceSequence:
     def test_ok(self, precached_repo):
         """Test sequence replacement and deletion."""
-        otu_before = create_otu(
-            precached_repo,
-            1169032,
-            ["MK431779"],
-            acronym="",
-        )
+        with precached_repo.lock():
+            otu_before = create_otu(
+                precached_repo,
+                1169032,
+                ["MK431779"],
+                acronym="",
+            )
 
         isolate_id, old_sequence_id = (
             otu_before.get_sequence_id_hierarchy_from_accession(
@@ -385,12 +395,13 @@ class TestReplaceSequence:
 
         assert type(old_sequence_id) is UUID
 
-        sequence = replace_sequence_in_otu(
-            repo=precached_repo,
-            otu=otu_before,
-            new_accession="NC_003355",
-            replaced_accession="MK431779",
-        )
+        with precached_repo.lock():
+            sequence = replace_sequence_in_otu(
+                repo=precached_repo,
+                otu=otu_before,
+                new_accession="NC_003355",
+                replaced_accession="MK431779",
+            )
 
         assert type(sequence) is RepoSequence
 
@@ -407,12 +418,14 @@ class TestReplaceSequence:
 class TestPromoteAccessions:
     def test_ok(self, empty_repo: Repo):
         """Test that RefSeq accessions can be promoted automatically."""
-        otu = create_otu(
-            empty_repo, 2164102, ["MF062136", "MF062137", "MF062138"], acronym=""
-        )
-        isolate = add_genbank_isolate(
-            empty_repo, otu, ["MF062125", "MF062126", "MF062127"]
-        )
+        with empty_repo.lock():
+            otu = create_otu(
+                empty_repo, 2164102, ["MF062136", "MF062137", "MF062138"], acronym=""
+            )
+
+            isolate = add_genbank_isolate(
+                empty_repo, otu, ["MF062125", "MF062126", "MF062127"]
+            )
 
         otu_before = empty_repo.get_otu(otu.id)
 
@@ -431,7 +444,8 @@ class TestPromoteAccessions:
             "MF062127",
         }
 
-        promoted_accessions = promote_otu_accessions(empty_repo, otu_before)
+        with empty_repo.lock():
+            promoted_accessions = promote_otu_accessions(empty_repo, otu_before)
 
         assert promoted_accessions == {"NC_055390", "NC_055391", "NC_055392"}
 
@@ -457,18 +471,18 @@ class TestPromoteAccessions:
         assert otu_after.excluded_accessions == {"MF062125", "MF062126", "MF062127"}
 
     def test_command_ok(self, empty_repo: Repo):
-        otu = create_otu(
-            empty_repo, 2164102, ["MF062125", "MF062126", "MF062127"], acronym=""
-        )
+        with empty_repo.lock():
+            otu = create_otu(
+                empty_repo, 2164102, ["MF062125", "MF062126", "MF062127"], acronym=""
+            )
 
         otu_before = empty_repo.get_otu(otu.id)
 
         assert otu_before.accessions == {"MF062125", "MF062126", "MF062127"}
 
         subprocess.run(
-            ["ref-builder", "otu", "promote"]
-            + [str(2164102)]
-            + ["--path", str(empty_repo.path)],
+            ["ref-builder", "otu", "--path", str(empty_repo.path)]
+            + ["promote", str(2164102)],
             check=False,
         )
 
