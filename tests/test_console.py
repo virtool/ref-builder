@@ -2,7 +2,7 @@ import pytest
 from faker import Faker
 from syrupy import SnapshotAssertion
 
-from ref_builder.console import console, print_raw_otu, print_otu, print_otu_list
+from ref_builder.console import console, print_otu_as_json, print_otu, print_otu_list
 from ref_builder.models import Molecule, MolType, OTUMinimal, Strandedness, Topology
 from ref_builder.plan import Plan, Segment, SegmentName, SegmentRule
 from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
@@ -107,7 +107,8 @@ def test_print_otu(snapshot: SnapshotAssertion):
     assert capture.get() == snapshot
 
 
-def test_print_raw_otu():
+def test_print_otu_as_json():
+    """Test that an OTU is printed as expected by ``print_otu_as_json``."""
     fake = Faker(["en_US"])
     fake.add_provider(AccessionProvider)
     fake.add_provider(SequenceProvider)
@@ -152,4 +153,4 @@ def test_print_raw_otu():
         isolates=[],
     )
 
-    print_raw_otu(otu)
+    print_otu_as_json(otu)
