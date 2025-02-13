@@ -76,7 +76,8 @@ def otu_create(
 @otu.command(name="get")
 @click.argument("IDENTIFIER", type=str)
 @click.option(
-    "--as-json", "--json",
+    "--as-json",
+    "--json",
     metavar="JSON",
     is_flag=True,
     help="Output in JSON form",
