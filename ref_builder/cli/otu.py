@@ -82,7 +82,7 @@ def otu_create(
                 ignore_cache=ignore_cache,
             )
         except ValueError as e:
-            click.error(e, err=True)
+            click.echo(e, err=True)
             sys.exit(1)
 
 
