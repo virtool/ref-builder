@@ -195,6 +195,20 @@ class Index:
 
         return None
 
+    def get_id_by_partial(self, partial: str) -> UUID | None:
+        result = self.con.execute(
+            f"SELECT id FROM otus WHERE id LIKE '{partial}%'",
+        )
+
+        otu_ids = [row[0] for row in result]
+
+        if otu_ids:
+            if len(otu_ids) > 1:
+                raise ValueError("Found more than one result, need longer partial.")
+            return UUID(otu_ids[0])
+
+        return None
+
     def delete_otu(self, otu_id: UUID) -> None:
         """Remove an OTU from the index.
 
