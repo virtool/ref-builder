@@ -107,9 +107,13 @@ class TestAssignRecordsToSegments:
 
         assigned_records = assign_records_to_segments(records, otu.plan)
 
-        assert sorted(assigned_records.values(), key=lambda r: r.accession) == snapshot(
-            exclude=props("id")
-        )
+        assert {
+            str(otu.plan.get_segment_by_id(segment_id).name): {
+                "accession_version": assigned_records[segment_id].accession,
+                "source_segment": assigned_records[segment_id].source.segment,
+            }
+            for segment_id in assigned_records
+        } == snapshot(exclude=props("id"))
 
     def test_names_not_in_plan(
         self,

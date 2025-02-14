@@ -5,7 +5,7 @@ import pytest
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
-from ref_builder.otu.create import create_otu
+from ref_builder.otu.create import create_otu_with_taxid
 from ref_builder.otu.isolate import add_genbank_isolate
 from ref_builder.otu.modify import (
     add_segments_to_plan,
@@ -194,7 +194,7 @@ class TestSetPlan:
         snapshot: SnapshotAssertion,
     ):
         """Test the addition of segments to an OTU plan."""
-        otu_before = create_otu(
+        otu_before = create_otu_with_taxid(
             precached_repo,
             2164102,
             accessions,
@@ -364,7 +364,7 @@ class TestDeleteIsolate:
 class TestReplaceSequence:
     def test_ok(self, precached_repo):
         """Test sequence replacement and deletion."""
-        otu_before = create_otu(
+        otu_before = create_otu_with_taxid(
             precached_repo,
             1169032,
             ["MK431779"],
@@ -401,7 +401,7 @@ class TestReplaceSequence:
 class TestPromoteAccessions:
     def test_ok(self, empty_repo: Repo):
         """Test that RefSeq accessions can be promoted automatically."""
-        otu = create_otu(
+        otu = create_otu_with_taxid(
             empty_repo, 2164102, ["MF062136", "MF062137", "MF062138"], acronym=""
         )
         isolate = add_genbank_isolate(
@@ -451,7 +451,7 @@ class TestPromoteAccessions:
         assert otu_after.excluded_accessions == {"MF062125", "MF062126", "MF062127"}
 
     def test_command_ok(self, empty_repo: Repo):
-        otu = create_otu(
+        otu = create_otu_with_taxid(
             empty_repo, 2164102, ["MF062125", "MF062126", "MF062127"], acronym=""
         )
 
