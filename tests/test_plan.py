@@ -248,6 +248,37 @@ class TestExtractSegmentNameFromRecord:
             prefix=suffix, key=key
         )
 
+    @pytest.mark.parametrize("key", ["1", "A", "U3"])
+    @pytest.mark.parametrize(
+        "mol_type", [NCBISourceMolType.GENOMIC_RNA, NCBISourceMolType.GENOMIC_DNA]
+    )
+    def test_no_delimiter_ok(
+        self,
+        key: str,
+        mol_type: NCBISourceMolType,
+        ncbi_genbank_factory: NCBIGenbankFactory,
+        ncbi_source_factory: NCBISourceFactory,
+    ):
+        """Test that extract_segment_name_from_record() can handle undelimited segment names."""
+        match mol_type:
+            case NCBISourceMolType.GENOMIC_DNA:
+                prefix = "DNA"
+            case NCBISourceMolType.GENOMIC_RNA:
+                prefix = "RNA"
+            case _:
+                raise ValueError(f"{mol_type} may not be a valid NCBISourceMolType.")
+
+        record = ncbi_genbank_factory.build(
+            source=ncbi_source_factory.build(
+                mol_type=mol_type,
+                segment=prefix + key,
+            ),
+        )
+
+        assert extract_segment_name_from_record(record) == SegmentName(
+            prefix=prefix, key=key
+        )
+
     @pytest.mark.parametrize("key", ["", "V#", "51f9a0bc-7b3b-434f-bf4c-f7abaa015b8d"])
     @pytest.mark.parametrize(
         "mol_type", [NCBISourceMolType.GENOMIC_RNA, NCBISourceMolType.GENOMIC_DNA]
