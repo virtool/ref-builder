@@ -103,13 +103,21 @@ def otu_create(
     help="Output in JSON form",
 )
 @pass_repo
-def otu_get(repo: Repo, identifier: str) -> None:
-    """Get an OTU by its unique ID or taxonomy ID."""
+def otu_get(repo: Repo, identifier: str, as_json: bool) -> None:
+    """Get an OTU by its unique ID or taxonomy ID.
+
+    IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
+    """
     try:
-        identifier = int(identifier)
-        otu_ = repo.get_otu_by_taxid(identifier)
+        otu_id = UUID(identifier)
     except ValueError:
-        otu_ = repo.get_otu(UUID(identifier))
+        otu_id = _get_otu_id_from_other_identifier(repo, identifier)
+
+    if otu_id is None:
+        click.echo("OTU not found.", err=True)
+        sys.exit(1)
+
+    otu_ = repo.get_otu(otu_id)
 
     if otu_ is None:
         click.echo("OTU not found.", err=True)
