@@ -90,12 +90,22 @@ def otu_create(
 @click.argument("IDENTIFIER", type=str)
 @path_option
 def otu_get(identifier: str, path: Path) -> None:
-    """Get an OTU by its unique ID or taxonomy ID."""
+    """Get an OTU by its unique ID or taxonomy ID.
+
+    IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
+    """
+    repo = Repo(path)
+
     try:
-        identifier = int(identifier)
-        otu_ = Repo(path).get_otu_by_taxid(identifier)
+        otu_id = UUID(identifier)
     except ValueError:
-        otu_ = Repo(path).get_otu(UUID(identifier))
+        otu_id = _get_otu_id_from_other_identifier(repo, identifier)
+
+    if otu_id is None:
+        click.echo("OTU not found.", err=True)
+        sys.exit(1)
+
+    otu_ = repo.get_otu(otu_id)
 
     if otu_ is None:
         click.echo("OTU not found.", err=True)
