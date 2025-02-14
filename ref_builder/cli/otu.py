@@ -341,3 +341,24 @@ def plan_rename_segment(
         )
     except ValueError as e:
         click.echo(e, err=True)
+
+
+def _get_otu_id_from_other_identifier(repo: Repo, identifier: str) -> UUID | None:
+    """Return an OTU id from the repo if identifier matches a single OTU.
+    Return None if no matching OTU is found, raise a ValueError if >1 OTU is found.
+    """
+    try:
+        identifier = int(identifier)
+        return repo.get_otu_id_by_taxid(identifier)
+    except ValueError:
+        pass
+
+    try:
+        return repo.get_otu_id_by_partial(identifier)
+    except ValueError:
+        click.echo(
+            "Partial ID too short to narrow down results.",
+            err=True,
+        )
+
+    return None
