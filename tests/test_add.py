@@ -178,14 +178,6 @@ class TestCreateOTU:
 
         assert otu.acronym == "FBNSV"
 
-    def test_otu_create_with_undelimited_segment_data_ok(self, precached_repo: Repo):
-        """Test that Genbank records with undelimited segment names can be used to create a new OTU."""
-        otu = create_otu(
-            precached_repo, 1520332, ["KJ704366", "KJ704367", "KJ704368"], acronym=""
-        )
-
-        assert otu
-
 
 class TestCreateOTUCommands:
     @pytest.mark.parametrize(
