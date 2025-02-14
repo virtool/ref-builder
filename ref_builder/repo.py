@@ -678,7 +678,6 @@ class Repo:
 
         return self._index.get_id_by_partial(partial)
 
-
     def _rehydrate_otu(self, event_ids: list[int]) -> RepoOTU:
         event = self._event_store.read_event(event_ids[0])
 
