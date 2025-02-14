@@ -17,6 +17,11 @@ def _render_nucleotide_link(accession: str) -> str:
     return f"[link=https://www.ncbi.nlm.nih.gov/nuccore/{accession}]{accession}[/link]"
 
 
+def print_otu_as_json(otu: RepoOTU) -> None:
+    """Print the OTU data to the console as JSON."""
+    console.print(otu.model_dump_json())
+
+
 def print_otu(otu: RepoOTU) -> None:
     """Print the details for an OTU to the console.
 
