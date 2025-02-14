@@ -596,6 +596,16 @@ class TestGetOTU:
 
         assert empty_repo.last_id == 8
 
+    def test_partial_ok(self, initialized_repo: Repo):
+        """Test that getting an isolate ID starting with a truncated 8-character portion
+        returns an ID.
+        """
+        otu = next(initialized_repo.iter_otus())
+
+        partial_id = str(otu.id)[:8]
+
+        assert initialized_repo.get_otu_id_by_partial(partial_id) == otu.id
+
     def test_retrieve_nonexistent_otu(self, initialized_repo: Repo):
         """Test that getting an OTU that does not exist returns ``None``."""
         assert initialized_repo.get_otu(uuid4()) is None
