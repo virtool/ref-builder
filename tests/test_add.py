@@ -8,7 +8,7 @@ from syrupy.filters import props
 
 from ref_builder.cli.otu import otu_create
 from ref_builder.cli.isolate import isolate_create
-from ref_builder.otu.create import create_otu
+from ref_builder.otu.create import create_otu_with_taxid, create_otu_without_taxid
 from ref_builder.otu.isolate import (
     add_and_name_isolate,
     add_genbank_isolate,
@@ -33,10 +33,11 @@ def run_create_otu_command(
             "ref-builder",
             "otu",
             "create",
-            str(taxid),
             *accessions,
             "--path",
             str(path),
+            "--taxid",
+            str(taxid),
             "--acronym",
             acronym,
         ],
@@ -75,7 +76,7 @@ class TestCreateOTU:
         snapshot: SnapshotAssertion,
     ):
         """Test that an OTU can be created in an empty repository."""
-        otu = create_otu(
+        otu = create_otu_with_taxid(
             precached_repo,
             345184,
             ["DQ178610", "DQ178611"],
@@ -93,7 +94,7 @@ class TestCreateOTU:
     def test_create_duplicate_fail(self, scratch_repo: Repo):
         """Test that an OTU with the same Taxonomy ID cannot be created."""
         with pytest.raises(ValueError):
-            create_otu(
+            create_otu_with_taxid(
                 scratch_repo,
                 345184,
                 ["DQ178610", "DQ178611"],
@@ -112,7 +113,7 @@ class TestCreateOTU:
     ):
         assert list(precached_repo.iter_otus()) == []
 
-        otu = create_otu(
+        otu = create_otu_with_taxid(
             precached_repo,
             taxid,
             accessions,
@@ -131,7 +132,7 @@ class TestCreateOTU:
         """Test that the superceded accessions included in RefSeq metadata
         are automatically added to the OTU's excluded accessions list.
         """
-        otu = create_otu(
+        otu = create_otu_with_taxid(
             precached_repo,
             3158377,
             [
@@ -159,7 +160,7 @@ class TestCreateOTU:
         )
 
     def test_otu_create_with_acronym_auto(self, precached_repo: Repo):
-        otu = create_otu(
+        otu = create_otu_with_taxid(
             precached_repo,
             132477,
             ["NC_013006"],
@@ -169,7 +170,7 @@ class TestCreateOTU:
         assert otu.acronym == "KLV"
 
     def test_otu_create_with_acronym_manual(self, precached_repo: Repo):
-        otu = create_otu(
+        otu = create_otu_with_taxid(
             precached_repo,
             1441799,
             ["NC_023881"],
@@ -177,6 +178,18 @@ class TestCreateOTU:
         )
 
         assert otu.acronym == "FBNSV"
+
+    def test_create_without_taxid_ok(self, precached_repo):
+        assert (
+            create_otu_without_taxid(
+                precached_repo, accessions=["DQ178610", "DQ178611"], acronym=""
+            ).taxid
+            == 345184
+        )
+
+        otu = precached_repo.get_otu_by_taxid(345184)
+
+        assert otu is not None
 
 
 class TestCreateOTUCommands:
@@ -206,6 +219,33 @@ class TestCreateOTUCommands:
             exclude=props("id", "isolates", "representative_isolate"),
         )
 
+    @pytest.mark.parametrize(
+        "taxid, accessions",
+        [(1278205, ["NC_020160"]), (345184, ["DQ178610", "DQ178611"])],
+    )
+    def test_without_taxid_ok(
+        self,
+        taxid: int,
+        accessions: list[str],
+        precached_repo: Repo,
+    ):
+        subprocess.run(
+            [
+                "ref-builder",
+                "otu",
+                "create",
+                *accessions,
+                "--path",
+                str(precached_repo.path),
+            ],
+            check=False,
+        )
+
+        otus = list(Repo(precached_repo.path).iter_otus())
+
+        assert len(otus) == 1
+        assert otus[0].taxid == taxid
+
     def test_acronym(self, precached_repo: Repo):
         """Test if the --acronym option works as planned."""
         run_create_otu_command(
@@ -223,7 +263,7 @@ class TestCreateOTUCommands:
 
 class TestAddIsolate:
     def test_add_multipartite(self, precached_repo: Repo):
-        otu_before = create_otu(
+        otu_before = create_otu_with_taxid(
             precached_repo, 2164102, ["MF062136", "MF062137", "MF062138"], acronym=""
         )
 
@@ -274,7 +314,9 @@ class TestAddIsolate:
         isolate_1_accessions = ["DQ178610", "DQ178611"]
         isolate_2_accessions = ["DQ178613", "DQ178614"]
 
-        otu = create_otu(precached_repo, 345184, isolate_1_accessions, acronym="")
+        otu = create_otu_with_taxid(
+            precached_repo, 345184, isolate_1_accessions, acronym=""
+        )
 
         assert otu.accessions == set(isolate_1_accessions)
 
@@ -300,7 +342,9 @@ class TestAddIsolate:
         isolate_1_accessions = ["DQ178610", "DQ178611"]
         isolate_2_accessions = ["DQ178613", "DQ178614"]
 
-        otu = create_otu(precached_repo, 345184, isolate_1_accessions, acronym="")
+        otu = create_otu_with_taxid(
+            precached_repo, 345184, isolate_1_accessions, acronym=""
+        )
 
         assert otu.accessions == set(isolate_1_accessions)
 
@@ -321,7 +365,9 @@ class TestAddIsolate:
         isolate_1_accessions = ["DQ178610", "DQ178611"]
         isolate_2_accessions = ["DQ178613", "DQ178614"]
 
-        otu = create_otu(precached_repo, 345184, isolate_1_accessions, acronym="")
+        otu = create_otu_with_taxid(
+            precached_repo, 345184, isolate_1_accessions, acronym=""
+        )
 
         assert otu.accessions == set(isolate_1_accessions)
 
@@ -352,7 +398,7 @@ class TestAddIsolate:
         taxid = 2164102
         accessions = ["MF062136", "MF062137", "MF062138"]
 
-        otu = create_otu(
+        otu = create_otu_with_taxid(
             precached_repo,
             taxid,
             accessions,
@@ -378,7 +424,7 @@ class TestReplaceIsolateSequences:
         refseq_accessions: list[str],
     ):
         """Test that a requested replacement occurs as expected."""
-        create_otu(
+        create_otu_with_taxid(
             empty_repo,
             taxid,
             accessions=original_accessions,
@@ -413,7 +459,7 @@ class TestReplaceIsolateSequences:
         """Test that attempting to add an isolate with RefSeq accessions
         raises RefSeqConflictError
         """
-        create_otu(
+        create_otu_with_taxid(
             empty_repo,
             taxid,
             accessions=original_accessions,

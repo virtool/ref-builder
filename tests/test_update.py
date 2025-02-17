@@ -1,7 +1,7 @@
 import pytest
 from syrupy import SnapshotAssertion
 
-from ref_builder.otu.create import create_otu
+from ref_builder.otu.create import create_otu_with_taxid
 from ref_builder.otu.update import auto_update_otu, iter_fetch_list
 from ref_builder.repo import Repo
 
@@ -16,7 +16,7 @@ class TestUpdateOTU:
         snapshot: SnapshotAssertion,
     ):
         """Test automatic update behaviour."""
-        otu_before = create_otu(
+        otu_before = create_otu_with_taxid(
             precached_repo,
             2164102,
             ["NC_055390", "NC_055391", "NC_055392"],
@@ -69,7 +69,7 @@ class TestUpdateOTU:
         snapshot: SnapshotAssertion,
     ):
         """Test that automatic update replaces superceded accessions with RefSeq versions."""
-        otu_before = create_otu(
+        otu_before = create_otu_with_taxid(
             precached_repo,
             2164102,
             ["MF062125", "MF062126", "MF062127"],

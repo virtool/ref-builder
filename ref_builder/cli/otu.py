@@ -6,9 +6,9 @@ import click
 import structlog
 
 from ref_builder.cli.validate import validate_no_duplicate_accessions
-from ref_builder.console import print_otu, print_otu_list
+from ref_builder.console import print_otu, print_otu_list, print_otu_as_json
 from ref_builder.options import ignore_cache_option, path_option
-from ref_builder.otu.create import create_otu
+from ref_builder.otu.create import create_otu_with_taxid, create_otu_without_taxid
 from ref_builder.otu.modify import (
     add_segments_to_plan,
     allow_accessions_into_otu,
@@ -35,7 +35,7 @@ def otu() -> None:
 
 
 @otu.command(name="create")
-@click.argument("TAXID", type=int)
+@click.option("--taxid", type=int)
 @click.argument(
     "accessions_",
     callback=validate_no_duplicate_accessions,
@@ -65,23 +65,43 @@ def otu_create(
         click.echo("Duplicate accessions were provided.", err=True)
         sys.exit(1)
 
-    try:
-        create_otu(
-            repo,
-            taxid,
-            accessions_,
-            acronym=acronym,
-            ignore_cache=ignore_cache,
-        )
-    except ValueError as e:
-        click.echo(e, err=True)
-        sys.exit(1)
+    if taxid:
+        try:
+            create_otu_with_taxid(
+                repo,
+                taxid,
+                accessions_,
+                acronym=acronym,
+                ignore_cache=ignore_cache,
+            )
+        except ValueError as e:
+            click.echo(e, err=True)
+            sys.exit(1)
+
+    else:
+        try:
+            create_otu_without_taxid(
+                repo,
+                accessions_,
+                acronym=acronym,
+                ignore_cache=ignore_cache,
+            )
+        except ValueError as e:
+            click.error(e, err=True)
+            sys.exit(1)
 
 
 @otu.command(name="get")
 @click.argument("IDENTIFIER", type=str)
+@click.option(
+    "--as-json",
+    "--json",
+    metavar="JSON",
+    is_flag=True,
+    help="Output in JSON form",
+)
 @path_option
-def otu_get(identifier: str, path: Path) -> None:
+def otu_get(identifier: str, path: Path, as_json: bool) -> None:
     """Get an OTU by its unique ID or taxonomy ID."""
     try:
         identifier = int(identifier)
@@ -93,7 +113,10 @@ def otu_get(identifier: str, path: Path) -> None:
         click.echo("OTU not found.", err=True)
         sys.exit(1)
 
-    print_otu(otu_)
+    if as_json:
+        print_otu_as_json(otu_)
+    else:
+        print_otu(otu_)
 
 
 @otu.command(name="list")
