@@ -6,7 +6,8 @@ from click.testing import CliRunner
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
-from ref_builder.cli.otu import otu_create
+
+from ref_builder.cli.otu import otu
 from ref_builder.cli.isolate import isolate_create
 from ref_builder.otu.create import create_otu_with_taxid, create_otu_without_taxid
 from ref_builder.otu.isolate import (
@@ -36,8 +37,6 @@ def run_create_otu_command(
             str(path),
             "create",
             *accessions,
-            "--path",
-            str(path),
             "--taxid",
             str(taxid),
             "--acronym",
@@ -62,7 +61,7 @@ class TestCreateOTU:
         assert list(precached_repo.iter_otus()) == []
 
         with precached_repo.lock():
-            otu_ = create_otu(
+            otu_ = create_otu_with_taxid(
                 precached_repo,
                 taxid,
                 accessions,
@@ -78,13 +77,15 @@ class TestCreateOTU:
     def test_duplicate_accessions(self, precached_repo: Repo):
         """Test that an error is raised when duplicate accessions are provided."""
         runner = CliRunner()
+
         result = runner.invoke(
             otu,
             [
                 "--path",
                 str(precached_repo.path),
                 "create",
-                "1169032",
+                "--taxid",
+                str(1169032),
                 "MK431779",
                 "MK431779",
             ],
@@ -247,10 +248,10 @@ class TestCreateOTUCommands:
             [
                 "ref-builder",
                 "otu",
-                "create",
-                *accessions,
                 "--path",
                 str(precached_repo.path),
+                "create",
+                *accessions,
             ],
             check=False,
         )
@@ -363,7 +364,9 @@ class TestAddIsolate:
         isolate_2_accessions = ["DQ178613", "DQ178614"]
 
         with precached_repo.lock():
-            otu = create_otu_with_taxid(precached_repo, 345184, isolate_1_accessions, acronym="")
+            otu = create_otu_with_taxid(
+                precached_repo, 345184, isolate_1_accessions, acronym=""
+            )
 
         assert otu.accessions == set(isolate_1_accessions)
 
@@ -385,7 +388,9 @@ class TestAddIsolate:
         isolate_2_accessions = ["DQ178613", "DQ178614"]
 
         with precached_repo.lock():
-            otu = create_otu_with_taxid(precached_repo, 345184, isolate_1_accessions, acronym="")
+            otu = create_otu_with_taxid(
+                precached_repo, 345184, isolate_1_accessions, acronym=""
+            )
 
         assert otu.accessions == set(isolate_1_accessions)
 
