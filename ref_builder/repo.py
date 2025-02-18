@@ -699,6 +699,10 @@ class Repo:
 
         return self.get_otu(otu_id).excluded_accessions
 
+    def get_otu_id_by_isolate_id(self, isolate_id: uuid.UUID) -> uuid.UUID | None:
+        """Get an OTU ID from an isolate ID that belongs to it."""
+        return self._index.get_id_by_isolate_id(isolate_id)
+
     def get_otu(self, otu_id: uuid.UUID) -> RepoOTU | None:
         """Get the OTU with the given ``otu_id``.
 
