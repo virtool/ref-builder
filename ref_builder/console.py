@@ -5,8 +5,8 @@ from rich.table import Table
 from rich.text import Text
 
 from ref_builder.models import OTUMinimal
-from ref_builder.plan import SegmentRule
-from ref_builder.resources import RepoOTU
+from ref_builder.plan import Plan, SegmentRule
+from ref_builder.resources import RepoIsolate, RepoOTU
 
 
 def _render_taxonomy_id_link(taxid: int) -> str:
@@ -15,6 +15,52 @@ def _render_taxonomy_id_link(taxid: int) -> str:
 
 def _render_nucleotide_link(accession: str) -> str:
     return f"[link=https://www.ncbi.nlm.nih.gov/nuccore/{accession}]{accession}[/link]"
+
+
+def print_isolate_as_json(isolate: RepoIsolate) -> None:
+    console.print(isolate.model_dump_json())
+
+
+def print_isolate(isolate: RepoIsolate, plan: Plan) -> None:
+    max_accession_length = max(
+        len(str(sequence.accession))
+        for sequence in isolate.sequences
+    )
+
+    max_segment_name_length = max(
+        len(str(segment.name)) for segment in plan.segments
+    )
+
+    index_by_segment_id = {segment.id: i for i, segment in enumerate(plan.segments)}
+
+    console.print(
+        Text(str(isolate.name))
+    ) if isolate.name is not None else console.print(
+        "[italic]Unnamed[/italic]",
+    )
+    console.line()
+
+    isolate_table = Table(
+        box=None,
+    )
+
+    isolate_table.add_column("ACCESSION", width=max_accession_length)
+    isolate_table.add_column("LENGTH")
+    isolate_table.add_column("SEGMENT", min_width=max_segment_name_length)
+    isolate_table.add_column("DEFINITION")
+
+    for sequence in sorted(
+            isolate.sequences,
+            key=lambda s: index_by_segment_id[s.segment],
+    ):
+        isolate_table.add_row(
+            _render_nucleotide_link(str(sequence.accession)),
+            str(len(sequence.sequence)),
+            str(plan.get_segment_by_id(sequence.segment).name or "Unnamed"),
+            sequence.definition,
+        )
+
+    console.print(isolate_table)
 
 
 def print_otu_as_json(otu: RepoOTU) -> None:
