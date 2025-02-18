@@ -72,6 +72,16 @@ class Index:
 
         self.con.execute(
             """
+            CREATE TABLE IF NOT EXISTS isolates (
+                id TEXT PRIMARY KEY,
+                name TEXT,
+                otu_id TEXT
+            );
+            """,
+        )
+
+        self.con.execute(
+            """
             CREATE TABLE IF NOT EXISTS otus (
                 id TEXT PRIMARY KEY,
                 acronym TEXT,
@@ -97,6 +107,7 @@ class Index:
 
         for table, column in [
             ("events", "otu_id"),
+            ("isolates", "id"),
             ("otus", "id"),
             ("otus", "legacy_id"),
             ("otus", "name"),
@@ -195,6 +206,18 @@ class Index:
 
         return None
 
+    def get_id_by_isolate_id(self, isolate_id: UUID) -> UUID | None:
+        """Get an OTU ID from an isolate ID that belongs to it."""
+        cursor = self.con.execute(
+            "SELECT otu_id FROM isolates WHERE id = ?",
+            (str(isolate_id),),
+        )
+
+        if result := cursor.fetchone():
+            return UUID(result[0])
+
+        return None
+
     def delete_otu(self, otu_id: UUID) -> None:
         """Remove an OTU from the index.
 
@@ -204,6 +227,11 @@ class Index:
         """
         self.con.execute(
             "DELETE FROM events WHERE otu_id = ?",
+            (str(otu_id),),
+        )
+
+        self.con.execute(
+            "DELETE FROM isolates WHERE otu_id = ?",
             (str(otu_id),),
         )
 
@@ -313,8 +341,17 @@ class Index:
 
         batch = []
 
-        # Insert or update the sequences.
+        # Insert or update the isolates.
         for isolate in otu_dict["isolates"]:
+            self.con.execute(
+                "INSERT OR REPLACE INTO isolates (id, name, otu_id) VALUES (?, ?, ?)",
+                (
+                    str(isolate["id"]),
+                    str(isolate["name"]),
+                    str(otu_dict["id"]),
+                ),
+            )
+
             for sequence in isolate["sequences"]:
                 crc = _calculate_crc32(sequence["sequence"])
                 batch.append(
