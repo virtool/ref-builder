@@ -60,7 +60,6 @@ class Index:
         self.con.execute("PRAGMA journal_mode = WAL")
         self.con.execute("PRAGMA synchronous = NORMAL")
 
-
         self.con.execute(
             """
             CREATE TABLE IF NOT EXISTS events (

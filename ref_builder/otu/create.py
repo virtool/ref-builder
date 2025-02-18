@@ -82,8 +82,8 @@ def create_otu_with_taxid(
 def create_otu_without_taxid(
     repo: Repo,
     accessions: list[str],
-        acronym: str,
-        ignore_cache: bool = False,
+    acronym: str,
+    ignore_cache: bool = False,
 ) -> RepoOTU | None:
     """Create a new OTU from a list of accessions.
 
