@@ -7,9 +7,9 @@ import structlog
 
 from ref_builder.cli.utils import pass_repo
 from ref_builder.cli.validate import validate_no_duplicate_accessions
-from ref_builder.console import print_otu, print_otu_list
+from ref_builder.console import print_otu, print_otu_list, print_otu_as_json
 from ref_builder.options import ignore_cache_option, path_option
-from ref_builder.otu.create import create_otu
+from ref_builder.otu.create import create_otu_with_taxid, create_otu_without_taxid
 from ref_builder.otu.modify import (
     add_segments_to_plan,
     allow_accessions_into_otu,
@@ -34,7 +34,7 @@ def otu(ctx: click.Context, path: Path) -> None:
 
 
 @otu.command(name="create")
-@click.argument("TAXID", type=int)
+@click.option("--taxid", type=int)
 @click.argument(
     "accessions_",
     callback=validate_no_duplicate_accessions,
@@ -58,17 +58,45 @@ def otu_create(
     OTUs are created from a list of accessions and a taxonomy ID. The associated Genbank
     records are fetched and used to create the first isolate and a plan.
     """
-    create_otu(
-        repo,
-        taxid,
-        accessions_,
-        acronym=acronym,
-        ignore_cache=ignore_cache,
-    )
+    if len(accessions_) != len(set(accessions_)):
+        click.echo("Duplicate accessions were provided.", err=True)
+        sys.exit(1)
+
+    if taxid:
+        try:
+            create_otu_with_taxid(
+                repo,
+                taxid,
+                accessions_,
+                acronym=acronym,
+                ignore_cache=ignore_cache,
+            )
+        except ValueError as e:
+            click.echo(e, err=True)
+            sys.exit(1)
+
+    else:
+        try:
+            create_otu_without_taxid(
+                repo,
+                accessions_,
+                acronym=acronym,
+                ignore_cache=ignore_cache,
+            )
+        except ValueError as e:
+            click.echo(e, err=True)
+            sys.exit(1)
 
 
 @otu.command(name="get")
 @click.argument("IDENTIFIER", type=str)
+@click.option(
+    "--as-json",
+    "--json",
+    metavar="JSON",
+    is_flag=True,
+    help="Output in JSON form",
+)
 @pass_repo
 def otu_get(repo: Repo, identifier: str) -> None:
     """Get an OTU by its unique ID or taxonomy ID."""
@@ -82,7 +110,10 @@ def otu_get(repo: Repo, identifier: str) -> None:
         click.echo("OTU not found.", err=True)
         sys.exit(1)
 
-    print_otu(otu_)
+    if as_json:
+        print_otu_as_json(otu_)
+    else:
+        print_otu(otu_)
 
 
 @otu.command(name="list")
@@ -283,9 +314,12 @@ def plan_rename_segment(
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
-    rename_plan_segment(
-        repo,
-        otu_,
-        segment_id=UUID(segment_id),
-        segment_name=SegmentName(segment_name_[0], segment_name_[1]),
-    )
+    try:
+        rename_plan_segment(
+            repo,
+            otu_,
+            segment_id=UUID(segment_id),
+            segment_name=SegmentName(segment_name_[0], segment_name_[1]),
+        )
+    except ValueError as e:
+        click.echo(e, err=True)

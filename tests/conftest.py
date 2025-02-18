@@ -15,7 +15,7 @@ from ref_builder.legacy.utils import build_legacy_otu
 from ref_builder.logs import configure_logger
 from ref_builder.ncbi.cache import NCBICache
 from ref_builder.ncbi.client import NCBIClient
-from ref_builder.otu.create import create_otu
+from ref_builder.otu.create import create_otu_with_taxid
 from ref_builder.otu.update import update_otu_with_accessions
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
@@ -195,7 +195,7 @@ def scratch_event_store_data(
 
     with temp_scratch_repo.lock():
         for otu_contents in toc:
-            otu = create_otu(
+            otu = create_otu_with_taxid(
                 temp_scratch_repo,
                 otu_contents.taxid,
                 otu_contents.plan,
