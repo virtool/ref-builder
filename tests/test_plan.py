@@ -28,7 +28,7 @@ class TestPlan:
                 {
                     "id": uuid4(),
                     "name": None,
-                    "required": "required",
+                    "rule": "required",
                     "length": 100,
                     "length_tolerance": 0.01,
                 }
@@ -48,7 +48,7 @@ class TestPlan:
                     Segment(
                         id=segment["id"],
                         name=segment["name"],
-                        required=SegmentRule(segment["required"]),
+                        rule=SegmentRule(segment["required"]),
                         length=segment["length"],
                         length_tolerance=segment["length_tolerance"],
                     )
@@ -90,7 +90,7 @@ class TestPlan:
             }
         )
 
-        assert plan.segments[0].required == SegmentRule(required)
+        assert plan.segments[0].rule == SegmentRule(required)
 
     @pytest.mark.parametrize(
         "name",

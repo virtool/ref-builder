@@ -72,7 +72,7 @@ def print_otu(otu: RepoOTU) -> None:
         plan_table.add_row(
             str("Unnamed" if segment.name is None else segment.name),
             "[red]Yes[/red]"
-            if segment.required == SegmentRule.REQUIRED
+            if segment.rule == SegmentRule.REQUIRED
             else "[grey]No[/grey]",
             str(segment.length),
             str(segment.length_tolerance),

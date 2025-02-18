@@ -157,7 +157,7 @@ class TestCreateOTU:
                         length=150,
                         length_tolerance=empty_repo.settings.default_segment_length_tolerance,
                         name=None,
-                        required=SegmentRule.REQUIRED,
+                        rule=SegmentRule.REQUIRED,
                     )
                 ],
             ),
@@ -189,7 +189,7 @@ class TestCreateOTU:
                             "length": 150,
                             "length_tolerance": empty_repo.settings.default_segment_length_tolerance,
                             "name": None,
-                            "required": SegmentRule.REQUIRED,
+                            "rule": SegmentRule.REQUIRED,
                         }
                     ],
                 },
@@ -557,7 +557,7 @@ class TestGetOTU:
                             length=150,
                             length_tolerance=empty_repo.settings.default_segment_length_tolerance,
                             name=None,
-                            required=SegmentRule.REQUIRED,
+                            rule=SegmentRule.REQUIRED,
                         )
                     ],
                 ),
