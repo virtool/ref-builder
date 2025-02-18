@@ -4,6 +4,7 @@ from uuid import UUID
 
 import click
 
+from ref_builder.errors import InvalidInputError, PartialIDConflictError
 from ref_builder.cli.utils import pass_repo
 from ref_builder.console import print_isolate, print_isolate_as_json
 from ref_builder.cli.validate import validate_no_duplicate_accessions
@@ -177,8 +178,8 @@ def isolate_get(repo: Repo, identifier: str, as_json: bool) -> None:
         try:
             isolate_id = repo.get_isolate_id_by_partial(identifier)
 
-        except ValueError as e:
-            click.echo(e, err=True)
+        except InvalidInputError:
+            click.echo("Partial ID segment must be at least 8 characters long.", err=True)
             sys.exit(1)
 
     if isolate_id is None:
