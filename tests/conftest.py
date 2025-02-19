@@ -219,6 +219,8 @@ def scratch_event_store_data(
 
     pytestconfig.cache.set("scratch_src", scratch_src)
 
+    return scratch_src
+
 
 class OTUContents(BaseModel):
     taxid: int
