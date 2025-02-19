@@ -11,7 +11,7 @@
           'key': 'A',
           'prefix': 'DNA',
         }),
-        'required': 'required',
+        'rule': 'required',
       }),
       dict({
         'id': UUID,
@@ -21,7 +21,7 @@
           'key': 'B',
           'prefix': 'DNA',
         }),
-        'required': 'required',
+        'rule': 'required',
       }),
     ]),
   })
@@ -35,7 +35,7 @@
         'length': 100,
         'length_tolerance': 0.01,
         'name': None,
-        'required': 'required',
+        'rule': 'required',
       }),
     ]),
   })

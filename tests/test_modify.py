@@ -119,7 +119,7 @@ class TestSetPlan:
                 length=2000,
                 length_tolerance=scratch_repo.settings.default_segment_length_tolerance,
                 name=SegmentName(prefix="DNA", key="C"),
-                required=SegmentRule.RECOMMENDED,
+                rule=SegmentRule.RECOMMENDED,
             ),
         )
 
@@ -128,7 +128,7 @@ class TestSetPlan:
                 length=1000,
                 length_tolerance=scratch_repo.settings.default_segment_length_tolerance,
                 name=SegmentName(prefix="DNA", key="Z"),
-                required=SegmentRule.OPTIONAL,
+                rule=SegmentRule.OPTIONAL,
             ),
         )
         with scratch_repo.lock():

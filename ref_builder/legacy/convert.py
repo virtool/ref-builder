@@ -88,7 +88,7 @@ def convert_legacy_repo(name: str, path: Path, target_path: Path) -> None:
                 length=int(mean_length),
                 length_tolerance=round(length_tolerance, 2),
                 name=name,
-                required=SegmentRule.REQUIRED
+                rule=SegmentRule.REQUIRED
                 if segment["required"]
                 else SegmentRule.OPTIONAL,
             )

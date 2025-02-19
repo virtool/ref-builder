@@ -59,7 +59,7 @@ class Segment(BaseModel):
     name: SegmentName | None
     """The name of the segment"""
 
-    required: SegmentRule
+    rule: SegmentRule
     """Whether this segment must be present in all additions."""
 
     @classmethod
@@ -68,7 +68,7 @@ class Segment(BaseModel):
         length: int,
         length_tolerance: float,
         name: SegmentName | None,
-        required: SegmentRule = SegmentRule.REQUIRED,
+        rule: SegmentRule = SegmentRule.REQUIRED,
     ) -> "Segment":
         """Return a new segment."""
         return Segment(
@@ -76,7 +76,7 @@ class Segment(BaseModel):
             length=length,
             length_tolerance=length_tolerance,
             name=name,
-            required=required,
+            rule=rule,
         )
 
     @classmethod
@@ -84,7 +84,7 @@ class Segment(BaseModel):
         cls,
         record: NCBIGenbank,
         length_tolerance: float,
-        required: SegmentRule,
+        rule: SegmentRule,
     ) -> "Segment":
         """Return a new segment from an NCBI Genbank record."""
         return Segment(
@@ -92,7 +92,7 @@ class Segment(BaseModel):
             length=len(record.sequence),
             length_tolerance=length_tolerance,
             name=extract_segment_name_from_record(record),
-            required=required,
+            rule=rule,
         )
 
 
@@ -114,18 +114,14 @@ class Plan(BaseModel):
     def required_segments(self) -> list[Segment]:
         """Return a list of segments that are required by all additions."""
         return [
-            segment
-            for segment in self.segments
-            if segment.required == SegmentRule.REQUIRED
+            segment for segment in self.segments if segment.rule == SegmentRule.REQUIRED
         ]
 
     @property
     def not_required_segments(self) -> list[Segment]:
         """Return a list of segments that are not always required for inclusion."""
         return [
-            segment
-            for segment in self.segments
-            if segment.required != SegmentRule.REQUIRED
+            segment for segment in self.segments if segment.rule != SegmentRule.REQUIRED
         ]
 
     @classmethod

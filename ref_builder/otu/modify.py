@@ -101,7 +101,7 @@ def set_plan_length_tolerances(
                                 length=otu.plan.segments[0].length,
                                 length_tolerance=tolerance,
                                 name=None,
-                                required=SegmentRule.REQUIRED,
+                                rule=SegmentRule.REQUIRED,
                             )
                         ]
                     ),
@@ -225,7 +225,7 @@ def resize_monopartite_plan(
                 length=otu.plan.segments[0].length,
                 length_tolerance=sequence_length_tolerance,
                 name=name,
-                required=SegmentRule.REQUIRED,
+                rule=SegmentRule.REQUIRED,
             )
         ]
         + new_segments,

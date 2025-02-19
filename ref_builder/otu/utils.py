@@ -101,7 +101,7 @@ def create_plan_from_records(
                     length=len(record.sequence),
                     length_tolerance=length_tolerance,
                     name=extract_segment_name_from_record(record),
-                    required=SegmentRule.REQUIRED,
+                    rule=SegmentRule.REQUIRED,
                 )
             ]
         )

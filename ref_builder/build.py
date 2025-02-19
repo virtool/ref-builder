@@ -81,7 +81,7 @@ def build_json(indent: bool, output_path: Path, path: Path, version: str) -> Non
             {
                 "molecule": molecule,
                 "name": str(segment.name) if segment.name else "Unnamed",
-                "required": segment.required == SegmentRule.REQUIRED,
+                "required": segment.rule == SegmentRule.REQUIRED,
             }
             for segment in otu.plan.segments
         ]
