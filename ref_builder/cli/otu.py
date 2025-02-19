@@ -17,7 +17,12 @@ from ref_builder.otu.modify import (
     rename_plan_segment,
     set_representative_isolate,
 )
-from ref_builder.otu.update import auto_update_otu, promote_otu_accessions
+from ref_builder.otu.update import (
+    auto_update_otu,
+    batch_update_repo,
+    promote_otu_accessions,
+    RECORD_FETCH_CHUNK_SIZE,
+)
 from ref_builder.plan import SegmentName, SegmentRule
 from ref_builder.repo import Repo, locked_repo
 from ref_builder.utils import IsolateName, IsolateNameType
@@ -121,6 +126,19 @@ def otu_get(repo: Repo, identifier: str) -> None:
 def otu_list(repo: Repo) -> None:
     """List all OTUs in the repository."""
     print_otu_list(repo.iter_minimal_otus())
+
+
+@otu.command(name="batch-update")
+@ignore_cache_option
+@path_option
+def otu_batch_auto_update(path: Path, ignore_cache: bool) -> None:
+    """Update all OTUs with the latest data from NCBI."""
+    repo = Repo(path)
+
+    batch_update_repo(
+        repo,
+        ignore_cache=ignore_cache,
+    )
 
 
 @otu.command(name="update")

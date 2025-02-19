@@ -163,6 +163,10 @@ def create_isolate(
             log.warning(str(e))
             return None
 
+        if "Duplicate segment names found in records" in str(e):
+            log.warning(str(e))
+            return None
+
         raise
 
     for segment_id, record in assigned.items():

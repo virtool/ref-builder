@@ -1,4 +1,5 @@
 from collections import defaultdict
+from collections.abc import Collection, Iterable, Iterator
 from uuid import UUID
 
 from structlog import get_logger
@@ -11,14 +12,22 @@ from ref_builder.otu.isolate import (
 )
 from ref_builder.otu.utils import (
     DeleteRationale,
+    get_segments_min_length,
+    get_segments_max_length,
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU
-from ref_builder.utils import Accession, IsolateName
+from ref_builder.utils import IsolateName
 
 logger = get_logger("otu.update")
+
+OTU_FEEDBACK_INTERVAL = 100
+"""A default interval for batch OTU feedback."""
+
+RECORD_FETCH_CHUNK_SIZE = 25
+"""A default chunk size for NCBI EFetch calls."""
 
 
 def auto_update_otu(
@@ -31,11 +40,10 @@ def auto_update_otu(
 
     log = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
-    accessions = ncbi.fetch_accessions_by_taxid(otu.taxid)
+    accessions = ncbi.filter_accessions(ncbi.fetch_accessions_by_taxid(otu.taxid))
 
     fetch_list = sorted(
-        {Accession.from_string(accession).key for accession in accessions}
-        - otu.blocked_accessions
+        {accession.key for accession in accessions} - otu.blocked_accessions
     )
 
     if fetch_list:
@@ -43,6 +51,134 @@ def auto_update_otu(
         update_otu_with_accessions(repo, otu, fetch_list, ignore_cache)
     else:
         log.info("OTU is up to date.")
+
+
+def batch_update_repo(
+    repo: Repo,
+    chunk_size: int = RECORD_FETCH_CHUNK_SIZE,
+    ignore_cache: bool = False,
+):
+    """Fetch new accessions for all OTUs in the repo and create isolates as possible."""
+    repo_logger = logger.bind(path=str(repo.path))
+
+    repo_logger.info("Starting batch update...")
+
+    taxid_new_accession_index = batch_fetch_new_accessions(
+        repo.iter_otus(), ignore_cache
+    )
+
+    if not taxid_new_accession_index:
+        logger.info("OTUs are up to date.")
+        return None
+
+    fetch_set = {
+        accession
+        for otu_accessions in taxid_new_accession_index.values()
+        for accession in otu_accessions
+    }
+
+    logger.info("New accessions found.", accession_count=len(taxid_new_accession_index))
+
+    indexed_records = batch_fetch_new_records(
+        fetch_set,
+        chunk_size=chunk_size,
+        ignore_cache=ignore_cache,
+    )
+
+    if not indexed_records:
+        logger.info("No valid accessions found.")
+        return None
+
+    logger.info(
+        "Checking new records against OTUs.", otu_count=len(taxid_new_accession_index)
+    )
+
+    for taxid, accessions in taxid_new_accession_index.items():
+        otu_records = [
+            record
+            for accession in accessions
+            if (record := indexed_records.get(accession)) is not None
+        ]
+
+        if not otu_records:
+            continue
+
+        update_otu_with_records(
+            repo,
+            otu=repo.get_otu_by_taxid(taxid),
+            records=otu_records,
+        )
+
+    repo_logger.info("Batch update complete.")
+
+
+def batch_fetch_new_accessions(
+    otus: Iterable[RepoOTU],
+    ignore_cache: bool = False,
+) -> dict[int, set[str]]:
+    """Check OTU iterator for new accessions and return results indexed by taxid."""
+    ncbi = NCBIClient(ignore_cache)
+
+    otu_counter = 0
+
+    taxid_accession_index = {}
+
+    for otu in otus:
+        otu_logger = logger.bind(taxid=otu.taxid, name=otu.name)
+
+        otu_counter += 1
+
+        if otu_counter % OTU_FEEDBACK_INTERVAL == 0:
+            otu_logger.info(
+                "Fetching accession updates...",
+                otu_counter=otu_counter,
+            )
+
+        raw_accessions = ncbi.fetch_accessions_by_taxid(
+            otu.taxid,
+            sequence_min_length=get_segments_min_length(otu.plan.segments),
+            sequence_max_length=get_segments_max_length(otu.plan.segments),
+        )
+
+        accessions_to_fetch = {
+            accession.key for accession in ncbi.filter_accessions(raw_accessions)
+        } - otu.blocked_accessions
+
+        if accessions_to_fetch:
+            otu_logger.debug(
+                "Potential accessions found.",
+                accession_count=len(accessions_to_fetch),
+                otu_counter=otu_counter,
+            )
+
+            taxid_accession_index[otu.taxid] = accessions_to_fetch
+
+    return taxid_accession_index
+
+
+def batch_fetch_new_records(
+    accessions: Collection[str],
+    chunk_size: int = RECORD_FETCH_CHUNK_SIZE,
+    ignore_cache: bool = False,
+) -> dict[str, NCBIGenbank]:
+    """Download a batch of records and return in a dictionary indexed by accession."""
+    if not accessions:
+        return {}
+
+    ncbi = NCBIClient(ignore_cache)
+
+    fetch_list = list(accessions)
+
+    indexed_records = {}
+    for fetch_list_chunk in iter_fetch_list(fetch_list, chunk_size):
+        chunked_records = ncbi.fetch_genbank_records(fetch_list_chunk)
+
+        indexed_records.update({record.accession: record for record in chunked_records})
+
+    if indexed_records:
+        return indexed_records
+
+    return {}
 
 
 def update_isolate_from_accessions(
@@ -78,7 +214,11 @@ def update_isolate_from_records(
     if len(records) == 1:
         assigned = {otu.plan.segments[0].id: records[0]}
     else:
-        assigned = assign_records_to_segments(records, otu.plan)
+        try:
+            assigned = assign_records_to_segments(records, otu.plan)
+        except ValueError:
+            logger.exception()
+            return None
 
     for segment_id, record in assigned.items():
         _, accession = parse_refseq_comment(record.comment)
@@ -148,6 +288,18 @@ def update_otu_with_accessions(
     if promote_otu_accessions(repo, otu, ignore_cache):
         otu = repo.get_otu(otu.id)
 
+    if records:
+        return update_otu_with_records(repo, otu, records)
+
+
+def update_otu_with_records(
+    repo: Repo,
+    otu: RepoOTU,
+    records: list[NCBIGenbank],
+):
+    """Take a list of downloaded NCBI Genbank records, filter for eligible records
+    and add new sequences to the OTU.
+    """
     new_isolate_names = []
 
     for divided_records in (
@@ -180,12 +332,11 @@ def promote_otu_accessions(
 
     log = logger.bind(otu_id=otu.id, taxid=otu.taxid)
 
-    log.debug("Checking for promotable records.", accessions=sorted(otu.accessions))
+    log.info("Checking for promotable sequences.")
 
-    accessions = ncbi.fetch_accessions_by_taxid(otu.taxid)
+    accessions = ncbi.filter_accessions(ncbi.fetch_accessions_by_taxid(otu.taxid))
     fetch_list = sorted(
-        set(Accession.from_string(accession).key for accession in accessions)
-        - otu.blocked_accessions
+        {accession.key for accession in accessions} - otu.blocked_accessions
     )
 
     if fetch_list:
@@ -242,7 +393,13 @@ def promote_otu_accessions_from_records(
             f"Promoting {isolate.name}", predecessor_accessions=isolate.accessions
         )
 
-        promoted_isolate = update_isolate_from_records(repo, otu, isolate_id, records)
+        try:
+            promoted_isolate = update_isolate_from_records(
+                repo, otu, isolate_id, records
+            )
+        except ValueError:
+            logger.exception()
+            continue
 
         otu_logger.debug(
             f"{isolate.name} sequences promoted using RefSeq data",
@@ -261,6 +418,17 @@ def promote_otu_accessions_from_records(
         otu_logger.debug("All accessions are up to date")
 
     return promoted_accessions
+
+
+def iter_fetch_list(
+    fetch_list: list[str], page_size=RECORD_FETCH_CHUNK_SIZE
+) -> Iterator[list[str]]:
+    """Divide a list of accessions and yield in pages."""
+    page_size = max(1, page_size)
+    page_count = len(fetch_list) // page_size + int(len(fetch_list) % page_size != 0)
+
+    for iterator in range(page_count):
+        yield fetch_list[iterator * page_size : (iterator + 1) * page_size]
 
 
 def _bin_refseq_records(
