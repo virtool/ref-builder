@@ -114,18 +114,14 @@ class Plan(BaseModel):
     def required_segments(self) -> list[Segment]:
         """Return a list of segments that are required by all additions."""
         return [
-            segment
-            for segment in self.segments
-            if segment.rule == SegmentRule.REQUIRED
+            segment for segment in self.segments if segment.rule == SegmentRule.REQUIRED
         ]
 
     @property
     def not_required_segments(self) -> list[Segment]:
         """Return a list of segments that are not always required for inclusion."""
         return [
-            segment
-            for segment in self.segments
-            if segment.rule != SegmentRule.REQUIRED
+            segment for segment in self.segments if segment.rule != SegmentRule.REQUIRED
         ]
 
     @classmethod
