@@ -7,10 +7,11 @@ from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
 from ref_builder.build import build_json
+from ref_builder.repo import Repo
 
 
-@pytest.fixture
-def comparison_reference(pytestconfig, tmp_path, scratch_repo) -> dict:
+@pytest.fixture()
+def comparison_reference(pytestconfig, scratch_repo: Repo, tmp_path: Path) -> dict:
     """A prebuilt reference file. Cached in .pytest_cache."""
     comparison_reference = pytestconfig.cache.get("comparison_reference", None)
 
@@ -31,7 +32,10 @@ def comparison_reference(pytestconfig, tmp_path, scratch_repo) -> dict:
 
 
 def test_ok(
-    scratch_repo, comparison_reference, tmp_path: Path, snapshot: SnapshotAssertion
+    comparison_reference: dict,
+    scratch_repo: Repo,
+    snapshot: SnapshotAssertion,
+    tmp_path: Path,
 ):
     """Test that the command exits with a 0 exit code."""
     output_path = tmp_path / "reference.json"
@@ -42,9 +46,7 @@ def test_ok(
         built_json = orjson.loads(f.read())
 
     assert built_json == snapshot(exclude=props("created_at", "otus"))
-
     assert built_json["otus"] == comparison_reference["otus"]
-
     assert (arrow.utcnow() - arrow.get(built_json["created_at"])).seconds == 0
 
 

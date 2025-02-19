@@ -69,13 +69,14 @@ def create_otu_with_taxid(
         )
         return None
 
-    return write_otu(
-        repo,
-        taxonomy,
-        records,
-        acronym=acronym,
-        isolate_name=next(iter(binned_records.keys())) if binned_records else None,
-    )
+    with repo.use_transaction():
+        return write_otu(
+            repo,
+            taxonomy,
+            records,
+            acronym=acronym,
+            isolate_name=next(iter(binned_records.keys())) if binned_records else None,
+        )
 
 
 def create_otu_without_taxid(
@@ -123,13 +124,14 @@ def create_otu_without_taxid(
         logger.fatal(f"Could not retrieve {taxid} from NCBI Taxonomy")
         return None
 
-    return write_otu(
-        repo,
-        taxonomy,
-        records,
-        acronym,
-        isolate_name=next(iter(binned_records.keys())) if binned_records else None,
-    )
+    with repo.use_transaction():
+        return write_otu(
+            repo,
+            taxonomy,
+            records,
+            acronym,
+            isolate_name=next(iter(binned_records.keys())) if binned_records else None,
+        )
 
 
 def write_otu(
