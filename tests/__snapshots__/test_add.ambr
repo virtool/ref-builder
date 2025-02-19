@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: TestCreateOTU.test_empty_success
+# name: TestCreateOTU.test_empty_repo
   dict({
     'acronym': '',
     'excluded_accessions': set({
@@ -34,16 +34,6 @@
       ]),
     }),
     'taxid': 345184,
-  })
-# ---
-# name: TestCreateOTU.test_otu_create_refseq_autoexclude
-  set({
-    'EF546808',
-    'EF546809',
-    'EF546810',
-    'EF546811',
-    'EF546812',
-    'EF546813',
   })
 # ---
 # name: TestCreateOTUCommands.test_ok[1278205-accessions0]

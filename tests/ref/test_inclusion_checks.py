@@ -120,12 +120,13 @@ class TestAddMultipartiteIsolate:
             sequence_length_multiplier,
         )
 
-        isolate = create_isolate(
-            scratch_repo,
-            otu_before,
-            IsolateName(type=IsolateNameType.ISOLATE, value="mock"),
-            records,
-        )
+        with scratch_repo.lock(), scratch_repo.use_transaction():
+            isolate = create_isolate(
+                scratch_repo,
+                otu_before,
+                IsolateName(type=IsolateNameType.ISOLATE, value="mock"),
+                records,
+            )
 
         otu_after = scratch_repo.get_otu_by_taxid(3158377)
 
@@ -144,12 +145,13 @@ class TestAddMultipartiteIsolate:
             sequence_length_multiplier,
         )
 
-        isolate = create_isolate(
-            scratch_repo,
-            otu_before,
-            IsolateName(type=IsolateNameType.ISOLATE, value="mock"),
-            records,
-        )
+        with scratch_repo.lock(), scratch_repo.use_transaction():
+            isolate = create_isolate(
+                scratch_repo,
+                otu_before,
+                IsolateName(type=IsolateNameType.ISOLATE, value="mock"),
+                records,
+            )
 
         assert isolate is None
 

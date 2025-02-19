@@ -5,10 +5,12 @@ from pathlib import Path
 
 import click
 import structlog
+from rich.table import Table
 
+from ref_builder.build import build_json
 from ref_builder.cli.isolate import isolate
 from ref_builder.cli.otu import otu
-from ref_builder.build import build_json
+from ref_builder.console import console
 from ref_builder.legacy.convert import convert_legacy_repo
 from ref_builder.legacy.utils import iter_legacy_otus
 from ref_builder.legacy.validate import validate_legacy_repo
@@ -36,6 +38,30 @@ def entry(debug: bool, verbosity: int) -> None:
         verbosity = 2
 
     configure_logger(verbosity)
+
+
+@entry.command()
+@path_option
+def status(path: Path) -> None:
+    """Show the status of the reference repository."""
+    repo = Repo(path)
+
+    table = Table(show_header=False)
+
+    table.add_column("")
+    table.add_column("")
+
+    table.add_row("Name", repo.meta.name)
+    table.add_row("Path", str(path.absolute()))
+    table.add_row("Data Type", repo.meta.data_type)
+    table.add_row("Organism", repo.meta.organism)
+    table.add_row("Events", str(repo.last_id))
+    table.add_row(
+        "Valid",
+        "[green]Yes[/green]" if repo.last_id == repo.head_id else "[red]No[/red]",
+    )
+
+    console.print(table)
 
 
 @entry.command()
@@ -74,7 +100,6 @@ def init(data_type: DataType, name: str, organism: str, path: Path) -> None:
 
 
 entry.add_command(otu)
-
 entry.add_command(isolate)
 
 
