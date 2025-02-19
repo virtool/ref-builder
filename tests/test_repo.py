@@ -597,7 +597,7 @@ class TestGetOTU:
         assert empty_repo.last_id == 8
 
     def test_partial_ok(self, initialized_repo: Repo):
-        """Test that getting an isolate ID starting with a truncated 8-character portion
+        """Test that getting an OTU ID starting with a truncated 8-character portion
         returns an ID.
         """
         otu = next(initialized_repo.iter_otus())
