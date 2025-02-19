@@ -48,7 +48,7 @@ class TestPlan:
                     Segment(
                         id=segment["id"],
                         name=segment["name"],
-                        rule=SegmentRule(segment["required"]),
+                        rule=SegmentRule(segment["rule"]),
                         length=segment["length"],
                         length_tolerance=segment["length_tolerance"],
                     )
@@ -84,7 +84,7 @@ class TestPlan:
                 "segments": [
                     {
                         **self.example["segments"][0],
-                        "required": required,
+                        "rule": required,
                     }
                 ],
             }
@@ -161,7 +161,7 @@ class TestPlan:
         """Test that the required_segments property works as expected when a monopartite
         plan has either one or no required segments.
         """
-        self.example["segments"][0]["required"] = rule
+        self.example["segments"][0]["rule"] = rule
 
         plan = Plan.model_validate(self.example)
 
@@ -178,7 +178,7 @@ class TestPlan:
         self.example["segments"] = [
             {
                 **self.example["segments"][0],
-                "required": rule,
+                "rule": rule,
                 "name": {"prefix": "DNA", "key": key},
             }
             for key, rule in zip(
