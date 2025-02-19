@@ -749,6 +749,21 @@ class Repo:
         """
         return self._index.get_id_by_taxid(taxid)
 
+    def get_otu_id_by_partial(self, partial: str) -> uuid.UUID | None:
+        """Return the UUID of the OTU starting with the given ``partial`` string.
+        Raise a ValueErrror if more than one matching OTU id is found.
+
+        If no OTU is found, return None.
+
+        :param partial: a partial segment of the OTU id with a minimum length of 8
+        :return: the UUID of the OTU or ``None``
+
+        """
+        if len(partial) < 8:
+            raise ValueError("Partial ID segment must be at least 8 characters long.")
+
+        return self._index.get_id_by_partial(partial)
+
     def _rehydrate_otu(self, events: Iterator[Event]) -> RepoOTU:
         event = next(events)
 
