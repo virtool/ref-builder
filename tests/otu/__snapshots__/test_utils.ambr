@@ -54,7 +54,7 @@
         'length': 7424,
         'length_tolerance': 0.03,
         'name': None,
-        'required': 'required',
+        'rule': 'required',
       }),
     ]),
   })
@@ -71,7 +71,7 @@
           'key': 'C',
           'prefix': 'DNA',
         }),
-        'required': 'required',
+        'rule': 'required',
       }),
       dict({
         'id': UUID,
@@ -81,7 +81,7 @@
           'key': 'M',
           'prefix': 'DNA',
         }),
-        'required': 'required',
+        'rule': 'required',
       }),
       dict({
         'id': UUID,
@@ -91,7 +91,7 @@
           'key': 'N',
           'prefix': 'DNA',
         }),
-        'required': 'required',
+        'rule': 'required',
       }),
       dict({
         'id': UUID,
@@ -101,7 +101,7 @@
           'key': 'R',
           'prefix': 'DNA',
         }),
-        'required': 'required',
+        'rule': 'required',
       }),
       dict({
         'id': UUID,
@@ -111,7 +111,7 @@
           'key': 'S',
           'prefix': 'DNA',
         }),
-        'required': 'required',
+        'rule': 'required',
       }),
       dict({
         'id': UUID,
@@ -121,7 +121,7 @@
           'key': 'U3',
           'prefix': 'DNA',
         }),
-        'required': 'required',
+        'rule': 'required',
       }),
     ]),
   })

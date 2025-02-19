@@ -9,7 +9,7 @@
           'key': 'L',
           'prefix': 'RNA',
         }),
-        'required': 'required',
+        'rule': 'required',
       }),
       dict({
         'length': 1613,
@@ -18,7 +18,7 @@
           'key': 'M',
           'prefix': 'RNA',
         }),
-        'required': 'required',
+        'rule': 'required',
       }),
       dict({
         'length': 1291,
@@ -27,7 +27,7 @@
           'key': 'S',
           'prefix': 'RNA',
         }),
-        'required': 'optional',
+        'rule': 'optional',
       }),
     ]),
   })
@@ -42,7 +42,7 @@
           'key': 'L',
           'prefix': 'RNA',
         }),
-        'required': 'required',
+        'rule': 'required',
       }),
       dict({
         'length': 1291,
@@ -51,7 +51,7 @@
           'key': 'S',
           'prefix': 'RNA',
         }),
-        'required': 'optional',
+        'rule': 'optional',
       }),
     ]),
   })
