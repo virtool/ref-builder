@@ -25,3 +25,13 @@ class TestPrintCommands:
             )
 
             assert result.exit_code == 0
+
+    def test_otu_get_json_ok(self, scratch_repo):
+        for otu_ in scratch_repo.iter_otus():
+            result = runner.invoke(
+                otu_command_group,
+                ["--path", str(scratch_repo.path)]
+                + ["get", str(otu_.id), "--json"],
+            )
+
+            assert result.exit_code == 0
