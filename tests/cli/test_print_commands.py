@@ -30,8 +30,7 @@ class TestPrintCommands:
         for otu_ in scratch_repo.iter_otus():
             result = runner.invoke(
                 otu_command_group,
-                ["--path", str(scratch_repo.path)]
-                + ["get", str(otu_.id), "--json"],
+                ["--path", str(scratch_repo.path)] + ["get", str(otu_.id), "--json"],
             )
 
             assert result.exit_code == 0
