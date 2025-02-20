@@ -141,10 +141,6 @@ def scratch_repo(tmp_path: Path, scratch_event_store_data: dict[str, dict]) -> R
         with open(src_path / filename, "wb") as f:
             f.write(orjson.dumps(scratch_event_store_data[filename]))
 
-    head = int(max(scratch_event_store_data.keys()).split(".json")[0])
-    with open(path / "head", "w") as f:
-        f.write(str(head))
-
     (path / ".cache").mkdir(parents=True)
 
     return Repo(path)
@@ -219,6 +215,8 @@ def scratch_event_store_data(
             scratch_src[event_file_path.name] = orjson.loads(f.read())
 
     pytestconfig.cache.set("scratch_src", scratch_src)
+
+    return scratch_src
 
 
 class OTUContents(BaseModel):
