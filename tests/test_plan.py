@@ -29,7 +29,7 @@ class TestPlan:
                 {
                     "id": uuid4(),
                     "name": None,
-                    "required": "required",
+                    "rule": "required",
                     "length": 100,
                     "length_tolerance": 0.01,
                 }
@@ -49,7 +49,7 @@ class TestPlan:
                     Segment(
                         id=segment["id"],
                         name=segment["name"],
-                        required=SegmentRule(segment["required"]),
+                        rule=SegmentRule(segment["rule"]),
                         length=segment["length"],
                         length_tolerance=segment["length_tolerance"],
                     )
@@ -85,13 +85,13 @@ class TestPlan:
                 "segments": [
                     {
                         **self.example["segments"][0],
-                        "required": required,
+                        "rule": required,
                     }
                 ],
             }
         )
 
-        assert plan.segments[0].required == SegmentRule(required)
+        assert plan.segments[0].rule == SegmentRule(required)
 
     @pytest.mark.parametrize(
         "name",
@@ -162,7 +162,7 @@ class TestPlan:
         """Test that the required_segments property works as expected when a monopartite
         plan has either one or no required segments.
         """
-        self.example["segments"][0]["required"] = rule
+        self.example["segments"][0]["rule"] = rule
 
         plan = Plan.model_validate(self.example)
 
@@ -179,7 +179,7 @@ class TestPlan:
         self.example["segments"] = [
             {
                 **self.example["segments"][0],
-                "required": rule,
+                "rule": rule,
                 "name": {"prefix": "DNA", "key": key},
             }
             for key, rule in zip(

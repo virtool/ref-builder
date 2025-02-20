@@ -15,7 +15,12 @@ from ref_builder.plan import (
     extract_segment_name_from_record,
     extract_segment_name_from_record_with_plan,
 )
-from ref_builder.utils import Accession, IsolateName, IsolateNameType
+from ref_builder.utils import (
+    Accession,
+    IsolateName,
+    IsolateNameType,
+    generate_natural_sort_key,
+)
 
 logger = structlog.get_logger()
 
@@ -72,15 +77,14 @@ def create_segments_from_records(
     records: list[NCBIGenbank], rule: SegmentRule, length_tolerance: float
 ) -> list[Segment]:
     """Return a list of SegmentPlans."""
-    segments = []
-
     if len(records) > 1 and not all(r.source.segment for r in records):
         raise ValueError("Segment name not found for multipartite OTU segment.")
 
-    return [
-        Segment.from_record(record, length_tolerance, rule)
-        for record in sorted(records, key=lambda r: r.accession)
+    segments = [
+        Segment.from_record(record, length_tolerance, rule) for record in records
     ]
+
+    return sorted(segments, key=lambda s: generate_natural_sort_key(str(s.name)))
 
 
 def create_plan_from_records(
@@ -98,7 +102,7 @@ def create_plan_from_records(
                     length=len(record.sequence),
                     length_tolerance=length_tolerance,
                     name=extract_segment_name_from_record(record),
-                    required=SegmentRule.REQUIRED,
+                    rule=SegmentRule.REQUIRED,
                 )
             ]
         )
@@ -187,24 +191,13 @@ def group_genbank_records_by_isolate(
     isolates = defaultdict(dict)
 
     for record in records:
-        try:
-            isolate_name = _extract_isolate_name_from_record(record)
-
-            if isolate_name is None:
-                logger.debug(
-                    "RefSeq record does not contain sufficient source data "
-                    " for automatic inclusion. Add this record manually.",
-                    accession=record.accession,
-                    definition=record.definition,
-                    source_data=record.source,
-                )
-                continue
-
-            versioned_accession = Accession.from_string(record.accession_version)
-            isolates[isolate_name][versioned_accession] = record
-
-        except ValueError:
+        isolate_name = _get_isolate_name(record)
+        if isolate_name is None:
+            # Assume this is a monopartite OTU and do not group.
             continue
+
+        versioned_accession = Accession.from_string(record.accession_version)
+        isolates[isolate_name][versioned_accession] = record
 
     return isolates
 
@@ -234,10 +227,7 @@ def _extract_isolate_name_from_record(record: NCBIGenbank) -> IsolateName | None
                     value=record.source.model_dump()[source_type],
                 )
 
-    if record.refseq:
-        return None
-
-    raise ValueError("Record does not contain sufficient source data for inclusion.")
+    return None
 
 
 def assign_records_to_segments(

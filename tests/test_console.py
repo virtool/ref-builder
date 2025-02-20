@@ -2,7 +2,7 @@ import pytest
 from faker import Faker
 from syrupy import SnapshotAssertion
 
-from ref_builder.console import console, print_otu, print_otu_list
+from ref_builder.console import console, print_otu_as_json, print_otu, print_otu_list
 from ref_builder.models import Molecule, MolType, OTUMinimal, Strandedness, Topology
 from ref_builder.plan import Plan, Segment, SegmentName, SegmentRule
 from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
@@ -56,21 +56,21 @@ def test_print_otu(snapshot: SnapshotAssertion):
                     length=1099,
                     length_tolerance=0.03,
                     name=SegmentName("DNA", "R"),
-                    required=SegmentRule.REQUIRED,
+                    rule=SegmentRule.REQUIRED,
                 ),
                 Segment(
                     id=fake.uuid4(),
                     length=1074,
                     length_tolerance=0.03,
                     name=SegmentName("DNA", "M"),
-                    required=SegmentRule.REQUIRED,
+                    rule=SegmentRule.REQUIRED,
                 ),
                 Segment(
                     id=fake.uuid4(),
                     length=1087,
                     length_tolerance=0.03,
                     name=SegmentName("DNA", "S"),
-                    required=SegmentRule.REQUIRED,
+                    rule=SegmentRule.REQUIRED,
                 ),
             ],
         ),
@@ -105,3 +105,52 @@ def test_print_otu(snapshot: SnapshotAssertion):
         print_otu(otu)
 
     assert capture.get() == snapshot
+
+
+def test_print_otu_as_json():
+    """Test that an OTU is printed as expected by ``print_otu_as_json``."""
+    fake = Faker(["en_US"])
+    fake.add_provider(AccessionProvider)
+    fake.add_provider(SequenceProvider)
+    fake.seed_instance(8801)
+
+    otu = RepoOTU(
+        id=fake.uuid4(),
+        acronym="BabAV",
+        excluded_accessions=set(),
+        legacy_id="",
+        molecule=Molecule(
+            strandedness=Strandedness.SINGLE, topology=Topology.LINEAR, type=MolType.RNA
+        ),
+        name="Babuvirus abacae",
+        plan=Plan.new(
+            [
+                Segment(
+                    id=fake.uuid4(),
+                    length=1099,
+                    length_tolerance=0.03,
+                    name=SegmentName("DNA", "R"),
+                    rule=SegmentRule.REQUIRED,
+                ),
+                Segment(
+                    id=fake.uuid4(),
+                    length=1074,
+                    length_tolerance=0.03,
+                    name=SegmentName("DNA", "M"),
+                    rule=SegmentRule.REQUIRED,
+                ),
+                Segment(
+                    id=fake.uuid4(),
+                    length=1087,
+                    length_tolerance=0.03,
+                    name=SegmentName("DNA", "S"),
+                    rule=SegmentRule.REQUIRED,
+                ),
+            ],
+        ),
+        representative_isolate=None,
+        taxid=438782,
+        isolates=[],
+    )
+
+    print_otu_as_json(otu)

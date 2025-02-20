@@ -3,6 +3,7 @@ import sys
 import structlog
 
 from ref_builder.ncbi.client import NCBIClient
+from ref_builder.ncbi.models import NCBIGenbank, NCBITaxonomy
 from ref_builder.otu.isolate import create_sequence_from_record
 from ref_builder.otu.utils import (
     assign_records_to_segments,
@@ -13,11 +14,12 @@ from ref_builder.otu.utils import (
 )
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
+from ref_builder.utils import IsolateName
 
 logger = structlog.get_logger("otu.create")
 
 
-def create_otu(
+def create_otu_with_taxid(
     repo: Repo,
     taxid: int,
     accessions: list[str],
@@ -67,7 +69,80 @@ def create_otu(
         )
         return None
 
-    molecule = get_molecule_from_records(records)
+    with repo.use_transaction():
+        return write_otu(
+            repo,
+            taxonomy,
+            records,
+            acronym=acronym,
+            isolate_name=next(iter(binned_records.keys())) if binned_records else None,
+        )
+
+
+def create_otu_without_taxid(
+    repo: Repo,
+    accessions: list[str],
+    acronym: str,
+    ignore_cache: bool = False,
+) -> RepoOTU | None:
+    """Create a new OTU from a list of accessions.
+
+    Uses the provided accessions to generate a plan and add a first isolate.
+
+    :param repo: the repository to add the OTU to.
+    :param accessions: accessions to build the new otu from
+    :param acronym: an alternative name to use during searches.
+    :param ignore_cache: whether to ignore the cache.
+
+    """
+    ncbi = NCBIClient(ignore_cache)
+
+    records = ncbi.fetch_genbank_records(accessions)
+
+    if len(records) != len(accessions):
+        logger.fatal("Could not retrieve all requested accessions.")
+        return None
+
+    if len(set(record.source.taxid for record in records)) > 1:
+        logger.fatal("Not all records are from the same organism.")
+
+        return None
+
+    taxid = records[0].source.taxid
+
+    binned_records = group_genbank_records_by_isolate(records)
+
+    if len(binned_records) > 1:
+        logger.fatal(
+            "More than one isolate found. Cannot create plan.",
+        )
+        return None
+
+    taxonomy = ncbi.fetch_taxonomy_record(taxid)
+
+    if taxonomy is None:
+        logger.fatal(f"Could not retrieve {taxid} from NCBI Taxonomy")
+        return None
+
+    with repo.use_transaction():
+        return write_otu(
+            repo,
+            taxonomy,
+            records,
+            acronym,
+            isolate_name=next(iter(binned_records.keys())) if binned_records else None,
+        )
+
+
+def write_otu(
+    repo: Repo,
+    taxonomy: NCBITaxonomy,
+    records: list[NCBIGenbank],
+    acronym: str,
+    isolate_name: IsolateName | None,
+) -> RepoOTU | None:
+    """Create a new OTU from an NCBI Taxonomy record and a list of Nucleotide records."""
+    otu_logger = logger.bind(taxid=taxonomy.id)
 
     plan = create_plan_from_records(
         records,
@@ -75,8 +150,9 @@ def create_otu(
     )
 
     if plan is None:
-        otu_logger.fatal("Could not create plan from records.")
-        return None
+        logger.fatal("Could not create plan from records.")
+
+    molecule = get_molecule_from_records(records)
 
     try:
         otu = repo.create_otu(
@@ -85,7 +161,7 @@ def create_otu(
             molecule=molecule,
             name=taxonomy.name,
             plan=plan,
-            taxid=taxid,
+            taxid=taxonomy.id,
         )
     except ValueError as e:
         otu_logger.fatal(e)
@@ -94,7 +170,7 @@ def create_otu(
     isolate = repo.create_isolate(
         otu_id=otu.id,
         legacy_id=None,
-        name=next(iter(binned_records.keys())) if binned_records else None,
+        name=isolate_name,
     )
 
     otu.add_isolate(isolate)

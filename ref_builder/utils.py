@@ -8,8 +8,8 @@ import orjson
 ZERO_PADDING_MAX = 99999999
 """The maximum number that can be padded with zeroes in event IDs and filenames."""
 
-genbank_accession_params = re.compile(pattern=r"^[A-Z]{1,2}[0-9]{5,6}$")
-refseq_accession_params = re.compile(pattern=r"^NC_[0-9]{6}$")
+GENBANK_ACCESSION_PATTERN = re.compile(pattern=r"^[A-Z]{1,2}[0-9]{5,6}$")
+REFSEQ_ACCESSION_PATTERN = re.compile(pattern=r"^NC_[0-9]{6}$")
 
 
 @dataclass(frozen=True)
@@ -33,19 +33,25 @@ class Accession:
         """Create an Accession from a raw accession string."""
         accession_parts = string.split(".")
 
-        if len(accession_parts) == 2:
-            try:
-                return Accession(
-                    key=accession_parts[0],
-                    version=int(accession_parts[1]),
-                )
-            except ValueError:
+        try:
+            key, string_version = string.split(".")
+        except ValueError as e:
+            if "not enough values to unpack" in str(e):
                 raise ValueError(
-                    f"Raw accession {string} does not include a valid version.",
+                    "Accession does not contain two parts delimited by a period."
                 )
 
-        msg = f"Raw accession {string} is not versioned."
-        raise ValueError(msg)
+            raise
+
+        try:
+            version = int(string_version)
+        except ValueError as e:
+            if "invalid literal for int() with base 10" in str(e):
+                raise ValueError("Accession version is not an integer.")
+
+            raise
+
+        return Accession(key=key, version=version)
 
     def __eq__(self, other: "Accession") -> bool:
         if isinstance(other, Accession):
@@ -136,6 +142,39 @@ def format_json(path: Path) -> None:
         f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2))
 
 
+def get_accession_key(raw: str) -> str:
+    """Parse a string to check if it follows Genbank or RefSeq accession parameters and
+    return the key part only.
+    """
+    if GENBANK_ACCESSION_PATTERN.match(raw) or REFSEQ_ACCESSION_PATTERN.match(raw):
+        return raw
+
+    versioned_accession = Accession.from_string(raw)
+
+    if GENBANK_ACCESSION_PATTERN.match(
+        versioned_accession.key
+    ) or REFSEQ_ACCESSION_PATTERN.match(versioned_accession.key):
+        return versioned_accession.key
+
+    raise ValueError("Invalid accession key")
+
+
+def generate_natural_sort_key(string: str) -> list[int | str]:
+    """Generate a natural order sorting key for a string.
+
+    This list: ["1", "10", "2"] will be sorted as ["1", "2", "10"], as opposed to
+    lexographical order, which would result in ["1", "10", "2"].
+
+    :param string: the string to convert to a sorting key
+    :return: the sorting key
+    """
+
+    def _convert(string_: str) -> int | str:
+        return int(string_) if string_.isdigit() else string_.lower()
+
+    return [_convert(c) for c in re.split("([0-9]+)", string)]
+
+
 def pad_zeroes(number: int) -> str:
     """Pad a number with zeroes to make it 8 characters long.
 
@@ -146,20 +185,3 @@ def pad_zeroes(number: int) -> str:
         raise ValueError("Number is too large to pad")
 
     return str(number).zfill(8)
-
-
-def get_accession_key(raw: str) -> str:
-    """Parse a string to check if it follows Genbank or RefSeq accession parameters and
-    return the key part only.
-    """
-    if genbank_accession_params.match(raw) or refseq_accession_params.match(raw):
-        return raw
-
-    versioned_accession = Accession.from_string(raw)
-
-    if genbank_accession_params.match(
-        versioned_accession.key
-    ) or refseq_accession_params.match(versioned_accession.key):
-        return versioned_accession.key
-
-    raise ValueError("Invalid accession key")

@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: TestCreateOTU.test_empty_success
+# name: TestCreateOTU.test_empty_repo
   dict({
     'acronym': '',
     'excluded_accessions': set({
@@ -20,7 +20,7 @@
             'key': 'A',
             'prefix': 'DNA',
           }),
-          'required': 'required',
+          'rule': 'required',
         }),
         dict({
           'length': 2494,
@@ -29,21 +29,11 @@
             'key': 'B',
             'prefix': 'DNA',
           }),
-          'required': 'required',
+          'rule': 'required',
         }),
       ]),
     }),
     'taxid': 345184,
-  })
-# ---
-# name: TestCreateOTU.test_otu_create_refseq_autoexclude
-  set({
-    'EF546808',
-    'EF546809',
-    'EF546810',
-    'EF546811',
-    'EF546812',
-    'EF546813',
   })
 # ---
 # name: TestCreateOTUCommands.test_ok[1278205-accessions0]
@@ -65,7 +55,7 @@
           'length': 342,
           'length_tolerance': 0.03,
           'name': None,
-          'required': 'required',
+          'rule': 'required',
         }),
       ]),
     }),
@@ -93,7 +83,7 @@
             'key': 'A',
             'prefix': 'DNA',
           }),
-          'required': 'required',
+          'rule': 'required',
         }),
         dict({
           'length': 2494,
@@ -102,7 +92,7 @@
             'key': 'B',
             'prefix': 'DNA',
           }),
-          'required': 'required',
+          'rule': 'required',
         }),
       ]),
     }),

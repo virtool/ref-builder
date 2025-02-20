@@ -51,6 +51,30 @@ class TestCreatePlanFromRecords:
         assert isinstance(plan, Plan)
         assert plan.model_dump() == snapshot(matcher=uuid_matcher)
 
+        segment_names = [str(segment.name) for segment in plan.segments]
+
+        # Make sure the segment names are ordered alphabetically.
+        assert segment_names == sorted(segment_names)
+
+    def test_numeric_sorting(self, scratch_ncbi_client: NCBIClient):
+        """Test that segment names are sorted numerically."""
+        records = scratch_ncbi_client.fetch_genbank_records(
+            ["NC_010314", "NC_010315", "NC_010316"]
+        )
+
+        for record, segment_name in zip(
+            records, ["RNA 3", "RNA 10", "RNA 1"], strict=True
+        ):
+            record.source.segment = segment_name
+
+        plan = create_plan_from_records(records, length_tolerance=0.03)
+
+        assert [str(segment.name) for segment in plan.segments] == [
+            "RNA 1",
+            "RNA 3",
+            "RNA 10",
+        ]
+
 
 @pytest.mark.parametrize("taxid", [223262, 3158377])
 class TestAssignRecordsToSegments:
@@ -83,9 +107,13 @@ class TestAssignRecordsToSegments:
 
         assigned_records = assign_records_to_segments(records, otu.plan)
 
-        assert sorted(assigned_records.values(), key=lambda r: r.accession) == snapshot(
-            exclude=props("id")
-        )
+        assert {
+            str(otu.plan.get_segment_by_id(segment_id).name): {
+                "accession_version": assigned_records[segment_id].accession,
+                "source_segment": assigned_records[segment_id].source.segment,
+            }
+            for segment_id in assigned_records
+        } == snapshot(exclude=props("id"))
 
     def test_names_not_in_plan(
         self,

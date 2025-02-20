@@ -15,7 +15,7 @@ from ref_builder.legacy.utils import build_legacy_otu
 from ref_builder.logs import configure_logger
 from ref_builder.ncbi.cache import NCBICache
 from ref_builder.ncbi.client import NCBIClient
-from ref_builder.otu.create import create_otu
+from ref_builder.otu.create import create_otu_with_taxid
 from ref_builder.otu.update import update_otu_with_accessions
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
@@ -170,42 +170,51 @@ def scratch_user_cache_path(files_path: Path, tmp_path: Path) -> Path:
 @pytest.fixture()
 def scratch_event_store_data(
     pytestconfig,
-    tmp_path,
-    scratch_repo_contents_path,
+    scratch_repo_contents_path: Path,
+    tmp_path: Path,
 ) -> dict:
     """Scratch repo events. Cached in .pytest_cache."""
     scratch_src = pytestconfig.cache.get("scratch_src", None)
-    if scratch_src is None:
-        temp_scratch_repo = Repo.new(
-            data_type=DataType.GENOME,
-            name="src_test",
-            path=tmp_path,
-            organism="viruses",
-        )
 
-        with open(scratch_repo_contents_path, "rb") as f:
-            toc = otu_contents_list_adapter.validate_json(f.read())
+    if scratch_src:
+        return scratch_src
 
+    temp_scratch_repo = Repo.new(
+        data_type=DataType.GENOME,
+        name="src_test",
+        path=tmp_path,
+        organism="viruses",
+    )
+
+    with open(scratch_repo_contents_path, "rb") as f:
+        toc = otu_contents_list_adapter.validate_json(f.read())
+
+    with temp_scratch_repo.lock():
         for otu_contents in toc:
-            otu = create_otu(
+            otu = create_otu_with_taxid(
                 temp_scratch_repo,
                 otu_contents.taxid,
                 otu_contents.plan,
                 "",
             )
 
+            fetch_set = set(otu_contents.contents) - otu.blocked_accessions
+            if not fetch_set:
+                continue
+
             update_otu_with_accessions(
                 repo=temp_scratch_repo,
                 otu=otu,
-                accessions=otu_contents.contents,
+                accessions=list(fetch_set),
             )
 
-        scratch_src = {}
-        for event_file_path in (tmp_path / "src").glob("*.json"):
-            with open(event_file_path) as f:
-                scratch_src[event_file_path.name] = orjson.loads(f.read())
+    scratch_src = {}
 
-        pytestconfig.cache.set("scratch_src", scratch_src)
+    for event_file_path in (tmp_path / "src").glob("*.json"):
+        with open(event_file_path) as f:
+            scratch_src[event_file_path.name] = orjson.loads(f.read())
+
+    pytestconfig.cache.set("scratch_src", scratch_src)
 
     return scratch_src
 

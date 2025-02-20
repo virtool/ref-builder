@@ -18,74 +18,76 @@ from ref_builder.utils import Accession, DataType, IsolateName, IsolateNameType
 @pytest.fixture()
 def initialized_repo(empty_repo: Repo):
     """Return a pre-initialized mock Repo."""
-    otu = empty_repo.create_otu(
-        acronym="TMV",
-        legacy_id=None,
-        molecule=Molecule(
-            strandedness=Strandedness.SINGLE,
-            type=MolType.RNA,
-            topology=Topology.LINEAR,
-        ),
-        name="Tobacco mosaic virus",
-        plan=Plan.new(
-            [
-                Segment.new(
-                    length=150,
-                    length_tolerance=empty_repo.settings.default_segment_length_tolerance,
-                    name=None,
-                )
-            ]
-        ),
-        taxid=12242,
-    )
+    with empty_repo.lock(), empty_repo.use_transaction():
+        otu = empty_repo.create_otu(
+            acronym="TMV",
+            legacy_id=None,
+            molecule=Molecule(
+                strandedness=Strandedness.SINGLE,
+                type=MolType.RNA,
+                topology=Topology.LINEAR,
+            ),
+            name="Tobacco mosaic virus",
+            plan=Plan.new(
+                [
+                    Segment.new(
+                        length=150,
+                        length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                        name=None,
+                    )
+                ]
+            ),
+            taxid=12242,
+        )
 
-    sequence_1 = empty_repo.create_sequence(
-        otu.id,
-        "TMVABC.1",
-        "TMV",
-        None,
-        otu.plan.segments[0].id,
-        "ACGT",
-    )
+        sequence_1 = empty_repo.create_sequence(
+            otu.id,
+            "TMVABC.1",
+            "TMV",
+            None,
+            otu.plan.segments[0].id,
+            "ACGT",
+        )
 
-    isolate_a = empty_repo.create_isolate(
-        otu.id,
-        None,
-        IsolateName(IsolateNameType.ISOLATE, "A"),
-    )
+        isolate_a = empty_repo.create_isolate(
+            otu.id,
+            None,
+            IsolateName(IsolateNameType.ISOLATE, "A"),
+        )
 
-    empty_repo.link_sequence(otu.id, isolate_a.id, sequence_1.id)
+        empty_repo.link_sequence(otu.id, isolate_a.id, sequence_1.id)
 
     return empty_repo
 
 
 def init_otu(empty_repo: Repo) -> RepoOTU:
-    return empty_repo.create_otu(
-        acronym="TMV",
-        legacy_id="abcd1234",
-        molecule=Molecule(
-            strandedness=Strandedness.SINGLE,
-            type=MolType.RNA,
-            topology=Topology.LINEAR,
-        ),
-        name="Tobacco mosaic virus",
-        plan=Plan.new(
-            segments=[
-                Segment.new(
-                    length=150,
-                    length_tolerance=empty_repo.settings.default_segment_length_tolerance,
-                    name=None,
-                )
-            ]
-        ),
-        taxid=12242,
-    )
+    with empty_repo.lock(), empty_repo.use_transaction():
+        return empty_repo.create_otu(
+            acronym="TMV",
+            legacy_id="abcd1234",
+            molecule=Molecule(
+                strandedness=Strandedness.SINGLE,
+                type=MolType.RNA,
+                topology=Topology.LINEAR,
+            ),
+            name="Tobacco mosaic virus",
+            plan=Plan.new(
+                segments=[
+                    Segment.new(
+                        length=150,
+                        length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                        name=None,
+                    )
+                ]
+            ),
+            taxid=12242,
+        )
 
 
 class TestNew:
     def test_ok(self, empty_repo: Repo, tmp_path: Path):
-        """Test that creating a new ``Repo`` object returns the expected object and creates
-        the expected directory structure.
+        """Test that creating a new ``Repo`` object returns the expected object and
+        creates the expected directory structure.
         """
         assert empty_repo.path == tmp_path / "test_repo"
         assert empty_repo.last_id == 1
@@ -114,7 +116,7 @@ class TestCreateOTU:
         """Test that creating an OTU returns the expected ``RepoOTU`` object and creates
         the expected event file.
         """
-        monopartite_plan = Plan.new(
+        plan = Plan.new(
             segments=[
                 Segment.new(
                     length=150,
@@ -124,18 +126,19 @@ class TestCreateOTU:
             ]
         )
 
-        otu = empty_repo.create_otu(
-            acronym="TMV",
-            legacy_id="abcd1234",
-            molecule=Molecule(
-                strandedness=Strandedness.SINGLE,
-                type=MolType.RNA,
-                topology=Topology.LINEAR,
-            ),
-            name="Tobacco mosaic virus",
-            plan=monopartite_plan,
-            taxid=12242,
-        )
+        with empty_repo.lock(), empty_repo.use_transaction():
+            otu = empty_repo.create_otu(
+                acronym="TMV",
+                legacy_id="abcd1234",
+                molecule=Molecule(
+                    strandedness=Strandedness.SINGLE,
+                    type=MolType.RNA,
+                    topology=Topology.LINEAR,
+                ),
+                name="Tobacco mosaic virus",
+                plan=plan,
+                taxid=12242,
+            )
 
         assert otu == RepoOTU(
             id=otu.id,
@@ -150,14 +153,14 @@ class TestCreateOTU:
             name="Tobacco mosaic virus",
             representative_isolate=None,
             plan=Plan(
-                id=monopartite_plan.id,
+                id=plan.id,
                 segments=[
                     Segment(
-                        id=monopartite_plan.segments[0].id,
+                        id=plan.segments[0].id,
                         length=150,
                         length_tolerance=empty_repo.settings.default_segment_length_tolerance,
                         name=None,
-                        required=SegmentRule.REQUIRED,
+                        rule=SegmentRule.REQUIRED,
                     )
                 ],
             ),
@@ -182,14 +185,14 @@ class TestCreateOTU:
                 "legacy_id": "abcd1234",
                 "name": "Tobacco mosaic virus",
                 "plan": {
-                    "id": str(monopartite_plan.id),
+                    "id": str(plan.id),
                     "segments": [
                         {
-                            "id": str(monopartite_plan.segments[0].id),
+                            "id": str(plan.segments[0].id),
                             "length": 150,
                             "length_tolerance": empty_repo.settings.default_segment_length_tolerance,
                             "name": None,
-                            "required": SegmentRule.REQUIRED,
+                            "rule": SegmentRule.REQUIRED,
                         }
                     ],
                 },
@@ -208,34 +211,65 @@ class TestCreateOTU:
         """Test that creating an OTU with a name that already exists raises a
         ``ValueError``.
         """
-        otu = empty_repo.create_otu(
-            acronym="TMV",
-            legacy_id=None,
-            molecule=Molecule(
-                strandedness=Strandedness.SINGLE,
-                type=MolType.RNA,
-                topology=Topology.LINEAR,
-            ),
-            name="Tobacco mosaic virus",
-            plan=Plan.new(
-                segments=[
-                    Segment.new(
-                        length=150,
-                        length_tolerance=empty_repo.settings.default_segment_length_tolerance,
-                        name=None,
-                    )
-                ]
-            ),
-            taxid=12242,
-        )
+        with empty_repo.lock():
+            with empty_repo.use_transaction():
+                empty_repo.create_otu(
+                    acronym="TMV",
+                    legacy_id=None,
+                    molecule=Molecule(
+                        strandedness=Strandedness.SINGLE,
+                        type=MolType.RNA,
+                        topology=Topology.LINEAR,
+                    ),
+                    name="Tobacco mosaic virus",
+                    plan=Plan.new(
+                        segments=[
+                            Segment.new(
+                                length=150,
+                                length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                                name=None,
+                            )
+                        ]
+                    ),
+                    taxid=12242,
+                )
 
-        with pytest.raises(
-            ValueError,
-            match="An OTU with the name 'Tobacco mosaic virus' already exists",
-        ):
+            with (
+                empty_repo.use_transaction(),
+                pytest.raises(
+                    ValueError,
+                    match="An OTU with the name 'Tobacco mosaic virus' already exists",
+                ),
+            ):
+                empty_repo.create_otu(
+                    acronym="TMV",
+                    legacy_id=None,
+                    molecule=Molecule(
+                        strandedness=Strandedness.SINGLE,
+                        type=MolType.RNA,
+                        topology=Topology.LINEAR,
+                    ),
+                    name="Tobacco mosaic virus",
+                    plan=Plan.new(
+                        segments=[
+                            Segment.new(
+                                length=150,
+                                length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                                name=None,
+                            )
+                        ]
+                    ),
+                    taxid=438782,
+                )
+
+    def test_duplicate_legacy_id(self, empty_repo: Repo):
+        """Test that creating an OTU with a legacy ID that already exists raises a
+        ``ValueError``.
+        """
+        with empty_repo.lock(), empty_repo.use_transaction():
             empty_repo.create_otu(
                 acronym="TMV",
-                legacy_id=None,
+                legacy_id="abcd1234",
                 molecule=Molecule(
                     strandedness=Strandedness.SINGLE,
                     type=MolType.RNA,
@@ -251,37 +285,16 @@ class TestCreateOTU:
                         )
                     ]
                 ),
-                taxid=438782,
+                taxid=12242,
             )
 
-    def test_duplicate_legacy_id(self, empty_repo: Repo):
-        """Test that creating an OTU with a legacy ID that already exists raises a
-        ``ValueError``.
-        """
-        otu = empty_repo.create_otu(
-            acronym="TMV",
-            legacy_id="abcd1234",
-            molecule=Molecule(
-                strandedness=Strandedness.SINGLE,
-                type=MolType.RNA,
-                topology=Topology.LINEAR,
+        with (
+            pytest.raises(
+                ValueError,
+                match="An OTU with the legacy ID 'abcd1234' already exists",
             ),
-            name="Tobacco mosaic virus",
-            plan=Plan.new(
-                segments=[
-                    Segment.new(
-                        length=150,
-                        length_tolerance=empty_repo.settings.default_segment_length_tolerance,
-                        name=None,
-                    )
-                ]
-            ),
-            taxid=12242,
-        )
-
-        with pytest.raises(
-            ValueError,
-            match="An OTU with the legacy ID 'abcd1234' already exists",
+            empty_repo.lock(),
+            empty_repo.use_transaction(),
         ):
             empty_repo.create_otu(
                 acronym="",
@@ -314,11 +327,12 @@ class TestCreateIsolate:
         """
         otu = init_otu(empty_repo)
 
-        isolate = empty_repo.create_isolate(
-            otu.id,
-            None,
-            IsolateName(IsolateNameType.ISOLATE, "A"),
-        )
+        with empty_repo.lock(), empty_repo.use_transaction():
+            isolate = empty_repo.create_isolate(
+                otu.id,
+                None,
+                IsolateName(IsolateNameType.ISOLATE, "A"),
+            )
 
         assert isinstance(isolate.id, UUID)
         assert isolate.sequences == []
@@ -350,15 +364,20 @@ class TestCreateIsolate:
         """Test that a ValueError is raised if an isolate name is already taken."""
         otu = init_otu(empty_repo)
 
-        empty_repo.create_isolate(
-            otu.id,
-            None,
-            IsolateName(IsolateNameType.ISOLATE, "A"),
-        )
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.create_isolate(
+                otu.id,
+                None,
+                IsolateName(IsolateNameType.ISOLATE, "A"),
+            )
 
-        with pytest.raises(
-            ValueError,
-            match="Isolate name already exists: Isolate A",
+        with (
+            empty_repo.lock(),
+            empty_repo.use_transaction(),
+            pytest.raises(
+                ValueError,
+                match="Isolate name already exists: Isolate A",
+            ),
         ):
             empty_repo.create_isolate(
                 otu.id,
@@ -372,11 +391,12 @@ class TestCreateIsolate:
         """
         otu = init_otu(empty_repo)
 
-        isolate = empty_repo.create_isolate(
-            otu.id,
-            None,
-            None,
-        )
+        with empty_repo.lock(), empty_repo.use_transaction():
+            isolate = empty_repo.create_isolate(
+                otu.id,
+                None,
+                None,
+            )
 
         assert isinstance(isolate.id, UUID)
         assert isolate.sequences == []
@@ -389,14 +409,15 @@ def test_create_sequence(empty_repo: Repo):
     """
     otu = init_otu(empty_repo)
 
-    sequence = empty_repo.create_sequence(
-        otu.id,
-        "TMVABC.1",
-        "TMV",
-        None,
-        otu.plan.segments[0].id,
-        "ACGT",
-    )
+    with empty_repo.lock(), empty_repo.use_transaction():
+        sequence = empty_repo.create_sequence(
+            otu.id,
+            "TMVABC.1",
+            "TMV",
+            None,
+            otu.plan.segments[0].id,
+            "ACGT",
+        )
 
     assert sequence is not None
 
@@ -438,8 +459,8 @@ class TestGetOTU:
     """Test the retrieval of OTU data."""
 
     def test_ok(self, empty_repo: Repo):
-        """Test that getting an OTU returns the expected ``RepoOTU`` object including two
-        isolates with one sequence each.
+        """Test that getting an OTU returns the expected ``RepoOTU`` object including
+        two isolates with one sequence each.
         """
         monopartite_plan = Plan.new(
             segments=[
@@ -451,56 +472,63 @@ class TestGetOTU:
             ]
         )
 
-        otu = empty_repo.create_otu(
-            acronym="TMV",
-            legacy_id=None,
-            molecule=Molecule(
-                strandedness=Strandedness.SINGLE,
-                type=MolType.RNA,
-                topology=Topology.LINEAR,
-            ),
-            name="Tobacco mosaic virus",
-            taxid=12242,
-            plan=monopartite_plan,
-        )
+        with empty_repo.lock():
+            with empty_repo.use_transaction():
+                otu = empty_repo.create_otu(
+                    acronym="TMV",
+                    legacy_id=None,
+                    molecule=Molecule(
+                        strandedness=Strandedness.SINGLE,
+                        type=MolType.RNA,
+                        topology=Topology.LINEAR,
+                    ),
+                    name="Tobacco mosaic virus",
+                    taxid=12242,
+                    plan=monopartite_plan,
+                )
 
-        segment_id = otu.plan.segments[0].id
+            segment_id = otu.plan.segments[0].id
 
-        sequence_1 = empty_repo.create_sequence(
-            otu.id,
-            "TMVABC.1",
-            "TMV",
-            None,
-            segment_id,
-            "ACGT",
-        )
+            with empty_repo.use_transaction():
+                sequence_1 = empty_repo.create_sequence(
+                    otu.id,
+                    "TMVABC.1",
+                    "TMV",
+                    None,
+                    segment_id,
+                    "ACGT",
+                )
 
-        isolate_a = empty_repo.create_isolate(
-            otu.id,
-            None,
-            IsolateName(IsolateNameType.ISOLATE, "A"),
-        )
+                isolate_a = empty_repo.create_isolate(
+                    otu.id,
+                    None,
+                    IsolateName(IsolateNameType.ISOLATE, "A"),
+                )
 
-        empty_repo.link_sequence(otu.id, isolate_a.id, sequence_id=sequence_1.id)
+                empty_repo.link_sequence(
+                    otu.id, isolate_a.id, sequence_id=sequence_1.id
+                )
 
-        sequence_2 = empty_repo.create_sequence(
-            otu.id,
-            "TMVABCB.1",
-            "TMV",
-            None,
-            segment_id,
-            "ACGTGGAGAGACC",
-        )
+                sequence_2 = empty_repo.create_sequence(
+                    otu.id,
+                    "TMVABCB.1",
+                    "TMV",
+                    None,
+                    segment_id,
+                    "ACGTGGAGAGACC",
+                )
 
-        isolate_b = empty_repo.create_isolate(
-            otu.id,
-            None,
-            IsolateName(IsolateNameType.ISOLATE, "B"),
-        )
+                isolate_b = empty_repo.create_isolate(
+                    otu.id,
+                    None,
+                    IsolateName(IsolateNameType.ISOLATE, "B"),
+                )
 
-        empty_repo.link_sequence(otu.id, isolate_b.id, sequence_id=sequence_2.id)
+                empty_repo.link_sequence(
+                    otu.id, isolate_b.id, sequence_id=sequence_2.id
+                )
 
-        otu = empty_repo.get_otu(otu.id)
+            otu = empty_repo.get_otu(otu.id)
 
         otu_contents = [
             RepoIsolate(
@@ -557,7 +585,7 @@ class TestGetOTU:
                             length=150,
                             length_tolerance=empty_repo.settings.default_segment_length_tolerance,
                             name=None,
-                            required=SegmentRule.REQUIRED,
+                            rule=SegmentRule.REQUIRED,
                         )
                     ],
                 ),
@@ -573,33 +601,8 @@ class TestGetOTU:
         assert initialized_repo.get_otu(uuid4()) is None
 
     def test_accessions(self, initialized_repo: Repo):
-        """Test that the `accessions` property returns the expected set of
-        accessions.
-        """
-        otu = next(initialized_repo.iter_otus())
-
-        assert otu.accessions == {"TMVABC"}
-
-        sequence_2 = initialized_repo.create_sequence(
-            otu.id,
-            "TMVABCB.1",
-            "TMV",
-            None,
-            otu.plan.segments[0].id,
-            "ACGTGGAGAGACC",
-        )
-
-        isolate_b = initialized_repo.create_isolate(
-            otu.id,
-            None,
-            IsolateName(type=IsolateNameType.ISOLATE, value="B"),
-        )
-
-        initialized_repo.link_sequence(otu.id, isolate_b.id, sequence_id=sequence_2.id)
-
-        otu = next(initialized_repo.iter_otus())
-
-        assert otu.accessions == {"TMVABC", "TMVABCB"}
+        """Test that the `accessions` property returns the expected accessions."""
+        assert next(initialized_repo.iter_otus()).accessions == {"TMVABC"}
 
     def test_blocked_accessions(self, initialized_repo: Repo):
         """Test that the `blocked_accessions` property returns the expected set of
@@ -607,42 +610,44 @@ class TestGetOTU:
         """
         otu = initialized_repo.get_otu_by_taxid(12242)
 
-        sequence_2 = initialized_repo.create_sequence(
-            otu.id,
-            "TMVABCB.1",
-            "TMV",
-            None,
-            otu.plan.segments[0].id,
-            "ACGTGGAGAGACC",
-        )
+        with initialized_repo.lock(), initialized_repo.use_transaction():
+            sequence = initialized_repo.create_sequence(
+                otu.id,
+                "TMVABCB.1",
+                "TMV",
+                None,
+                otu.plan.segments[0].id,
+                "ACGTGGAGAGACC",
+            )
 
-        isolate_b = initialized_repo.create_isolate(
-            otu.id,
-            None,
-            IsolateName(type=IsolateNameType.ISOLATE, value="B"),
-        )
+            isolate = initialized_repo.create_isolate(
+                otu.id,
+                None,
+                IsolateName(type=IsolateNameType.ISOLATE, value="B"),
+            )
 
-        initialized_repo.link_sequence(otu.id, isolate_b.id, sequence_id=sequence_2.id)
+            initialized_repo.link_sequence(otu.id, isolate.id, sequence_id=sequence.id)
 
-        initialized_repo.exclude_accession(otu.id, "GROK")
-        initialized_repo.exclude_accession(otu.id, "TOK")
+            initialized_repo.exclude_accession(otu.id, "GROK")
+            initialized_repo.exclude_accession(otu.id, "TOK")
 
-        otu = initialized_repo.get_otu(otu.id)
-
-        assert otu.blocked_accessions == {"TMVABC", "TMVABCB", "GROK", "TOK"}
+        assert initialized_repo.get_otu(otu.id).blocked_accessions == {
+            "TMVABC",
+            "TMVABCB",
+            "GROK",
+            "TOK",
+        }
 
 
 class TestGetIsolate:
-    def test_get_isolate(self, initialized_repo: Repo):
+    def test_by_id(self, initialized_repo: Repo):
         """Test that getting an isolate returns the expected ``RepoIsolate`` object."""
         otu = next(initialized_repo.iter_otus())
 
-        isolate_ids = {isolate.id for isolate in otu.isolates}
+        for isolate in otu.isolates:
+            assert otu.get_isolate(isolate.id) in otu.isolates
 
-        for isolate_id in isolate_ids:
-            assert otu.get_isolate(isolate_id) in otu.isolates
-
-    def test_get_isolate_id_by_name(self, initialized_repo: Repo):
+    def test_by_name(self, initialized_repo: Repo):
         """Test that getting an isolate ID by name returns the expected ID."""
         otu = next(initialized_repo.iter_otus())
 
@@ -661,26 +666,28 @@ class TestGetIsolate:
 
         isolate_before = otu.isolates[0]
 
-        sequence_1_1 = initialized_repo.create_sequence(
-            otu.id,
-            accession="EMPTY1.1",
-            definition="TMV B",
-            legacy_id=None,
-            segment=otu.plan.segments[0].id,
-            sequence="GACCACGTGGAGA",
-        )
+        with initialized_repo.lock():
+            with initialized_repo.use_transaction():
+                sequence = initialized_repo.create_sequence(
+                    otu.id,
+                    accession="EMPTY1.1",
+                    definition="TMV B",
+                    legacy_id=None,
+                    segment=otu.plan.segments[0].id,
+                    sequence="GACCACGTGGAGA",
+                )
 
-        isolate_unnamed = initialized_repo.create_isolate(
-            otu.id,
-            None,
-            None,
-        )
+                isolate_unnamed = initialized_repo.create_isolate(
+                    otu.id,
+                    None,
+                    None,
+                )
 
-        initialized_repo.link_sequence(
-            otu.id, isolate_unnamed.id, sequence_id=sequence_1_1.id
-        )
+                initialized_repo.link_sequence(
+                    otu.id, isolate_unnamed.id, sequence_id=sequence.id
+                )
 
-        otu_after = next(initialized_repo.iter_otus())
+            otu_after = next(initialized_repo.iter_otus())
 
         assert len(otu_after.isolate_ids) == len(otu.isolate_ids) + 1
         assert otu_after.accessions == {"TMVABC", "EMPTY1"}
@@ -696,18 +703,16 @@ class TestExcludeAccessions:
     """Test that accessions can be excluded from future fetches."""
 
     def test_ok(self, empty_repo: Repo):
-        otu_init = init_otu(empty_repo)
+        otu = init_otu(empty_repo)
 
-        assert not otu_init.excluded_accessions
+        assert otu.excluded_accessions == set()
 
-        mock_accessions = {"TM100021", "TM100022", "TM100023"}
+        accessions = {"TM100021", "TM100022", "TM100023"}
 
-        empty_repo.exclude_accessions(otu_init.id, mock_accessions)
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.exclude_accessions(otu.id, accessions)
 
-        otu_first_exclusion = empty_repo.get_otu(otu_init.id)
-
-        assert otu_first_exclusion.excluded_accessions == mock_accessions
-
+        assert empty_repo.get_otu(otu.id).excluded_accessions == accessions
         assert empty_repo.last_id == 3
 
         with open(empty_repo.path / "src" / f"{empty_repo.last_id:08}.json") as f:
@@ -722,39 +727,37 @@ class TestExcludeAccessions:
             },
             "id": 3,
             "query": {
-                "otu_id": str(otu_first_exclusion.id),
+                "otu_id": str(otu.id),
             },
             "type": "UpdateExcludedAccessions",
         }
 
-        empty_repo.exclude_accessions(otu_init.id, {"TM100024"})
-
-        otu_second_exclusion = empty_repo.get_otu(otu_init.id)
-
-        assert (
-            otu_second_exclusion.excluded_accessions
-            == otu_first_exclusion.excluded_accessions | {"TM100024"}
-        )
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.exclude_accessions(otu.id, {"TM100024"})
 
         assert empty_repo.last_id == 4
+        assert empty_repo.get_otu(otu.id).excluded_accessions == accessions | {
+            "TM100024"
+        }
 
-    def test_extant_fail(self, initialized_repo: Repo):
-        """Test that an extant accession cannot be added to the excluded accessions."""
-        otu_before = initialized_repo.get_otu_by_taxid(12242)
-
+    def test_exists(self, initialized_repo: Repo):
+        """Test that an accession the exists in an OTU sequence cannot be added to the
+        excluded accessions.
+        """
         assert initialized_repo.last_id == 5
 
-        assert otu_before.excluded_accessions == set()
+        with initialized_repo.lock():
+            otu = initialized_repo.get_otu_by_taxid(12242)
 
-        extant_accession = next(iter(otu_before.accessions))
+            assert otu.excluded_accessions == set()
 
-        initialized_repo.exclude_accessions(otu_before.id, {extant_accession})
+            accession = next(iter(otu.accessions))
 
-        otu_after = initialized_repo.get_otu_by_taxid(12242)
+            with initialized_repo.use_transaction():
+                initialized_repo.exclude_accessions(otu.id, {f"{accession}.1"})
 
-        assert otu_after.excluded_accessions == set()
-
-        assert initialized_repo.last_id == 5
+            assert initialized_repo.last_id == 5
+            assert initialized_repo.get_otu_by_taxid(12242).excluded_accessions == set()
 
         with open(
             initialized_repo.path / "src" / f"{initialized_repo.last_id:08}.json"
@@ -763,54 +766,53 @@ class TestExcludeAccessions:
 
         assert event["type"] != "UpdateExcludedAccessions"
 
-    def test_already_excluded_fail(self, empty_repo):
-        """Test that an attempted redundant exclusion does not create a new event."""
+    def test_already_excluded(self, empty_repo: Repo):
+        """Test that an attempted redundant exclusion does not create a new `event."""
         otu_id = init_otu(empty_repo).id
 
-        assert not empty_repo.get_otu(otu_id).excluded_accessions
+        accessions = {"TM100021", "TM100022", "TM100023"}
 
-        mock_accessions = {"TM100021", "TM100022", "TM100023"}
+        with empty_repo.lock():
+            assert empty_repo.get_otu(otu_id).excluded_accessions == set()
 
-        empty_repo.exclude_accessions(otu_id, mock_accessions)
+            with empty_repo.use_transaction():
+                empty_repo.exclude_accessions(otu_id, accessions)
+
+            assert empty_repo.last_id == 3
+
+            with empty_repo.use_transaction():
+                empty_repo.exclude_accessions(otu_id, {"TM100021"})
+
+            assert empty_repo.get_otu(otu_id).excluded_accessions == accessions
 
         assert empty_repo.last_id == 3
 
-        assert empty_repo.path.joinpath("src", "00000003.json").exists()
-
-        empty_repo.exclude_accessions(otu_id, {"TM100021"})
-
-        otu_before = empty_repo.get_otu(otu_id)
-
-        assert otu_before.excluded_accessions == mock_accessions
-
-        assert empty_repo.last_id == 3
-
-        assert not empty_repo.path.joinpath("src", "00000004.json").exists()
-
-    def test_already_excluded_partial_ok(self, empty_repo):
-        """Test that a partially redundant list of exclusions creates
-        a new event with the redundant accession omitted."""
+    def test_partially_already_excluded(self, empty_repo: Repo):
+        """Test that a partially redundant list of exclusions creates a new event with
+        the redundant accession omitted.
+        """
         otu_id = init_otu(empty_repo).id
 
-        mock_accessions = {"TM100021", "TM100022", "TM100023"}
+        accessions = {"TM100021", "TM100022", "TM100023"}
 
-        empty_repo.exclude_accessions(otu_id, mock_accessions)
+        with empty_repo.lock():
+            with empty_repo.use_transaction():
+                empty_repo.exclude_accessions(otu_id, accessions)
 
-        assert empty_repo.last_id == 3
+            otu_before = empty_repo.get_otu(otu_id)
 
-        otu_before = empty_repo.get_otu(otu_id)
+            assert empty_repo.last_id == 3
+            assert otu_before.excluded_accessions == accessions
 
-        assert otu_before.excluded_accessions == mock_accessions
+            with empty_repo.use_transaction():
+                empty_repo.exclude_accessions(otu_id, {"TM100023", "TM100024"})
 
-        empty_repo.exclude_accessions(otu_id, {"TM100023", "TM100024"})
+            otu_after = empty_repo.get_otu(otu_id)
 
-        otu_after = empty_repo.get_otu(otu_id)
-
-        assert otu_after.excluded_accessions == otu_before.excluded_accessions | {
-            "TM100024"
-        }
-
-        assert empty_repo.last_id == 4
+            assert empty_repo.last_id == 4
+            assert otu_after.excluded_accessions == otu_before.excluded_accessions | {
+                "TM100024"
+            }
 
         with open(
             empty_repo.path.joinpath("src", f"{empty_repo.last_id:08}.json")
@@ -843,17 +845,18 @@ class TestAllowAccessions:
         """
         otu = init_otu(empty_repo)
 
-        mock_accessions = {"TM100021", "TM100022", "TM100023"}
+        accessions = {"TM100021", "TM100022", "TM100023"}
 
-        empty_repo.exclude_accessions(otu.id, mock_accessions)
+        with empty_repo.lock():
+            with empty_repo.use_transaction():
+                empty_repo.exclude_accessions(otu.id, accessions)
 
-        otu_before = empty_repo.get_otu(otu.id)
+            assert empty_repo.get_otu(otu.id).excluded_accessions == accessions
 
-        assert otu_before.excluded_accessions == mock_accessions
+            with empty_repo.use_transaction():
+                empty_repo.allow_accessions(otu.id, ["TM100021", "TM100022"])
 
-        empty_repo.allow_accessions(otu.id, ["TM100021", "TM100022"])
-
-        otu_after = empty_repo.get_otu(otu.id)
+            otu_after = empty_repo.get_otu(otu.id)
 
         with open(empty_repo.path.joinpath("src", "00000004.json")) as f:
             event = orjson.loads(f.read())
@@ -880,45 +883,48 @@ class TestAllowAccessions:
         """
         otu = init_otu(empty_repo)
 
-        mock_accessions = {"TM100021", "TM100022", "TM100023"}
+        accessions = {"TM100021", "TM100022", "TM100023"}
 
-        empty_repo.exclude_accessions(otu.id, mock_accessions)
+        with empty_repo.lock():
+            with empty_repo.use_transaction():
+                empty_repo.exclude_accessions(otu.id, accessions)
 
-        otu_before = empty_repo.get_otu(otu.id)
+            assert empty_repo.get_otu(otu.id).excluded_accessions == accessions
 
-        assert otu_before.excluded_accessions == mock_accessions
+            with empty_repo.use_transaction():
+                empty_repo.allow_accessions(otu.id, ["TM100024"])
 
-        empty_repo.allow_accessions(otu.id, ["TM100024"])
+            assert empty_repo.get_otu(otu.id).excluded_accessions == accessions
 
-        otu_after = empty_repo.get_otu(otu.id)
+            with empty_repo.use_transaction():
+                empty_repo.allow_accessions(otu.id, accessions)
+
+            otu_after = empty_repo.get_otu(otu.id).excluded_accessions == set()
 
         assert not empty_repo.path.joinpath("src", "00000005.json").exists()
-
-        assert otu_after.excluded_accessions == mock_accessions
 
 
 def test_delete_isolate(initialized_repo: Repo):
     """Test that an isolate can be redacted from an OTU."""
-    otu_before = next(initialized_repo.iter_otus())
+    with initialized_repo.lock():
+        otu_before = next(initialized_repo.iter_otus())
 
-    otu_id = otu_before.id
+        otu_id = otu_before.id
 
-    isolate_before = next(iter(otu_before.isolates))
+        isolate_before = next(iter(otu_before.isolates))
 
-    initialized_repo.delete_isolate(
-        otu_id,
-        isolate_before.id,
-        rationale="Testing redaction",
-    )
+        with initialized_repo.use_transaction():
+            initialized_repo.delete_isolate(
+                otu_id,
+                isolate_before.id,
+                rationale="Testing redaction",
+            )
 
-    otu_after = initialized_repo.get_otu(otu_id)
+        otu_after = initialized_repo.get_otu(otu_id)
 
     assert otu_before != otu_after
-
     assert len(otu_after.isolates) == len(otu_before.isolates) - 1
-
     assert isolate_before.id not in otu_after.isolate_ids
-
     assert isolate_before.accessions not in otu_after.accessions
 
 
@@ -934,24 +940,27 @@ def test_replace_sequence(initialized_repo: Repo):
         otu_before.get_sequence_id_hierarchy_from_accession(accession)
     )
 
-    new_sequence = initialized_repo.create_sequence(
-        otu_before.id,
-        "TMVABCC.1",
-        "TMV edit",
-        None,
-        otu_before.plan.segments[0].id,
-        "ACGTGGAGAGACCA",
-    )
+    with initialized_repo.lock():
+        with initialized_repo.use_transaction():
+            new_sequence = initialized_repo.create_sequence(
+                otu_before.id,
+                "TMVABCC.1",
+                "TMV edit",
+                None,
+                otu_before.plan.segments[0].id,
+                "ACGTGGAGAGACCA",
+            )
 
-    initialized_repo.replace_sequence(
-        otu_id=otu_before.id,
-        isolate_id=isolate_id,
-        sequence_id=new_sequence.id,
-        replaced_sequence_id=replaced_sequence_id,
-        rationale="Testing sequence redaction",
-    )
+        with initialized_repo.use_transaction():
+            initialized_repo.replace_sequence(
+                otu_id=otu_before.id,
+                isolate_id=isolate_id,
+                sequence_id=new_sequence.id,
+                replaced_sequence_id=replaced_sequence_id,
+                rationale="Testing sequence redaction",
+            )
 
-    otu_after = initialized_repo.get_otu(otu_before.id)
+        otu_after = initialized_repo.get_otu(otu_before.id)
 
     assert otu_after.get_sequence_by_id(new_sequence.id) is not None
     assert otu_after.get_sequence_by_id(replaced_sequence_id) is None
@@ -988,7 +997,8 @@ class TestMalformedEvent:
         with open(path, "rb") as f:
             event = orjson.loads(f.read())
 
-        otu = initialized_repo.get_otu_by_taxid(12242)
+        with initialized_repo.lock():
+            otu = initialized_repo.get_otu_by_taxid(12242)
 
         assert type(otu) is RepoOTU
 
@@ -997,8 +1007,11 @@ class TestMalformedEvent:
         with open(path, "wb") as f:
             f.write(orjson.dumps(event))
 
-        with pytest.raises(
-            ValueError,
-            match="Input should be a valid integer, unable to parse string",
+        with (
+            initialized_repo.lock(),
+            pytest.raises(
+                ValueError,
+                match="Input should be a valid integer, unable to parse string",
+            ),
         ):
             initialized_repo.get_otu_by_taxid(12242)
