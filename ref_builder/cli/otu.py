@@ -103,7 +103,7 @@ def otu_create(
     help="Output in JSON form",
 )
 @pass_repo
-def otu_get(repo: Repo, identifier: str) -> None:
+def otu_get(repo: Repo, identifier: str, as_json: bool) -> None:
     """Get an OTU by its unique ID or taxonomy ID."""
     try:
         identifier = int(identifier)
