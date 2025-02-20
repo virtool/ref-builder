@@ -191,7 +191,7 @@ def group_genbank_records_by_isolate(
     isolates = defaultdict(dict)
 
     for record in records:
-        isolate_name = _get_isolate_name(record)
+        isolate_name = _extract_isolate_name_from_record(record)
         if isolate_name is None:
             # Assume this is a monopartite OTU and do not group.
             continue
