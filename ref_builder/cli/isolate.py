@@ -5,6 +5,7 @@ from uuid import UUID
 import click
 
 from ref_builder.cli.utils import pass_repo
+from ref_builder.console import print_isolate, print_isolate_as_json
 from ref_builder.cli.validate import validate_no_duplicate_accessions
 from ref_builder.options import ignore_cache_option, path_option
 from ref_builder.otu.isolate import (
@@ -149,3 +150,50 @@ def isolate_delete(repo: Repo, identifier: str) -> None:
     delete_isolate_from_otu(repo, otu_, isolate_id)
 
     click.echo("Isolate deleted.")
+
+
+@isolate.command(name="get")
+@click.argument("IDENTIFIER", type=str)
+@click.option(
+    "--as-json",
+    "--json",
+    metavar="JSON",
+    is_flag=True,
+    help="Output in JSON form",
+)
+@pass_repo
+def isolate_get(repo: Repo, identifier: str, as_json: bool) -> None:
+    """Get an isolate with a UUID corresponding to IDENTIFIER.
+
+    IDENTIFIER is an unique isolate ID (>8 characters)
+    """
+    isolate_id = None
+    try:
+        isolate_id = UUID(identifier)
+    except ValueError:
+        pass
+
+    if isolate_id is None:
+        try:
+            isolate_id = repo.get_isolate_id_by_partial(identifier)
+
+        except ValueError as e:
+            click.echo(e, err=True)
+            sys.exit(1)
+
+    if isolate_id is None:
+        click.echo("Isolate could not be found.", err=True)
+        sys.exit(1)
+
+    otu_ = repo.get_otu(repo.get_otu_id_by_isolate_id(isolate_id))
+
+    isolate_ = otu_.get_isolate(isolate_id)
+
+    if isolate_ is None:
+        click.echo("Isolate could not be found.", err=True)
+        sys.exit(1)
+
+    if as_json:
+        print_isolate_as_json(isolate_)
+    else:
+        print_isolate(isolate_, otu_.plan)
