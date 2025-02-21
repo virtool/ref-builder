@@ -218,6 +218,25 @@ class Index:
 
         return None
 
+    def get_isolate_id_by_partial(self, partial: str) -> UUID | None:
+        """Get an isolate ID beginning with a truncated ``partial`` string."""
+        if partial == "":
+            raise ValueError("Empty partial given.")
+
+        result = self.con.execute(
+            "SELECT id FROM isolates WHERE id LIKE ?",
+            (f"{partial}%",),
+        )
+
+        otu_ids = [row[0] for row in result]
+
+        if otu_ids:
+            if len(otu_ids) > 1:
+                raise ValueError("Found more than one result, need longer partial.")
+            return UUID(otu_ids[0])
+
+        return None
+
     def delete_otu(self, otu_id: UUID) -> None:
         """Remove an OTU from the index.
 
