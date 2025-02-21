@@ -110,31 +110,42 @@ def isolate_create(
 
 
 @isolate.command(name="delete")  # type: ignore
-@click.option("--taxid", type=int, required=True)
-@click.argument("ISOLATE_KEY", type=str)
+@click.argument("IDENTIFIER", type=str)
 @pass_repo
-def isolate_delete(repo: Repo, isolate_key: str, taxid: int) -> None:
-    """Delete isolate."""
-    otu_ = repo.get_otu_by_taxid(taxid)
+def isolate_delete(repo: Repo, identifier: str) -> None:
+    """Delete an isolate with a UUID corresponding to IDENTIFIER.
 
-    if otu_ is None:
-        click.echo(f"OTU {taxid} not found.", err=True)
-        sys.exit(1)
-
+    IDENTIFIER is an unique isolate ID (>8 characters)
+    """
+    isolate_id = None
     try:
-        isolate_id = UUID(isolate_key)
+        isolate_id = UUID(identifier)
     except ValueError:
-        parts = isolate_key.split(" ")
-        try:
-            isolate_name = IsolateName(IsolateNameType(parts[0].lower()), parts[1])
-        except ValueError:
-            click.echo(f'Error: "{isolate_key}" is not a valid isolate name.', err=True)
-            sys.exit(1)
-
-        isolate_id = otu_.get_isolate_id_by_name(isolate_name)
+        pass
 
     if isolate_id is None:
-        click.echo("Isolate could not be found in this OTU.", err=True)
+        try:
+            isolate_id = repo.get_isolate_id_by_partial(identifier)
+
+        except InvalidInputError:
+            click.echo("Partial ID segment must be at least 8 characters long.", err=True)
+            sys.exit(1)
+
+        except PartialIDConflictError as e:
+            click.echo(e, err=True)
+
+    if isolate_id is None:
+        click.echo("Isolate could not be found.", err=True)
+        sys.exit(1)
+
+    if (otu_id := repo.get_otu_id_by_isolate_id(isolate_id)) is None:
+        click.echo(f"The containing OTU could not be found.", err=True)
+        sys.exit(1)
+
+    if (otu_ := repo.get_otu(otu_id)) is None:
+        click.echo(f"OTU not found.", err=True)
         sys.exit(1)
 
     delete_isolate_from_otu(repo, otu_, isolate_id)
+
+    click.echo("Isolate deleted.")
