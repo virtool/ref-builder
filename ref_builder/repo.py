@@ -753,6 +753,20 @@ class Repo:
         """
         return self._index.get_id_by_taxid(taxid)
 
+    def get_isolate_id_by_partial(self, partial: str) -> uuid.UUID | None:
+        """Return the UUID of the isolate starting with the given ``partial`` string.
+        Raise a ValueErrror if more than one matching isolate id is found.
+        If no isolate is found, return None.
+
+        :param partial: a partial segment of the isolate id with a minimum length of 8
+        :return: the UUID of the isolate or ``None``
+
+        """
+        if len(partial) < 8:
+            raise ValueError("Isolate ID partial length < 8.")
+
+        return self._index.get_isolate_id_by_partial(partial)
+
     def _rehydrate_otu(self, events: Iterator[Event]) -> RepoOTU:
         event = next(events)
 
