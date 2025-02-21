@@ -106,6 +106,45 @@ class TestOTU:
         assert otu.get_isolate(isolate_id) is not None
         assert otu.get_sequence_by_id(sequence_id) is not None
 
+    def test_check_get_sequence_by_id_integrity(self, scratch_repo: Repo):
+        """Test that RepoOTU.get_sequence() can retrieve every sequence ID
+        within each constituent isolate from its own private index.
+        """
+
+        otu_ = RepoOTU(**OTUFactory.build().model_dump())
+
+        for i in range(10):
+            isolate = RepoIsolate(
+                **IsolateFactory.build_on_plan(otu_.plan).model_dump()
+            )
+            otu_.add_isolate(isolate)
+
+        sequence_ids_in_isolates = {
+            sequence.id for isolate in otu_.isolates for sequence in isolate.sequences
+        }
+
+        for sequence_id in sequence_ids_in_isolates:
+            assert otu_.get_sequence_by_id(sequence_id) is not None
+
+    def test_check_get_sequence_by_accession_integrity(self, scratch_repo: Repo):
+        """Test that RepoOTU.get_sequence() can retrieve every accession
+        within each constituent isolate.
+        """
+
+        otu_ = RepoOTU(**OTUFactory.build().model_dump())
+
+        for i in range(10):
+            isolate = RepoIsolate(
+                **IsolateFactory.build_on_plan(otu_.plan).model_dump()
+            )
+            otu_.add_isolate(isolate)
+
+        for isolate in otu_.isolates:
+            for sequence in isolate.sequences:
+                assert (
+                    otu_.get_sequence_by_accession(sequence.accession.key) == sequence
+                )
+
     def test_otu_delete_isolate(self):
         """Test that RepoOTU.delete_isolate() does not affect other isolates."""
 
