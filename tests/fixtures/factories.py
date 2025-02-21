@@ -295,6 +295,15 @@ class IsolateFactory(ModelFactory[IsolateBase]):
             for accession in cls.__faker__.accessions(sequence_count)
         ]
 
+    @staticmethod
+    def build_on_plan(plan: Plan):
+        """Take a plan and return a matching isolate."""
+        return IsolateFactory.build(
+            sequences=[
+                SequenceFactory.build(segment=segment.id) for segment in plan.segments
+            ]
+        )
+
 
 class OTUFactory(ModelFactory[OTUBase]):
     """OTU Factory with quasi-realistic data."""
