@@ -2,12 +2,19 @@ import pytest
 from faker import Faker
 from syrupy import SnapshotAssertion
 
-from ref_builder.console import console, print_otu_as_json, print_otu, print_otu_list
+from ref_builder.console import (
+    console,
+    print_isolate,
+    print_isolate_as_json,
+    print_otu,
+    print_otu_as_json,
+    print_otu_list,
+)
 from ref_builder.models import Molecule, MolType, OTUMinimal, Strandedness, Topology
 from ref_builder.plan import Plan, Segment, SegmentName, SegmentRule
 from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
-from tests.fixtures.factories import OTUMinimalFactory
+from tests.fixtures.factories import OTUMinimalFactory, IsolateFactory
 from tests.fixtures.providers import AccessionProvider, SequenceProvider
 
 
@@ -31,6 +38,90 @@ class TestPrintOTUList:
             print_otu_list(OTUMinimal(**otu) for otu in [])
 
         assert capture.get() == "No OTUs found\n"
+
+
+class TestPrintIsolate:
+    """Test isolate console output."""
+
+    def test_ok(self, snapshot: SnapshotAssertion):
+        """Test that an isolate is printed as expected by ``print_isolate``."""
+        fake = Faker(["en_US"])
+        fake.add_provider(AccessionProvider)
+        fake.add_provider(SequenceProvider)
+        fake.seed_instance(8801)
+
+        plan = Plan.new(
+            [
+                Segment(
+                    id=fake.uuid4(),
+                    length=1099,
+                    length_tolerance=0.03,
+                    name=SegmentName("DNA", "R"),
+                    rule=SegmentRule.REQUIRED,
+                ),
+                Segment(
+                    id=fake.uuid4(),
+                    length=1074,
+                    length_tolerance=0.03,
+                    name=SegmentName("DNA", "M"),
+                    rule=SegmentRule.REQUIRED,
+                ),
+                Segment(
+                    id=fake.uuid4(),
+                    length=1087,
+                    length_tolerance=0.03,
+                    name=SegmentName("DNA", "S"),
+                    rule=SegmentRule.REQUIRED,
+                ),
+            ],
+        )
+
+        isolate = RepoIsolate(**IsolateFactory.build_on_plan(plan).model_dump())
+
+        with console.capture() as capture:
+            print_isolate(isolate, plan)
+
+        assert capture.get() == snapshot
+
+    def test_json_ok(self, snapshot: SnapshotAssertion):
+        """Test that an isolate is printed as expected by ``print_isolate_as_json``."""
+        fake = Faker(["en_US"])
+        fake.add_provider(AccessionProvider)
+        fake.add_provider(SequenceProvider)
+        fake.seed_instance(8801)
+
+        plan = Plan.new(
+            [
+                Segment(
+                    id=fake.uuid4(),
+                    length=1099,
+                    length_tolerance=0.03,
+                    name=SegmentName("DNA", "R"),
+                    rule=SegmentRule.REQUIRED,
+                ),
+                Segment(
+                    id=fake.uuid4(),
+                    length=1074,
+                    length_tolerance=0.03,
+                    name=SegmentName("DNA", "M"),
+                    rule=SegmentRule.REQUIRED,
+                ),
+                Segment(
+                    id=fake.uuid4(),
+                    length=1087,
+                    length_tolerance=0.03,
+                    name=SegmentName("DNA", "S"),
+                    rule=SegmentRule.REQUIRED,
+                ),
+            ],
+        )
+
+        isolate = RepoIsolate(**IsolateFactory.build_on_plan(plan).model_dump())
+
+        with console.capture() as capture:
+            print_isolate_as_json(isolate)
+
+        assert capture.get() == snapshot
 
 
 def test_print_otu(snapshot: SnapshotAssertion):
