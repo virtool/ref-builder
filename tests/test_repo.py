@@ -708,6 +708,15 @@ class TestGetIsolate:
         assert isolate_unnamed_after.accessions == {"EMPTY1"}
 
 
+def test_get_isolate_id_from_partial(initialized_repo: Repo):
+    """Test that an isolate id can be retrieved from a truncated ``partial`` string."""
+    otu = next(initialized_repo.iter_otus())
+
+    isolate = otu.isolates[0]
+
+    assert initialized_repo.get_isolate_id_by_partial(str(isolate.id)[:8]) == isolate.id
+
+
 class TestExcludeAccessions:
     """Test that accessions can be excluded from future fetches."""
 
