@@ -109,6 +109,73 @@ class TestIsolateCreateCommand:
         assert "Duplicate accessions are not allowed." in result.output
 
 
+class TestIsolateGetCommand:
+    """Test `ref-builder isolate get ISOLATE_ID`` works as expected."""
+
+    def test_ok(self, scratch_repo):
+        """Test basic command functionality."""
+        otu_id = scratch_repo.get_otu_id_by_taxid(1169032)
+
+        for isolate_id in scratch_repo.get_otu(otu_id).isolate_ids:
+            result = runner.invoke(
+                isolate_command_group,
+                [
+                    "--path",
+                    str(scratch_repo.path),
+                    "get",
+                    str(isolate_id),
+                ],
+            )
+
+            assert result.exit_code == 0
+
+    def test_partial_ok(self, scratch_repo):
+        """Test that a partial isolate ID can also be a valid identifier."""
+        otu_id = scratch_repo.get_otu_id_by_taxid(1169032)
+
+        for isolate_id in scratch_repo.get_otu(otu_id).isolate_ids:
+            result = runner.invoke(
+                isolate_command_group,
+                [
+                    "--path",
+                    str(scratch_repo.path),
+                    "get",
+                    str(isolate_id)[:8],
+                ],
+            )
+
+            assert result.exit_code == 0
+
+    def test_json_ok(self, scratch_repo):
+        otu_id = scratch_repo.get_otu_id_by_taxid(1169032)
+
+        for isolate_id in scratch_repo.get_otu(otu_id).isolate_ids:
+            result = runner.invoke(
+                isolate_command_group,
+                ["--path", str(scratch_repo.path), "get", str(isolate_id), "--json"],
+            )
+
+            assert result.exit_code == 0
+
+    def test_empty(self, scratch_repo):
+        """Test that an empty isolate identifier string exits with an error."""
+        result = runner.invoke(
+            isolate_command_group,
+            [
+                "--path",
+                str(scratch_repo.path),
+                "get",
+                "",
+            ],
+        )
+
+        assert result.exit_code == 1
+
+        print(result.output)
+
+        assert "Partial ID segment must be at least 8 characters long" in result.output
+
+
 class TestIsolateDeleteCommand:
     """Test `ref-builder isolate delete ISOLATE_ID`` works as expected."""
 
