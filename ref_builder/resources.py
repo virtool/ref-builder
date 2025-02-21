@@ -257,6 +257,9 @@ class RepoOTU(BaseModel):
         self.isolates.append(isolate)
         self._isolates_by_id[isolate.id] = isolate
 
+        for sequence in isolate.sequences:
+            self.add_sequence(sequence)
+
     def add_sequence(self, sequence: RepoSequence) -> None:
         """Add a sequence to a given isolate."""
         self._sequences_by_id[sequence.id] = sequence
