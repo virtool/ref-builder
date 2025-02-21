@@ -639,6 +639,15 @@ class TestGetOTU:
         }
 
 
+def test_get_otu_id_from_isolate_id(initialized_repo: Repo):
+    """Test that the OTU id can be retrieved from a isolate ID contained within."""
+    otu = next(initialized_repo.iter_otus())
+
+    isolate = otu.isolates[0]
+
+    assert initialized_repo.get_otu_id_by_isolate_id(isolate.id) == otu.id
+
+
 class TestGetIsolate:
     def test_by_id(self, initialized_repo: Repo):
         """Test that getting an isolate returns the expected ``RepoIsolate`` object."""
@@ -697,6 +706,15 @@ class TestGetIsolate:
 
         assert isolate_unnamed_after.name is None
         assert isolate_unnamed_after.accessions == {"EMPTY1"}
+
+
+def test_get_isolate_id_from_partial(initialized_repo: Repo):
+    """Test that an isolate id can be retrieved from a truncated ``partial`` string."""
+    otu = next(initialized_repo.iter_otus())
+
+    isolate = otu.isolates[0]
+
+    assert initialized_repo.get_isolate_id_by_partial(str(isolate.id)[:8]) == isolate.id
 
 
 class TestExcludeAccessions:
