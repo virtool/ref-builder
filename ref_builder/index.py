@@ -196,8 +196,10 @@ class Index:
         return None
 
     def get_id_by_partial(self, partial: str) -> UUID | None:
+        """Get an OTU ID by a truncated ``partial`` string."""
         result = self.con.execute(
-            f"SELECT id FROM otus WHERE id LIKE '{partial}%'",
+            "SELECT id FROM otus WHERE id LIKE ?",
+            (f"{partial}%",),
         )
 
         otu_ids = [row[0] for row in result]
