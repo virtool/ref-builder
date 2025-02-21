@@ -158,3 +158,14 @@ def test_get_id_by_isolate_id(index: Index, indexable_otus: list[RepoOTU]):
         first_isolate = next(iter(otu.isolate_ids))
 
         assert index.get_id_by_isolate_id(first_isolate) == otu.id
+
+
+def test_get_isolate_id_by_partial(index: Index, indexable_otus: list[RepoOTU]):
+    """Test the `get_isolate_id_by_partial` method of the Index class."""
+    for otu in indexable_otus:
+        first_isolate_id = next(iter(otu.isolate_ids))
+
+        assert (
+            index.get_isolate_id_by_partial(str(first_isolate_id)[:8])
+            == first_isolate_id
+        )
