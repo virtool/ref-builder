@@ -111,15 +111,6 @@ class RepoIsolate(BaseModel):
         """Add a sequence to the isolate."""
         self.sequences.append(sequence)
 
-    def replace_sequence(
-        self,
-        sequence: RepoSequence,
-        replaced_sequence_id: UUID,
-    ) -> None:
-        """Replace a sequence with the given ID with a new sequence."""
-        self.add_sequence(sequence)
-        self.delete_sequence(replaced_sequence_id)
-
     def delete_sequence(self, sequence_id: UUID) -> None:
         """Delete a sequence from a given isolate."""
         sequence = self.get_sequence_by_id(sequence_id)
@@ -357,12 +348,3 @@ class RepoOTU(BaseModel):
     def unlink_sequence(self, isolate_id: UUID4, sequence_id: UUID4) -> None:
         """Unlink the given sequence from the given isolate. Used only during rehydration."""
         self.get_isolate(isolate_id).delete_sequence(sequence_id)
-
-    def replace_sequence(
-        self,
-        sequence: RepoSequence,
-        isolate_id: UUID4,
-        replaced_sequence_id: UUID4,
-    ) -> None:
-        """Replace a sequence with the given ID with a new sequence."""
-        self.get_isolate(isolate_id).replace_sequence(sequence, replaced_sequence_id)
