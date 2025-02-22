@@ -63,18 +63,22 @@
   
   '''
 # ---
-# name: TestPrintOTUList.test_ok
+# name: TestPrintOTU.test_as_json_ok
   '''
-  [1mNAME                       ACRONYM  TAXID   ID                                  [0m
-  Maize bunchy top virus     MBTV     30724   cd613e30-d8f1-4adf-91b7-584a2265b1f5
-  Garlic leaf crumple virus  GLCV     24406   6ec9d286-63ca-428d-95f4-b3b2e4b06ce6
-  Tomato leafroll virus      TLV      243081  025b413f-8a9a-421e-a648-a7dd06839eb9
-  Garlic leaf crumple virus  GLCV     533380  75a89294-c2cd-489a-b802-08a9ad45f23d
-  Squash tatter leaf virus   STLV     385957  3099fdf5-ab99-454a-a901-e35cd47d380d
+  {"id":"e7019832-f5b4-4b78-b528-9929bf0ec839","acronym":"BabAV","excluded_accessi
+  ons":[],"legacy_id":"","name":"Babuvirus 
+  abacae","representative_isolate":null,"molecule":{"strandedness":"single","topol
+  ogy":"linear","type":"RNA"},"plan":{"id":"aa2ec177-b438-4ece-8984-b1e43a4ad810",
+  "segments":[{"id":"cbfea737-c871-48c8-a200-6d5a316a0900","length":1099,"length_t
+  olerance":0.03,"name":{"prefix":"DNA","key":"R"},"rule":"required"},{"id":"06d3a
+  af1-7e54-4da7-aa64-9d11af726838","length":1074,"length_tolerance":0.03,"name":{"
+  prefix":"DNA","key":"M"},"rule":"required"},{"id":"af02c6ab-7438-4c9a-807e-553a7
+  11a94e3","length":1087,"length_tolerance":0.03,"name":{"prefix":"DNA","key":"S"}
+  ,"rule":"required"}]},"taxid":438782,"isolates":[]}
   
   '''
 # ---
-# name: test_print_otu
+# name: TestPrintOTU.test_print_otu
   '''
   Babuvirus abacae
   
@@ -104,6 +108,17 @@
    NC_134696.1  803     DNA R    Poor beyond interest finally require wish most. 
    NC_132006.1  781     DNA M    Pull foot culture.                              
    NC_795643.1  138     DNA S    Character game tell result marriage very.       
+  
+  '''
+# ---
+# name: TestPrintOTUList.test_ok
+  '''
+  [1mNAME                       ACRONYM  TAXID   ID                                  [0m
+  Maize bunchy top virus     MBTV     30724   cd613e30-d8f1-4adf-91b7-584a2265b1f5
+  Garlic leaf crumple virus  GLCV     24406   6ec9d286-63ca-428d-95f4-b3b2e4b06ce6
+  Tomato leafroll virus      TLV      243081  025b413f-8a9a-421e-a648-a7dd06839eb9
+  Garlic leaf crumple virus  GLCV     533380  75a89294-c2cd-489a-b802-08a9ad45f23d
+  Squash tatter leaf virus   STLV     385957  3099fdf5-ab99-454a-a901-e35cd47d380d
   
   '''
 # ---

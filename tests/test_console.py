@@ -124,124 +124,134 @@ class TestPrintIsolate:
         assert capture.get() == snapshot
 
 
-def test_print_otu(snapshot: SnapshotAssertion):
-    """Test that an OTU is printed as expected by ``print_otu``."""
-    fake = Faker(["en_US"])
-    fake.add_provider(AccessionProvider)
-    fake.add_provider(SequenceProvider)
-    fake.seed_instance(8801)
+class TestPrintOTU:
+    """Test OTU console output."""
 
-    otu = RepoOTU(
-        id=fake.uuid4(),
-        acronym="BabAV",
-        excluded_accessions=set(),
-        legacy_id="",
-        molecule=Molecule(
-            strandedness=Strandedness.SINGLE, topology=Topology.LINEAR, type=MolType.RNA
-        ),
-        name="Babuvirus abacae",
-        plan=Plan.new(
-            [
-                Segment(
-                    id=fake.uuid4(),
-                    length=1099,
-                    length_tolerance=0.03,
-                    name=SegmentName("DNA", "R"),
-                    rule=SegmentRule.REQUIRED,
-                ),
-                Segment(
-                    id=fake.uuid4(),
-                    length=1074,
-                    length_tolerance=0.03,
-                    name=SegmentName("DNA", "M"),
-                    rule=SegmentRule.REQUIRED,
-                ),
-                Segment(
-                    id=fake.uuid4(),
-                    length=1087,
-                    length_tolerance=0.03,
-                    name=SegmentName("DNA", "S"),
-                    rule=SegmentRule.REQUIRED,
-                ),
-            ],
-        ),
-        representative_isolate=None,
-        taxid=438782,
-        isolates=[],
-    )
+    def test_print_otu(self, snapshot: SnapshotAssertion):
+        """Test that an OTU is printed as expected by ``print_otu``."""
+        fake = Faker(["en_US"])
+        fake.add_provider(AccessionProvider)
+        fake.add_provider(SequenceProvider)
+        fake.seed_instance(8801)
 
-    for _ in range(2):
-        sequences = [
-            RepoSequence(
-                id=fake.uuid4(),
-                accession=Accession.from_string(fake.accession() + ".1"),
-                definition=fake.sentence(),
-                legacy_id=None,
-                sequence=fake.sequence(),
-                segment=segment.id,
-            )
-            for segment in otu.plan.segments
-        ]
-
-        otu.isolates.append(
-            RepoIsolate(
-                id=fake.uuid4(),
-                legacy_id=None,
-                name=IsolateName(type=IsolateNameType.ISOLATE, value=fake.word()),
-                sequences=sequences,
-            )
+        otu = RepoOTU(
+            id=fake.uuid4(),
+            acronym="BabAV",
+            excluded_accessions=set(),
+            legacy_id="",
+            molecule=Molecule(
+                strandedness=Strandedness.SINGLE,
+                topology=Topology.LINEAR,
+                type=MolType.RNA,
+            ),
+            name="Babuvirus abacae",
+            plan=Plan.new(
+                [
+                    Segment(
+                        id=fake.uuid4(),
+                        length=1099,
+                        length_tolerance=0.03,
+                        name=SegmentName("DNA", "R"),
+                        rule=SegmentRule.REQUIRED,
+                    ),
+                    Segment(
+                        id=fake.uuid4(),
+                        length=1074,
+                        length_tolerance=0.03,
+                        name=SegmentName("DNA", "M"),
+                        rule=SegmentRule.REQUIRED,
+                    ),
+                    Segment(
+                        id=fake.uuid4(),
+                        length=1087,
+                        length_tolerance=0.03,
+                        name=SegmentName("DNA", "S"),
+                        rule=SegmentRule.REQUIRED,
+                    ),
+                ],
+            ),
+            representative_isolate=None,
+            taxid=438782,
+            isolates=[],
         )
 
-    with console.capture() as capture:
-        print_otu(otu)
-
-    assert capture.get() == snapshot
-
-
-def test_print_otu_as_json():
-    """Test that an OTU is printed as expected by ``print_otu_as_json``."""
-    fake = Faker(["en_US"])
-    fake.add_provider(AccessionProvider)
-    fake.add_provider(SequenceProvider)
-    fake.seed_instance(8801)
-
-    otu = RepoOTU(
-        id=fake.uuid4(),
-        acronym="BabAV",
-        excluded_accessions=set(),
-        legacy_id="",
-        molecule=Molecule(
-            strandedness=Strandedness.SINGLE, topology=Topology.LINEAR, type=MolType.RNA
-        ),
-        name="Babuvirus abacae",
-        plan=Plan.new(
-            [
-                Segment(
+        for _ in range(2):
+            sequences = [
+                RepoSequence(
                     id=fake.uuid4(),
-                    length=1099,
-                    length_tolerance=0.03,
-                    name=SegmentName("DNA", "R"),
-                    rule=SegmentRule.REQUIRED,
-                ),
-                Segment(
-                    id=fake.uuid4(),
-                    length=1074,
-                    length_tolerance=0.03,
-                    name=SegmentName("DNA", "M"),
-                    rule=SegmentRule.REQUIRED,
-                ),
-                Segment(
-                    id=fake.uuid4(),
-                    length=1087,
-                    length_tolerance=0.03,
-                    name=SegmentName("DNA", "S"),
-                    rule=SegmentRule.REQUIRED,
-                ),
-            ],
-        ),
-        representative_isolate=None,
-        taxid=438782,
-        isolates=[],
-    )
+                    accession=Accession.from_string(fake.accession() + ".1"),
+                    definition=fake.sentence(),
+                    legacy_id=None,
+                    sequence=fake.sequence(),
+                    segment=segment.id,
+                )
+                for segment in otu.plan.segments
+            ]
 
-    print_otu_as_json(otu)
+            otu.isolates.append(
+                RepoIsolate(
+                    id=fake.uuid4(),
+                    legacy_id=None,
+                    name=IsolateName(type=IsolateNameType.ISOLATE, value=fake.word()),
+                    sequences=sequences,
+                )
+            )
+
+        with console.capture() as capture:
+            print_otu(otu)
+
+        assert capture.get() == snapshot
+
+    def test_as_json_ok(self, snapshot: SnapshotAssertion):
+        """Test that an OTU is printed as expected by ``print_otu_as_json``."""
+        fake = Faker(["en_US"])
+        fake.add_provider(AccessionProvider)
+        fake.add_provider(SequenceProvider)
+        fake.seed_instance(8801)
+
+        otu = RepoOTU(
+            id=fake.uuid4(),
+            acronym="BabAV",
+            excluded_accessions=set(),
+            legacy_id="",
+            molecule=Molecule(
+                strandedness=Strandedness.SINGLE,
+                topology=Topology.LINEAR,
+                type=MolType.RNA,
+            ),
+            name="Babuvirus abacae",
+            plan=Plan(
+                id=fake.uuid4(),
+                segments=[
+                    Segment(
+                        id=fake.uuid4(),
+                        length=1099,
+                        length_tolerance=0.03,
+                        name=SegmentName("DNA", "R"),
+                        rule=SegmentRule.REQUIRED,
+                    ),
+                    Segment(
+                        id=fake.uuid4(),
+                        length=1074,
+                        length_tolerance=0.03,
+                        name=SegmentName("DNA", "M"),
+                        rule=SegmentRule.REQUIRED,
+                    ),
+                    Segment(
+                        id=fake.uuid4(),
+                        length=1087,
+                        length_tolerance=0.03,
+                        name=SegmentName("DNA", "S"),
+                        rule=SegmentRule.REQUIRED,
+                    ),
+                ],
+            ),
+            representative_isolate=None,
+            taxid=438782,
+            isolates=[],
+        )
+
+        with console.capture() as capture:
+            print_otu_as_json(otu)
+
+        assert capture.get() == snapshot
