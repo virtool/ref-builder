@@ -7,6 +7,7 @@ from ref_builder.plan import Plan, Segment
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU
 from ref_builder.utils import IsolateName, IsolateNameType
+from tests.fixtures.factories import IsolateFactory, OTUFactory
 
 
 class TestSequence:
@@ -104,3 +105,67 @@ class TestOTU:
 
         assert otu.get_isolate(isolate_id) is not None
         assert otu.get_sequence_by_id(sequence_id) is not None
+
+    def test_check_get_sequence_by_id_integrity(self, scratch_repo: Repo):
+        """Test that RepoOTU.get_sequence() can retrieve every sequence ID
+        within each constituent isolate from its own private index.
+        """
+
+        otu_ = RepoOTU(**OTUFactory.build().model_dump())
+
+        for i in range(10):
+            isolate = RepoIsolate(
+                **IsolateFactory.build_on_plan(otu_.plan).model_dump()
+            )
+            otu_.add_isolate(isolate)
+
+        sequence_ids_in_isolates = {
+            sequence.id for isolate in otu_.isolates for sequence in isolate.sequences
+        }
+
+        for sequence_id in sequence_ids_in_isolates:
+            assert otu_.get_sequence_by_id(sequence_id) is not None
+
+    def test_check_get_sequence_by_accession_integrity(self, scratch_repo: Repo):
+        """Test that RepoOTU.get_sequence() can retrieve every accession
+        within each constituent isolate.
+        """
+
+        otu_ = RepoOTU(**OTUFactory.build().model_dump())
+
+        for i in range(10):
+            isolate = RepoIsolate(
+                **IsolateFactory.build_on_plan(otu_.plan).model_dump()
+            )
+            otu_.add_isolate(isolate)
+
+        for isolate in otu_.isolates:
+            for sequence in isolate.sequences:
+                assert (
+                    otu_.get_sequence_by_accession(sequence.accession.key) == sequence
+                )
+
+    def test_otu_delete_isolate(self):
+        """Test that RepoOTU.delete_isolate() does not affect other isolates."""
+
+        otu_before = RepoOTU(**OTUFactory.build().model_dump())
+
+        for i in range(10):
+            isolate = RepoIsolate(
+                **IsolateFactory.build_on_plan(otu_before.plan).model_dump()
+            )
+            otu_before.add_isolate(isolate)
+
+        initial_isolate_ids = [isolate.id for isolate in otu_before.isolates]
+
+        deleted_id = initial_isolate_ids[3]
+
+        otu_after = otu_before.model_copy()
+
+        otu_after.delete_isolate(deleted_id)
+
+        assert otu_after.get_isolate(deleted_id) is None
+
+        for i in range(10):
+            extant_id = initial_isolate_ids[i + 3]
+            assert otu_after.get_isolate(extant_id) == otu_before.get_isolate(extant_id)
