@@ -12,7 +12,7 @@ from ref_builder.ncbi.models import NCBIGenbank
 SIMPLE_NAME_PATTERN = re.compile(r"([A-Za-z0-9])+")
 """Regex pattern for parsing segment name strings with no prefix."""
 
-COMPLEX_NAME_PATTERN = re.compile(r"([A-Za-z]+)[-_ ]+([A-Za-z0-9]+)")
+COMPLEX_NAME_PATTERN = re.compile(r"([A-Za-z]+)[-_ ]+(.*)")
 """Regex pattern for parsing segment name strings consisting of a prefix and a key."""
 
 
