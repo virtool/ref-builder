@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from uuid import UUID, uuid4
 
 import pytest
@@ -11,7 +12,7 @@ from ref_builder.plan import (
     SegmentName,
     SegmentRule,
     extract_segment_name_from_record,
-    parse_segment_name,
+    extract_segment_name_from_record_with_plan,
 )
 from tests.fixtures.factories import NCBIGenbankFactory, NCBISourceFactory
 from tests.fixtures.utils import uuid_matcher
@@ -192,15 +193,15 @@ class TestPlan:
         assert plan.required_segments == [plan.segments[0], plan.segments[2]]
 
 
-class TestParseSegmentName:
+class TestSegmentName:
     """Test segment name normalization."""
 
     @pytest.mark.parametrize("delimiter", [" ", "_", "-"])
     @pytest.mark.parametrize("key", ["A", "BN", "U3"])
     @pytest.mark.parametrize("prefix", ["DNA", "RNA"])
-    def test_ok(self, delimiter: str, key: str, prefix: str):
+    def test_from_string(self, delimiter: str, key: str, prefix: str):
         """Test that parse_segment_name() correctly parses prefix-key segment names."""
-        assert parse_segment_name(f"{prefix}{delimiter}{key}") == SegmentName(
+        assert SegmentName.from_string(f"{prefix}{delimiter}{key}") == SegmentName(
             prefix=prefix, key=key
         )
 
@@ -208,9 +209,9 @@ class TestParseSegmentName:
         "string",
         ["", "*V/", "51f9a0bc-7b3b-434f-bf4c-f7abaa015b8d"],
     )
-    def test_none(self, string: str) -> None:
+    def test_from_string_none(self, string: str) -> None:
         """Test that parse_segment_name() returns expected ValueError for bad input."""
-        assert parse_segment_name(string) is None
+        assert SegmentName.from_string(string) is None
 
 
 class TestExtractSegmentNameFromRecord:
@@ -247,6 +248,37 @@ class TestExtractSegmentNameFromRecord:
             prefix=suffix, key=key
         )
 
+    @pytest.mark.parametrize("key", ["1", "A", "U3"])
+    @pytest.mark.parametrize(
+        "mol_type", [NCBISourceMolType.GENOMIC_RNA, NCBISourceMolType.GENOMIC_DNA]
+    )
+    def test_no_delimiter_ok(
+        self,
+        key: str,
+        mol_type: NCBISourceMolType,
+        ncbi_genbank_factory: NCBIGenbankFactory,
+        ncbi_source_factory: NCBISourceFactory,
+    ):
+        """Test that extract_segment_name_from_record() can handle undelimited segment names."""
+        match mol_type:
+            case NCBISourceMolType.GENOMIC_DNA:
+                prefix = "DNA"
+            case NCBISourceMolType.GENOMIC_RNA:
+                prefix = "RNA"
+            case _:
+                raise ValueError(f"{mol_type} may not be a valid NCBISourceMolType.")
+
+        record = ncbi_genbank_factory.build(
+            source=ncbi_source_factory.build(
+                mol_type=mol_type,
+                segment=prefix + key,
+            ),
+        )
+
+        assert extract_segment_name_from_record(record) == SegmentName(
+            prefix=prefix, key=key
+        )
+
     @pytest.mark.parametrize("key", ["", "V#", "51f9a0bc-7b3b-434f-bf4c-f7abaa015b8d"])
     @pytest.mark.parametrize(
         "mol_type", [NCBISourceMolType.GENOMIC_RNA, NCBISourceMolType.GENOMIC_DNA]
@@ -267,3 +299,64 @@ class TestExtractSegmentNameFromRecord:
         )
 
         assert extract_segment_name_from_record(record) is None
+
+
+class TesttExtractSegmentNameFromRecordWithPlanInference:
+    """Test segment name extraction with plan inference."""
+
+    plan: Plan
+
+    @pytest.fixture(autouse=True)
+    def _setup(
+        self,
+        ncbi_genbank_factory: NCBIGenbankFactory,
+        ncbi_source_factory: NCBISourceFactory,
+    ):
+        """Set up a plan with two segments."""
+        self.factories = SimpleNamespace(
+            genbank=ncbi_genbank_factory,
+            source=ncbi_source_factory,
+        )
+
+        self.plan = Plan.new(
+            [
+                Segment.new(100, 0.01, SegmentName(prefix="RNA", key="A")),
+                Segment.new(200, 0.02, SegmentName(prefix="RNA", key="B")),
+            ]
+        )
+
+    def test_no_inference(
+        self,
+        ncbi_genbank_factory: NCBIGenbankFactory,
+        ncbi_source_factory: NCBISourceFactory,
+    ) -> None:
+        """Test that an easily parseable segment name is returned."""
+        record = ncbi_genbank_factory.build(
+            source=ncbi_source_factory.build(
+                mol_type=NCBISourceMolType.GENOMIC_RNA,
+                segment="A",
+            ),
+        )
+
+        assert extract_segment_name_from_record_with_plan(
+            record, self.plan
+        ) == SegmentName(prefix="RNA", key="A")
+
+    def test_no_delimiter(
+        self,
+        ncbi_genbank_factory: NCBIGenbankFactory,
+        ncbi_source_factory: NCBISourceFactory,
+    ) -> None:
+        """Test that a segment name can be inferred from the plan when no delimiter is
+        present.
+        """
+        record = ncbi_genbank_factory.build(
+            source=ncbi_source_factory.build(
+                mol_type=NCBISourceMolType.GENOMIC_RNA,
+                segment="RNAB",
+            ),
+        )
+
+        assert extract_segment_name_from_record_with_plan(
+            record, self.plan
+        ) == SegmentName(prefix="RNA", key="B")

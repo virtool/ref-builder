@@ -699,6 +699,10 @@ class Repo:
 
         return self.get_otu(otu_id).excluded_accessions
 
+    def get_otu_id_by_isolate_id(self, isolate_id: uuid.UUID) -> uuid.UUID | None:
+        """Get an OTU ID from an isolate ID that belongs to it."""
+        return self._index.get_id_by_isolate_id(isolate_id)
+
     def get_otu(self, otu_id: uuid.UUID) -> RepoOTU | None:
         """Get the OTU with the given ``otu_id``.
 
@@ -763,6 +767,20 @@ class Repo:
             raise ValueError("Partial ID segment must be at least 8 characters long.")
 
         return self._index.get_id_by_partial(partial)
+
+    def get_isolate_id_by_partial(self, partial: str) -> uuid.UUID | None:
+        """Return the UUID of the isolate starting with the given ``partial`` string.
+        Raise a ValueErrror if more than one matching isolate id is found.
+        If no isolate is found, return None.
+
+        :param partial: a partial segment of the isolate id with a minimum length of 8
+        :return: the UUID of the isolate or ``None``
+
+        """
+        if len(partial) < 8:
+            raise ValueError("Isolate ID partial length < 8.")
+
+        return self._index.get_isolate_id_by_partial(partial)
 
     def _rehydrate_otu(self, events: Iterator[Event]) -> RepoOTU:
         event = next(events)
