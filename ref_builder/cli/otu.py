@@ -7,7 +7,7 @@ import structlog
 
 from ref_builder.cli.utils import pass_repo
 from ref_builder.cli.validate import validate_no_duplicate_accessions
-from ref_builder.console import print_otu, print_otu_list, print_otu_as_json
+from ref_builder.console import print_otu, print_otu_as_json, print_otu_list
 from ref_builder.options import ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu_with_taxid, create_otu_without_taxid
 from ref_builder.otu.modify import (
@@ -21,7 +21,6 @@ from ref_builder.otu.update import (
     auto_update_otu,
     batch_update_repo,
     promote_otu_accessions,
-    RECORD_FETCH_CHUNK_SIZE,
 )
 from ref_builder.plan import SegmentName, SegmentRule
 from ref_builder.repo import Repo, locked_repo
@@ -130,11 +129,9 @@ def otu_list(repo: Repo) -> None:
 
 @otu.command(name="batch-update")
 @ignore_cache_option
-@path_option
-def otu_batch_auto_update(path: Path, ignore_cache: bool) -> None:
+@pass_repo
+def otu_batch_auto_update(repo: Repo, ignore_cache: bool) -> None:
     """Update all OTUs with the latest data from NCBI."""
-    repo = Repo(path)
-
     batch_update_repo(
         repo,
         ignore_cache=ignore_cache,
@@ -153,8 +150,7 @@ def otu_auto_update(repo: Repo, taxid: int, ignore_cache: bool) -> None:
         click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
         sys.exit(1)
 
-    with repo.lock():
-        auto_update_otu(repo, otu_, ignore_cache=ignore_cache)
+    auto_update_otu(repo, otu_, ignore_cache=ignore_cache)
 
 
 @otu.command(name="promote")
