@@ -68,7 +68,7 @@ def otu_create(
 
     if taxid:
         try:
-            create_otu_with_taxid(
+            otu_ = create_otu_with_taxid(
                 repo,
                 taxid,
                 accessions_,
@@ -81,7 +81,7 @@ def otu_create(
 
     else:
         try:
-            create_otu_without_taxid(
+            otu_ = create_otu_without_taxid(
                 repo,
                 accessions_,
                 acronym=acronym,
@@ -90,6 +90,12 @@ def otu_create(
         except ValueError as e:
             click.echo(e, err=True)
             sys.exit(1)
+
+    if otu_ is None:
+        click.echo("OTU was not created correctly.", err=True)
+        sys.exit(1)
+
+    print_otu(otu_)
 
 
 @otu.command(name="get")
