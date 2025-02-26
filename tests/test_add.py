@@ -75,26 +75,6 @@ class TestCreateOTU:
         assert otu_.accessions == set(accessions)
         assert otu_.representative_isolate == otu_.isolates[0].id
 
-    def test_duplicate_accessions(self, precached_repo: Repo):
-        """Test that an error is raised when duplicate accessions are provided."""
-        runner = CliRunner()
-
-        result = runner.invoke(
-            otu,
-            [
-                "--path",
-                str(precached_repo.path),
-                "create",
-                "--taxid",
-                str(1169032),
-                "MK431779",
-                "MK431779",
-            ],
-        )
-
-        assert result.exit_code == 2
-        assert "Duplicate accessions are not allowed." in result.output
-
     def test_empty_repo(
         self,
         precached_repo: Repo,
@@ -288,6 +268,26 @@ class TestCreateOTUCommands:
 
         assert len(otus) == 1
         assert otus[0].acronym == "CabLCJV"
+
+    def test_duplicate_accessions(self, precached_repo: Repo):
+        """Test that an error is raised when duplicate accessions are provided."""
+        runner = CliRunner()
+
+        result = runner.invoke(
+            otu_command_group,
+            [
+                "--path",
+                str(precached_repo.path),
+                "create",
+                "--taxid",
+                str(1169032),
+                "MK431779",
+                "MK431779",
+            ],
+        )
+
+        assert result.exit_code == 2
+        assert "Duplicate accessions are not allowed." in result.output
 
 
 class TestAddIsolate:
