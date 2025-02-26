@@ -7,7 +7,8 @@ from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
 
-from ref_builder.cli.otu import otu
+from ref_builder.console import console, print_otu
+from ref_builder.cli.otu import otu as otu_command_group
 from ref_builder.cli.isolate import isolate_create
 from ref_builder.otu.create import create_otu_with_taxid, create_otu_without_taxid
 from ref_builder.otu.isolate import (
@@ -220,12 +221,20 @@ class TestCreateOTUCommands:
         precached_repo: Repo,
         snapshot: SnapshotAssertion,
     ):
-        """Test that an OTU can be created using the command line interface."""
-        run_create_otu_command(
-            taxid=taxid,
-            path=precached_repo.path,
-            accessions=accessions,
+        """Test that an OTU can be created using the command line interface.
+
+        Also check resulting print_otu() console output.
+        """
+        runner = CliRunner()
+
+        result = runner.invoke(
+            otu_command_group,
+            ["--path", str(precached_repo.path)]
+            + ["create", "--taxid", str(taxid)]
+            + accessions,
         )
+
+        assert result.exit_code == 0
 
         otus = list(Repo(precached_repo.path).iter_otus())
 
@@ -233,6 +242,11 @@ class TestCreateOTUCommands:
         assert otus[0].model_dump() == snapshot(
             exclude=props("id", "isolates", "representative_isolate"),
         )
+
+        with console.capture() as capture:
+            print_otu(otus[0])
+
+        assert capture.get() in result.output
 
     @pytest.mark.parametrize(
         "taxid, accessions",
