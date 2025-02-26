@@ -230,7 +230,7 @@ def extract_segment_name_from_record_with_plan(
     :param plan: A plan.
     :return: A segment name or `None`.
     """
-    if record.source.segment == "":
+    if not record.source.segment:
         return None
 
     if (segment_name := SegmentName.from_string(record.source.segment)) is not None:
