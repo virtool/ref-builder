@@ -206,6 +206,22 @@ class Index:
 
         return None
 
+    def get_id_by_partial(self, partial: str) -> UUID | None:
+        """Get an OTU ID by a truncated ``partial`` string."""
+        result = self.con.execute(
+            "SELECT id FROM otus WHERE id LIKE ?",
+            (f"{partial}%",),
+        )
+
+        otu_ids = [row[0] for row in result]
+
+        if otu_ids:
+            if len(otu_ids) > 1:
+                raise ValueError("Found more than one result, need longer partial.")
+            return UUID(otu_ids[0])
+
+        return None
+
     def get_id_by_isolate_id(self, isolate_id: UUID) -> UUID | None:
         """Get an OTU ID from an isolate ID that belongs to it."""
         cursor = self.con.execute(
