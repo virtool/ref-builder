@@ -429,11 +429,10 @@ class Index:
         the repository.
 
         :param event_id: the event ID to rollback to
-
         """
         self.con.execute(
             """
-            DELETE FROM events WHERE at_event > ?
+            DELETE FROM events WHERE event_id > ?
             """,
             (event_id,),
         )
