@@ -79,10 +79,9 @@ class TestParseTaxonomy:
         """
         record = scratch_ncbi_cache.load_taxonomy(1016856)
 
-        with pytest.raises(ValidationError):
-            assert NCBITaxonomy(**record)
+        assert NCBITaxonomy(**record).rank == NCBIRank.NO_RANK
 
-        taxonomy = NCBITaxonomy(rank="isolate", **record)
+        taxonomy = NCBITaxonomy(rank=NCBIRank.ISOLATE, **record)
 
         assert taxonomy.rank == NCBIRank.ISOLATE
         assert taxonomy.model_dump() == snapshot

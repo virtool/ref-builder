@@ -3,7 +3,7 @@ import sys
 import structlog
 
 from ref_builder.ncbi.client import NCBIClient
-from ref_builder.ncbi.models import NCBIGenbank, NCBITaxonomy
+from ref_builder.ncbi.models import NCBIGenbank, NCBIRank, NCBITaxonomy
 from ref_builder.otu.isolate import create_sequence_from_record
 from ref_builder.otu.utils import (
     assign_records_to_segments,
@@ -123,6 +123,9 @@ def create_otu_without_taxid(
     if taxonomy is None:
         logger.fatal(f"Could not retrieve {taxid} from NCBI Taxonomy")
         return None
+
+    if taxonomy.rank != NCBIRank.SPECIES:
+        taxonomy = ncbi.fetch_taxonomy_record(taxonomy.species.id)
 
     with repo.use_transaction():
         return write_otu(

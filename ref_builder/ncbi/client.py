@@ -288,7 +288,11 @@ class NCBIClient:
             else:
                 return None
 
-        if rank := self._fetch_taxonomy_rank(taxid):
+        try:
+            return NCBITaxonomy.model_validate(record)
+
+        except ValidationError:
+            rank = self._fetch_taxonomy_rank(taxid)
             try:
                 return NCBITaxonomy(**record, rank=rank)
             except ValidationError:

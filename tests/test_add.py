@@ -195,15 +195,22 @@ class TestCreateOTU:
 
         assert otu_.acronym == "FBNSV"
 
-    def test_create_without_taxid_ok(self, precached_repo):
+    @pytest.mark.parametrize(
+        ("accessions", "expected_taxid"),
+        [
+            (["DQ178610", "DQ178611"], 345184),
+            (["NC_043170"], 3240630),
+        ],
+    )
+    def test_create_without_taxid_ok(self, accessions, expected_taxid, precached_repo):
         with precached_repo.lock():
             made_otu = create_otu_without_taxid(
-                precached_repo, accessions=["DQ178610", "DQ178611"], acronym=""
+                precached_repo, accessions=accessions, acronym=""
             )
 
-        assert made_otu.taxid == 345184
+        assert made_otu.taxid == expected_taxid
 
-        otu = precached_repo.get_otu_by_taxid(345184)
+        otu = precached_repo.get_otu_by_taxid(expected_taxid)
 
         assert otu is not None
 

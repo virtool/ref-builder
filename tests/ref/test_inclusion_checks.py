@@ -113,7 +113,7 @@ class TestAddMultipartiteIsolate:
         """Test that sequences within recommended length tolerance
         are added without issue.
         """
-        otu_before = scratch_repo.get_otu_by_taxid(3158377)
+        otu_before = scratch_repo.get_otu_by_taxid(438782)
 
         records = self.create_mock_isolate_records(
             otu_before,
@@ -128,7 +128,7 @@ class TestAddMultipartiteIsolate:
                 records,
             )
 
-        otu_after = scratch_repo.get_otu_by_taxid(3158377)
+        otu_after = scratch_repo.get_otu_by_taxid(438782)
 
         assert isolate.id in otu_after.isolate_ids
         assert isolate.accessions.issubset(otu_after.accessions)
@@ -138,7 +138,7 @@ class TestAddMultipartiteIsolate:
         """Test that sequences that exceed recommended length tolerance are
         automatically rejected.
         """
-        otu_before = scratch_repo.get_otu_by_taxid(3158377)
+        otu_before = scratch_repo.get_otu_by_taxid(438782)
 
         records = self.create_mock_isolate_records(
             otu_before,
@@ -155,7 +155,7 @@ class TestAddMultipartiteIsolate:
 
         assert isolate is None
 
-        otu_after = scratch_repo.get_otu_by_taxid(3158377)
+        otu_after = scratch_repo.get_otu_by_taxid(438782)
 
         assert otu_after.isolate_ids == otu_before.isolate_ids
         assert otu_after.accessions == otu_before.accessions

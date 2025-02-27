@@ -76,7 +76,7 @@ class TestCreatePlanFromRecords:
         ]
 
 
-@pytest.mark.parametrize("taxid", [223262, 3158377])
+@pytest.mark.parametrize("taxid", [223262, 438782])
 class TestAssignRecordsToSegments:
     """Test whether a list of records can be assigned to plan segments."""
 

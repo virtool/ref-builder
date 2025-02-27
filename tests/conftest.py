@@ -16,7 +16,7 @@ from ref_builder.logs import configure_logger
 from ref_builder.ncbi.cache import NCBICache
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.create import create_otu_with_taxid
-from ref_builder.otu.update import update_otu_with_accessions
+from ref_builder.otu.isolate import add_genbank_isolate
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
 from ref_builder.utils import Accession, DataType
@@ -189,24 +189,24 @@ def scratch_event_store_data(
     with open(scratch_repo_contents_path, "rb") as f:
         toc = otu_contents_list_adapter.validate_json(f.read())
 
-    with temp_scratch_repo.lock():
-        for otu_contents in toc:
-            otu = create_otu_with_taxid(
+    for otu_contents in toc:
+        with temp_scratch_repo.lock():
+            create_otu_with_taxid(
                 temp_scratch_repo,
                 otu_contents.taxid,
                 otu_contents.plan,
                 "",
             )
 
-            fetch_set = set(otu_contents.contents) - otu.blocked_accessions
-            if not fetch_set:
-                continue
+        otu = temp_scratch_repo.get_otu_by_taxid(otu_contents.taxid)
 
-            update_otu_with_accessions(
-                repo=temp_scratch_repo,
-                otu=otu,
-                accessions=list(fetch_set),
-            )
+        for isolate_accessions in otu_contents.contents:
+            with temp_scratch_repo.lock():
+                add_genbank_isolate(
+                    repo=temp_scratch_repo,
+                    otu=otu,
+                    accessions=isolate_accessions,
+                )
 
     scratch_src = {}
 
@@ -226,7 +226,7 @@ class OTUContents(BaseModel):
     plan: list[str]
     """A list of accessions that determine the OTU's schema."""
 
-    contents: list[str]
+    contents: list[list[str]]
     """A list of accessions to be added to the OTU."""
 
 
