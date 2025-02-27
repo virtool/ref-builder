@@ -808,7 +808,8 @@ class Repo:
 
         self._event_store.prune(head_id)
 
-        head_path.unlink(missing_ok=True)
+        with open(head_path) as f:
+            f.write(str(head_id))
 
     def _write_event(self, cls: type[Event], data: EventData, query: EventQuery):
         """Write an event to the repository."""
