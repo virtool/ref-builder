@@ -89,6 +89,8 @@ from ref_builder.utils import (
     get_accession_key,
 )
 
+GITIGNORE_CONTENTS = [".cache", "lock"]
+
 logger = get_logger("repo")
 
 
@@ -157,7 +159,7 @@ class Repo:
             raise ValueError("The target path is not empty")
 
         with open(path / ".gitignore", "w") as f:
-            f.write(".cache\n")
+            f.write("\n".join(GITIGNORE_CONTENTS) + "\n")
 
         shutil.copytree(
             Path(__file__).parent.parent / "assets/github",

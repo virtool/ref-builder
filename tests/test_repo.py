@@ -6,7 +6,7 @@ import pytest
 
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
 from ref_builder.plan import Plan, Segment, SegmentRule
-from ref_builder.repo import Repo
+from ref_builder.repo import Repo, GITIGNORE_CONTENTS
 from ref_builder.resources import (
     RepoIsolate,
     RepoOTU,
@@ -97,6 +97,11 @@ class TestNew:
         assert empty_repo.meta.organism == "virus"
 
         assert empty_repo.settings.default_segment_length_tolerance == 0.03
+
+        assert (empty_repo.path / ".gitignore").exists()
+
+        with open(empty_repo.path / ".gitignore", "r") as f:
+            assert f.read() == "\n".join(GITIGNORE_CONTENTS) + "\n"
 
     def test_alternate_settings(self, tmp_path: Path):
         """Test retrieval of non-default settings."""
