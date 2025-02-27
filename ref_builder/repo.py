@@ -808,6 +808,8 @@ class Repo:
 
         self._event_store.prune(head_id)
 
+        head_path.unlink(missing_ok=True)
+
     def _write_event(self, cls: type[Event], data: EventData, query: EventQuery):
         """Write an event to the repository."""
         if self._transaction is None:
