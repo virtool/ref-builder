@@ -236,9 +236,17 @@ def extract_segment_name_from_record_with_plan(
     if (segment_name := SegmentName.from_string(record.source.segment)) is not None:
         return segment_name
 
-    plan_keys_and_prefixes = {
-        segment.name.key: segment.name.prefix for segment in plan.segments
-    }
+    if plan.monopartite:
+        return None
+
+    try:
+        plan_keys_and_prefixes = {
+            segment.name.key: segment.name.prefix
+            for segment in plan.segments
+            if segment.name is not None
+        }
+    except AttributeError:
+        raise ValueError("Malformed plan")
 
     # Handle no delimiter.
     for prefix in plan_keys_and_prefixes.values():
