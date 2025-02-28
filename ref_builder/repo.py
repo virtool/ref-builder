@@ -250,12 +250,23 @@ class Repo:
         try:
             yield self._transaction
 
-        except Exception as e:
+        except (AbortTransactionError, Exception) as e:
+            logger.debug(
+                "Error encountered mid-transaction. Pruning events...",
+                head_id=self.head_id,
+            )
+
             self.prune()
 
-            logger.error("Error encountered during transaction.", error=e)
+            # Workaround for else block issues
+            with open(self.path / "head", "w") as f:
+                f.write(str(self.head_id))
+
+            raise e
 
         else:
+            logger.debug("Writing head file...", last_id=self.last_id)
+
             with open(self.path / "head", "w") as f:
                 f.write(str(self.last_id))
 
@@ -267,11 +278,6 @@ class Repo:
 
         This removes the events from the store and updates the index accordingly.
         """
-        logger.debug(
-            "Error encountered mid-transaction. Pruning events...",
-            head_id=self.head_id,
-        )
-
         self._index.prune(self.head_id)
         self._event_store.prune(self.head_id)
 
