@@ -243,11 +243,18 @@ class Repo:
             raise TransactionExistsError
 
         if self.last_id != self.head_id:
-            logger.debug("", head_id=self.head_id, last_id=self.last_id)
+            logger.error(
+                "Head ID and last event ID do not match.",
+                head_id=self.head_id,
+                last_id=self.last_id,
+            )
+
             raise TransactionExistsError
 
         if not self._lock.locked:
             raise LockRequiredError
+
+        self.prune()
 
         self._transaction = Transaction()
 
