@@ -293,34 +293,31 @@ class TestCreateOTU:
                 taxid=12242,
             )
 
-        with (
-            pytest.raises(
+        with empty_repo.lock(), empty_repo.use_transaction():
+            with pytest.raises(
                 ValueError,
                 match="An OTU with the legacy ID 'abcd1234' already exists",
-            ),
-            empty_repo.lock(),
-            empty_repo.use_transaction(),
-        ):
-            empty_repo.create_otu(
-                acronym="",
-                molecule=Molecule(
-                    strandedness=Strandedness.SINGLE,
-                    type=MolType.RNA,
-                    topology=Topology.LINEAR,
-                ),
-                legacy_id="abcd1234",
-                name="Abaca bunchy top virus",
-                plan=Plan.new(
-                    segments=[
-                        Segment.new(
-                            length=150,
-                            length_tolerance=empty_repo.settings.default_segment_length_tolerance,
-                            name=None,
-                        )
-                    ]
-                ),
-                taxid=438782,
-            )
+            ):
+                empty_repo.create_otu(
+                    acronym="",
+                    molecule=Molecule(
+                        strandedness=Strandedness.SINGLE,
+                        type=MolType.RNA,
+                        topology=Topology.LINEAR,
+                    ),
+                    legacy_id="abcd1234",
+                    name="Abaca bunchy top virus",
+                    plan=Plan.new(
+                        segments=[
+                            Segment.new(
+                                length=150,
+                                length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                                name=None,
+                            )
+                        ]
+                    ),
+                    taxid=438782,
+                )
 
 
 class TestCreateIsolate:
