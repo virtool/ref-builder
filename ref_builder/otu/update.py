@@ -20,6 +20,7 @@ from ref_builder.otu.utils import (
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU
 from ref_builder.utils import IsolateName
+from ref_builder.transaction import AbortTransactionError
 
 logger = get_logger("otu.update")
 
@@ -315,6 +316,9 @@ def update_otu_with_records(
                 isolate = create_isolate(
                     repo, otu, isolate_name, list(isolate_records.values())
                 )
+
+                if isolate is None:
+                    raise AbortTransactionError()
 
             if isolate:
                 new_isolate_names.append(isolate.name)
