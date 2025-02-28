@@ -250,7 +250,7 @@ class Repo:
         try:
             yield self._transaction
 
-        except (AbortTransactionError, Exception) as e:
+        except Exception as e:
             logger.debug(
                 "Error encountered mid-transaction. Pruning events...",
                 head_id=self.head_id,
@@ -262,7 +262,8 @@ class Repo:
             with open(self.path / "head", "w") as f:
                 f.write(str(self.head_id))
 
-            raise e
+            if not isinstance(e, AbortTransactionError):
+                raise
 
         else:
             logger.debug("Writing head file...", last_id=self.last_id)
