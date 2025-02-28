@@ -391,7 +391,7 @@ class TestAddIsolate:
 
         assert otu.accessions == set(isolate_1_accessions)
 
-        with precached_repo.lock(), precached_repo.use_transaction():
+        with precached_repo.lock():
             isolate = add_unnamed_isolate(precached_repo, otu, isolate_2_accessions)
 
         otu_after = precached_repo.get_otu_by_taxid(345184)
@@ -415,12 +415,13 @@ class TestAddIsolate:
 
         assert otu.accessions == set(isolate_1_accessions)
 
-        isolate = add_and_name_isolate(
-            precached_repo,
-            otu,
-            isolate_2_accessions,
-            isolate_name=IsolateName(type=IsolateNameType.ISOLATE, value="dummy"),
-        )
+        with precached_repo.lock():
+            isolate = add_and_name_isolate(
+                precached_repo,
+                otu,
+                isolate_2_accessions,
+                isolate_name=IsolateName(type=IsolateNameType.ISOLATE, value="dummy"),
+            )
 
         otu_after = precached_repo.get_otu_by_taxid(345184)
 
