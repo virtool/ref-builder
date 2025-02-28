@@ -254,9 +254,14 @@ class Repo:
             logger.debug(
                 "Error encountered mid-transaction. Pruning events...",
                 head_id=self.head_id,
+                last_id=self.last_id,
             )
 
             self.prune()
+
+            logger.debug(
+                "Overwriting head file...", head_id=self.head_id, last_id=self.last_id
+            )
 
             # Workaround for else block issues
             with open(self.path / "head", "w") as f:
