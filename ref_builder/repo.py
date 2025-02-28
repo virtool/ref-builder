@@ -249,16 +249,19 @@ class Repo:
 
         try:
             yield self._transaction
+
         except Exception as e:
             self.prune()
 
             if not isinstance(e, AbortTransactionError):
                 raise
-        else:
-            self._transaction = None
 
+        else:
             with open(self.path / "head", "w") as f:
                 f.write(str(self.last_id))
+
+        finally:
+            self._transaction = None
 
     def prune(self) -> None:
         """Prune an events ahead of the head.
