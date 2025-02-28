@@ -242,6 +242,10 @@ class Repo:
         if self._transaction:
             raise TransactionExistsError
 
+        if self.last_id != self.head_id:
+            logger.debug("", head_id=self.head_id, last_id=self.last_id)
+            raise TransactionExistsError
+
         if not self._lock.locked:
             raise LockRequiredError
 
@@ -259,22 +263,14 @@ class Repo:
 
             self.prune()
 
-            logger.debug(
-                "Overwriting head file...", head_id=self.head_id, last_id=self.last_id
-            )
-
-            # Workaround for else block issues
-            with open(self.path / "head", "w") as f:
-                f.write(str(self.head_id))
-
             if not isinstance(e, AbortTransactionError):
                 raise
 
         else:
-            logger.debug("Writing head file...", last_id=self.last_id)
+            self._head_id = self.last_id
 
             with open(self.path / "head", "w") as f:
-                f.write(str(self.last_id))
+                f.write(str(self._head_id))
 
         finally:
             self._transaction = None
