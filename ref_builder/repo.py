@@ -265,6 +265,11 @@ class Repo:
 
         This removes the events from the store and updates the index accordingly.
         """
+        logger.debug(
+            "Error encountered mid-transaction. Pruning events...",
+            head_id=self.head_id,
+        )
+
         self._index.prune(self.head_id)
         self._event_store.prune(self.head_id)
 
