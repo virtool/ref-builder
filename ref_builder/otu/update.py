@@ -112,11 +112,15 @@ def batch_update_repo(
         if not otu_records:
             continue
 
+        otu_id = repo.get_otu_id_by_taxid(taxid)
+
         update_otu_with_records(
             repo,
-            otu=repo.get_otu_by_taxid(taxid),
+            otu=repo.get_otu(otu_id),
             records=otu_records,
         )
+
+        repo.get_otu(otu_id)
 
     repo_logger.info("Batch update complete.")
 
