@@ -253,8 +253,7 @@ class Repo:
         except Exception as e:
             self.prune()
 
-            if not isinstance(e, AbortTransactionError):
-                raise
+            logger.error("Error encountered during transaction.", error=e)
 
         else:
             with open(self.path / "head", "w") as f:
@@ -815,7 +814,6 @@ class Repo:
             head_id = int(f.read())
 
         self._event_store.prune(head_id)
-
 
     def _write_event(self, cls: type[Event], data: EventData, query: EventQuery):
         """Write an event to the repository."""
