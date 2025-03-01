@@ -27,6 +27,7 @@ from ref_builder.errors import (
     LockRequiredError,
     TransactionExistsError,
     TransactionRequiredError,
+    InvalidInputError,
 )
 from ref_builder.events.base import (
     ApplicableEvent,
@@ -764,7 +765,9 @@ class Repo:
 
         """
         if len(partial) < 8:
-            raise ValueError("Partial ID segment must be at least 8 characters long.")
+            raise InvalidInputError(
+                "Partial ID segment must be at least 8 characters long."
+            )
 
         return self._index.get_id_by_partial(partial)
 
@@ -778,7 +781,9 @@ class Repo:
 
         """
         if len(partial) < 8:
-            raise ValueError("Isolate ID partial length < 8.")
+            raise InvalidInputError(
+                "Partial ID segment must be at least 8 characters long."
+            )
 
         return self._index.get_isolate_id_by_partial(partial)
 

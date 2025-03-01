@@ -8,7 +8,7 @@ import structlog
 from ref_builder.cli.utils import pass_repo
 from ref_builder.cli.validate import validate_no_duplicate_accessions
 from ref_builder.console import print_otu, print_otu_as_json, print_otu_list
-from ref_builder.errors import PartialIDConflictError
+from ref_builder.errors import PartialIDConflictError, InvalidInputError
 from ref_builder.options import ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu_with_taxid, create_otu_without_taxid
 from ref_builder.otu.modify import (
@@ -367,9 +367,16 @@ def _get_otu_id_from_other_identifier(repo: Repo, identifier: str) -> UUID | Non
 
     try:
         return repo.get_otu_id_by_partial(identifier)
+
     except PartialIDConflictError:
         click.echo(
             "Partial ID too short to narrow down results.",
+            err=True,
+        )
+
+    except InvalidInputError as e:
+        click.echo(
+            e,
             err=True,
         )
 
