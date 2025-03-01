@@ -28,6 +28,7 @@ class NCBIRank(StrEnum):
 
     SPECIES = "species"
     ISOLATE = "isolate"
+    NO_RANK = "no rank"
 
 
 class NCBISourceMolType(StrEnum):

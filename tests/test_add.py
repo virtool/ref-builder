@@ -7,7 +7,8 @@ from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
 
-from ref_builder.cli.otu import otu
+from ref_builder.console import console, print_otu
+from ref_builder.cli.otu import otu as otu_command_group
 from ref_builder.cli.isolate import isolate_create
 from ref_builder.otu.create import create_otu_with_taxid, create_otu_without_taxid
 from ref_builder.otu.isolate import (
@@ -73,26 +74,6 @@ class TestCreateOTU:
         assert len(otu_.plan.segments) == len(accessions)
         assert otu_.accessions == set(accessions)
         assert otu_.representative_isolate == otu_.isolates[0].id
-
-    def test_duplicate_accessions(self, precached_repo: Repo):
-        """Test that an error is raised when duplicate accessions are provided."""
-        runner = CliRunner()
-
-        result = runner.invoke(
-            otu,
-            [
-                "--path",
-                str(precached_repo.path),
-                "create",
-                "--taxid",
-                str(1169032),
-                "MK431779",
-                "MK431779",
-            ],
-        )
-
-        assert result.exit_code == 2
-        assert "Duplicate accessions are not allowed." in result.output
 
     def test_empty_repo(
         self,
@@ -195,15 +176,22 @@ class TestCreateOTU:
 
         assert otu_.acronym == "FBNSV"
 
-    def test_create_without_taxid_ok(self, precached_repo):
+    @pytest.mark.parametrize(
+        ("accessions", "expected_taxid"),
+        [
+            (["DQ178610", "DQ178611"], 345184),
+            (["NC_043170"], 3240630),
+        ],
+    )
+    def test_create_without_taxid_ok(self, accessions, expected_taxid, precached_repo):
         with precached_repo.lock():
             made_otu = create_otu_without_taxid(
-                precached_repo, accessions=["DQ178610", "DQ178611"], acronym=""
+                precached_repo, accessions=accessions, acronym=""
             )
 
-        assert made_otu.taxid == 345184
+        assert made_otu.taxid == expected_taxid
 
-        otu = precached_repo.get_otu_by_taxid(345184)
+        otu = precached_repo.get_otu_by_taxid(expected_taxid)
 
         assert otu is not None
 
@@ -220,12 +208,20 @@ class TestCreateOTUCommands:
         precached_repo: Repo,
         snapshot: SnapshotAssertion,
     ):
-        """Test that an OTU can be created using the command line interface."""
-        run_create_otu_command(
-            taxid=taxid,
-            path=precached_repo.path,
-            accessions=accessions,
+        """Test that an OTU can be created using the command line interface.
+
+        Also check resulting print_otu() console output.
+        """
+        runner = CliRunner()
+
+        result = runner.invoke(
+            otu_command_group,
+            ["--path", str(precached_repo.path)]
+            + ["create", "--taxid", str(taxid)]
+            + accessions,
         )
+
+        assert result.exit_code == 0
 
         otus = list(Repo(precached_repo.path).iter_otus())
 
@@ -233,6 +229,11 @@ class TestCreateOTUCommands:
         assert otus[0].model_dump() == snapshot(
             exclude=props("id", "isolates", "representative_isolate"),
         )
+
+        with console.capture() as capture:
+            print_otu(otus[0])
+
+        assert capture.get() in result.output
 
     @pytest.mark.parametrize(
         "taxid, accessions",
@@ -274,6 +275,26 @@ class TestCreateOTUCommands:
 
         assert len(otus) == 1
         assert otus[0].acronym == "CabLCJV"
+
+    def test_duplicate_accessions(self, precached_repo: Repo):
+        """Test that an error is raised when duplicate accessions are provided."""
+        runner = CliRunner()
+
+        result = runner.invoke(
+            otu_command_group,
+            [
+                "--path",
+                str(precached_repo.path),
+                "create",
+                "--taxid",
+                str(1169032),
+                "MK431779",
+                "MK431779",
+            ],
+        )
+
+        assert result.exit_code == 2
+        assert "Duplicate accessions are not allowed." in result.output
 
 
 class TestAddIsolate:
