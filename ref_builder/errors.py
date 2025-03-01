@@ -31,3 +31,12 @@ class PartialIDConflictError(Exception):
 
     def __init__(self) -> None:
         super().__init__("Found more than one result, may need longer partial.")
+
+
+class InvalidInputError(Exception):
+    """Raised when a command input does not match expected paramters."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+
+        super().__init__(message)
