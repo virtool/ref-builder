@@ -11,6 +11,7 @@ from uuid import UUID
 
 import orjson
 
+from ref_builder.errors import PartialIDConflictError
 from ref_builder.models import OTUMinimal
 from ref_builder.resources import RepoOTU
 
@@ -215,7 +216,7 @@ class Index:
 
         if result := cursor.fetchmany(size=2):
             if len(result) > 1:
-                raise ValueError("Found more than one result, need longer partial.")
+                raise PartialIDConflictError
 
             if result:
                 return UUID(result[0][0])
