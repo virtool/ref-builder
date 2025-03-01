@@ -359,10 +359,11 @@ def _get_otu_id_from_other_identifier(repo: Repo, identifier: str) -> UUID | Non
     Return None if no matching OTU is found, raise a ValueError if >1 OTU is found.
     """
     try:
-        return repo.get_otu_id_by_taxid(int(identifier))
-
+        taxid = int(identifier)
     except ValueError:
         pass
+    else:
+        return repo.get_otu_id_by_taxid(taxid)
 
     try:
         return repo.get_otu_id_by_partial(identifier)
