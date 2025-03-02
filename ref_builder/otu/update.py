@@ -27,7 +27,7 @@ logger = get_logger("otu.update")
 OTU_FEEDBACK_INTERVAL = 100
 """A default interval for batch OTU feedback."""
 
-RECORD_FETCH_CHUNK_SIZE = 25
+RECORD_FETCH_CHUNK_SIZE = 500
 """A default chunk size for NCBI EFetch calls."""
 
 
