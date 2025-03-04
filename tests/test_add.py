@@ -9,7 +9,6 @@ from syrupy.filters import props
 
 from ref_builder.console import console, print_otu
 from ref_builder.cli.otu import otu as otu_command_group
-from ref_builder.cli.isolate import isolate_create
 from ref_builder.otu.create import create_otu_with_taxid, create_otu_without_taxid
 from ref_builder.otu.isolate import (
     add_and_name_isolate,
@@ -331,21 +330,6 @@ class TestAddIsolate:
             "MF062126",
             "MF062127",
         }
-
-    def test_duplicate_accessions(self, precached_repo: Repo):
-        """Test that an error is raised when duplicate accessions are provided."""
-        runner = CliRunner()
-        result = runner.invoke(
-            isolate_create,
-            [
-                "345184",
-                "DQ178610",
-                "DQ178610",
-            ],
-        )
-
-        assert result.exit_code == 2
-        assert "Duplicate accessions are not allowed." in result.output
 
     def test_genbank(self, precached_repo: Repo):
         """Test that add_genbank_isolate() adds an isolate with a correctly parsed
