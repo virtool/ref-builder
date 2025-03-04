@@ -242,6 +242,8 @@ class Repo:
         if self._transaction:
             raise TransactionExistsError
 
+        self.prune()
+
         if self.last_id != self.head_id:
             logger.error(
                 "Head ID and last event ID do not match.",
@@ -253,8 +255,6 @@ class Repo:
 
         if not self._lock.locked:
             raise LockRequiredError
-
-        self.prune()
 
         self._transaction = Transaction()
 
