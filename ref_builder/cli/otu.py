@@ -8,6 +8,7 @@ import structlog
 from ref_builder.cli.utils import pass_repo
 from ref_builder.cli.validate import validate_no_duplicate_accessions
 from ref_builder.console import print_otu, print_otu_as_json, print_otu_list
+from ref_builder.errors import PartialIDConflictError, InvalidInputError
 from ref_builder.options import ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu_with_taxid, create_otu_without_taxid
 from ref_builder.otu.modify import (
@@ -109,12 +110,20 @@ def otu_create(
 )
 @pass_repo
 def otu_get(repo: Repo, identifier: str, as_json: bool) -> None:
-    """Get an OTU by its unique ID or taxonomy ID."""
+    """Get an OTU by its unique ID or taxonomy ID.
+
+    IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
+    """
     try:
-        identifier = int(identifier)
-        otu_ = repo.get_otu_by_taxid(identifier)
+        otu_id = UUID(identifier)
     except ValueError:
-        otu_ = repo.get_otu(UUID(identifier))
+        otu_id = _get_otu_id_from_other_identifier(repo, identifier)
+
+    if otu_id is None:
+        click.echo("OTU not found.", err=True)
+        sys.exit(1)
+
+    otu_ = repo.get_otu(otu_id)
 
     if otu_ is None:
         click.echo("OTU not found.", err=True)
@@ -343,3 +352,32 @@ def plan_rename_segment(
         )
     except ValueError as e:
         click.echo(e, err=True)
+
+
+def _get_otu_id_from_other_identifier(repo: Repo, identifier: str) -> UUID | None:
+    """Return an OTU id from the repo if identifier matches a single OTU.
+    Return None if no matching OTU is found, raise a ValueError if >1 OTU is found.
+    """
+    try:
+        taxid = int(identifier)
+    except ValueError:
+        pass
+    else:
+        return repo.get_otu_id_by_taxid(taxid)
+
+    try:
+        return repo.get_otu_id_by_partial(identifier)
+
+    except PartialIDConflictError:
+        click.echo(
+            "Partial ID too short to narrow down results.",
+            err=True,
+        )
+
+    except InvalidInputError as e:
+        click.echo(
+            e,
+            err=True,
+        )
+
+    return None

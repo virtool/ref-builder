@@ -11,6 +11,7 @@ from uuid import UUID
 
 import orjson
 
+from ref_builder.errors import PartialIDConflictError
 from ref_builder.models import OTUMinimal
 from ref_builder.resources import RepoOTU
 
@@ -206,6 +207,22 @@ class Index:
 
         return None
 
+    def get_id_by_partial(self, partial: str) -> UUID | None:
+        """Get an OTU ID by a truncated ``partial`` string."""
+        cursor = self.con.execute(
+            "SELECT id FROM otus WHERE id LIKE ?",
+            (f"{partial}%",),
+        )
+
+        if result := cursor.fetchmany(size=2):
+            if len(result) > 1:
+                raise PartialIDConflictError
+
+            if result:
+                return UUID(result[0][0])
+
+        return None
+
     def get_id_by_isolate_id(self, isolate_id: UUID) -> UUID | None:
         """Get an OTU ID from an isolate ID that belongs to it."""
         cursor = self.con.execute(
@@ -223,17 +240,17 @@ class Index:
         if partial == "":
             raise ValueError("Empty partial given.")
 
-        result = self.con.execute(
+        cursor = self.con.execute(
             "SELECT id FROM isolates WHERE id LIKE ?",
             (f"{partial}%",),
         )
 
-        otu_ids = [row[0] for row in result]
+        if result := cursor.fetchmany(size=2):
+            if len(result) > 1:
+                raise PartialIDConflictError
 
-        if otu_ids:
-            if len(otu_ids) > 1:
-                raise ValueError("Found more than one result, need longer partial.")
-            return UUID(otu_ids[0])
+            if result:
+                return UUID(result[0][0])
 
         return None
 
