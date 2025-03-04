@@ -34,3 +34,25 @@ class TestPrintCommands:
             )
 
             assert result.exit_code == 0
+
+    def test_otu_partial_ok(self, scratch_repo):
+        for otu_ in scratch_repo.iter_otus():
+            result = runner.invoke(
+                otu_command_group,
+                ["--path", str(scratch_repo.path)] + ["get", str(otu_.id)[:8]],
+            )
+
+            assert result.exit_code == 0
+
+    def test_otu_partial_too_short(self, scratch_repo):
+        for otu_ in scratch_repo.iter_otus():
+            result = runner.invoke(
+                otu_command_group,
+                ["--path", str(scratch_repo.path)] + ["get", str(otu_.id)[:5]],
+            )
+
+            assert result.exit_code == 1
+
+            assert (
+                "Partial ID segment must be at least 8 characters long" in result.output
+            )

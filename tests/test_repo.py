@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 import orjson
 import pytest
 
+from ref_builder.errors import InvalidInputError
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
 from ref_builder.plan import Plan, Segment, SegmentRule
 from ref_builder.repo import Repo, GITIGNORE_CONTENTS
@@ -597,6 +598,30 @@ class TestGetOTU:
         )
 
         assert empty_repo.last_id == 8
+
+    def test_partial_ok(self, initialized_repo: Repo):
+        """Test that getting an OTU ID starting with a truncated 8-character portion
+        returns an ID.
+        """
+        otu = next(initialized_repo.iter_otus())
+
+        partial_id = str(otu.id)[:8]
+
+        assert initialized_repo.get_otu_id_by_partial(partial_id) == otu.id
+
+    def test_partial_too_short(self, initialized_repo: Repo):
+        """Test that getting an OTU ID starting with a truncated 7-character portion
+        does not return an ID.
+        """
+        otu = next(initialized_repo.iter_otus())
+
+        partial_id = str(otu.id)[:7]
+
+        with pytest.raises(
+            InvalidInputError,
+            match="Partial ID segment must be at least 8 characters long",
+        ):
+            initialized_repo.get_otu_id_by_partial(partial_id)
 
     def test_retrieve_nonexistent_otu(self, initialized_repo: Repo):
         """Test that getting an OTU that does not exist returns ``None``."""
