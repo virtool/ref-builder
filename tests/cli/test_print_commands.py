@@ -53,6 +53,4 @@ class TestPrintCommands:
 
             assert result.exit_code == 1
 
-            assert (
-                "Partial ID segment must be at least 8 characters long" in result.output
-            )
+            assert "OTU not found" in result.output
