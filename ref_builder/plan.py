@@ -236,22 +236,26 @@ def extract_segment_name_from_record_with_plan(
     if (segment_name := SegmentName.from_string(record.source.segment)) is not None:
         return segment_name
 
-    plan_keys_and_prefixes = {
-        segment.name.key: segment.name.prefix for segment in plan.segments
-    }
+    if not plan.monopartite:
+        try:
+            plan_keys_and_prefixes = {
+                segment.name.key: segment.name.prefix for segment in plan.segments
+            }
+        except AttributeError:
+            raise ValueError("Multipartite plan contains unnamed segments")
 
-    # Handle no delimiter.
-    for prefix in plan_keys_and_prefixes.values():
-        if record.source.segment.casefold().startswith(prefix.casefold()):
+        # Handle no delimiter.
+        for prefix in plan_keys_and_prefixes.values():
+            if record.source.segment.casefold().startswith(prefix.casefold()):
+                return SegmentName(
+                    prefix=prefix, key=record.source.segment[len(prefix) :].strip()
+                )
+
+        # Handle no prefix.
+        with suppress(KeyError):
             return SegmentName(
-                prefix=prefix, key=record.source.segment[len(prefix) :].strip()
+                prefix=plan_keys_and_prefixes[record.source.segment],
+                key=record.source.segment,
             )
-
-    # Handle no prefix.
-    with suppress(KeyError):
-        return SegmentName(
-            prefix=plan_keys_and_prefixes[record.source.segment],
-            key=record.source.segment,
-        )
 
     return None
