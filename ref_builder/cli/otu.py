@@ -192,7 +192,6 @@ def otu_promote_accessions(repo: Repo, taxid: int, ignore_cache: bool) -> None:
     type=str,
     required=True,
 )
-@ignore_cache_option
 @pass_repo
 def otu_exclude_accessions(
     repo: Repo,
@@ -222,7 +221,6 @@ def otu_exclude_accessions(
     type=str,
     required=True,
 )
-@ignore_cache_option
 @pass_repo
 def otu_allow_accessions(
     repo: Repo,
