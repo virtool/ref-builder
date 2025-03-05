@@ -2,6 +2,7 @@ from collections import defaultdict
 from collections.abc import Collection, Iterable, Iterator
 from uuid import UUID
 
+from pydantic import RootModel
 from structlog import get_logger
 
 from ref_builder.ncbi.client import NCBIClient
@@ -29,6 +30,10 @@ OTU_FEEDBACK_INTERVAL = 100
 
 RECORD_FETCH_CHUNK_SIZE = 500
 """A default chunk size for NCBI EFetch calls."""
+
+
+BatchFetchIndex = RootModel[dict[int, set[str]]]
+"""Assists in reading and writing the fetched accessions by taxid index from file."""
 
 
 def auto_update_otu(
