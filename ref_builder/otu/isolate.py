@@ -97,8 +97,6 @@ def add_unnamed_isolate(
     Download the GenBank records and pass the isolate name and records to the add
     method.
     """
-    log = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
-
     records = fetch_records_from_accessions(
         accessions, otu.blocked_accessions, ignore_cache
     )
@@ -161,19 +159,19 @@ def create_isolate(
         assigned = assign_records_to_segments(records, otu.plan)
     except ValueError as e:
         if "Segment names not found in plan" in str(e):
-            log.warning(str(e))
+            log.debug(str(e))
             return None
 
         if "Required segment names not found in records" in str(e):
-            log.warning(str(e))
+            log.debug(str(e))
             return None
 
         if "If a segment has no name, it must be the only segment" in str(e):
-            log.warning(str(e))
+            log.debug(str(e))
             return None
 
         if "Duplicate segment names found in records" in str(e):
-            log.warning(str(e))
+            log.debug(str(e))
             return None
 
         raise
@@ -186,7 +184,7 @@ def create_isolate(
             matching_segment.length,
             matching_segment.length_tolerance,
         ):
-            log.warning(
+            log.debug(
                 "Sequence does not conform to plan length.",
                 accession=record.accession_version,
                 length=len(record.sequence),
@@ -205,7 +203,7 @@ def create_isolate(
         )
     except ValueError as e:
         if "Isolate name already exists" in str(e):
-            log.warning("OTU already contains isolate with name.")
+            log.debug("OTU already contains isolate with name.")
             return None
 
         raise
