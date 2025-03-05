@@ -116,7 +116,6 @@ class TestEvents:
         index.add_event_id(104, otu.id)
 
         assert index.get_event_ids_by_otu_id(otu.id) == EventIndexItem(
-            at_event=104,
             event_ids=[100, 101, 104],
             otu_id=otu.id,
         )

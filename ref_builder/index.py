@@ -20,9 +20,6 @@ from ref_builder.resources import RepoOTU
 class EventIndexItem:
     """The event IDs associated with an OTU."""
 
-    at_event: int
-    """The latest event ID when this cache index was last updated"""
-
     event_ids: list[int]
     """A list of event IDs"""
 
@@ -64,7 +61,6 @@ class Index:
         self.con.execute(
             """
             CREATE TABLE IF NOT EXISTS events (
-                at_event INTEGER,
                 event_id INTEGER PRIMARY KEY,
                 otu_id TEXT
             );
@@ -164,7 +160,6 @@ class Index:
 
         if event_ids:
             return EventIndexItem(
-                event_ids[-1],
                 event_ids,
                 otu_id,
             )
@@ -446,11 +441,10 @@ class Index:
         the repository.
 
         :param event_id: the event ID to rollback to
-
         """
         self.con.execute(
             """
-            DELETE FROM events WHERE at_event > ?
+            DELETE FROM events WHERE event_id > ?
             """,
             (event_id,),
         )

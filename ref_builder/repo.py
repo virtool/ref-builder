@@ -243,6 +243,17 @@ class Repo:
         if self._transaction:
             raise TransactionExistsError
 
+        self.prune()
+
+        if self.last_id != self.head_id:
+            logger.error(
+                "Head ID and last event ID do not match.",
+                head_id=self.head_id,
+                last_id=self.last_id,
+            )
+
+            raise TransactionExistsError
+
         if not self._lock.locked:
             raise LockRequiredError
 
@@ -250,16 +261,27 @@ class Repo:
 
         try:
             yield self._transaction
+
         except Exception as e:
+            logger.debug(
+                "Error encountered mid-transaction. Pruning events...",
+                head_id=self.head_id,
+                last_id=self.last_id,
+            )
+
             self.prune()
 
             if not isinstance(e, AbortTransactionError):
                 raise
+
         else:
-            self._transaction = None
+            self._head_id = self.last_id
 
             with open(self.path / "head", "w") as f:
-                f.write(str(self.last_id))
+                f.write(str(self._head_id))
+
+        finally:
+            self._transaction = None
 
     def prune(self) -> None:
         """Prune an events ahead of the head.
