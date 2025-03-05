@@ -28,8 +28,25 @@ def exclude_accessions_from_otu(
     accessions: Collection[str],
 ) -> None:
     """Exclude accessions from future addition to an OTU."""
+    original_excluded_accessions = otu.excluded_accessions.copy()
+
     with repo.use_transaction():
-        repo.exclude_accessions(otu_id=otu.id, accessions=accessions)
+        excluded_accessions = repo.exclude_accessions(
+            otu_id=otu.id, accessions=accessions
+        )
+
+    if excluded_accessions != original_excluded_accessions:
+        logger.info(
+            "Updated excluded accession list.",
+            otu_id=str(otu.id),
+            excluded_accessions=sorted(excluded_accessions),
+        )
+
+    if excluded_accessions == original_excluded_accessions:
+        logger.info(
+            "Excluded accession list already up to date.",
+            excluded_accessions=excluded_accessions,
+        )
 
 
 def allow_accessions_into_otu(
@@ -41,8 +58,25 @@ def allow_accessions_into_otu(
 
     This reverses the effect of exclude_accessions_from_otu.
     """
+    original_excluded_accessions = otu.excluded_accessions.copy()
+
     with repo.use_transaction():
-        repo.allow_accessions(otu_id=otu.id, accessions=accessions)
+        excluded_accessions = repo.allow_accessions(
+            otu_id=otu.id, accessions=accessions
+        )
+
+    if excluded_accessions != original_excluded_accessions:
+        logger.info(
+            "Updated excluded accession list.",
+            otu_id=str(otu.id),
+            excluded_accessions=sorted(excluded_accessions),
+        )
+
+    if excluded_accessions == original_excluded_accessions:
+        logger.info(
+            "Excluded accession list already up to date.",
+            excluded_accessions=excluded_accessions,
+        )
 
 
 def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
