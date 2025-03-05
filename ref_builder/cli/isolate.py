@@ -130,7 +130,9 @@ def isolate_delete(repo: Repo, identifier: str) -> None:
             isolate_id = repo.get_isolate_id_by_partial(identifier)
 
         except InvalidInputError:
-            click.echo("Partial ID segment must be at least 8 characters long.", err=True)
+            click.echo(
+                "Partial ID segment must be at least 8 characters long.", err=True
+            )
             sys.exit(1)
 
         except PartialIDConflictError as e:
@@ -179,7 +181,9 @@ def isolate_get(repo: Repo, identifier: str, as_json: bool) -> None:
             isolate_id = repo.get_isolate_id_by_partial(identifier)
 
         except InvalidInputError:
-            click.echo("Partial ID segment must be at least 8 characters long.", err=True)
+            click.echo(
+                "Partial ID segment must be at least 8 characters long.", err=True
+            )
             sys.exit(1)
 
     if isolate_id is None:
