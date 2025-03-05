@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: TestCreateOTUCommands.test_ok[1278205-accessions0]
+# name: TestCreateOTUCommands.test_with_taxid_ok[1278205-accessions0]
   dict({
     'acronym': '',
     'excluded_accessions': set({
@@ -25,7 +25,7 @@
     'taxid': 1278205,
   })
 # ---
-# name: TestCreateOTUCommands.test_ok[345184-accessions1]
+# name: TestCreateOTUCommands.test_with_taxid_ok[345184-accessions1]
   dict({
     'acronym': '',
     'excluded_accessions': set({
