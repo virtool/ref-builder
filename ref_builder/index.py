@@ -5,7 +5,6 @@ import sqlite3
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from pprint import pprint
 from typing import Any
 from uuid import UUID
 
@@ -449,14 +448,12 @@ class Index:
             (event_id,),
         )
 
-        result = self.con.execute(
+        self.con.execute(
             """
             DELETE FROM otus WHERE at_event > ?
             """,
             (event_id,),
         )
-
-        pprint(result)
 
         self.con.commit()
 
