@@ -1,7 +1,9 @@
 from collections import defaultdict
 from collections.abc import Collection, Iterable, Iterator
+from pathlib import Path
 from uuid import UUID
 
+import arrow
 from pydantic import RootModel
 from structlog import get_logger
 
@@ -527,3 +529,35 @@ def _bin_refseq_records(
         raise ValueError("Invalid total number of records")
 
     return refseq_records, non_refseq_records
+
+
+def _cache_fetch_index(
+    fetch_index: dict[int, set[str]], cache_path: Path,
+) -> Path | None:
+    validated_fetch_index = BatchFetchIndex.model_validate(fetch_index)
+
+    timestamp = arrow.utcnow().naive
+
+    filename = f"fetch_index__{timestamp:%Y}_{timestamp:%m}_{timestamp:%d}"
+
+    fetch_index_path = cache_path / f"{filename}.json"
+
+    with open(fetch_index_path, "w") as f:
+        f.write(validated_fetch_index.model_dump_json())
+
+    if fetch_index_path.exists():
+        return fetch_index_path
+
+
+def _load_fetch_index(path: Path) -> dict[int, set[str]] | None:
+    if not path.exists():
+        return None
+
+    if path.suffix != ".json":
+        return None
+
+    with open(path, "rb") as f:
+        fetch_index = BatchFetchIndex.model_validate_json(f.read())
+
+    if fetch_index:
+        return fetch_index.model_dump()
