@@ -65,10 +65,13 @@ def auto_update_otu(
 def batch_update_repo(
     repo: Repo,
     chunk_size: int = RECORD_FETCH_CHUNK_SIZE,
+    precache_records: bool = False,
     ignore_cache: bool = False,
 ):
     """Fetch new accessions for all OTUs in the repo and create isolates as possible."""
-    repo_logger = logger.bind(path=str(repo.path))
+    repo_logger = logger.bind(
+        path=str(repo.path), precache_records=precache_records
+    )
 
     repo_logger.info("Starting batch update...")
 
@@ -88,39 +91,54 @@ def batch_update_repo(
 
     logger.info("New accessions found.", accession_count=len(taxid_new_accession_index))
 
-    indexed_records = batch_fetch_new_records(
-        fetch_set,
-        chunk_size=chunk_size,
-        ignore_cache=ignore_cache,
-    )
+    if precache_records:
+        logger.info("Precaching records...", accession_count=len(fetch_set))
 
-    if not indexed_records:
-        logger.info("No valid accessions found.")
-        return None
-
-    logger.info(
-        "Checking new records against OTUs.", otu_count=len(taxid_new_accession_index)
-    )
-
-    for taxid, accessions in taxid_new_accession_index.items():
-        otu_records = [
-            record
-            for accession in accessions
-            if (record := indexed_records.get(accession)) is not None
-        ]
-
-        if not otu_records:
-            continue
-
-        otu_id = repo.get_otu_id_by_taxid(taxid)
-
-        update_otu_with_records(
-            repo,
-            otu=repo.get_otu(otu_id),
-            records=otu_records,
+        indexed_records = batch_fetch_new_records(
+            fetch_set,
+            chunk_size=chunk_size,
+            ignore_cache=ignore_cache,
         )
 
-        repo.get_otu(otu_id)
+        if not indexed_records:
+            logger.info("No valid accessions found.")
+            return None
+
+        logger.info(
+            "Checking new records against OTUs.", otu_count=len(taxid_new_accession_index)
+        )
+
+        for taxid, accessions in taxid_new_accession_index.items():
+            otu_records = [
+                record
+                for accession in accessions
+                if (record := indexed_records.get(accession)) is not None
+            ]
+
+            if not otu_records:
+                continue
+
+            otu_id = repo.get_otu_id_by_taxid(taxid)
+
+            update_otu_with_records(
+                repo,
+                otu=repo.get_otu(otu_id),
+                records=otu_records,
+            )
+
+            repo.get_otu(otu_id)
+
+    else:
+        for taxid, accessions in taxid_new_accession_index.items():
+            otu_id = repo.get_otu_id_by_taxid(taxid)
+
+            update_otu_with_accessions(
+                repo,
+                otu=repo.get_otu(otu_id),
+                accessions=accessions
+            )
+
+            repo.get_otu(otu_id)
 
     repo_logger.info("Batch update complete.")
 
