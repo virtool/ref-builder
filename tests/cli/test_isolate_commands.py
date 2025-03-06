@@ -171,8 +171,6 @@ class TestIsolateGetCommand:
 
         assert result.exit_code == 1
 
-        print(result.output)
-
         assert "Partial ID segment must be at least 8 characters long" in result.output
 
 

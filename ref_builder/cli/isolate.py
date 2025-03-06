@@ -158,14 +158,13 @@ def isolate_delete(repo: Repo, identifier: str) -> None:
 @isolate.command(name="get")
 @click.argument("IDENTIFIER", type=str)
 @click.option(
-    "--as-json",
     "--json",
-    metavar="JSON",
+    "json_",
     is_flag=True,
     help="Output in JSON form",
 )
 @pass_repo
-def isolate_get(repo: Repo, identifier: str, as_json: bool) -> None:
+def isolate_get(repo: Repo, identifier: str, json: bool) -> None:
     """Get an isolate with a UUID corresponding to IDENTIFIER.
 
     IDENTIFIER is an unique isolate ID (>8 characters)
