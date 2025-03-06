@@ -194,6 +194,34 @@ def batch_fetch_new_records(
     return {}
 
 
+def batch_file_new_records(
+    repo: Repo,
+    indexed_accessions: dict[int, set[str]],
+    indexed_records: dict[str, NCBIGenbank],
+):
+    logger.info("Checking new records against OTUs.", otu_count=len(indexed_accessions))
+
+    for taxid, accessions in indexed_accessions.items():
+        otu_records = [
+            record
+            for accession in accessions
+            if (record := indexed_records.get(accession)) is not None
+        ]
+
+        if not otu_records:
+            continue
+
+        otu_id = repo.get_otu_id_by_taxid(taxid)
+
+        update_otu_with_records(
+            repo,
+            otu=repo.get_otu(otu_id),
+            records=otu_records,
+        )
+
+        repo.get_otu(otu_id)
+
+
 def update_isolate_from_accessions(
     repo: Repo,
     otu: RepoOTU,
