@@ -184,7 +184,7 @@ def otu_promote_accessions(repo: Repo, taxid: int, ignore_cache: bool) -> None:
 
 
 @otu.command(name="exclude-accessions")  # type: ignore
-@click.argument("TAXID", type=int)
+@click.argument("IDENTIFIER", type=str)
 @click.argument(
     "accessions_",
     metavar="ACCESSIONS",
@@ -195,25 +195,32 @@ def otu_promote_accessions(repo: Repo, taxid: int, ignore_cache: bool) -> None:
 @pass_repo
 def otu_exclude_accessions(
     repo: Repo,
+    identifier: str,
     accessions_: list[str],
-    taxid: int,
 ) -> None:
     """Exclude the given accessions from this OTU.
 
     Any duplicate accessions will be ignored. Only one exclusion per unique accession
     will be made.
+
+    IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
     """
-    otu_ = repo.get_otu_by_taxid(taxid)
+    try:
+        otu_id = UUID(identifier)
+    except ValueError:
+        otu_id = _get_otu_id_from_other_identifier(repo, identifier)
+
+    otu_ = repo.get_otu(otu_id)
 
     if otu_ is None:
-        click.echo(f"OTU {taxid} not found.", err=True)
+        click.echo("OTU not found.", err=True)
         sys.exit(1)
 
     exclude_accessions_from_otu(repo, otu_, accessions_)
 
 
 @otu.command(name="allow-accessions")  # type: ignore
-@click.argument("TAXID", type=int)
+@click.argument("IDENTIFIER", type=str)
 @click.argument(
     "accessions_",
     metavar="ACCESSIONS",
@@ -224,18 +231,25 @@ def otu_exclude_accessions(
 @pass_repo
 def otu_allow_accessions(
     repo: Repo,
+    identifier: str,
     accessions_: list[str],
-    taxid: int,
 ) -> None:
     """Allow the given excluded accessions back into the OTU.
 
     Any duplicate accessions will be ignored. Only one exclusion per unique accession
     will be made.
+
+    IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
     """
-    otu_ = repo.get_otu_by_taxid(taxid)
+    try:
+        otu_id = UUID(identifier)
+    except ValueError:
+        otu_id = _get_otu_id_from_other_identifier(repo, identifier)
+
+    otu_ = repo.get_otu(otu_id)
 
     if otu_ is None:
-        click.echo(f"OTU {taxid} not found.", err=True)
+        click.echo("OTU not found.", err=True)
         sys.exit(1)
 
     allow_accessions_into_otu(repo, otu_, set(accessions_))
