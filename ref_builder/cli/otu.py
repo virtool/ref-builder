@@ -161,6 +161,7 @@ def otu_list(repo: Repo) -> None:
         file_okay=True,
         path_type=Path,
     ),
+    help="Input a file path to a fetch index file."
 )
 @ignore_cache_option
 @pass_repo
