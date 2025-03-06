@@ -308,7 +308,7 @@ def update_isolate_from_records(
 def update_otu_with_accessions(
     repo: Repo,
     otu: RepoOTU,
-    accessions: list,
+    accessions: Collection[str],
     ignore_cache: bool = False,
 ) -> list[UUID]:
     """Take a list of accessions, filter for eligible accessions and
