@@ -193,6 +193,12 @@ def batch_fetch_new_records(
     ignore_cache: bool = False,
 ) -> dict[str, NCBIGenbank]:
     """Download a batch of records and return in a dictionary indexed by accession."""
+    fetch_logger = logger.bind(
+        accession_count=len(accessions),
+        chunk_size=chunk_size,
+        ignore_cache=ignore_cache,
+    )
+
     if not accessions:
         return {}
 
@@ -200,11 +206,17 @@ def batch_fetch_new_records(
 
     fetch_list = list(accessions)
 
+    page_counter = 0
+
     indexed_records = {}
     for fetch_list_chunk in iter_fetch_list(fetch_list, chunk_size):
+        fetch_logger.info("Fetching records...", page_counter=page_counter)
+
         chunked_records = ncbi.fetch_genbank_records(fetch_list_chunk)
 
         indexed_records.update({record.accession: record for record in chunked_records})
+
+        page_counter += 1
 
     if indexed_records:
         return indexed_records
