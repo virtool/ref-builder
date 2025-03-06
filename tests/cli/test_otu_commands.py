@@ -130,4 +130,50 @@ class TestExcludeAccessionsCommand:
         assert "Added accessions to excluded accession list" in result.output
 
         assert "['DQ178608', 'DQ178609']" in result.output
-        
+
+
+class TestAllowAccessionsCommand:
+    """Test that ``ref-builder otu allow-accessions`` behaves as expected."""
+
+    def test_allowable_ok(self, scratch_repo: Repo):
+        """Test that command lists out newly allowable accessions"""
+        taxid = 345184
+
+        result = runner.invoke(
+            otu_command_group,
+            ["--path", str(scratch_repo.path)]
+            + ["exclude-accessions", str(taxid)]
+            + ["DQ178608", "DQ178609"],
+        )
+
+        assert result.exit_code == 0
+
+        result = runner.invoke(
+            otu_command_group,
+            ["--path", str(scratch_repo.path)]
+            + ["allow-accessions", str(taxid)]
+            + ["DQ178608"],
+        )
+
+        assert result.exit_code == 0
+
+        assert "Removed accessions from excluded accession list" in result.output
+
+        assert "['DQ178608']" in result.output
+
+        assert "Updated excluded accession list" in result.output
+
+        assert "['DQ178609']" in result.output
+
+    def test_redundant_ok(self, scratch_repo: Repo):
+        """Test that the command informs the user when excluded accessions are already up to date."""
+        result = runner.invoke(
+            otu_command_group,
+            ["--path", str(scratch_repo.path)]
+            + ["allow-accessions", str(345184)]
+            + ["DQ178612", "DQ178613"],
+        )
+
+        assert result.exit_code == 0
+
+        assert "Excluded accession list already up to date" in result.output
