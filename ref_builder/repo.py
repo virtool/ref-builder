@@ -716,7 +716,6 @@ class Repo:
                 "Removed accessions from excluded accession list.",
                 taxid=otu.taxid,
                 otu_id=str(otu.id),
-                excluded_accessions=sorted(otu.excluded_accessions),
                 new_excluded_accessions=sorted(allowable_accessions),
             )
 

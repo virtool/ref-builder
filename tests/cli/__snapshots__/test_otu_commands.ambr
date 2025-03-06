@@ -1,5 +1,31 @@
 # serializer version: 1
-# name: TestCreateOTU.test_empty_repo
+# name: TestCreateOTUCommands.test_with_taxid_ok[1278205-accessions0]
+  dict({
+    'acronym': '',
+    'excluded_accessions': set({
+      'JX263426',
+    }),
+    'legacy_id': None,
+    'molecule': dict({
+      'strandedness': 'single',
+      'topology': 'linear',
+      'type': 'RNA',
+    }),
+    'name': 'Dahlia latent viroid',
+    'plan': dict({
+      'segments': list([
+        dict({
+          'length': 342,
+          'length_tolerance': 0.03,
+          'name': None,
+          'rule': 'required',
+        }),
+      ]),
+    }),
+    'taxid': 1278205,
+  })
+# ---
+# name: TestCreateOTUCommands.test_with_taxid_ok[345184-accessions1]
   dict({
     'acronym': '',
     'excluded_accessions': set({
