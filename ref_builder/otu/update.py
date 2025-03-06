@@ -27,7 +27,7 @@ logger = get_logger("otu.update")
 OTU_FEEDBACK_INTERVAL = 100
 """A default interval for batch OTU feedback."""
 
-RECORD_FETCH_CHUNK_SIZE = 25
+RECORD_FETCH_CHUNK_SIZE = 500
 """A default chunk size for NCBI EFetch calls."""
 
 
@@ -35,7 +35,7 @@ def auto_update_otu(
     repo: Repo,
     otu: RepoOTU,
     ignore_cache: bool = False,
-) -> None:
+) -> RepoOTU:
     """Fetch new accessions for the OTU and create isolates as possible."""
     ncbi = NCBIClient(False)
 
@@ -49,9 +49,17 @@ def auto_update_otu(
 
     if fetch_list:
         log.info("Syncing OTU with Genbank.")
-        update_otu_with_accessions(repo, otu, fetch_list, ignore_cache)
+        new_isolate_ids = update_otu_with_accessions(
+            repo, otu, fetch_list, ignore_cache
+        )
+
+        if new_isolate_ids:
+            log.info("Added new isolates", isolate_ids=new_isolate_ids)
+
     else:
         log.info("OTU is up to date.")
+
+    return repo.get_otu(otu.id)
 
 
 def batch_update_repo(
@@ -104,11 +112,15 @@ def batch_update_repo(
         if not otu_records:
             continue
 
+        otu_id = repo.get_otu_id_by_taxid(taxid)
+
         update_otu_with_records(
             repo,
-            otu=repo.get_otu_by_taxid(taxid),
+            otu=repo.get_otu(otu_id),
             records=otu_records,
         )
+
+        repo.get_otu(otu_id)
 
     repo_logger.info("Batch update complete.")
 
@@ -270,7 +282,7 @@ def update_otu_with_accessions(
     otu: RepoOTU,
     accessions: list,
     ignore_cache: bool = False,
-) -> list[IsolateName]:
+) -> list[UUID]:
     """Take a list of accessions, filter for eligible accessions and
     add new sequences to the OTU.
     """
@@ -297,11 +309,11 @@ def update_otu_with_records(
     repo: Repo,
     otu: RepoOTU,
     records: list[NCBIGenbank],
-):
+) -> list[UUID]:
     """Take a list of downloaded NCBI Genbank records, filter for eligible records
     and add new sequences to the OTU.
     """
-    new_isolate_names = []
+    new_isolate_ids = []
 
     for divided_records in (
         [record for record in records if record.refseq],
@@ -321,9 +333,9 @@ def update_otu_with_records(
                     raise AbortTransactionError()
 
             if isolate:
-                new_isolate_names.append(isolate.name)
+                new_isolate_ids.append(isolate.id)
 
-    return new_isolate_names
+    return new_isolate_ids
 
 
 def promote_otu_accessions(
