@@ -164,7 +164,7 @@ def isolate_delete(repo: Repo, identifier: str) -> None:
     help="Output in JSON form",
 )
 @pass_repo
-def isolate_get(repo: Repo, identifier: str, json: bool) -> None:
+def isolate_get(repo: Repo, identifier: str, json_: bool) -> None:
     """Get an isolate with a UUID corresponding to IDENTIFIER.
 
     IDENTIFIER is an unique isolate ID (>8 characters)
@@ -197,7 +197,7 @@ def isolate_get(repo: Repo, identifier: str, json: bool) -> None:
         click.echo("Isolate could not be found.", err=True)
         sys.exit(1)
 
-    if as_json:
+    if json_:
         print_isolate_as_json(isolate_)
     else:
         print_isolate(isolate_, otu_.plan)
