@@ -72,6 +72,7 @@ def auto_update_otu(
 def batch_update_repo(
     repo: Repo,
     chunk_size: int = RECORD_FETCH_CHUNK_SIZE,
+    fetch_index_path: Path | None = None,
     precache_records: bool = False,
     ignore_cache: bool = False,
 ):
@@ -82,9 +83,23 @@ def batch_update_repo(
 
     repo_logger.info("Starting batch update...")
 
-    taxid_new_accession_index = batch_fetch_new_accessions(
-        repo.iter_otus(), ignore_cache
-    )
+    if fetch_index_path is None:
+        taxid_new_accession_index = batch_fetch_new_accessions(
+            repo.iter_otus(), ignore_cache
+        )
+
+        fetch_index_cache_path = _cache_fetch_index(
+            taxid_new_accession_index, repo.path / ".cache"
+        )
+
+        repo_logger.info("Fetch index cached", fetch_index_path=fetch_index_cache_path)
+
+    else:
+        repo_logger.info(
+            "Loading fetch index...", fetch_index_path=str(fetch_index_path)
+        )
+
+        taxid_new_accession_index = _load_fetch_index(fetch_index_path)
 
     if not taxid_new_accession_index:
         logger.info("OTUs are up to date.")
