@@ -1,5 +1,4 @@
-import subprocess
-from pathlib import Path
+from uuid import UUID
 
 import pytest
 from click.testing import CliRunner
@@ -9,7 +8,6 @@ from syrupy.filters import props
 from ref_builder.cli.otu import otu as otu_command_group
 from ref_builder.console import console, print_otu
 from ref_builder.repo import Repo
-
 
 runner = CliRunner()
 
@@ -113,3 +111,23 @@ class TestCreateOTUCommands:
 
         assert result.exit_code == 2
         assert "Duplicate accessions are not allowed." in result.output
+
+
+class TestExcludeAccessionsCommand:
+    """Test that ``ref-builder otu exclude-accessions`` behaves as expected."""
+
+    def test_excludable_ok(self, scratch_repo):
+        """Test that command lists out new excluded accessions"""
+        result = runner.invoke(
+            otu_command_group,
+            ["--path", str(scratch_repo.path)]
+            + ["exclude-accessions", str(345184)]
+            + ["DQ178608", "DQ178609"],
+        )
+
+        assert result.exit_code == 0
+
+        assert "Added accessions to excluded accession list" in result.output
+
+        assert "['DQ178608', 'DQ178609']" in result.output
+        
