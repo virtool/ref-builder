@@ -143,12 +143,18 @@ def otu_list(repo: Repo) -> None:
 
 
 @otu.command(name="batch-update")
+@click.option("--fetch-batch-size", type=int, default=250)
 @ignore_cache_option
 @pass_repo
-def otu_batch_auto_update(repo: Repo, ignore_cache: bool) -> None:
+def otu_batch_auto_update(
+    repo: Repo,
+    fetch_batch_size: int,
+    ignore_cache: bool,
+) -> None:
     """Update all OTUs with the latest data from NCBI."""
     batch_update_repo(
         repo,
+        chunk_size=fetch_batch_size,
         ignore_cache=ignore_cache,
     )
 
