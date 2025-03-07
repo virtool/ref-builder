@@ -154,7 +154,7 @@ def otu_list(repo: Repo) -> None:
 @click.option(
     "--start-date",
     type=click.DateTime(["%Y-%m-%d", "%Y/%m/%d"]),
-    help="Exclude records edited before this date"
+    help="Exclude records edited before this date",
 )
 @click.option(
     "--fetch-index-path",
@@ -191,7 +191,7 @@ def otu_batch_auto_update(
 @click.option(
     "--start-date",
     type=click.DateTime(["%Y-%m-%d", "%Y/%m/%d"]),
-    help="Exclude records edited before this date"
+    help="Exclude records edited before this date",
 )
 @click.option(
     "--fetch-index-path",

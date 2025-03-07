@@ -94,13 +94,20 @@ def batch_update_repo(
     ignore_cache: bool = False,
 ):
     """Fetch new accessions for all OTUs in the repo and create isolates as possible."""
-    repo_logger = logger.bind(path=str(repo.path), precache_records=precache_records, start_date=start_date.isoformat())
+    repo_logger = logger.bind(
+        path=str(repo.path),
+        precache_records=precache_records,
+    )
+    if start_date is not None:
+        repo_logger = repo_logger.bind(start_date.isoformat())
 
     repo_logger.info("Starting batch update...")
 
     if fetch_index_path is None:
         taxid_new_accession_index = batch_fetch_new_accessions(
-            repo.iter_otus(), modification_date_start=start_date, ignore_cache=ignore_cache,
+            repo.iter_otus(),
+            modification_date_start=start_date,
+            ignore_cache=ignore_cache,
         )
 
         fetch_index_cache_path = _cache_fetch_index(

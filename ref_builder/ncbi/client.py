@@ -190,8 +190,12 @@ class NCBIClient:
             )
 
         if modification_date_start is not None:
-            modification_date_start_string = modification_date_start.strftime("%Y/%m/%d")
-            term += " AND " + f"{modification_date_start_string}:3000[Modification Date]"
+            modification_date_start_string = modification_date_start.strftime(
+                "%Y/%m/%d"
+            )
+            term += (
+                " AND " + f"{modification_date_start_string}:3000[Modification Date]"
+            )
 
         # If there are more than 1000 accessions, we need to paginate.
         while True:
