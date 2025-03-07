@@ -113,6 +113,8 @@ class TestClientFetchRawGenbank:
 
 
 class TestFetchAccessionsByTaxid:
+    """Test NCBI ESearch interface functionality."""
+
     def test_ok(self):
         """Test that the client can fetch accessions by taxid."""
         assert NCBIClient.fetch_accessions_by_taxid(1198450) == [
