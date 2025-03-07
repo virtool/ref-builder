@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 from syrupy import SnapshotAssertion
 
@@ -175,6 +177,36 @@ class TestFetchAccessionsByTaxid:
         assert narrow_filtered_accessions.issubset(wide_filtered_accessions)
 
         assert wide_filtered_accessions - narrow_filtered_accessions
+
+    def test_esearch_limit_by_date(self, uncached_ncbi_client: NCBIClient):
+        """Test that a more recent modification date search term fetches a smaller subset of accessions"""
+        taxid = 12232
+
+        unfiltered_accessions = set(
+            uncached_ncbi_client.fetch_accessions_by_taxid(taxid)
+        )
+
+        after_2024_accessions = set(
+            NCBIClient.fetch_accessions_by_taxid(
+                taxid,
+                modification_date_start=datetime.date(year=2024, month=1, day=1),
+            )
+        )
+
+        assert len(after_2024_accessions) < len(unfiltered_accessions)
+
+        assert after_2024_accessions.issubset(unfiltered_accessions)
+
+        after_2025_accessions = set(
+            NCBIClient.fetch_accessions_by_taxid(
+                taxid,
+                modification_date_start=datetime.date(year=2025, month=1, day=1),
+            )
+        )
+
+        assert len(after_2025_accessions) < len(after_2024_accessions)
+
+        assert after_2025_accessions.issubset(after_2024_accessions)
 
 
 class TestFetchTaxonomy:
