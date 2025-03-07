@@ -1,3 +1,4 @@
+import datetime
 from collections import defaultdict
 from collections.abc import Collection, Iterable, Iterator
 from pathlib import Path
@@ -42,6 +43,7 @@ def auto_update_otu(
     repo: Repo,
     otu: RepoOTU,
     fetch_index_path: Path | None = None,
+    start_date: datetime.date | None = None,
     ignore_cache: bool = False,
 ) -> RepoOTU:
     """Fetch new accessions for the OTU and create isolates as possible."""
@@ -64,6 +66,7 @@ def auto_update_otu(
                 otu.taxid,
                 sequence_min_length=get_segments_min_length(otu.plan.segments),
                 sequence_max_length=get_segments_max_length(otu.plan.segments),
+                modification_date_start=start_date,
             ),
         )
 
