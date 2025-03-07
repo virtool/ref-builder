@@ -130,7 +130,7 @@ class TestFetchAccessionsByTaxid:
         """
         assert len(NCBIClient.fetch_accessions_by_taxid(12585)) > 1000
 
-    def test_esearch_limit(self, uncached_ncbi_client: NCBIClient):
+    def test_esearch_limit_by_length(self, uncached_ncbi_client: NCBIClient):
         """Test that narrow search terms fetch a smaller subset of accessions
         than wide search terms.
         """
