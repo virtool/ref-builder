@@ -77,9 +77,7 @@ def batch_update_repo(
     ignore_cache: bool = False,
 ):
     """Fetch new accessions for all OTUs in the repo and create isolates as possible."""
-    repo_logger = logger.bind(
-        path=str(repo.path), precache_records=precache_records
-    )
+    repo_logger = logger.bind(path=str(repo.path), precache_records=precache_records)
 
     repo_logger.info("Starting batch update...")
 
@@ -127,7 +125,8 @@ def batch_update_repo(
             return None
 
         logger.info(
-            "Checking new records against OTUs.", otu_count=len(taxid_new_accession_index)
+            "Checking new records against OTUs.",
+            otu_count=len(taxid_new_accession_index),
         )
 
         for taxid, accessions in taxid_new_accession_index.items():
@@ -154,7 +153,9 @@ def batch_update_repo(
         ncbi = NCBIClient(ignore_cache)
 
         for taxid, accessions in taxid_new_accession_index.items():
-            otu_id = repo.get_otu_id_by_taxid(taxid)
+            if (otu_id := repo.get_otu_id_by_taxid(taxid)) is None:
+                logger.debug("No corresponding OTU found in this repo", taxid=taxid)
+                continue
 
             otu_records = ncbi.fetch_genbank_records(accessions)
 
@@ -552,7 +553,8 @@ def _bin_refseq_records(
 
 
 def _cache_fetch_index(
-    fetch_index: dict[int, set[str]], cache_path: Path,
+    fetch_index: dict[int, set[str]],
+    cache_path: Path,
 ) -> Path | None:
     validated_fetch_index = BatchFetchIndex.model_validate(fetch_index)
 

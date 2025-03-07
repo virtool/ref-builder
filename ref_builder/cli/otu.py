@@ -143,16 +143,12 @@ def otu_list(repo: Repo) -> None:
 
 
 @otu.command(name="batch-update")
-@click.option(
-    "--precache",
-    is_flag=True,
-    help="Precache all NCBI Nucleotide records."
-)
+@click.option("--precache", is_flag=True, help="Precache all NCBI Nucleotide records.")
 @click.option(
     "--precache-batch-size",
     type=int,
     default=250,
-    help="Change precache batch size (default 250)."
+    help="Change precache batch size (default 250).",
 )
 @click.option(
     "--fetch-index-path",
@@ -161,7 +157,7 @@ def otu_list(repo: Repo) -> None:
         file_okay=True,
         path_type=Path,
     ),
-    help="Input a file path to a fetch index file."
+    help="Input a file path to a fetch index file.",
 )
 @ignore_cache_option
 @pass_repo
