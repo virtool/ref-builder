@@ -3,6 +3,7 @@
 import os
 from collections.abc import Collection
 from contextlib import contextmanager
+import datetime
 from enum import StrEnum
 from http import HTTPStatus
 from urllib.error import HTTPError
@@ -168,12 +169,14 @@ class NCBIClient:
         taxid: int,
         sequence_min_length: int = 0,
         sequence_max_length: int = 0,
+        modification_date_start: datetime.date | None = None,
     ) -> list[str]:
         """Fetch all accessions associated with the given ``taxid``.
 
         :param taxid: A Taxonomy ID
         :param sequence_min_length: The minimum length of a fetched sequence.
         :param sequence_max_length: The maximum length of a fetched sequence.
+        :param modification_date_start: The earliest modification date a fetched sequence can have.::
         :return: A list of Genbank accessions
         """
         page = 1
@@ -185,6 +188,10 @@ class NCBIClient:
                 sequence_min_length,
                 sequence_max_length,
             )
+
+        if modification_date_start is not None:
+            modification_date_start_string = modification_date_start.strftime("%Y/%m/%d")
+            term += " AND " + f"{modification_date_start_string}:3000[Modification Date]"
 
         # If there are more than 1000 accessions, we need to paginate.
         while True:
