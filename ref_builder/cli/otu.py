@@ -1,3 +1,4 @@
+import datetime
 import sys
 from pathlib import Path
 from uuid import UUID
@@ -151,6 +152,11 @@ def otu_list(repo: Repo) -> None:
     help="Change precache batch size (default 250).",
 )
 @click.option(
+    "--start-date",
+    type=click.DateTime(["%Y-%m-%d", "%Y/%m/%d"]),
+    help="Exclude records edited before this date"
+)
+@click.option(
     "--fetch-index-path",
     type=click.Path(
         exists=True,
@@ -166,11 +172,13 @@ def otu_batch_auto_update(
     precache_batch_size: int,
     precache: bool,
     ignore_cache: bool,
+    start_date: datetime.date | None,
     fetch_index_path: Path | None,
 ) -> None:
     """Update all OTUs with the latest data from NCBI."""
     batch_update_repo(
         repo,
+        start_date=start_date,
         fetch_index_path=fetch_index_path,
         chunk_size=precache_batch_size,
         precache_records=precache,
