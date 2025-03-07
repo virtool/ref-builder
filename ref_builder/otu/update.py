@@ -1,3 +1,4 @@
+import datetime
 from collections import defaultdict
 from collections.abc import Collection, Iterable, Iterator
 from pathlib import Path
@@ -41,6 +42,7 @@ BatchFetchIndex = RootModel[dict[int, set[str]]]
 def auto_update_otu(
     repo: Repo,
     otu: RepoOTU,
+    start_date: datetime.date | None = None,
     ignore_cache: bool = False,
 ) -> RepoOTU:
     """Fetch new accessions for the OTU and create isolates as possible."""
@@ -48,7 +50,14 @@ def auto_update_otu(
 
     log = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
-    accessions = ncbi.filter_accessions(ncbi.fetch_accessions_by_taxid(otu.taxid))
+    accessions = ncbi.filter_accessions(
+        ncbi.fetch_accessions_by_taxid(
+            otu.taxid,
+            sequence_min_length=get_segments_min_length(otu.plan.segments),
+            sequence_max_length=get_segments_max_length(otu.plan.segments),
+            modification_date_start=start_date,
+        ),
+    )
 
     fetch_list = sorted(
         {accession.key for accession in accessions} - otu.blocked_accessions
@@ -71,19 +80,26 @@ def auto_update_otu(
 
 def batch_update_repo(
     repo: Repo,
+    start_date: datetime.date | None = None,
     chunk_size: int = RECORD_FETCH_CHUNK_SIZE,
     fetch_index_path: Path | None = None,
     precache_records: bool = False,
     ignore_cache: bool = False,
 ):
     """Fetch new accessions for all OTUs in the repo and create isolates as possible."""
-    repo_logger = logger.bind(path=str(repo.path), precache_records=precache_records)
+    repo_logger = logger.bind(
+        path=str(repo.path),
+        precache_records=precache_records,
+        start_date=start_date.isoformat(),
+    )
 
     repo_logger.info("Starting batch update...")
 
     if fetch_index_path is None:
         taxid_new_accession_index = batch_fetch_new_accessions(
-            repo.iter_otus(), ignore_cache
+            repo.iter_otus(),
+            modification_date_start=start_date,
+            ignore_cache=ignore_cache,
         )
 
         fetch_index_cache_path = _cache_fetch_index(
@@ -173,6 +189,7 @@ def batch_update_repo(
 
 def batch_fetch_new_accessions(
     otus: Iterable[RepoOTU],
+    modification_date_start: datetime.date | None = None,
     ignore_cache: bool = False,
 ) -> dict[int, set[str]]:
     """Check OTU iterator for new accessions and return results indexed by taxid."""
@@ -197,6 +214,7 @@ def batch_fetch_new_accessions(
             otu.taxid,
             sequence_min_length=get_segments_min_length(otu.plan.segments),
             sequence_max_length=get_segments_max_length(otu.plan.segments),
+            modification_date_start=modification_date_start,
         )
 
         accessions_to_fetch = {
