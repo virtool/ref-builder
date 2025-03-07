@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 
 import pytest
@@ -182,6 +183,35 @@ class TestUpdateOTU:
         assert {
             str(isolate.name): isolate.accessions for isolate in otu_after.isolates
         } == snapshot()
+
+    def test_start_date_limit(self, precached_repo: Repo):
+        """Test automatic update with the start date set to ``today``."""
+        with precached_repo.lock():
+            otu_before = create_otu_with_taxid(
+                precached_repo,
+                2164102,
+                ["NC_055390", "NC_055391", "NC_055392"],
+                "",
+            )
+
+        assert otu_before.accessions == {"NC_055390", "NC_055391", "NC_055392"}
+
+        with precached_repo.lock():
+            otu_after = auto_update_otu(
+                precached_repo, otu_before, start_date=datetime.date.today(),
+            )
+
+        assert {
+            "MF062130",
+            "MF062131",
+            "MF062132",
+            "MF062136",
+            "MF062137",
+            "MF062138",
+            "OR889795",
+            "OR889796",
+            "OR889797",
+        }.isdisjoint(otu_after.accessions)
 
     def test_with_refseq_replacement_ok(
         self,
