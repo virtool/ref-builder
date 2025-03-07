@@ -1,7 +1,10 @@
 from collections import defaultdict
 from collections.abc import Collection, Iterable, Iterator
+from pathlib import Path
 from uuid import UUID
 
+import arrow
+from pydantic import RootModel
 from structlog import get_logger
 
 from ref_builder.ncbi.client import NCBIClient
@@ -29,6 +32,10 @@ OTU_FEEDBACK_INTERVAL = 100
 
 RECORD_FETCH_CHUNK_SIZE = 500
 """A default chunk size for NCBI EFetch calls."""
+
+
+BatchFetchIndex = RootModel[dict[int, set[str]]]
+"""Assists in reading and writing the fetched accessions by taxid index from file."""
 
 
 def auto_update_otu(
@@ -65,16 +72,32 @@ def auto_update_otu(
 def batch_update_repo(
     repo: Repo,
     chunk_size: int = RECORD_FETCH_CHUNK_SIZE,
+    fetch_index_path: Path | None = None,
+    precache_records: bool = False,
     ignore_cache: bool = False,
 ):
     """Fetch new accessions for all OTUs in the repo and create isolates as possible."""
-    repo_logger = logger.bind(path=str(repo.path))
+    repo_logger = logger.bind(path=str(repo.path), precache_records=precache_records)
 
     repo_logger.info("Starting batch update...")
 
-    taxid_new_accession_index = batch_fetch_new_accessions(
-        repo.iter_otus(), ignore_cache
-    )
+    if fetch_index_path is None:
+        taxid_new_accession_index = batch_fetch_new_accessions(
+            repo.iter_otus(), ignore_cache
+        )
+
+        fetch_index_cache_path = _cache_fetch_index(
+            taxid_new_accession_index, repo.path / ".cache"
+        )
+
+        repo_logger.info("Fetch index cached", fetch_index_path=fetch_index_cache_path)
+
+    else:
+        repo_logger.info(
+            "Loading fetch index...", fetch_index_path=str(fetch_index_path)
+        )
+
+        taxid_new_accession_index = _load_fetch_index(fetch_index_path)
 
     if not taxid_new_accession_index:
         logger.info("OTUs are up to date.")
@@ -88,39 +111,62 @@ def batch_update_repo(
 
     logger.info("New accessions found.", accession_count=len(taxid_new_accession_index))
 
-    indexed_records = batch_fetch_new_records(
-        fetch_set,
-        chunk_size=chunk_size,
-        ignore_cache=ignore_cache,
-    )
+    if precache_records:
+        logger.info("Precaching records...", accession_count=len(fetch_set))
 
-    if not indexed_records:
-        logger.info("No valid accessions found.")
-        return None
-
-    logger.info(
-        "Checking new records against OTUs.", otu_count=len(taxid_new_accession_index)
-    )
-
-    for taxid, accessions in taxid_new_accession_index.items():
-        otu_records = [
-            record
-            for accession in accessions
-            if (record := indexed_records.get(accession)) is not None
-        ]
-
-        if not otu_records:
-            continue
-
-        otu_id = repo.get_otu_id_by_taxid(taxid)
-
-        update_otu_with_records(
-            repo,
-            otu=repo.get_otu(otu_id),
-            records=otu_records,
+        indexed_records = batch_fetch_new_records(
+            fetch_set,
+            chunk_size=chunk_size,
+            ignore_cache=ignore_cache,
         )
 
-        repo.get_otu(otu_id)
+        if not indexed_records:
+            logger.info("No valid accessions found.")
+            return None
+
+        logger.info(
+            "Checking new records against OTUs.",
+            otu_count=len(taxid_new_accession_index),
+        )
+
+        for taxid, accessions in taxid_new_accession_index.items():
+            otu_records = [
+                record
+                for accession in accessions
+                if (record := indexed_records.get(accession)) is not None
+            ]
+
+            if not otu_records:
+                continue
+
+            otu_id = repo.get_otu_id_by_taxid(taxid)
+
+            update_otu_with_records(
+                repo,
+                otu=repo.get_otu(otu_id),
+                records=otu_records,
+            )
+
+            repo.get_otu(otu_id)
+
+    else:
+        ncbi = NCBIClient(ignore_cache)
+
+        for taxid, accessions in taxid_new_accession_index.items():
+            if (otu_id := repo.get_otu_id_by_taxid(taxid)) is None:
+                logger.debug("No corresponding OTU found in this repo", taxid=taxid)
+                continue
+
+            otu_records = ncbi.fetch_genbank_records(accessions)
+
+            if otu_records:
+                update_otu_with_records(
+                    repo,
+                    otu=repo.get_otu(otu_id),
+                    records=otu_records,
+                )
+
+                repo.get_otu(otu_id)
 
     repo_logger.info("Batch update complete.")
 
@@ -175,6 +221,12 @@ def batch_fetch_new_records(
     ignore_cache: bool = False,
 ) -> dict[str, NCBIGenbank]:
     """Download a batch of records and return in a dictionary indexed by accession."""
+    fetch_logger = logger.bind(
+        accession_count=len(accessions),
+        chunk_size=chunk_size,
+        ignore_cache=ignore_cache,
+    )
+
     if not accessions:
         return {}
 
@@ -182,16 +234,50 @@ def batch_fetch_new_records(
 
     fetch_list = list(accessions)
 
+    page_counter = 0
+
     indexed_records = {}
     for fetch_list_chunk in iter_fetch_list(fetch_list, chunk_size):
+        fetch_logger.info("Fetching records...", page_counter=page_counter)
+
         chunked_records = ncbi.fetch_genbank_records(fetch_list_chunk)
 
         indexed_records.update({record.accession: record for record in chunked_records})
+
+        page_counter += 1
 
     if indexed_records:
         return indexed_records
 
     return {}
+
+
+def batch_file_new_records(
+    repo: Repo,
+    indexed_accessions: dict[int, set[str]],
+    indexed_records: dict[str, NCBIGenbank],
+):
+    logger.info("Checking new records against OTUs.", otu_count=len(indexed_accessions))
+
+    for taxid, accessions in indexed_accessions.items():
+        otu_records = [
+            record
+            for accession in accessions
+            if (record := indexed_records.get(accession)) is not None
+        ]
+
+        if not otu_records:
+            continue
+
+        otu_id = repo.get_otu_id_by_taxid(taxid)
+
+        update_otu_with_records(
+            repo,
+            otu=repo.get_otu(otu_id),
+            records=otu_records,
+        )
+
+        repo.get_otu(otu_id)
 
 
 def update_isolate_from_accessions(
@@ -280,7 +366,7 @@ def update_isolate_from_records(
 def update_otu_with_accessions(
     repo: Repo,
     otu: RepoOTU,
-    accessions: list,
+    accessions: Collection[str],
     ignore_cache: bool = False,
 ) -> list[UUID]:
     """Take a list of accessions, filter for eligible accessions and
@@ -464,3 +550,36 @@ def _bin_refseq_records(
         raise ValueError("Invalid total number of records")
 
     return refseq_records, non_refseq_records
+
+
+def _cache_fetch_index(
+    fetch_index: dict[int, set[str]],
+    cache_path: Path,
+) -> Path | None:
+    validated_fetch_index = BatchFetchIndex.model_validate(fetch_index)
+
+    timestamp = arrow.utcnow().naive
+
+    filename = f"fetch_index__{timestamp:%Y}_{timestamp:%m}_{timestamp:%d}"
+
+    fetch_index_path = cache_path / f"{filename}.json"
+
+    with open(fetch_index_path, "w") as f:
+        f.write(validated_fetch_index.model_dump_json())
+
+    if fetch_index_path.exists():
+        return fetch_index_path
+
+
+def _load_fetch_index(path: Path) -> dict[int, set[str]] | None:
+    if not path.exists():
+        return None
+
+    if path.suffix != ".json":
+        return None
+
+    with open(path, "rb") as f:
+        fetch_index = BatchFetchIndex.model_validate_json(f.read())
+
+    if fetch_index:
+        return fetch_index.model_dump()
