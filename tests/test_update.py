@@ -81,7 +81,9 @@ class TestUpdateOTU:
 
         with precached_repo.lock():
             otu_after = auto_update_otu(
-                precached_repo, otu_before, start_date=datetime.date.today(),
+                precached_repo,
+                otu_before,
+                start_date=datetime.date.today(),
             )
 
         assert {
