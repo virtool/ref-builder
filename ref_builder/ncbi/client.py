@@ -180,7 +180,8 @@ class NCBIClient:
         :param taxid: A Taxonomy ID
         :param sequence_min_length: The minimum length of a fetched sequence.
         :param sequence_max_length: The maximum length of a fetched sequence.
-        :param modification_date_start: The earliest modification date a fetched sequence can have.::
+        :param modification_date_start: The earliest a sequence's latest modification date can be.::
+        :param modification_date_end: The latest a sequence's latest modification date can be.::
         :return: A list of Genbank accessions
         """
         page = 1
