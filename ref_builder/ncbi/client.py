@@ -201,8 +201,6 @@ class NCBIClient:
                 modification_date_end,
             )
 
-        print(term)
-
         # If there are more than 1000 accessions, we need to paginate.
         while True:
             retstart = (page - 1) * ESEARCH_PAGE_SIZE
