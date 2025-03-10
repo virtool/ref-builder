@@ -570,6 +570,13 @@ def _bin_refseq_records(
     return refseq_records, non_refseq_records
 
 
+def _generate_datestamp_filename():
+    """Get the current UTC date and return as a a filename_safe string."""
+    timestamp = arrow.utcnow().naive
+
+    return f"{timestamp:%Y}_{timestamp:%m}_{timestamp:%d}"
+
+
 def _cache_fetch_index(
     fetch_index: dict[int, set[str]],
     cache_path: Path,
