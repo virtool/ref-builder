@@ -112,6 +112,7 @@ class TestClientFetchRawGenbank:
         assert not records
 
 
+@pytest.mark.ncbi()
 class TestFetchAccessionsByTaxid:
     """Test NCBI ESearch interface functionality."""
 
@@ -211,8 +212,8 @@ class TestFetchAccessionsByTaxid:
         assert after_2025_accessions.issubset(after_2024_accessions)
 
 
+@pytest.mark.ncbi()
 class TestFetchTaxonomy:
-    @pytest.mark.ncbi()
     def test_ok(
         self,
         snapshot: SnapshotAssertion,
@@ -228,7 +229,6 @@ class TestFetchTaxonomy:
         # Make sure the taxid is now cached.
         assert uncached_ncbi_client.cache.load_taxonomy(1198450)
 
-    @pytest.mark.ncbi()
     def test_not_found(self, uncached_ncbi_client: NCBIClient):
         """Test that the client returns None when the taxid does not exist."""
         assert uncached_ncbi_client.fetch_taxonomy_record(99999999) is None
