@@ -464,7 +464,9 @@ class NCBIClient:
         :return: A formatted date filter string or an empty string.
         """
         if filter_type not in {"MDAT", "PDAT"}:
-            raise ValueError("Invalid filter type. Only ``MDAT``, ``PDAT`` are supported.")
+            raise ValueError(
+                "Invalid filter type. Only ``MDAT``, ``PDAT`` are supported."
+            )
 
         if start_date is None and end_date is None:
             return ""
