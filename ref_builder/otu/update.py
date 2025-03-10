@@ -188,6 +188,7 @@ def batch_update_repo(
 def batch_fetch_new_accessions(
     otus: Iterable[RepoOTU],
     modification_date_start: datetime.date | None = None,
+    modification_date_end: datetime.date | None = None,
     ignore_cache: bool = False,
 ) -> dict[int, set[str]]:
     """Check OTU iterator for new accessions and return results indexed by taxid."""
@@ -213,6 +214,7 @@ def batch_fetch_new_accessions(
             sequence_min_length=get_segments_min_length(otu.plan.segments),
             sequence_max_length=get_segments_max_length(otu.plan.segments),
             modification_date_start=modification_date_start,
+            modification_date_end=modification_date_end,
         )
 
         accessions_to_fetch = {
