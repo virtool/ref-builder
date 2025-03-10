@@ -428,17 +428,21 @@ def promote_otu_accessions(
 
     log.info("Checking for promotable sequences.")
 
-    accessions = ncbi.filter_accessions(ncbi.fetch_accessions_by_taxid(otu.taxid))
-    fetch_list = sorted(
-        {accession.key for accession in accessions} - otu.blocked_accessions
+    accessions = ncbi.filter_accessions(
+        ncbi.fetch_accessions_by_taxid(
+            otu.taxid,
+            sequence_min_length=get_segments_min_length(otu.plan.segments),
+            sequence_max_length=get_segments_max_length(otu.plan.segments),
+        ),
     )
+    fetch_set = {accession.key for accession in accessions} - otu.blocked_accessions
 
-    if fetch_list:
-        records = ncbi.fetch_genbank_records(fetch_list)
+    if fetch_set:
+        records = ncbi.fetch_genbank_records(fetch_set)
 
         log.debug(
             "New accessions found. Checking for promotable records.",
-            fetch_list=fetch_list,
+            fetch_list=sorted(fetch_set),
         )
 
         return promote_otu_accessions_from_records(repo, otu, records)
