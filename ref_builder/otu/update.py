@@ -585,11 +585,7 @@ def _cache_fetch_index(
 ) -> Path | None:
     validated_fetch_index = BatchFetchIndex.model_validate(fetch_index)
 
-    timestamp = arrow.utcnow().naive
-
-    filename = f"fetch_index__{timestamp:%Y}_{timestamp:%m}_{timestamp:%d}"
-
-    fetch_index_path = cache_path / f"{filename}.json"
+    fetch_index_path = cache_path / f"fetch_index__{_generate_datestamp_filename()}.json"
 
     with open(fetch_index_path, "w") as f:
         f.write(validated_fetch_index.model_dump_json())
