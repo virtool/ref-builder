@@ -28,6 +28,9 @@ base_logger = get_logger("ncbi")
 ESEARCH_PAGE_SIZE = 1000
 """The number of results to fetch per page in an Entrez esearch query."""
 
+DATE_TEMPLATE = "%Y/%m/%d"
+"""The standard date format used by NCBI Entrez."""
+
 
 class GenbankRecordKey(StrEnum):
     """Genbank record keys."""
@@ -441,6 +444,44 @@ class NCBIClient:
             return f'"{max_length}"[SLEN]'
 
         return ""
+
+    @staticmethod
+    def generate_date_filter_string(
+        filter_type: str,
+        start_date: datetime.date | None = None,
+        end_date: datetime.date | None = None,
+    ) -> str:
+        """Return a term filter string delimiting a given time range.
+
+        Returns an empty string if not given a start or end date parameter.
+
+        :param filter_type: The search term filter type. Can be "MDAT" or "PDAT".:
+        :param start_date: The start date of the search range. If None, assume no lower bound.:
+        :param end_date: The end date of the search range. If None, assume no upper bound.:
+        :return: A formatted date filter string or an empty string.
+        """
+        if filter_type not in {"MDAT", "PDAT"}:
+            raise ValueError(
+                "Invalid filter type. Only ``MDAT``, ``PDAT`` are supported."
+            )
+
+        if start_date is None and end_date is None:
+            return ""
+
+        start_date_string = "0001/01/01"
+        end_date_string = "3000/12/31"
+
+        if start_date:
+            start_date_string = start_date.strftime(DATE_TEMPLATE)
+
+            if end_date:
+                end_date_string = end_date.strftime(DATE_TEMPLATE)
+
+        return (
+            f'"{start_date_string}"[{filter_type}]'
+            + " : "
+            + f'"{end_date_string}"[{filter_type}]'
+        )
 
 
 @contextmanager
