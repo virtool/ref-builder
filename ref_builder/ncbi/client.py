@@ -173,6 +173,7 @@ class NCBIClient:
         sequence_min_length: int = 0,
         sequence_max_length: int = 0,
         modification_date_start: datetime.date | None = None,
+        modification_date_end: datetime.date | None = None,
     ) -> list[str]:
         """Fetch all accessions associated with the given ``taxid``.
 
@@ -193,12 +194,13 @@ class NCBIClient:
             )
 
         if modification_date_start is not None:
-            modification_date_start_string = modification_date_start.strftime(
-                "%Y/%m/%d"
+            term += " AND " + NCBIClient.generate_date_filter_string(
+                "MDAT",
+                modification_date_start,
+                modification_date_end,
             )
-            term += (
-                " AND " + f"{modification_date_start_string}:3000[Modification Date]"
-            )
+
+        print(term)
 
         # If there are more than 1000 accessions, we need to paginate.
         while True:
