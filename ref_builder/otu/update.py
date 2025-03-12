@@ -156,11 +156,7 @@ def batch_update_repo(
 
             otu_id = repo.get_otu_id_by_taxid(taxid)
 
-            update_otu_with_records(
-                repo,
-                otu=repo.get_otu(otu_id),
-                records=otu_records,
-            )
+            _process_records_into_otu(repo, repo.get_otu(otu_id), otu_records)
 
             repo.get_otu(otu_id)
 
@@ -175,13 +171,7 @@ def batch_update_repo(
             otu_records = ncbi.fetch_genbank_records(accessions)
 
             if otu_records:
-                update_otu_with_records(
-                    repo,
-                    otu=repo.get_otu(otu_id),
-                    records=otu_records,
-                )
-
-                repo.get_otu(otu_id)
+                _process_records_into_otu(repo, repo.get_otu(otu_id), otu_records)
 
     repo_logger.info("Batch update complete.")
 
