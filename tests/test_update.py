@@ -14,7 +14,9 @@ from ref_builder.repo import Repo
 
 
 @pytest.mark.ncbi()
-class TestPromoteAccessions:
+class TestPromoteOTU:
+    """Test OTU accession promotion from Genbank to RefSeq."""
+
     def test_ok(self, empty_repo: Repo):
         """Test that RefSeq accessions can be promoted automatically."""
         with empty_repo.lock():
