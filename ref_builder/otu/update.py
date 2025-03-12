@@ -90,8 +90,9 @@ def batch_update_repo(
     repo_logger = logger.bind(
         path=str(repo.path),
         precache_records=precache_records,
-        start_date=start_date.isoformat(),
     )
+    if start_date is not None:
+        repo_logger = repo_logger.bind(start_date.isoformat())
 
     repo_logger.info("Starting batch update...")
 
