@@ -481,6 +481,8 @@ def promote_otu_accessions_from_records(
     """
     otu_logger = logger.bind(otu_id=str(otu.id), taxid=otu.taxid)
 
+    initial_exceptions = otu.excluded_accessions.copy()
+
     refseq_records = [record for record in records if record.refseq]
 
     promoted_accessions = set()
@@ -527,18 +529,23 @@ def promote_otu_accessions_from_records(
             logger.exception()
             continue
 
-        otu_logger.debug(
-            f"{isolate.name} sequences promoted using RefSeq data",
+        otu_logger.info(
+            f"Isolate promoted using RefSeq data",
+            isolate_id=str(isolate.id),
+            isolate_name=str(isolate.name) if isolate.name is not None else None,
             accessions=promoted_isolate.accessions,
         )
 
         promoted_accessions.update(promoted_isolate.accessions)
 
     if promoted_accessions:
-        otu_logger.debug(
+        otu = repo.get_otu(otu.id)
+
+        otu_logger.info(
             "Promoted records",
             count=len(promoted_accessions),
             promoted_accessions=sorted(promoted_accessions),
+            new_excluded_accessions=sorted(otu.excluded_accessions - initial_exceptions)
         )
     else:
         otu_logger.debug("All accessions are up to date")
