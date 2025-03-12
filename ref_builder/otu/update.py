@@ -49,14 +49,16 @@ def auto_update_otu(
 
     log = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
+    fetch_set = set()
+
     if isinstance(fetch_index_path, Path):
         log.info("Loading fetch index...", fetch_index_path=str(fetch_index_path))
 
         fetch_index = _load_fetch_index(fetch_index_path)
 
-        accessions = ncbi.filter_accessions(fetch_index[otu.taxid])
+        fetch_set = fetch_index.get(otu.taxid, fetch_set)
 
-    else:
+    if not fetch_set:
         accessions = ncbi.filter_accessions(
             ncbi.fetch_accessions_by_taxid(
                 otu.taxid,
@@ -65,15 +67,11 @@ def auto_update_otu(
             ),
         )
 
-    fetch_list = sorted(
-        {accession.key for accession in accessions} - otu.blocked_accessions
-    )
+        fetch_set = {accession.key for accession in accessions} - otu.blocked_accessions
 
-    if fetch_list:
+    if fetch_set:
         log.info("Syncing OTU with Genbank.")
-        new_isolate_ids = update_otu_with_accessions(
-            repo, otu, fetch_list, ignore_cache
-        )
+        new_isolate_ids = update_otu_with_accessions(repo, otu, fetch_set, ignore_cache)
 
         if new_isolate_ids:
             log.info("Added new isolates", isolate_ids=new_isolate_ids)
