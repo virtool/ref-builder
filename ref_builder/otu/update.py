@@ -469,7 +469,12 @@ def promote_otu_accessions_from_records(
     promoted_isolates = defaultdict(list)
 
     for record in refseq_records:
-        _, predecessor_accession = parse_refseq_comment(record.comment)
+        try:
+            _, predecessor_accession = parse_refseq_comment(record.comment)
+
+        except ValueError as e:
+            logger.debug(e, accession=record.accession_version, comment=record.comment)
+            continue
 
         if predecessor_accession in otu.accessions:
             otu_logger.debug(
