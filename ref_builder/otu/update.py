@@ -542,7 +542,9 @@ def promote_otu_accessions_from_records(
             "Promoted records",
             count=len(promoted_accessions),
             promoted_accessions=sorted(promoted_accessions),
-            new_excluded_accessions=sorted(otu.excluded_accessions - initial_exceptions)
+            new_excluded_accessions=sorted(
+                otu.excluded_accessions - initial_exceptions
+            ),
         )
     else:
         otu_logger.debug("All accessions are up to date")
