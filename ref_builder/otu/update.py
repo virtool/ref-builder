@@ -390,7 +390,7 @@ def update_otu_with_accessions(
 
     records = ncbi.fetch_genbank_records(accessions)
 
-    if promote_otu_accessions(repo, otu, ignore_cache):
+    if promote_otu_accessions_from_records(repo, otu, records):
         otu = repo.get_otu(otu.id)
 
     if records:
