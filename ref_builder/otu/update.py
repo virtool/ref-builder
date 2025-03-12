@@ -41,6 +41,7 @@ BatchFetchIndex = RootModel[dict[int, set[str]]]
 def auto_update_otu(
     repo: Repo,
     otu: RepoOTU,
+    fetch_index_path: Path | None = None,
     ignore_cache: bool = False,
 ) -> RepoOTU:
     """Fetch new accessions for the OTU and create isolates as possible."""
@@ -48,13 +49,21 @@ def auto_update_otu(
 
     log = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
-    accessions = ncbi.filter_accessions(
-        ncbi.fetch_accessions_by_taxid(
-            otu.taxid,
-            sequence_min_length=get_segments_min_length(otu.plan.segments),
-            sequence_max_length=get_segments_max_length(otu.plan.segments),
-        ),
-    )
+    if isinstance(fetch_index_path, Path):
+        log.info("Loading fetch index...", fetch_index_path=str(fetch_index_path))
+
+        fetch_index = _load_fetch_index(fetch_index_path)
+
+        accessions = ncbi.filter_accessions(fetch_index[otu.taxid])
+
+    else:
+        accessions = ncbi.filter_accessions(
+            ncbi.fetch_accessions_by_taxid(
+                otu.taxid,
+                sequence_min_length=get_segments_min_length(otu.plan.segments),
+                sequence_max_length=get_segments_max_length(otu.plan.segments),
+            ),
+        )
 
     fetch_list = sorted(
         {accession.key for accession in accessions} - otu.blocked_accessions
