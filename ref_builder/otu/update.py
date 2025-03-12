@@ -403,11 +403,8 @@ def update_otu_with_accessions(
 
     records = ncbi.fetch_genbank_records(accessions)
 
-    if promote_otu_accessions_from_records(repo, otu, records):
-        otu = repo.get_otu(otu.id)
-
     if records:
-        return update_otu_with_records(repo, otu, records)
+        return _process_records_into_otu(repo, otu, records)
 
 
 def update_otu_with_records(
