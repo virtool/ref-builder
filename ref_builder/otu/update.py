@@ -350,6 +350,38 @@ def update_isolate_from_records(
     return isolate
 
 
+def _process_records_into_otu(
+    repo: Repo,
+    otu: RepoOTU,
+    records: list[NCBIGenbank],
+):
+    genbank_records, refseq_records = [], []
+
+    for record in records:
+        if record.refseq:
+            refseq_records.append(record)
+
+        else:
+            genbank_records.append(record)
+
+    if promote_otu_accessions_from_records(
+        repo,
+        otu=repo.get_otu(otu.id),
+        records=refseq_records,
+    ):
+        otu = repo.get_otu(otu.id)
+
+    new_isolate_ids = update_otu_with_records(
+        repo,
+        otu=otu,
+        records=genbank_records,
+    )
+
+    repo.get_otu(otu.id)
+
+    return new_isolate_ids
+
+
 def update_otu_with_accessions(
     repo: Repo,
     otu: RepoOTU,
