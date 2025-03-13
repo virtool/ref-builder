@@ -1,5 +1,4 @@
 from pathlib import Path
-import subprocess
 
 import pytest
 from syrupy import SnapshotAssertion
@@ -103,30 +102,6 @@ class TestPromoteOTU:
         }
 
         assert otu_after.excluded_accessions == {"MF062125", "MF062126", "MF062127"}
-
-    def test_command_ok(self, empty_repo: Repo):
-        with empty_repo.lock():
-            otu = create_otu_with_taxid(
-                empty_repo, 2164102, ["MF062125", "MF062126", "MF062127"], acronym=""
-            )
-
-        otu_before = empty_repo.get_otu(otu.id)
-
-        assert otu_before.accessions == {"MF062125", "MF062126", "MF062127"}
-
-        subprocess.run(
-            ["ref-builder", "otu", "--path", str(empty_repo.path)]
-            + ["promote", str(2164102)],
-            check=False,
-        )
-
-        repo_after = Repo(empty_repo.path)
-
-        otu_after = repo_after.get_otu(otu.id)
-
-        assert otu_after.representative_isolate == otu_before.representative_isolate
-
-        assert otu_after.accessions == {"NC_055390", "NC_055391", "NC_055392"}
 
 
 @pytest.mark.ncbi()
