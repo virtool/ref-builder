@@ -79,15 +79,19 @@ def allow_accessions_into_otu(
         )
 
 
-def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
+def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> bool:
     """Remove an isolate from a specified OTU."""
     otu_logger = logger.bind(otu_id=str(otu.id), taxid=otu.taxid)
+
+    if isolate_id == otu.representative_isolate:
+        otu_logger.error("The representative isolate cannot be deleted from the OTU.")
+        return False
 
     isolate = otu.get_isolate(isolate_id)
 
     if not isolate:
         otu_logger.error("Isolate not found.", isolate_id=isolate_id)
-        return
+        return False
 
     with repo.use_transaction():
         repo.delete_isolate(otu.id, isolate.id, rationale=DeleteRationale.USER)
@@ -98,6 +102,10 @@ def delete_isolate_from_otu(repo: Repo, otu: RepoOTU, isolate_id: UUID) -> None:
         removed_isolate_id=isolate_id,
         current_isolate_ids=list[otu.isolate_ids],
     )
+
+    repo.get_otu(otu.id)
+
+    return True
 
 
 def set_plan(
