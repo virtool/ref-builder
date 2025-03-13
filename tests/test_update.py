@@ -15,6 +15,19 @@ from ref_builder.repo import Repo
 
 
 @pytest.fixture()
+def mock_repo(precached_repo: Repo) -> Repo:
+    with precached_repo.lock():
+        create_otu_with_taxid(
+            precached_repo,
+            2164102,
+            ["MF062125", "MF062126", "MF062127"],
+            "",
+        )
+
+    yield precached_repo
+
+
+@pytest.fixture()
 def mock_fetch_index_path(tmp_path: Path) -> Path:
     file_path = tmp_path / "fetch_index_2165102.json"
 
@@ -221,6 +234,31 @@ class TestUpdateOTU:
         assert {
             str(isolate.name): isolate.accessions for isolate in otu_after.isolates
         } == snapshot()
+
+    def test_with_fetch_index_ok(self, mock_repo: Repo, mock_fetch_index_path: Path):
+        otu_initial = next(mock_repo.iter_otus())
+
+        assert otu_initial
+
+        with mock_repo.lock():
+            otu_after = auto_update_otu(
+                mock_repo, otu_initial, fetch_index_path=mock_fetch_index_path
+            )
+
+        assert otu_after.accessions == {
+            "MF062136",
+            "MF062137",
+            "MF062138",
+            "MF062130",
+            "MF062131",
+            "MF062132",
+            "NC_055390",
+            "NC_055391",
+            "NC_055392",
+            "OR889795",
+            "OR889796",
+            "OR889797",
+        }
 
 
 def test_iter_fetch_list():
