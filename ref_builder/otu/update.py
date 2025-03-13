@@ -436,9 +436,13 @@ def promote_otu_accessions(
 
     log.info("Checking for promotable sequences.")
 
-    accessions = ncbi.filter_accessions(ncbi.fetch_accessions_by_taxid(otu.taxid))
-    fetch_list = sorted(
-        {accession.key for accession in accessions} - otu.blocked_accessions
+    accessions = ncbi.filter_accessions(
+        ncbi.fetch_accessions_by_taxid(
+            otu.taxid,
+            sequence_min_length=get_segments_min_length(otu.plan.segments),
+            sequence_max_length=get_segments_max_length(otu.plan.segments),
+            refseq_only=True,
+        ),
     )
 
     if fetch_list:

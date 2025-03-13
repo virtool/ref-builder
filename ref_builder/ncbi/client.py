@@ -168,6 +168,7 @@ class NCBIClient:
         taxid: int,
         sequence_min_length: int = 0,
         sequence_max_length: int = 0,
+        refseq_only: bool = False,
     ) -> list[str]:
         """Fetch all accessions associated with the given ``taxid``.
 
@@ -185,6 +186,9 @@ class NCBIClient:
                 sequence_min_length,
                 sequence_max_length,
             )
+
+        if refseq_only:
+            term += " AND " + "refseq[filter]"
 
         # If there are more than 1000 accessions, we need to paginate.
         while True:
