@@ -205,9 +205,7 @@ class TestUpdateOTU:
         )
 
         with precached_repo.lock():
-            auto_update_otu(precached_repo, otu_before)
-
-        otu_after = precached_repo.get_otu(otu_before.id)
+            otu_after = auto_update_otu(precached_repo, otu_before)
 
         assert otu_after.get_isolate(otu_after.representative_isolate).accessions == {
             "NC_055390",
