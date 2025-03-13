@@ -6,7 +6,6 @@ from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
 from ref_builder.otu.create import create_otu_with_taxid
-from ref_builder.otu.isolate import add_genbank_isolate
 from ref_builder.otu.modify import (
     add_segments_to_plan,
     allow_accessions_into_otu,
@@ -17,9 +16,6 @@ from ref_builder.otu.modify import (
     set_plan,
     set_plan_length_tolerances,
     set_representative_isolate,
-)
-from ref_builder.otu.update import (
-    promote_otu_accessions,
 )
 from ref_builder.plan import (
     Plan,
@@ -412,84 +408,3 @@ class TestReplaceSequence:
             == otu_after.get_isolate(isolate_id).accessions
             == {"NC_003355"}
         )
-
-
-@pytest.mark.ncbi()
-class TestPromoteAccessions:
-    def test_ok(self, empty_repo: Repo):
-        """Test that RefSeq accessions can be promoted automatically."""
-        with empty_repo.lock():
-            otu = create_otu_with_taxid(
-                empty_repo, 2164102, ["MF062136", "MF062137", "MF062138"], acronym=""
-            )
-
-            isolate = add_genbank_isolate(
-                empty_repo, otu, ["MF062125", "MF062126", "MF062127"]
-            )
-
-        otu_before = empty_repo.get_otu(otu.id)
-
-        assert otu_before.accessions == {
-            "MF062125",
-            "MF062126",
-            "MF062127",
-            "MF062136",
-            "MF062137",
-            "MF062138",
-        }
-
-        assert otu_before.get_isolate(isolate.id).accessions == {
-            "MF062125",
-            "MF062126",
-            "MF062127",
-        }
-
-        with empty_repo.lock():
-            promoted_accessions = promote_otu_accessions(empty_repo, otu_before)
-
-        assert promoted_accessions == {"NC_055390", "NC_055391", "NC_055392"}
-
-        otu_after = empty_repo.get_otu(otu.id)
-
-        assert otu_after.isolate_ids == otu_before.isolate_ids
-
-        assert otu_after.accessions == {
-            "NC_055390",
-            "NC_055391",
-            "NC_055392",
-            "MF062136",
-            "MF062137",
-            "MF062138",
-        }
-
-        assert otu_after.get_isolate(isolate.id).accessions == {
-            "NC_055390",
-            "NC_055391",
-            "NC_055392",
-        }
-
-        assert otu_after.excluded_accessions == {"MF062125", "MF062126", "MF062127"}
-
-    def test_command_ok(self, empty_repo: Repo):
-        with empty_repo.lock():
-            otu = create_otu_with_taxid(
-                empty_repo, 2164102, ["MF062125", "MF062126", "MF062127"], acronym=""
-            )
-
-        otu_before = empty_repo.get_otu(otu.id)
-
-        assert otu_before.accessions == {"MF062125", "MF062126", "MF062127"}
-
-        subprocess.run(
-            ["ref-builder", "otu", "--path", str(empty_repo.path)]
-            + ["promote", str(2164102)],
-            check=False,
-        )
-
-        repo_after = Repo(empty_repo.path)
-
-        otu_after = repo_after.get_otu(otu.id)
-
-        assert otu_after.representative_isolate == otu_before.representative_isolate
-
-        assert otu_after.accessions == {"NC_055390", "NC_055391", "NC_055392"}

@@ -179,18 +179,46 @@ def otu_batch_auto_update(
 
 
 @otu.command(name="update")
-@click.argument("TAXID", type=int)
+@click.argument("IDENTIFIER", type=str)
+@click.option(
+    "--fetch-index-path",
+    type=click.Path(
+        exists=True,
+        file_okay=True,
+        path_type=Path,
+    ),
+    help="Input a file path to a fetch index file.",
+)
 @ignore_cache_option
 @pass_repo
-def otu_auto_update(repo: Repo, taxid: int, ignore_cache: bool) -> None:
+def otu_auto_update(
+    repo: Repo,
+    identifier: str,
+    fetch_index_path: Path | None,
+    ignore_cache: bool,
+) -> None:
     """Update an OTU with the latest data from NCBI."""
-    otu_ = repo.get_otu_by_taxid(taxid)
+    try:
+        otu_id = UUID(identifier)
+    except ValueError:
+        otu_id = _get_otu_id_from_other_identifier(repo, identifier)
 
-    if otu_ is None:
-        click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
+    if otu_id is None:
+        click.echo("OTU not found.", err=True)
         sys.exit(1)
 
-    auto_update_otu(repo, otu_, ignore_cache=ignore_cache)
+    otu_ = repo.get_otu(otu_id)
+
+    if otu_ is None:
+        click.echo("OTU not found.", err=True)
+        sys.exit(1)
+
+    auto_update_otu(
+        repo,
+        otu_,
+        fetch_index_path=fetch_index_path,
+        ignore_cache=ignore_cache,
+    )
 
 
 @otu.command(name="promote")

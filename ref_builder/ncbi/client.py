@@ -401,7 +401,7 @@ class NCBIClient:
         return None
 
     @staticmethod
-    def filter_accessions(raw_accessions: Collection[str]) -> set:
+    def filter_accessions(raw_accessions: Collection[str]) -> set[Accession]:
         """Filter raw eSearch accession list and return a set of compliant Nucleotide accessions."""
         valid_accessions = set()
         for accession in raw_accessions:
