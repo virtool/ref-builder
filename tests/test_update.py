@@ -28,27 +28,34 @@ def mock_repo(precached_repo: Repo) -> Repo:
 
 
 @pytest.fixture()
-def mock_fetch_index_path(tmp_path: Path) -> Path:
+def mock_fetch_index() -> dict[int, set[str]]:
+    """A mock fetch index for NCBI Taxonomy ID 2164102."""
+    return {
+        2164102: {
+            "MF062130",
+            "MF062131",
+            "MF062132",
+            "MF062136",
+            "MF062137",
+            "MF062138",
+            "NC_055390",
+            "NC_055391",
+            "NC_055392",
+            "OR889795",
+            "OR889796",
+            "OR889797",
+        }
+    }
+
+
+@pytest.fixture()
+def mock_fetch_index_path(
+    mock_fetch_index: dict[int, set[str]], tmp_path: Path
+) -> Path:
+    """A temporary path to a mock fetch index."""
     file_path = tmp_path / "fetch_index_2165102.json"
 
-    fetch_index = BatchFetchIndex.model_validate(
-        {
-            2164102: {
-                "MF062130",
-                "MF062131",
-                "MF062132",
-                "MF062136",
-                "MF062137",
-                "MF062138",
-                "NC_055390",
-                "NC_055391",
-                "NC_055392",
-                "OR889795",
-                "OR889796",
-                "OR889797",
-            }
-        }
-    )
+    fetch_index = BatchFetchIndex.model_validate(mock_fetch_index)
 
     with open(file_path, "w") as f:
         f.write(fetch_index.model_dump_json())
@@ -179,6 +186,7 @@ class TestUpdateOTU:
     def test_with_refseq_replacement_ok(
         self,
         precached_repo: Repo,
+        mock_fetch_index: dict[int, set[str]],
         snapshot: SnapshotAssertion,
     ):
         """Test that automatic update replaces superceded accessions with RefSeq versions."""
@@ -216,26 +224,19 @@ class TestUpdateOTU:
         assert otu_after.isolate_ids.issuperset(otu_before.isolate_ids)
         assert otu_after.excluded_accessions == {"MF062125", "MF062126", "MF062127"}
 
-        assert otu_after.accessions == {
-            "MF062136",
-            "MF062137",
-            "MF062138",
-            "MF062130",
-            "MF062131",
-            "MF062132",
-            "NC_055390",
-            "NC_055391",
-            "NC_055392",
-            "OR889795",
-            "OR889796",
-            "OR889797",
-        }
+        assert otu_after.accessions == mock_fetch_index[2164102]
 
         assert {
             str(isolate.name): isolate.accessions for isolate in otu_after.isolates
         } == snapshot()
 
-    def test_with_fetch_index_ok(self, mock_repo: Repo, mock_fetch_index_path: Path):
+    def test_with_fetch_index_ok(
+        self,
+        mock_repo: Repo,
+        mock_fetch_index: dict[int, set[str]],
+        mock_fetch_index_path: Path,
+    ):
+        """Test with a path to a pre-made fetch index as input."""
         otu_initial = next(mock_repo.iter_otus())
 
         assert otu_initial
@@ -245,38 +246,14 @@ class TestUpdateOTU:
                 mock_repo, otu_initial, fetch_index_path=mock_fetch_index_path
             )
 
-        assert otu_after.accessions == {
-            "MF062136",
-            "MF062137",
-            "MF062138",
-            "MF062130",
-            "MF062131",
-            "MF062132",
-            "NC_055390",
-            "NC_055391",
-            "NC_055392",
-            "OR889795",
-            "OR889796",
-            "OR889797",
-        }
+        assert otu_after.accessions == mock_fetch_index[2164102]
 
 
-def test_iter_fetch_list():
+def test_iter_fetch_list(
+    mock_fetch_index: dict[int, set[str]],
+):
     """Test fetch list iterator."""
-    fetch_list = [
-        "MF062136",
-        "MF062137",
-        "MF062138",
-        "MF062130",
-        "MF062131",
-        "MF062132",
-        "NC_055390",
-        "NC_055391",
-        "NC_055392",
-        "OR889795",
-        "OR889796",
-        "OR889797",
-    ]
+    fetch_list = list(mock_fetch_index[2164102])
 
     for page_size in [1, 3, 5, 20]:
         for fetch_list_segment in iter_fetch_list(fetch_list, page_size):
