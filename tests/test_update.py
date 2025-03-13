@@ -1,3 +1,4 @@
+from pathlib import Path
 import subprocess
 
 import pytest
@@ -6,11 +7,43 @@ from syrupy import SnapshotAssertion
 from ref_builder.otu.create import create_otu_with_taxid
 from ref_builder.otu.isolate import add_genbank_isolate
 from ref_builder.otu.update import (
+    BatchFetchIndex,
     auto_update_otu,
     iter_fetch_list,
     promote_otu_accessions,
 )
 from ref_builder.repo import Repo
+
+
+@pytest.fixture()
+def mock_fetch_index_path(tmp_path: Path) -> Path:
+    file_path = tmp_path / "fetch_index_2165102.json"
+
+    fetch_index = BatchFetchIndex.model_validate(
+        {
+            2164102: {
+                "MF062130",
+                "MF062131",
+                "MF062132",
+                "MF062136",
+                "MF062137",
+                "MF062138",
+                "NC_055390",
+                "NC_055391",
+                "NC_055392",
+                "OR889795",
+                "OR889796",
+                "OR889797",
+            }
+        }
+    )
+
+    with open(file_path, "w") as f:
+        f.write(fetch_index.model_dump_json())
+
+    yield file_path
+
+    file_path.unlink()
 
 
 @pytest.mark.ncbi()
