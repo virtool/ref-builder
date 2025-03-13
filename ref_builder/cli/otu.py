@@ -5,7 +5,7 @@ from uuid import UUID
 import click
 import structlog
 
-from ref_builder.cli.utils import pass_repo
+from ref_builder.cli.utils import pass_repo, get_otu_from_identifier
 from ref_builder.cli.validate import validate_no_duplicate_accessions
 from ref_builder.console import print_otu, print_otu_as_json, print_otu_list
 from ref_builder.errors import PartialIDConflictError, InvalidInputError
@@ -198,20 +198,7 @@ def otu_auto_update(
     ignore_cache: bool,
 ) -> None:
     """Update an OTU with the latest data from NCBI."""
-    try:
-        otu_id = UUID(identifier)
-    except ValueError:
-        otu_id = _get_otu_id_from_other_identifier(repo, identifier)
-
-    if otu_id is None:
-        click.echo("OTU not found.", err=True)
-        sys.exit(1)
-
-    otu_ = repo.get_otu(otu_id)
-
-    if otu_ is None:
-        click.echo("OTU not found.", err=True)
-        sys.exit(1)
+    otu_ = get_otu_from_identifier(repo, identifier)
 
     auto_update_otu(
         repo,
@@ -222,16 +209,16 @@ def otu_auto_update(
 
 
 @otu.command(name="promote")
-@click.argument("TAXID", type=int)
+@click.argument("IDENTIFIER", type=str)
 @ignore_cache_option
 @pass_repo
-def otu_promote_accessions(repo: Repo, taxid: int, ignore_cache: bool) -> None:
+def otu_promote_accessions(
+    repo: Repo,
+    identifier: str,
+    ignore_cache: bool
+) -> None:
     """Promote all RefSeq accessions within an OTU."""
-    otu_ = repo.get_otu_by_taxid(taxid)
-
-    if otu_ is None:
-        click.echo(f"OTU not found for Taxonomy ID {taxid}.", err=True)
-        sys.exit(1)
+    otu_ = get_otu_from_identifier(repo, identifier)
 
     promote_otu_accessions(repo, otu_, ignore_cache)
 
