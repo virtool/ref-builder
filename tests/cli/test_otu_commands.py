@@ -201,3 +201,33 @@ class TestAllowAccessionsCommand:
         assert result.exit_code == 0
 
         assert "Excluded accession list already up to date" in result.output
+
+
+class TestPromoteOTUCommand:
+    """Test that ``ref-builder otu promote`` behaves as expected."""
+
+    def test_ok(self, precached_repo: Repo):
+        taxid = 2164102
+
+        rep_isolate_accessions = {"MF062125", "MF062126", "MF062127"}
+
+        path_option = ["--path", str(precached_repo.path)]
+
+        result = runner.invoke(
+            otu_command_group,
+            path_option
+            + ["create", "--taxid", str(taxid)]
+            + list(rep_isolate_accessions),
+        )
+
+        assert result.exit_code == 0
+
+        result = runner.invoke(otu_command_group, path_option + ["promote", str(taxid)])
+
+        assert result.exit_code == 0
+
+        otu_after = precached_repo.get_otu_by_taxid(taxid)
+
+        assert otu_after.excluded_accessions == rep_isolate_accessions
+
+        assert otu_after.accessions == {"NC_055390", "NC_055391", "NC_055392"}

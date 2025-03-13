@@ -41,6 +41,7 @@ BatchFetchIndex = RootModel[dict[int, set[str]]]
 def auto_update_otu(
     repo: Repo,
     otu: RepoOTU,
+    fetch_index_path: Path | None = None,
     ignore_cache: bool = False,
 ) -> RepoOTU:
     """Fetch new accessions for the OTU and create isolates as possible."""
@@ -48,17 +49,29 @@ def auto_update_otu(
 
     log = logger.bind(taxid=otu.taxid, otu_id=str(otu.id), name=otu.name)
 
-    accessions = ncbi.filter_accessions(ncbi.fetch_accessions_by_taxid(otu.taxid))
+    fetch_set = set()
 
-    fetch_list = sorted(
-        {accession.key for accession in accessions} - otu.blocked_accessions
-    )
+    if isinstance(fetch_index_path, Path):
+        log.info("Loading fetch index...", fetch_index_path=str(fetch_index_path))
 
-    if fetch_list:
-        log.info("Syncing OTU with Genbank.")
-        new_isolate_ids = update_otu_with_accessions(
-            repo, otu, fetch_list, ignore_cache
+        fetch_index = _load_fetch_index(fetch_index_path)
+
+        fetch_set = fetch_index.get(otu.taxid, fetch_set)
+
+    if not fetch_set:
+        accessions = ncbi.filter_accessions(
+            ncbi.fetch_accessions_by_taxid(
+                otu.taxid,
+                sequence_min_length=get_segments_min_length(otu.plan.segments),
+                sequence_max_length=get_segments_max_length(otu.plan.segments),
+            ),
         )
+
+        fetch_set = {accession.key for accession in accessions} - otu.blocked_accessions
+
+    if fetch_set:
+        log.info("Syncing OTU with Genbank.")
+        new_isolate_ids = update_otu_with_accessions(repo, otu, fetch_set, ignore_cache)
 
         if new_isolate_ids:
             log.info("Added new isolates", isolate_ids=new_isolate_ids)
@@ -109,7 +122,7 @@ def batch_update_repo(
         for accession in otu_accessions
     }
 
-    logger.info("New accessions found.", accession_count=len(taxid_new_accession_index))
+    logger.info("New accessions found.", otu_count=len(taxid_new_accession_index))
 
     if precache_records:
         logger.info("Precaching records...", accession_count=len(fetch_set))
@@ -141,11 +154,7 @@ def batch_update_repo(
 
             otu_id = repo.get_otu_id_by_taxid(taxid)
 
-            update_otu_with_records(
-                repo,
-                otu=repo.get_otu(otu_id),
-                records=otu_records,
-            )
+            _process_records_into_otu(repo, repo.get_otu(otu_id), otu_records)
 
             repo.get_otu(otu_id)
 
@@ -160,13 +169,7 @@ def batch_update_repo(
             otu_records = ncbi.fetch_genbank_records(accessions)
 
             if otu_records:
-                update_otu_with_records(
-                    repo,
-                    otu=repo.get_otu(otu_id),
-                    records=otu_records,
-                )
-
-                repo.get_otu(otu_id)
+                _process_records_into_otu(repo, repo.get_otu(otu_id), otu_records)
 
     repo_logger.info("Batch update complete.")
 
@@ -252,34 +255,6 @@ def batch_fetch_new_records(
     return {}
 
 
-def batch_file_new_records(
-    repo: Repo,
-    indexed_accessions: dict[int, set[str]],
-    indexed_records: dict[str, NCBIGenbank],
-):
-    logger.info("Checking new records against OTUs.", otu_count=len(indexed_accessions))
-
-    for taxid, accessions in indexed_accessions.items():
-        otu_records = [
-            record
-            for accession in accessions
-            if (record := indexed_records.get(accession)) is not None
-        ]
-
-        if not otu_records:
-            continue
-
-        otu_id = repo.get_otu_id_by_taxid(taxid)
-
-        update_otu_with_records(
-            repo,
-            otu=repo.get_otu(otu_id),
-            records=otu_records,
-        )
-
-        repo.get_otu(otu_id)
-
-
 def update_isolate_from_accessions(
     repo: Repo,
     otu: RepoOTU,
@@ -363,6 +338,38 @@ def update_isolate_from_records(
     return isolate
 
 
+def _process_records_into_otu(
+    repo: Repo,
+    otu: RepoOTU,
+    records: list[NCBIGenbank],
+):
+    genbank_records, refseq_records = [], []
+
+    for record in records:
+        if record.refseq:
+            refseq_records.append(record)
+
+        else:
+            genbank_records.append(record)
+
+    if promote_otu_accessions_from_records(
+        repo,
+        otu=repo.get_otu(otu.id),
+        records=refseq_records,
+    ):
+        otu = repo.get_otu(otu.id)
+
+    new_isolate_ids = update_otu_with_records(
+        repo,
+        otu=otu,
+        records=genbank_records,
+    )
+
+    repo.get_otu(otu.id)
+
+    return new_isolate_ids
+
+
 def update_otu_with_accessions(
     repo: Repo,
     otu: RepoOTU,
@@ -384,11 +391,8 @@ def update_otu_with_accessions(
 
     records = ncbi.fetch_genbank_records(accessions)
 
-    if promote_otu_accessions(repo, otu, ignore_cache):
-        otu = repo.get_otu(otu.id)
-
     if records:
-        return update_otu_with_records(repo, otu, records)
+        return _process_records_into_otu(repo, otu, records)
 
 
 def update_otu_with_records(
@@ -462,6 +466,8 @@ def promote_otu_accessions_from_records(
     """
     otu_logger = logger.bind(otu_id=str(otu.id), taxid=otu.taxid)
 
+    initial_exceptions = otu.excluded_accessions.copy()
+
     refseq_records = [record for record in records if record.refseq]
 
     promoted_accessions = set()
@@ -508,18 +514,25 @@ def promote_otu_accessions_from_records(
             logger.exception()
             continue
 
-        otu_logger.debug(
-            f"{isolate.name} sequences promoted using RefSeq data",
+        otu_logger.info(
+            f"Isolate promoted using RefSeq data",
+            isolate_id=str(isolate.id),
+            isolate_name=str(isolate.name) if isolate.name is not None else None,
             accessions=promoted_isolate.accessions,
         )
 
         promoted_accessions.update(promoted_isolate.accessions)
 
     if promoted_accessions:
-        otu_logger.debug(
+        otu = repo.get_otu(otu.id)
+
+        otu_logger.info(
             "Promoted records",
             count=len(promoted_accessions),
             promoted_accessions=sorted(promoted_accessions),
+            new_excluded_accessions=sorted(
+                otu.excluded_accessions - initial_exceptions
+            ),
         )
     else:
         otu_logger.debug("All accessions are up to date")
