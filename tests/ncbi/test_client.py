@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 from syrupy import SnapshotAssertion
 
@@ -110,7 +112,10 @@ class TestClientFetchRawGenbank:
         assert not records
 
 
+@pytest.mark.ncbi()
 class TestFetchAccessionsByTaxid:
+    """Test NCBI ESearch interface functionality."""
+
     def test_ok(self):
         """Test that the client can fetch accessions by taxid."""
         assert NCBIClient.fetch_accessions_by_taxid(1198450) == [
@@ -130,7 +135,7 @@ class TestFetchAccessionsByTaxid:
         """
         assert len(NCBIClient.fetch_accessions_by_taxid(12585)) > 1000
 
-    def test_esearch_limit(self, uncached_ncbi_client: NCBIClient):
+    def test_esearch_limit_by_length(self, uncached_ncbi_client: NCBIClient):
         """Test that narrow search terms fetch a smaller subset of accessions
         than wide search terms.
         """
@@ -176,9 +181,39 @@ class TestFetchAccessionsByTaxid:
 
         assert wide_filtered_accessions - narrow_filtered_accessions
 
+    def test_esearch_limit_by_date(self, uncached_ncbi_client: NCBIClient):
+        """Test that a more recent modification date search term fetches a smaller subset of accessions"""
+        taxid = 12232
 
+        unfiltered_accessions = set(
+            uncached_ncbi_client.fetch_accessions_by_taxid(taxid)
+        )
+
+        after_2024_accessions = set(
+            NCBIClient.fetch_accessions_by_taxid(
+                taxid,
+                modification_date_start=datetime.date(year=2024, month=1, day=1),
+            )
+        )
+
+        assert len(after_2024_accessions) < len(unfiltered_accessions)
+
+        assert after_2024_accessions.issubset(unfiltered_accessions)
+
+        after_2025_accessions = set(
+            NCBIClient.fetch_accessions_by_taxid(
+                taxid,
+                modification_date_start=datetime.date(year=2025, month=1, day=1),
+            )
+        )
+
+        assert len(after_2025_accessions) < len(after_2024_accessions)
+
+        assert after_2025_accessions.issubset(after_2024_accessions)
+
+
+@pytest.mark.ncbi()
 class TestFetchTaxonomy:
-    @pytest.mark.ncbi()
     def test_ok(
         self,
         snapshot: SnapshotAssertion,
@@ -194,7 +229,6 @@ class TestFetchTaxonomy:
         # Make sure the taxid is now cached.
         assert uncached_ncbi_client.cache.load_taxonomy(1198450)
 
-    @pytest.mark.ncbi()
     def test_not_found(self, uncached_ncbi_client: NCBIClient):
         """Test that the client returns None when the taxid does not exist."""
         assert uncached_ncbi_client.fetch_taxonomy_record(99999999) is None

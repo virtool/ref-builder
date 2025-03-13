@@ -1,3 +1,4 @@
+import datetime
 from collections import defaultdict
 from collections.abc import Collection, Iterable, Iterator
 from pathlib import Path
@@ -42,6 +43,7 @@ def auto_update_otu(
     repo: Repo,
     otu: RepoOTU,
     fetch_index_path: Path | None = None,
+    start_date: datetime.date | None = None,
     ignore_cache: bool = False,
 ) -> RepoOTU:
     """Fetch new accessions for the OTU and create isolates as possible."""
@@ -64,6 +66,7 @@ def auto_update_otu(
                 otu.taxid,
                 sequence_min_length=get_segments_min_length(otu.plan.segments),
                 sequence_max_length=get_segments_max_length(otu.plan.segments),
+                modification_date_start=start_date,
             ),
         )
 
@@ -84,19 +87,27 @@ def auto_update_otu(
 
 def batch_update_repo(
     repo: Repo,
+    start_date: datetime.date | None = None,
     chunk_size: int = RECORD_FETCH_CHUNK_SIZE,
     fetch_index_path: Path | None = None,
     precache_records: bool = False,
     ignore_cache: bool = False,
 ):
     """Fetch new accessions for all OTUs in the repo and create isolates as possible."""
-    repo_logger = logger.bind(path=str(repo.path), precache_records=precache_records)
+    repo_logger = logger.bind(
+        path=str(repo.path),
+        precache_records=precache_records,
+    )
+    if start_date is not None:
+        repo_logger = repo_logger.bind(start_date.isoformat())
 
     repo_logger.info("Starting batch update...")
 
     if fetch_index_path is None:
         taxid_new_accession_index = batch_fetch_new_accessions(
-            repo.iter_otus(), ignore_cache
+            repo.iter_otus(),
+            modification_date_start=start_date,
+            ignore_cache=ignore_cache,
         )
 
         fetch_index_cache_path = _cache_fetch_index(
@@ -176,6 +187,8 @@ def batch_update_repo(
 
 def batch_fetch_new_accessions(
     otus: Iterable[RepoOTU],
+    modification_date_start: datetime.date | None = None,
+    modification_date_end: datetime.date | None = None,
     ignore_cache: bool = False,
 ) -> dict[int, set[str]]:
     """Check OTU iterator for new accessions and return results indexed by taxid."""
@@ -200,6 +213,8 @@ def batch_fetch_new_accessions(
             otu.taxid,
             sequence_min_length=get_segments_min_length(otu.plan.segments),
             sequence_max_length=get_segments_max_length(otu.plan.segments),
+            modification_date_start=modification_date_start,
+            modification_date_end=modification_date_end,
         )
 
         accessions_to_fetch = {
@@ -440,17 +455,21 @@ def promote_otu_accessions(
 
     log.info("Checking for promotable sequences.")
 
-    accessions = ncbi.filter_accessions(ncbi.fetch_accessions_by_taxid(otu.taxid))
-    fetch_list = sorted(
-        {accession.key for accession in accessions} - otu.blocked_accessions
+    accessions = ncbi.filter_accessions(
+        ncbi.fetch_accessions_by_taxid(
+            otu.taxid,
+            sequence_min_length=get_segments_min_length(otu.plan.segments),
+            sequence_max_length=get_segments_max_length(otu.plan.segments),
+        ),
     )
+    fetch_set = {accession.key for accession in accessions} - otu.blocked_accessions
 
-    if fetch_list:
-        records = ncbi.fetch_genbank_records(fetch_list)
+    if fetch_set:
+        records = ncbi.fetch_genbank_records(fetch_set)
 
         log.debug(
             "New accessions found. Checking for promotable records.",
-            fetch_list=fetch_list,
+            fetch_list=sorted(fetch_set),
         )
 
         return promote_otu_accessions_from_records(repo, otu, records)
@@ -570,17 +589,22 @@ def _bin_refseq_records(
     return refseq_records, non_refseq_records
 
 
+def _generate_datestamp_filename():
+    """Get the current UTC date and return as a a filename_safe string."""
+    timestamp = arrow.utcnow().naive
+
+    return f"{timestamp:%Y}_{timestamp:%m}_{timestamp:%d}"
+
+
 def _cache_fetch_index(
     fetch_index: dict[int, set[str]],
     cache_path: Path,
 ) -> Path | None:
     validated_fetch_index = BatchFetchIndex.model_validate(fetch_index)
 
-    timestamp = arrow.utcnow().naive
-
-    filename = f"fetch_index__{timestamp:%Y}_{timestamp:%m}_{timestamp:%d}"
-
-    fetch_index_path = cache_path / f"{filename}.json"
+    fetch_index_path = (
+        cache_path / f"fetch_index__{_generate_datestamp_filename()}.json"
+    )
 
     with open(fetch_index_path, "w") as f:
         f.write(validated_fetch_index.model_dump_json())
