@@ -189,10 +189,15 @@ def isolate_rename(
     initial_isolate_name = isolate_.name
 
     isolate_name_type, isolate_name_value = name
+
     try:
         isolate_name_ = IsolateName(type=isolate_name_type, value=isolate_name_value)
     except ValueError:
         click.echo("Invalid isolate name", err=True)
         sys.exit(1)
-    
-    rename_isolate(repo, otu_, isolate_id, isolate_name=isolate_name_)
+
+    updated_isolate = rename_isolate(repo, otu_, isolate_id, isolate_name=isolate_name_)
+
+    if updated_isolate.name == initial_isolate_name:
+        click.echo("Isolate name remains unchanged.", err=True)
+        sys.exit(1)
