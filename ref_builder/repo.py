@@ -442,6 +442,35 @@ class Repo:
             IsolateQuery(otu_id=otu_id, isolate_id=isolate_id),
         )
 
+    def rename_isolate(
+        self,
+        otu_id: uuid.UUID,
+        isolate_id: uuid.UUID,
+        isolate_name: IsolateName,
+    ) -> IsolateName:
+        """Rename an existing isolate."""
+        otu_ = self.get_otu(otu_id)
+
+        if isolate_id not in otu_.isolate_ids:
+            raise ValueError("Isolate does not exist")
+
+        isolate_initial = otu_.get_isolate(isolate_id)
+
+        if isolate_name != isolate_initial.name:
+            self._write_event(
+                RenameIsolate,
+                RenameIsolateData(name=isolate_name),
+                IsolateQuery(otu_id=otu_id, isolate_id=isolate_id),
+            )
+        else:
+            logger.debug(
+                "Redundant isolate rename operation.",
+                name=str(isolate_name),
+                id=str(isolate_id),
+            )
+
+        return self.get_otu(otu_id).get_isolate(isolate_id).name
+
     def create_sequence(
         self,
         otu_id: uuid.UUID,
