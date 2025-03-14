@@ -98,3 +98,25 @@ class DeleteIsolate(ApplicableEvent):
         otu.delete_isolate(self.query.isolate_id)
 
         return otu
+
+
+class RenameIsolateData(EventData):
+    """The data for a :class:`RenameIsolate` event."""
+
+    name: IsolateName | None
+
+
+class RenameIsolate(ApplicableEvent):
+    """An event that changes an isolate's name."""
+
+    data: RenameIsolateData
+    query: IsolateQuery
+
+    def apply(self, otu: RepoOTU) -> RepoOTU:
+        """Rename isolate and return."""
+        otu.rename_isolate(
+            isolate_id=self.query.isolate_id,
+            name=self.data.name,
+        )
+
+        return otu

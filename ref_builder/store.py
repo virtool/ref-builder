@@ -9,6 +9,7 @@ from ref_builder.events.isolate import (
     DeleteIsolate,
     LinkSequence,
     UnlinkSequence,
+    RenameIsolate,
 )
 from ref_builder.events.otu import (
     CreateOTU,
@@ -129,6 +130,7 @@ class EventStore:
                     "DeleteIsolate": DeleteIsolate,
                     "DeleteSequence": DeleteSequence,
                     "CreatePlan": CreatePlan,
+                    "RenameIsolate": RenameIsolate,
                     "SetRepresentativeIsolate": SetRepresentativeIsolate,
                     "UpdateExcludedAccessions": UpdateExcludedAccessions,
                 }[loaded["type"]]

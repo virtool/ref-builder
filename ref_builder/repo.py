@@ -48,6 +48,8 @@ from ref_builder.events.isolate import (
     DeleteIsolateData,
     LinkSequence,
     LinkSequenceData,
+    RenameIsolate,
+    RenameIsolateData,
     UnlinkSequence,
     UnlinkSequenceData,
 )
