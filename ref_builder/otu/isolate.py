@@ -226,6 +226,34 @@ def create_isolate(
     return isolate
 
 
+def rename_isolate(
+    repo: Repo,
+    otu: RepoOTU,
+    isolate_id: UUID,
+    isolate_name: IsolateName,
+) -> RepoIsolate | None:
+    isolate_ = otu.get_isolate(isolate_id)
+
+    if isolate_.name == isolate_name:
+        logger.warning(
+            "Isolate name unchanged.", id=str(isolate_.id), name=str(isolate_.name)
+        )
+
+    else:
+        old_name = isolate_.name
+
+        with repo.use_transaction():
+            new_name = repo.rename_isolate(
+                otu.id,
+                isolate_id=isolate_id,
+                isolate_name=isolate_name,
+            )
+
+        logger.info("Isolate renamed", old_name=str(old_name), name=str(new_name))
+
+    return repo.get_otu(otu.id).get_isolate(isolate_.id)
+
+
 def create_sequence_from_record(
     repo: Repo,
     otu: RepoOTU,
