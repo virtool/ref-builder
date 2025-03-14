@@ -139,13 +139,15 @@ class TestPromoteCommand:
 
         result = runner.invoke(
             otu_command_group,
-            path_option
-            + ["promote", str(taxid)],
+            path_option + ["promote", str(taxid)],
         )
 
         assert result.exit_code == 0
 
-        assert "Isolate updated" and "['NC_055390', 'NC_055391', 'NC_055392']" in result.output
+        assert (
+            "Isolate updated"
+            and "['NC_055390', 'NC_055391', 'NC_055392']" in result.output
+        )
 
         repo_after = Repo(empty_repo.path)
 
@@ -180,8 +182,7 @@ class TestPromoteCommand:
 
         result = runner.invoke(
             otu_command_group,
-            path_option
-            + ["promote", str(taxid)],
+            path_option + ["promote", str(taxid)],
         )
 
         assert result.exit_code == 0
