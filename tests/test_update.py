@@ -9,6 +9,7 @@ from ref_builder.otu.isolate import add_genbank_isolate
 from ref_builder.otu.update import (
     BatchFetchIndex,
     auto_update_otu,
+    batch_update_repo,
     iter_fetch_list,
     promote_otu_accessions,
 )
@@ -277,6 +278,26 @@ class TestUpdateOTU:
             )
 
         assert otu_after.accessions == mock_fetch_index[2164102]
+
+
+class TestBatchUpdate:
+    """Test rudimentary batch update operation with a single OTU."""
+
+    def test_with_fetch_index_ok(
+        self,
+        mock_repo: Repo,
+        mock_fetch_index: dict[int, set[str]],
+        mock_fetch_index_path: Path,
+    ):
+        """Test with a path to a pre-made fetch index as input."""
+        otu_initial = next(mock_repo.iter_otus())
+
+        with mock_repo.lock():
+            batch_update_repo(mock_repo, fetch_index_path=mock_fetch_index_path)
+
+        otu_after = next(mock_repo.iter_otus())
+
+        assert otu_after.accessions == mock_fetch_index[otu_initial.taxid]
 
 
 def test_iter_fetch_list(
