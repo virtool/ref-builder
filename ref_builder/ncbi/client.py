@@ -183,6 +183,7 @@ class NCBIClient:
         :param sequence_max_length: The maximum length of a fetched sequence.
         :param modification_date_start: The earliest a sequence's latest modification date can be.::
         :param modification_date_end: The latest a sequence's latest modification date can be.::
+        :param refseq_only: Only fetch accessions from NCBI RefSeq database.:
         :return: A list of Genbank accessions
         """
         page = 1
