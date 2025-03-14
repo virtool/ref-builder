@@ -113,6 +113,83 @@ class TestCreateOTUCommands:
         assert "Duplicate accessions are not allowed." in result.output
 
 
+class TestPromoteCommand:
+    """Test that the ``ref-builder otu promote`` command works as planned."""
+
+    def test_promotable_ok(self, empty_repo: Repo):
+        """Test that otu promote adds new accessions to OTU."""
+        path_option = ["--path", str(empty_repo.path)]
+
+        taxid = 2164102
+
+        original_rep_isolate_accessions = {"MF062125", "MF062126", "MF062127"}
+
+        result = runner.invoke(
+            otu_command_group,
+            path_option
+            + ["create", "--taxid", str(taxid)]
+            + list(original_rep_isolate_accessions),
+        )
+
+        assert result.exit_code == 0
+
+        otu_before = empty_repo.get_otu_by_taxid(taxid)
+
+        assert otu_before.accessions == original_rep_isolate_accessions
+
+        result = runner.invoke(
+            otu_command_group,
+            path_option + ["promote", str(taxid)],
+        )
+
+        assert result.exit_code == 0
+
+        assert (
+            "Isolate updated"
+            and "['NC_055390', 'NC_055391', 'NC_055392']" in result.output
+        )
+
+        repo_after = Repo(empty_repo.path)
+
+        otu_after = repo_after.get_otu(otu_before.id)
+
+        assert otu_after.representative_isolate == otu_before.representative_isolate
+
+        assert otu_after.accessions == {"NC_055390", "NC_055391", "NC_055392"}
+
+        assert otu_after.excluded_accessions == original_rep_isolate_accessions
+
+    def test_redundant_ok(self, empty_repo: Repo):
+        """Test that command works correctly when the OTU is already up to date."""
+        path_option = ["--path", str(empty_repo.path)]
+
+        taxid = 2164102
+
+        rep_isolate_accessions = {"NC_055390", "NC_055391", "NC_055392"}
+
+        result = runner.invoke(
+            otu_command_group,
+            path_option
+            + ["create", "--taxid", str(taxid)]
+            + list(rep_isolate_accessions),
+        )
+
+        assert result.exit_code == 0
+
+        otu = empty_repo.get_otu_by_taxid(taxid)
+
+        assert otu.excluded_accessions == {"MF062125", "MF062126", "MF062127"}
+
+        result = runner.invoke(
+            otu_command_group,
+            path_option + ["promote", str(taxid)],
+        )
+
+        assert result.exit_code == 0
+
+        assert "Isolate updated" not in result.output
+
+
 class TestExcludeAccessionsCommand:
     """Test that ``ref-builder otu exclude-accessions`` behaves as expected."""
 
@@ -201,3 +278,33 @@ class TestAllowAccessionsCommand:
         assert result.exit_code == 0
 
         assert "Excluded accession list already up to date" in result.output
+
+
+class TestPromoteOTUCommand:
+    """Test that ``ref-builder otu promote`` behaves as expected."""
+
+    def test_ok(self, precached_repo: Repo):
+        taxid = 2164102
+
+        rep_isolate_accessions = {"MF062125", "MF062126", "MF062127"}
+
+        path_option = ["--path", str(precached_repo.path)]
+
+        result = runner.invoke(
+            otu_command_group,
+            path_option
+            + ["create", "--taxid", str(taxid)]
+            + list(rep_isolate_accessions),
+        )
+
+        assert result.exit_code == 0
+
+        result = runner.invoke(otu_command_group, path_option + ["promote", str(taxid)])
+
+        assert result.exit_code == 0
+
+        otu_after = precached_repo.get_otu_by_taxid(taxid)
+
+        assert otu_after.excluded_accessions == rep_isolate_accessions
+
+        assert otu_after.accessions == {"NC_055390", "NC_055391", "NC_055392"}
