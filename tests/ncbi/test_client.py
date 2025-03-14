@@ -138,7 +138,9 @@ class TestFetchAccessionsByTaxid:
     def test_refseq_limit(self, uncached_ncbi_client: NCBIClient):
         """Test that RefSeq-only searches return only RefSeq accessions."""
 
-        for raw_accession in NCBIClient.fetch_accessions_by_taxid(438782, refseq_only=True):
+        for raw_accession in NCBIClient.fetch_accessions_by_taxid(
+            438782, refseq_only=True
+        ):
             assert raw_accession[:3] == "NC_"
 
     def test_esearch_limit_by_length(self, uncached_ncbi_client: NCBIClient):

@@ -227,11 +227,7 @@ def otu_auto_update(
 @click.argument("IDENTIFIER", type=str)
 @ignore_cache_option
 @pass_repo
-def otu_promote_accessions(
-    repo: Repo,
-    identifier: str,
-    ignore_cache: bool
-) -> None:
+def otu_promote_accessions(repo: Repo, identifier: str, ignore_cache: bool) -> None:
     """Promote all RefSeq accessions within an OTU."""
     otu_ = get_otu_from_identifier(repo, identifier)
 
