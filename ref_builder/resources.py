@@ -308,6 +308,12 @@ class RepoOTU(BaseModel):
 
         return None
 
+    def rename_isolate(self, isolate_id: UUID, name: IsolateName) -> IsolateName | None:
+        """Replace an isolate's name field to a new IsolateName."""
+        self._isolates_by_id[isolate_id].name = name
+
+        return self._isolates_by_id[isolate_id].name
+
     def get_sequence_by_accession(
         self,
         accession: str,
