@@ -174,6 +174,7 @@ class NCBIClient:
         sequence_max_length: int = 0,
         modification_date_start: datetime.date | None = None,
         modification_date_end: datetime.date | None = None,
+        refseq_only: bool = False,
     ) -> list[str]:
         """Fetch all accessions associated with the given ``taxid``.
 
@@ -200,6 +201,9 @@ class NCBIClient:
                 modification_date_start,
                 modification_date_end,
             )
+
+        if refseq_only:
+            term += " AND " + "refseq[filter]"
 
         # If there are more than 1000 accessions, we need to paginate.
         while True:

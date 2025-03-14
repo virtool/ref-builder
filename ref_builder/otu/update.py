@@ -460,6 +460,7 @@ def promote_otu_accessions(
             otu.taxid,
             sequence_min_length=get_segments_min_length(otu.plan.segments),
             sequence_max_length=get_segments_max_length(otu.plan.segments),
+            refseq_only=True,
         ),
     )
     fetch_set = {accession.key for accession in accessions} - otu.blocked_accessions
