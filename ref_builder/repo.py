@@ -421,6 +421,15 @@ class Repo:
         rationale: str,
     ) -> None:
         """Delete an existing isolate from a given OTU."""
+        if (otu_ := self.get_otu(otu_id)) is None:
+            raise ValueError(f"OTU does not exist: {otu_id}")
+
+        if isolate_id not in otu_.isolate_ids:
+            raise ValueError(f"Isolate does not exist: {isolate_id}")
+
+        if isolate_id == otu_.representative_isolate:
+            raise ValueError(f"Representative isolate cannot be deleted.")
+
         self._write_event(
             DeleteIsolate,
             DeleteIsolateData(rationale=rationale),
