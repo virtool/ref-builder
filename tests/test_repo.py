@@ -742,6 +742,60 @@ def test_get_isolate_id_from_partial(initialized_repo: Repo):
     assert initialized_repo.get_isolate_id_by_partial(str(isolate.id)[:8]) == isolate.id
 
 
+class TestRenameIsolate:
+    """Test that an isolate can be renamed."""
+
+    def test_ok(self, initialized_repo: Repo):
+        """Test basic Repo.rename_isolate() functionality."""
+        otu = next(initialized_repo.iter_otus())
+
+        assert otu.get_isolate(otu.representative_isolate).name == IsolateName(
+            IsolateNameType.ISOLATE, "A"
+        )
+
+        new_name_1 = IsolateName(IsolateNameType.ISOLATE, "Atype")
+
+        assert initialized_repo.last_id == 6
+
+        with initialized_repo.lock():
+            with initialized_repo.use_transaction():
+                assert (
+                    initialized_repo.rename_isolate(
+                        otu.id,
+                        otu.representative_isolate,
+                        isolate_name=new_name_1,
+                    )
+                    == new_name_1
+                )
+
+        assert (
+            initialized_repo.get_otu(otu.id).get_isolate_id_by_name(new_name_1)
+            == otu.representative_isolate
+        )
+
+        assert initialized_repo.last_id == 7
+
+    def test_redundant_name(self, initialized_repo: Repo):
+        """Test that Repo.rename_isolate() does not write a new event when given the existing name."""
+        otu = next(initialized_repo.iter_otus())
+
+        assert otu.get_isolate(otu.representative_isolate).name == IsolateName(
+            IsolateNameType.ISOLATE, "A"
+        )
+
+        assert initialized_repo.last_id == 6
+
+        with initialized_repo.lock():
+            with initialized_repo.use_transaction():
+                initialized_repo.rename_isolate(
+                    otu.id,
+                    isolate_id=otu.representative_isolate,
+                    isolate_name=IsolateName(IsolateNameType.ISOLATE, "A"),
+                )
+
+        assert initialized_repo.last_id == 6
+
+
 class TestExcludeAccessions:
     """Test that excluded accessions are reflected in events.
 
