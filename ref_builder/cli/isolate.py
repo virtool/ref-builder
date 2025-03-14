@@ -11,6 +11,7 @@ from ref_builder.otu.isolate import (
     add_and_name_isolate,
     add_genbank_isolate,
     add_unnamed_isolate,
+    rename_isolate,
 )
 from ref_builder.otu.modify import delete_isolate_from_otu
 from ref_builder.otu.utils import RefSeqConflictError
@@ -162,3 +163,36 @@ def isolate_get(repo: Repo, identifier: str, json_: bool) -> None:
         print_isolate_as_json(isolate_)
     else:
         print_isolate(isolate_, otu_.plan)
+
+
+@isolate.command(name="rename")
+@click.argument("IDENTIFIER", type=str)
+@click.option(
+    "--name",
+    required=True,
+    type=(IsolateNameType, str),
+    help='a new name for an isolate, e.g. "isolate ARWV1"',
+)
+@pass_repo
+def isolate_rename(
+    repo: Repo,
+    identifier: str,
+    name: tuple[IsolateNameType, str],
+):
+    """Replace the name of an existing isolate with a new one."""
+    otu_id, isolate_id = get_otu_isolate_ids_from_identifier(repo, identifier)
+
+    otu_ = repo.get_otu(otu_id)
+
+    isolate_ = otu_.get_isolate(isolate_id)
+
+    initial_isolate_name = isolate_.name
+
+    isolate_name_type, isolate_name_value = name
+    try:
+        isolate_name_ = IsolateName(type=isolate_name_type, value=isolate_name_value)
+    except ValueError:
+        click.echo("Invalid isolate name", err=True)
+        sys.exit(1)
+    
+    rename_isolate(repo, otu_, isolate_id, isolate_name=isolate_name_)
