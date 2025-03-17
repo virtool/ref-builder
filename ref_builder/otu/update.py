@@ -530,18 +530,19 @@ def promote_otu_accessions_from_records(
             promoted_isolate = update_isolate_from_records(
                 repo, otu, isolate_id, records
             )
-        except ValueError:
-            logger.exception()
+        except ValueError as e:
+            logger.debug(e)
             continue
 
-        otu_logger.info(
-            f"Isolate promoted using RefSeq data",
-            isolate_id=str(isolate.id),
-            isolate_name=str(isolate.name) if isolate.name is not None else None,
-            accessions=promoted_isolate.accessions,
-        )
+        if promoted_isolate is not None:
+            otu_logger.info(
+                f"Isolate promoted using RefSeq data",
+                isolate_id=str(isolate.id),
+                isolate_name=str(isolate.name) if isolate.name is not None else None,
+                accessions=promoted_isolate.accessions,
+            )
 
-        promoted_accessions.update(promoted_isolate.accessions)
+            promoted_accessions.update(promoted_isolate.accessions)
 
     if promoted_accessions:
         otu = repo.get_otu(otu.id)
