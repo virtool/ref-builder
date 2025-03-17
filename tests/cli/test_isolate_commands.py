@@ -245,3 +245,51 @@ class TestIsolateDeleteCommand:
         assert result.exit_code == 1
 
         assert "representative isolate cannot be deleted from the OTU" in result.output
+
+
+class TestIsolateRenameCommand:
+    """Test that ``ref-builder isolate rename ISOLATE_ID --name NAME`` works as expected."""
+
+    def test_ok(self, scratch_repo):
+        otu_initial = scratch_repo.get_otu_by_taxid(1169032)
+
+        isolate_initial = otu_initial.get_isolate(otu_initial.representative_isolate)
+
+        result = runner.invoke(
+            isolate_command_group,
+            [
+                "--path",
+                str(scratch_repo.path),
+                "rename",
+                str(isolate_initial.id),
+                "--name",
+                "isolate",
+                "plox",
+            ],
+        )
+
+        assert result.exit_code == 0
+
+    def test_unchanged(self, scratch_repo):
+        otu_initial = scratch_repo.get_otu_by_taxid(1169032)
+
+        isolate_initial = otu_initial.get_isolate(otu_initial.representative_isolate)
+
+        isolate_initial_name = isolate_initial.name
+
+        result = runner.invoke(
+            isolate_command_group,
+            [
+                "--path",
+                str(scratch_repo.path),
+                "rename",
+                str(isolate_initial.id),
+                "--name",
+                isolate_initial_name.type,
+                isolate_initial_name.value,
+            ],
+        )
+
+        assert result.exit_code == 1
+
+        assert "name unchanged" in result.output
