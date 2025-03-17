@@ -305,8 +305,8 @@ def update_isolate_from_records(
     else:
         try:
             assigned = assign_records_to_segments(records, otu.plan)
-        except ValueError:
-            logger.exception()
+        except ValueError as e:
+            logger.debug(e)
             return None
 
     for segment_id, record in assigned.items():
