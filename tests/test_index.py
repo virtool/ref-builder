@@ -3,6 +3,7 @@
 import uuid
 from pathlib import Path
 
+import arrow
 import pytest
 
 from ref_builder.index import EventIndexItem, Index
@@ -111,9 +112,9 @@ class TestEvents:
         """Test that we can set and get events IDs for an OTU."""
         otu = indexable_otus[1]
 
-        index.add_event_id(100, otu.id)
-        index.add_event_id(101, otu.id)
-        index.add_event_id(104, otu.id)
+        index.add_event_id(100, otu.id, arrow.utcnow().naive)
+        index.add_event_id(101, otu.id, arrow.utcnow().naive)
+        index.add_event_id(104, otu.id, arrow.utcnow().naive)
 
         assert index.get_event_ids_by_otu_id(otu.id) == EventIndexItem(
             event_ids=[100, 101, 104],
