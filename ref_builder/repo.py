@@ -13,6 +13,7 @@ TODO: Check for accession conflicts.
 
 """
 
+import datetime
 import shutil
 import uuid
 from collections import defaultdict
@@ -837,6 +838,10 @@ class Repo:
             )
 
         return self._index.get_isolate_id_by_partial(partial)
+
+    def get_otu_last_modified(self, otu_id: uuid.UUID) -> datetime.datetime | None:
+        """Get the timestamp of the last event associated with an OTU."""
+        return self._index.get_latest_timestamp_by_otu_id(otu_id)
 
     def _rehydrate_otu(self, events: Iterator[Event]) -> RepoOTU:
         event = next(events)
