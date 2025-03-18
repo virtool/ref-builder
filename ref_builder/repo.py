@@ -311,7 +311,7 @@ class Repo:
             except KeyError:
                 continue
 
-            self._index.add_event_id(event.id, otu_id)
+            self._index.add_event_id(event.id, otu_id, event.timestamp)
 
     def iter_minimal_otus(self) -> Iterator[OTUMinimal]:
         """Iterate over minimal representations of the OTUs in the repository.
@@ -894,7 +894,9 @@ class Repo:
         )
 
         if hasattr(event.query, "otu_id"):
-            self._index.add_event_id(event.id, event.query.otu_id)
+            self._index.add_event_id(
+                event.id, event.query.otu_id, timestamp=event.timestamp,
+            )
 
         return event
 
