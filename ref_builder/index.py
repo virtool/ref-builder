@@ -174,6 +174,23 @@ class Index:
 
         return None
 
+    def get_latest_timestamp_by_otu_id(self, otu_id: UUID) -> datetime.datetime | None:
+        """Get the timestamp of the latest event associated with this ID."""
+        cursor = self.con.execute(
+            """
+            SELECT timestamp
+            FROM events
+            WHERE otu_id = ?
+            ORDER BY event_id DESC
+            """,
+            (str(otu_id),),
+        )
+
+        if result := cursor.fetchone():
+            return datetime.datetime.fromisoformat(result[0])
+
+        return None
+
     def get_id_by_legacy_id(self, legacy_id: str) -> UUID | None:
         """Get an OTU ID by its legacy ID."""
         cursor = self.con.execute(
