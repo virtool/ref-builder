@@ -31,8 +31,6 @@ class Accession:
     @classmethod
     def from_string(cls, string: str) -> "Accession":
         """Create an Accession from a raw accession string."""
-        accession_parts = string.split(".")
-
         try:
             key, string_version = string.split(".")
         except ValueError as e:
@@ -149,7 +147,10 @@ def get_accession_key(raw: str) -> str:
     if GENBANK_ACCESSION_PATTERN.match(raw) or REFSEQ_ACCESSION_PATTERN.match(raw):
         return raw
 
-    versioned_accession = Accession.from_string(raw)
+    try:
+        versioned_accession = Accession.from_string(raw)
+    except ValueError:
+        raise ValueError("Invalid accession key")
 
     if GENBANK_ACCESSION_PATTERN.match(
         versioned_accession.key
