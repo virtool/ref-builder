@@ -125,6 +125,26 @@ class TestEvents:
         """Test that we get ``None`` when an OTU ID is not found."""
         assert index.get_event_ids_by_otu_id(uuid.uuid4()) is None
 
+    def test_get_latest_timestamp_ok(self, index: Index, indexable_otus: list[RepoOTU]):
+        """Test ``.get_latest_timestamp_by_otu_id()`` retrieves the latest timestamp."""
+        otu = indexable_otus[1]
+
+        index.add_event_id(100, otu.id, arrow.utcnow().naive)
+
+        first_timestamp = arrow.utcnow().naive
+
+        index.add_event_id(101, otu.id, first_timestamp)
+
+        assert index.get_latest_timestamp_by_otu_id(otu.id) == first_timestamp
+
+        second_timestamp = arrow.utcnow().naive
+
+        index.add_event_id(104, otu.id, second_timestamp)
+
+        assert second_timestamp > first_timestamp
+
+        assert index.get_latest_timestamp_by_otu_id(otu.id) == second_timestamp
+
 
 class TestGetIDByPartial:
     """Test the `get_id_by_partial` method of the Snapshotter class."""
