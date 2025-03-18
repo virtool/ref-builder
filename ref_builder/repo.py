@@ -805,6 +805,12 @@ class Repo:
 
         return otu
 
+    def iter_otu_events(self, otu_id: uuid.UUID) -> Generator[ApplicableEvent, None, None]:
+        """Iterate through event log."""
+        if (event_index_item := self._index.get_event_ids_by_otu_id(otu_id)) is not None:
+            for event_id in event_index_item.event_ids:
+                yield self._event_store.read_event(event_id)
+
     def get_otu_by_taxid(self, taxid: int) -> RepoOTU | None:
         """Return the OTU with the given ``taxid``.
 
