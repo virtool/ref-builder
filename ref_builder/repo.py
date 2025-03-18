@@ -669,8 +669,9 @@ class Repo:
         except ValueError as e:
             if "Invalid accession key" in str(e):
                 logger.warning(
-                    "Invalid accession included in set. No changes were made to "
-                    "excluded accessions."
+                    "Invalid accession included in set. "
+                    "No changes were made to excluded accessions.",
+                    accessions=sorted(accessions),
                 )
 
                 return otu.excluded_accessions
