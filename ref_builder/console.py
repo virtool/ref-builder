@@ -106,6 +106,25 @@ def print_otu(otu: RepoOTU) -> None:
         _print_isolate(isolate, otu.plan, max_accession_length, max_segment_name_length)
 
 
+def print_otu_event_log(events: list) -> None:
+    rows = [(str(event.id), event.type, event.timestamp.isoformat()) for event in events]
+
+    raw_headers = ("EVENT ID", "TYPE", "TIMESTAMP")
+    col_widths = [max(len(row[i]) for row in rows + [raw_headers]) for i in range(3)]
+
+    # Define a row format based on column widths
+    row_format = "  ".join(f"{{:<{w}}}" for w in col_widths)
+
+    # Header without bold.
+    header_text = row_format.format(*raw_headers)
+
+    # Apply ANSI bold code and print.
+    print(f"\033[1m{header_text}\033[0m")  # noqa: T201
+    print("\n".join([row_format.format(*row) for row in rows]))  # noqa: T201
+
+
+
+
 def print_otu_list(otus: Iterator[OTUMinimal]) -> None:
     """Print a list of OTUs to the console.
 
