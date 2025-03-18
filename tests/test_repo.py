@@ -637,6 +637,8 @@ class TestGetOTU:
         """
         otu = initialized_repo.get_otu_by_taxid(12242)
 
+        excludable_accessions = {"GR33333", "TL44322"}
+
         with initialized_repo.lock(), initialized_repo.use_transaction():
             sequence = initialized_repo.create_sequence(
                 otu.id,
@@ -655,14 +657,16 @@ class TestGetOTU:
 
             initialized_repo.link_sequence(otu.id, isolate.id, sequence_id=sequence.id)
 
-            initialized_repo.exclude_accession(otu.id, "GROK")
-            initialized_repo.exclude_accession(otu.id, "TOK")
+        assert initialized_repo.get_otu(otu.id).blocked_accessions == {"TMVABC", "TMVABCB"}
+
+        with initialized_repo.lock(), initialized_repo.use_transaction():
+            initialized_repo.exclude_accessions(otu.id, excludable_accessions)
 
         assert initialized_repo.get_otu(otu.id).blocked_accessions == {
             "TMVABC",
             "TMVABCB",
-            "GROK",
-            "TOK",
+            "GR33333",
+            "TL44322",
         }
 
 
