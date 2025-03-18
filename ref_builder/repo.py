@@ -291,6 +291,23 @@ class Repo:
         self._index.prune(self.head_id)
         self._event_store.prune(self.head_id)
 
+    def clear_index(self) -> bool:
+        """Delete and replace the repository read index."""
+
+        index_path = self._index.path
+
+        if index_path.exists():
+            index_path.unlink()
+
+            (index_path.parent / f"{index_path.stem}.db-shm").unlink()
+            (index_path.parent / f"{index_path.stem}.db-wal").unlink()
+
+            self._index = Index(index_path)
+
+            return True
+
+        return False
+
     def iter_minimal_otus(self) -> Iterator[OTUMinimal]:
         """Iterate over minimal representations of the OTUs in the repository.
 
