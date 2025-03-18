@@ -129,17 +129,7 @@ class Repo:
 
         # Populate the index if it is empty.
         if not self._index.otu_ids:
-            logger.info("No index found. Rebuilding...")
-            for otu in self.iter_otus_from_events():
-                self._index.upsert_otu(otu, self.last_id)
-
-            for event in self._event_store.iter_events():
-                try:
-                    otu_id = event.query.model_dump()["otu_id"]
-                except KeyError:
-                    continue
-
-                self._index.add_event_id(event.id, otu_id)
+            self.rebuild_index()
 
     @classmethod
     def new(
@@ -307,6 +297,21 @@ class Repo:
             return True
 
         return False
+
+    def rebuild_index(self) -> None:
+        """Rebuild the repository read index."""
+
+        logger.info("No index found. Rebuilding...")
+        for otu in self.iter_otus_from_events():
+            self._index.upsert_otu(otu, self.last_id)
+
+        for event in self._event_store.iter_events():
+            try:
+                otu_id = event.query.model_dump()["otu_id"]
+            except KeyError:
+                continue
+
+            self._index.add_event_id(event.id, otu_id)
 
     def iter_minimal_otus(self) -> Iterator[OTUMinimal]:
         """Iterate over minimal representations of the OTUs in the repository.
