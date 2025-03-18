@@ -761,12 +761,20 @@ class Repo:
         if event_index_item is None:
             return None
 
-        events = (
-            self._event_store.read_event(event_id)
-            for event_id in event_index_item.event_ids
-        )
+        try:
+            events = (
+                self._event_store.read_event(event_id)
+                for event_id in event_index_item.event_ids
+            )
 
-        otu = self._rehydrate_otu(events)
+            otu = self._rehydrate_otu(events)
+
+        except FileNotFoundError:
+            logger.error("Event exists in index, but not in source. Deleting index...")
+
+            self.clear_index()
+
+            raise
 
         self._index.upsert_otu(otu, self.last_id)
 
