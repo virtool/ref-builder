@@ -289,11 +289,18 @@ class TestBatchUpdate:
         mock_fetch_index: dict[int, set[str]],
         mock_fetch_index_path: Path,
     ):
-        """Test with a path to a pre-made fetch index as input."""
+        """Test with a path to a pre-made fetch index as input.
+
+        ``skip_recently_updated`` disabled for predictable test results.
+        """
         otu_initial = next(mock_repo.iter_otus())
 
         with mock_repo.lock():
-            batch_update_repo(mock_repo, fetch_index_path=mock_fetch_index_path)
+            batch_update_repo(
+                mock_repo,
+                fetch_index_path=mock_fetch_index_path,
+                skip_recently_updated=False,
+            )
 
         otu_after = next(mock_repo.iter_otus())
 
