@@ -845,6 +845,15 @@ class Repo:
         """Get the timestamp of the last event associated with an OTU."""
         return self._index.get_latest_timestamp_by_otu_id(otu_id)
 
+    def write_otu_update_history_entry(self, otu_id) -> int:
+        if update_id := self._index.add_otu_update_history_entry(
+            otu_id,
+            arrow.utcnow().naive,
+        ) is None:
+            raise SystemError("OTU update history entry could not be retrieved after writing.")
+
+        return update_id
+
     def _rehydrate_otu(self, events: Iterator[Event]) -> RepoOTU:
         event = next(events)
 
