@@ -904,6 +904,14 @@ class Repo:
 
         return update_id
 
+    def get_event(self, event_id: int) -> Event | None:
+        """Return event from event store."""
+        try:
+            return self._event_store.read_event(event_id)
+
+        except FileNotFoundError:
+            return None
+
     def _rehydrate_otu(self, events: Iterator[Event]) -> RepoOTU:
         event = next(events)
 
