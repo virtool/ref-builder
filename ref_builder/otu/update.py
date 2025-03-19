@@ -82,6 +82,8 @@ def auto_update_otu(
     else:
         log.info("OTU is up to date.")
 
+    repo.write_otu_update_history_entry(otu.id)
+
     return repo.get_otu(otu.id)
 
 
@@ -167,7 +169,7 @@ def batch_update_repo(
 
             _process_records_into_otu(repo, repo.get_otu(otu_id), otu_records)
 
-            repo.get_otu(otu_id)
+            repo.write_otu_update_history_entry(otu_id)
 
     else:
         ncbi = NCBIClient(ignore_cache)
@@ -181,6 +183,8 @@ def batch_update_repo(
 
             if otu_records:
                 _process_records_into_otu(repo, repo.get_otu(otu_id), otu_records)
+
+            repo.write_otu_update_history_entry(otu_id)
 
     repo_logger.info("Batch update complete.")
 
