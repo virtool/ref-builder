@@ -1,6 +1,7 @@
 """An index for improving repository performance."""
 
 import binascii
+import datetime
 import sqlite3
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -61,7 +62,8 @@ class Index:
             """
             CREATE TABLE IF NOT EXISTS events (
                 event_id INTEGER PRIMARY KEY,
-                otu_id TEXT
+                otu_id TEXT,
+                timestamp TEXT
             );
             """,
         )
@@ -124,22 +126,29 @@ class Index:
         """A list of all OTUs tracked in the index."""
         return {UUID(row[0]) for row in self.con.execute("SELECT id FROM otus")}
 
-    def add_event_id(self, event_id: int, otu_id: UUID) -> None:
+    def add_event_id(
+        self,
+        event_id: int,
+        otu_id: UUID,
+        timestamp: datetime.datetime,
+    ) -> None:
         """Add a new event ID and associated it with a given OTU ID.
 
         This allows fast lookup of event IDs for a given OTU ID.
 
         :param event_id: the event ID to add
         :param otu_id: the OTU ID to add the event ID to
+        :param timestamp: the timestamp of the event
         """
         self.con.execute(
             """
-            INSERT INTO events (event_id, otu_id)
-            VALUES (?, ?)
+            INSERT INTO events (event_id, otu_id, timestamp)
+            VALUES (?, ?, ?)
             """,
             (
                 event_id,
                 str(otu_id),
+                timestamp.isoformat(),
             ),
         )
 
@@ -162,6 +171,23 @@ class Index:
                 event_ids,
                 otu_id,
             )
+
+        return None
+
+    def get_latest_timestamp_by_otu_id(self, otu_id: UUID) -> datetime.datetime | None:
+        """Get the timestamp of the latest event associated with this ID."""
+        cursor = self.con.execute(
+            """
+            SELECT timestamp
+            FROM events
+            WHERE otu_id = ?
+            ORDER BY event_id DESC
+            """,
+            (str(otu_id),),
+        )
+
+        if result := cursor.fetchone():
+            return datetime.datetime.fromisoformat(result[0])
 
         return None
 

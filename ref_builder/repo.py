@@ -13,6 +13,7 @@ TODO: Check for accession conflicts.
 
 """
 
+import datetime
 import shutil
 import uuid
 from collections import defaultdict
@@ -129,17 +130,7 @@ class Repo:
 
         # Populate the index if it is empty.
         if not self._index.otu_ids:
-            logger.info("No index found. Rebuilding...")
-            for otu in self.iter_otus_from_events():
-                self._index.upsert_otu(otu, self.last_id)
-
-            for event in self._event_store.iter_events():
-                try:
-                    otu_id = event.query.model_dump()["otu_id"]
-                except KeyError:
-                    continue
-
-                self._index.add_event_id(event.id, otu_id)
+            self.rebuild_index()
 
     @classmethod
     def new(
@@ -290,6 +281,38 @@ class Repo:
         """
         self._index.prune(self.head_id)
         self._event_store.prune(self.head_id)
+
+    def clear_index(self) -> bool:
+        """Delete and replace the repository read index."""
+
+        index_path = self._index.path
+
+        if index_path.exists():
+            index_path.unlink()
+
+            (index_path.parent / f"{index_path.stem}.db-shm").unlink()
+            (index_path.parent / f"{index_path.stem}.db-wal").unlink()
+
+            self._index = Index(index_path)
+
+            return True
+
+        return False
+
+    def rebuild_index(self) -> None:
+        """Rebuild the repository read index."""
+
+        logger.info("No index found. Rebuilding...")
+        for otu in self.iter_otus_from_events():
+            self._index.upsert_otu(otu, self.last_id)
+
+        for event in self._event_store.iter_events():
+            try:
+                otu_id = event.query.model_dump()["otu_id"]
+            except KeyError:
+                continue
+
+            self._index.add_event_id(event.id, otu_id, event.timestamp)
 
     def iter_minimal_otus(self) -> Iterator[OTUMinimal]:
         """Iterate over minimal representations of the OTUs in the repository.
@@ -739,12 +762,20 @@ class Repo:
         if event_index_item is None:
             return None
 
-        events = (
-            self._event_store.read_event(event_id)
-            for event_id in event_index_item.event_ids
-        )
+        try:
+            events = (
+                self._event_store.read_event(event_id)
+                for event_id in event_index_item.event_ids
+            )
 
-        otu = self._rehydrate_otu(events)
+            otu = self._rehydrate_otu(events)
+
+        except FileNotFoundError:
+            logger.error("Event exists in index, but not in source. Deleting index...")
+
+            self.clear_index()
+
+            raise
 
         self._index.upsert_otu(otu, self.last_id)
 
@@ -808,6 +839,10 @@ class Repo:
 
         return self._index.get_isolate_id_by_partial(partial)
 
+    def get_otu_last_modified(self, otu_id: uuid.UUID) -> datetime.datetime | None:
+        """Get the timestamp of the last event associated with an OTU."""
+        return self._index.get_latest_timestamp_by_otu_id(otu_id)
+
     def _rehydrate_otu(self, events: Iterator[Event]) -> RepoOTU:
         event = next(events)
 
@@ -864,7 +899,11 @@ class Repo:
         )
 
         if hasattr(event.query, "otu_id"):
-            self._index.add_event_id(event.id, event.query.otu_id)
+            self._index.add_event_id(
+                event.id,
+                event.query.otu_id,
+                timestamp=event.timestamp,
+            )
 
         return event
 
