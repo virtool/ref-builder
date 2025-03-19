@@ -8,6 +8,7 @@ import structlog
 from rich.table import Table
 
 from ref_builder.build import build_json
+from ref_builder.cli.events import events as events_subcommand
 from ref_builder.cli.isolate import isolate
 from ref_builder.cli.otu import otu
 from ref_builder.console import console
@@ -101,6 +102,7 @@ def init(data_type: DataType, name: str, organism: str, path: Path) -> None:
 
 entry.add_command(otu)
 entry.add_command(isolate)
+entry.add_command(events_subcommand)
 
 
 @entry.group()
