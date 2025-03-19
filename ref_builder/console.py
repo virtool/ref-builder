@@ -4,6 +4,7 @@ import rich.console
 from rich.table import Table
 from rich.text import Text
 
+from ref_builder.events.base import Event
 from ref_builder.models import OTUMinimal
 from ref_builder.plan import Plan, SegmentRule
 from ref_builder.resources import RepoIsolate, RepoOTU
@@ -149,6 +150,10 @@ def print_otu_list(otus: Iterator[OTUMinimal]) -> None:
     # Apply ANSI bold code and print.
     print(f"\033[1m{header_text}\033[0m")  # noqa: T201
     print("\n".join([row_format.format(*row) for row in rows]))  # noqa: T201
+
+
+def print_event_as_json(event: Event) -> None:
+    console.print(event.model_dump_json())
 
 
 def _print_isolate(
