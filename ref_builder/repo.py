@@ -895,7 +895,9 @@ class Repo:
 
         if hasattr(event.query, "otu_id"):
             self._index.add_event_id(
-                event.id, event.query.otu_id, timestamp=event.timestamp,
+                event.id,
+                event.query.otu_id,
+                timestamp=event.timestamp,
             )
 
         return event
