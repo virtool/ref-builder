@@ -152,6 +152,49 @@ def print_otu_list(otus: Iterator[OTUMinimal]) -> None:
     print("\n".join([row_format.format(*row) for row in rows]))  # noqa: T201
 
 
+def print_event(event: Event) -> None:
+    console.print(Text(f"EVENT {event.id}", style="bold underline"))
+    console.line()
+
+    table = Table(
+        box=None,
+        show_header=False,
+    )
+
+    table.add_row("[bold]TYPE[/bold]", event.type)
+    table.add_row("[bold]TIMESTAMP[/bold]", event.timestamp.isoformat())
+
+    console.print(table)
+
+    console.line()
+    console.print("[bold]QUERY[/bold]")
+
+    query_dict = event.query.model_dump()
+
+    query_table = Table(box=None)
+    for query_attribute in query_dict:
+        query_table.add_row(
+            f"[bold]{query_attribute}[/bold]",
+            str(query_dict[query_attribute]),
+        )
+
+    console.print(query_table)
+
+    data_dict = event.data.model_dump()
+
+    data_table = Table(box=None)
+    for data_attribute in data_dict:
+        data_table.add_row(
+            f"[bold]{data_attribute}[/bold]",
+            str(data_dict[data_attribute]),
+        )
+
+    console.line()
+    console.print("[bold]DATA[/bold]")
+
+    console.print(data_table)
+
+
 def print_event_as_json(event: Event) -> None:
     console.print(event.model_dump_json())
 
