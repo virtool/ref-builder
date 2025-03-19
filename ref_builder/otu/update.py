@@ -111,8 +111,20 @@ def batch_update_repo(
     repo_logger.info("Starting batch update...")
 
     if fetch_index_path is None:
+        if skip_recently_updated:
+            otu_iterator = (
+                otu
+                for otu in repo.iter_otus()
+                if _is_past_cooldown(
+                    repo.get_otu_last_updated(otu.id),
+                    current_timestamp=operation_run_timestamp,
+                )
+            )
+        else:
+            otu_iterator = repo.iter_otus()
+
         taxid_new_accession_index = batch_fetch_new_accessions(
-            repo.iter_otus(),
+            otu_iterator,
             modification_date_start=start_date,
             ignore_cache=ignore_cache,
         )
@@ -161,18 +173,30 @@ def batch_update_repo(
         )
 
         for taxid, accessions in taxid_new_accession_index.items():
+            if (otu_id := repo.get_otu_id_by_taxid(taxid)) is None:
+                logger.debug("No corresponding OTU found in this repo", taxid=taxid)
+                continue
+
+            if skip_recently_updated and not _is_past_cooldown(
+                repo.get_otu_last_updated(otu_id),
+                current_timestamp=operation_run_timestamp,
+            ):
+                logger.info(
+                    "This OTU was updated recently. Skipping...",
+                    cooldown=UPDATE_COOLDOWN_INTERVAL_IN_DAYS,
+                    get_otu_last_updated=repo.get_otu_last_updated(otu_id).isoformat(),
+                    otu_id=str(otu_id),
+                    taxid=str(taxid),
+                )
+                continue
+
             otu_records = [
                 record
                 for accession in accessions
                 if (record := indexed_records.get(accession)) is not None
             ]
-
-            if not otu_records:
-                continue
-
-            otu_id = repo.get_otu_id_by_taxid(taxid)
-
-            _process_records_into_otu(repo, repo.get_otu(otu_id), otu_records)
+            if otu_records:
+                _process_records_into_otu(repo, repo.get_otu(otu_id), otu_records)
 
             repo.write_otu_update_history_entry(otu_id)
 
@@ -182,6 +206,19 @@ def batch_update_repo(
         for taxid, accessions in taxid_new_accession_index.items():
             if (otu_id := repo.get_otu_id_by_taxid(taxid)) is None:
                 logger.debug("No corresponding OTU found in this repo", taxid=taxid)
+                continue
+
+            if skip_recently_updated and not _is_past_cooldown(
+                repo.get_otu_last_updated(otu_id),
+                current_timestamp=operation_run_timestamp,
+            ):
+                logger.info(
+                    "This OTU was updated recently. Skipping...",
+                    cooldown=UPDATE_COOLDOWN_INTERVAL_IN_DAYS,
+                    get_otu_last_updated=repo.get_otu_last_updated(otu_id).isoformat(),
+                    otu_id=str(otu_id),
+                    taxid=str(taxid),
+                )
                 continue
 
             otu_records = ncbi.fetch_genbank_records(accessions)
