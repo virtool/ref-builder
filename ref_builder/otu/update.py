@@ -676,12 +676,15 @@ def _load_fetch_index(path: Path) -> dict[int, set[str]] | None:
 
 
 def _is_past_cooldown(
-    otu_timestamp: datetime.datetime,
+    otu_timestamp: datetime.datetime | None,
     current_timestamp: datetime.datetime | None,
     cooldown: int = UPDATE_COOLDOWN_INTERVAL_IN_DAYS,
 ) -> bool:
-    """Return True if ``otu_timestamp`` is more than ``cooldown`` days past
-    ``current_timestamp``, else false."""
+    """Return True if ``otu_timestamp`` is None or more than ``cooldown`` days past
+    ``current_timestamp``, else False."""
+    if otu_timestamp is None:
+        return True
+
     if current_timestamp is None:
         current_timestamp = arrow.utcnow().naive
 
