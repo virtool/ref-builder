@@ -103,6 +103,16 @@ class Index:
             """,
         )
 
+        self.con.execute(
+            """
+            CREATE TABLE IF NOT EXISTS otu_update_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                otu_id TEXT,
+                timestamp_complete TEXT
+            );
+            """,
+        )
+
         for table, column in [
             ("events", "otu_id"),
             ("isolates", "id"),
@@ -112,6 +122,7 @@ class Index:
             ("otus", "taxid"),
             ("sequences", "otu_id"),
             ("sequences", "crc"),
+            ("otu_update_history", "otu_id"),
         ]:
             self.con.execute(
                 f"""
@@ -334,6 +345,45 @@ class Index:
                 name=row[3],
                 taxid=row[4],
             )
+
+    def get_last_otu_update_timestamp(self, otu_id: UUID) -> datetime.datetime | None:
+        """Get the timestamp of the last event in an update for an OTU."""
+        cursor = self.con.execute(
+            """
+            SELECT timestamp_complete FROM otu_update_history 
+            WHERE otu_id = ? ORDER BY id DESC
+            """,
+            (str(otu_id),),
+        )
+
+        if result := cursor.fetchone():
+            return datetime.datetime.fromisoformat(result[0])
+
+        return None
+
+    def add_otu_update_history_entry(
+        self, otu_id, timestamp: datetime.datetime
+    ) -> int | None:
+        """Write an entry into the OTU update history."""
+        self.con.execute(
+            """
+            INSERT INTO
+            otu_update_history(otu_id, timestamp_complete)
+            VALUES(?, ?)
+            """,
+            (
+                str(otu_id),
+                timestamp.isoformat(),
+            ),
+        )
+
+        cursor = self.con.execute(
+            "SELECT id FROM otu_update_history WHERE otu_id = ? ORDER BY id DESC",
+            (str(otu_id),),
+        )
+
+        if result := cursor.fetchone():
+            return result[0]
 
     def load_snapshot(self, otu_id: UUID) -> Snapshot | None:
         """Load an OTU snapshot."""
