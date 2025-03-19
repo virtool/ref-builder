@@ -845,6 +845,11 @@ class Repo:
         """Get the timestamp of the last event associated with an OTU."""
         return self._index.get_latest_timestamp_by_otu_id(otu_id)
 
+    def get_otu_last_updated(self, otu_id: uuid.UUID) -> datetime.datetime | None:
+        """Get the timestamp of the last time this OTU was automatically updated.
+        If this OTU has not been updated since this repo was initialized, return None."""
+        return self._index.get_last_otu_update_timestamp(otu_id)
+
     def write_otu_update_history_entry(self, otu_id) -> int:
         if update_id := self._index.add_otu_update_history_entry(
             otu_id,
