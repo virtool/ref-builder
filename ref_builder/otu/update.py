@@ -34,6 +34,8 @@ OTU_FEEDBACK_INTERVAL = 100
 RECORD_FETCH_CHUNK_SIZE = 500
 """A default chunk size for NCBI EFetch calls."""
 
+UPDATE_COOLDOWN_INTERVAL_IN_DAYS = 14
+
 
 BatchFetchIndex = RootModel[dict[int, set[str]]]
 """Assists in reading and writing the fetched accessions by taxid index from file."""
@@ -93,9 +95,12 @@ def batch_update_repo(
     chunk_size: int = RECORD_FETCH_CHUNK_SIZE,
     fetch_index_path: Path | None = None,
     precache_records: bool = False,
+    skip_recently_updated: bool = True,
     ignore_cache: bool = False,
 ):
     """Fetch new accessions for all OTUs in the repo and create isolates as possible."""
+    operation_run_timestamp = arrow.utcnow().naive
+
     repo_logger = logger.bind(
         path=str(repo.path),
         precache_records=precache_records,
@@ -631,3 +636,16 @@ def _load_fetch_index(path: Path) -> dict[int, set[str]] | None:
 
     if fetch_index:
         return fetch_index.model_dump()
+
+
+def _is_past_cooldown(
+    otu_timestamp: datetime.datetime,
+    current_timestamp: datetime.datetime | None,
+    cooldown: int = UPDATE_COOLDOWN_INTERVAL_IN_DAYS,
+) -> bool:
+    """Return True if ``otu_timestamp`` is more than ``cooldown`` days past
+    ``current_timestamp``, else false."""
+    if current_timestamp is None:
+        current_timestamp = arrow.utcnow().naive
+
+    return current_timestamp - otu_timestamp > datetime.timedelta(days=cooldown)
