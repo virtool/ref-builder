@@ -1,6 +1,7 @@
 """An index for improving repository performance."""
 
 import binascii
+import datetime
 import sqlite3
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -61,7 +62,8 @@ class Index:
             """
             CREATE TABLE IF NOT EXISTS events (
                 event_id INTEGER PRIMARY KEY,
-                otu_id TEXT
+                otu_id TEXT,
+                timestamp TEXT
             );
             """,
         )
@@ -101,6 +103,16 @@ class Index:
             """,
         )
 
+        self.con.execute(
+            """
+            CREATE TABLE IF NOT EXISTS otu_updates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                otu_id TEXT,
+                timestamp_complete TEXT
+            );
+            """,
+        )
+
         for table, column in [
             ("events", "otu_id"),
             ("isolates", "id"),
@@ -110,6 +122,7 @@ class Index:
             ("otus", "taxid"),
             ("sequences", "otu_id"),
             ("sequences", "crc"),
+            ("otu_updates", "otu_id"),
         ]:
             self.con.execute(
                 f"""
@@ -124,22 +137,29 @@ class Index:
         """A list of all OTUs tracked in the index."""
         return {UUID(row[0]) for row in self.con.execute("SELECT id FROM otus")}
 
-    def add_event_id(self, event_id: int, otu_id: UUID) -> None:
+    def add_event_id(
+        self,
+        event_id: int,
+        otu_id: UUID,
+        timestamp: datetime.datetime,
+    ) -> None:
         """Add a new event ID and associated it with a given OTU ID.
 
         This allows fast lookup of event IDs for a given OTU ID.
 
         :param event_id: the event ID to add
         :param otu_id: the OTU ID to add the event ID to
+        :param timestamp: the timestamp of the event
         """
         self.con.execute(
             """
-            INSERT INTO events (event_id, otu_id)
-            VALUES (?, ?)
+            INSERT INTO events (event_id, otu_id, timestamp)
+            VALUES (?, ?, ?)
             """,
             (
                 event_id,
                 str(otu_id),
+                timestamp.isoformat(),
             ),
         )
 
@@ -162,6 +182,40 @@ class Index:
                 event_ids,
                 otu_id,
             )
+
+        return None
+
+    def get_first_timestamp_by_otu_id(self, otu_id: UUID) -> datetime.datetime | None:
+        """Get the timestamp of the earliest event associated with this ID."""
+        cursor = self.con.execute(
+            """
+            SELECT timestamp
+            FROM events
+            WHERE otu_id = ?
+            ORDER BY event_id
+            """,
+            (str(otu_id),),
+        )
+
+        if result := cursor.fetchone():
+            return datetime.datetime.fromisoformat(result[0])
+
+        return None
+
+    def get_latest_timestamp_by_otu_id(self, otu_id: UUID) -> datetime.datetime | None:
+        """Get the timestamp of the latest event associated with this ID."""
+        cursor = self.con.execute(
+            """
+            SELECT timestamp
+            FROM events
+            WHERE otu_id = ?
+            ORDER BY event_id DESC
+            """,
+            (str(otu_id),),
+        )
+
+        if result := cursor.fetchone():
+            return datetime.datetime.fromisoformat(result[0])
 
         return None
 
@@ -291,6 +345,45 @@ class Index:
                 name=row[3],
                 taxid=row[4],
             )
+
+    def get_last_otu_update_timestamp(self, otu_id: UUID) -> datetime.datetime | None:
+        """Get the timestamp of the last event in an update for an OTU."""
+        cursor = self.con.execute(
+            """
+            SELECT timestamp_complete FROM otu_updates 
+            WHERE otu_id = ? ORDER BY id DESC
+            """,
+            (str(otu_id),),
+        )
+
+        if result := cursor.fetchone():
+            return datetime.datetime.fromisoformat(result[0])
+
+        return None
+
+    def add_otu_update_history_entry(
+        self, otu_id, timestamp: datetime.datetime
+    ) -> int | None:
+        """Write an entry into the OTU update history."""
+        self.con.execute(
+            """
+            INSERT INTO
+            otu_updates(otu_id, timestamp_complete)
+            VALUES(?, ?)
+            """,
+            (
+                str(otu_id),
+                timestamp.isoformat(),
+            ),
+        )
+
+        cursor = self.con.execute(
+            "SELECT id FROM otu_updates WHERE otu_id = ? ORDER BY id DESC",
+            (str(otu_id),),
+        )
+
+        if result := cursor.fetchone():
+            return result[0]
 
     def load_snapshot(self, otu_id: UUID) -> Snapshot | None:
         """Load an OTU snapshot."""

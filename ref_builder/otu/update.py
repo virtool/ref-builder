@@ -34,6 +34,8 @@ OTU_FEEDBACK_INTERVAL = 100
 RECORD_FETCH_CHUNK_SIZE = 500
 """A default chunk size for NCBI EFetch calls."""
 
+UPDATE_COOLDOWN_INTERVAL_IN_DAYS = 14
+
 
 BatchFetchIndex = RootModel[dict[int, set[str]]]
 """Assists in reading and writing the fetched accessions by taxid index from file."""
@@ -82,6 +84,8 @@ def auto_update_otu(
     else:
         log.info("OTU is up to date.")
 
+    repo.write_otu_update_history_entry(otu.id)
+
     return repo.get_otu(otu.id)
 
 
@@ -91,9 +95,14 @@ def batch_update_repo(
     chunk_size: int = RECORD_FETCH_CHUNK_SIZE,
     fetch_index_path: Path | None = None,
     precache_records: bool = False,
+    skip_recently_updated: bool = True,
     ignore_cache: bool = False,
-):
+) -> set[UUID]:
     """Fetch new accessions for all OTUs in the repo and create isolates as possible."""
+    operation_run_timestamp = arrow.utcnow().naive
+
+    updated_otu_ids = set()
+
     repo_logger = logger.bind(
         path=str(repo.path),
         precache_records=precache_records,
@@ -104,8 +113,21 @@ def batch_update_repo(
     repo_logger.info("Starting batch update...")
 
     if fetch_index_path is None:
+        if skip_recently_updated:
+            otu_iterator = (
+                otu
+                for otu in repo.iter_otus()
+                if _otu_is_cooled(
+                    repo,
+                    otu.id,
+                    timestamp_current=operation_run_timestamp,
+                )
+            )
+        else:
+            otu_iterator = repo.iter_otus()
+
         taxid_new_accession_index = batch_fetch_new_accessions(
-            repo.iter_otus(),
+            otu_iterator,
             modification_date_start=start_date,
             ignore_cache=ignore_cache,
         )
@@ -125,7 +147,8 @@ def batch_update_repo(
 
     if not taxid_new_accession_index:
         logger.info("OTUs are up to date.")
-        return None
+
+        return updated_otu_ids
 
     fetch_set = {
         accession
@@ -133,7 +156,10 @@ def batch_update_repo(
         for accession in otu_accessions
     }
 
-    logger.info("New accessions found.", otu_count=len(taxid_new_accession_index))
+    logger.info(
+        "Batch fetch index contains potential new accessions.",
+        otu_count=len(taxid_new_accession_index),
+    )
 
     if precache_records:
         logger.info("Precaching records...", accession_count=len(fetch_set))
@@ -146,7 +172,7 @@ def batch_update_repo(
 
         if not indexed_records:
             logger.info("No valid accessions found.")
-            return None
+            return updated_otu_ids
 
         logger.info(
             "Checking new records against OTUs.",
@@ -154,20 +180,37 @@ def batch_update_repo(
         )
 
         for taxid, accessions in taxid_new_accession_index.items():
+            if (otu_id := repo.get_otu_id_by_taxid(taxid)) is None:
+                logger.debug("No corresponding OTU found in this repo", taxid=taxid)
+                continue
+
+            if skip_recently_updated and not _otu_is_cooled(
+                repo,
+                otu_id,
+                timestamp_current=operation_run_timestamp,
+            ):
+                logger.info(
+                    "This OTU was updated recently. Skipping...",
+                    cooldown=UPDATE_COOLDOWN_INTERVAL_IN_DAYS,
+                    otu_id=str(otu_id),
+                    taxid=str(taxid),
+                )
+                continue
+
             otu_records = [
                 record
                 for accession in accessions
                 if (record := indexed_records.get(accession)) is not None
             ]
+            if otu_records:
+                isolate_ids = _process_records_into_otu(
+                    repo, repo.get_otu(otu_id), otu_records
+                )
 
-            if not otu_records:
-                continue
+                if isolate_ids:
+                    updated_otu_ids.add(otu_id)
 
-            otu_id = repo.get_otu_id_by_taxid(taxid)
-
-            _process_records_into_otu(repo, repo.get_otu(otu_id), otu_records)
-
-            repo.get_otu(otu_id)
+            repo.write_otu_update_history_entry(otu_id)
 
     else:
         ncbi = NCBIClient(ignore_cache)
@@ -177,12 +220,34 @@ def batch_update_repo(
                 logger.debug("No corresponding OTU found in this repo", taxid=taxid)
                 continue
 
+            if skip_recently_updated and not _otu_is_cooled(
+                repo,
+                otu_id,
+                timestamp_current=operation_run_timestamp,
+            ):
+                logger.info(
+                    "This OTU was updated recently. Skipping...",
+                    cooldown=UPDATE_COOLDOWN_INTERVAL_IN_DAYS,
+                    otu_id=str(otu_id),
+                    taxid=str(taxid),
+                )
+                continue
+
             otu_records = ncbi.fetch_genbank_records(accessions)
 
             if otu_records:
-                _process_records_into_otu(repo, repo.get_otu(otu_id), otu_records)
+                isolate_ids = _process_records_into_otu(
+                    repo, repo.get_otu(otu_id), otu_records
+                )
+
+                if isolate_ids:
+                    updated_otu_ids.add(otu_id)
+
+            repo.write_otu_update_history_entry(otu_id)
 
     repo_logger.info("Batch update complete.")
+
+    return updated_otu_ids
 
 
 def batch_fetch_new_accessions(
@@ -602,6 +667,7 @@ def _cache_fetch_index(
     fetch_index: dict[int, set[str]],
     cache_path: Path,
 ) -> Path | None:
+    """Write a batch fetch index to file."""
     validated_fetch_index = BatchFetchIndex.model_validate(fetch_index)
 
     fetch_index_path = (
@@ -616,6 +682,7 @@ def _cache_fetch_index(
 
 
 def _load_fetch_index(path: Path) -> dict[int, set[str]] | None:
+    """Load a batch fetch index from file."""
     if not path.exists():
         return None
 
@@ -627,3 +694,45 @@ def _load_fetch_index(path: Path) -> dict[int, set[str]] | None:
 
     if fetch_index:
         return fetch_index.model_dump()
+
+
+def _otu_is_cooled(
+    repo: Repo,
+    otu_id: UUID,
+    timestamp_current: datetime.datetime | None,
+    cooldown: int = UPDATE_COOLDOWN_INTERVAL_IN_DAYS,
+) -> bool:
+    """Return the update cooldown status of an OTU.
+
+    Return True if:
+        A) The OTU has been recorded as updated within ``cooldown`` days,
+        B) The OTU was created within ``cooldown`` days.
+        C) The OTU was created outside and last updated outside ``cooldown`` days.
+    """
+    cooldown_delta = datetime.timedelta(days=cooldown)
+
+    if timestamp_current is None:
+        timestamp_current = arrow.utcnow().naive
+
+    if (timestamp_last_updated := repo.get_otu_last_updated(otu_id)) is not None:
+        return timestamp_current - timestamp_last_updated > cooldown_delta
+
+    timestamp_created = repo.get_otu_first_created(otu_id)
+
+    if (timestamp_current - timestamp_created) <= cooldown_delta:
+        return True
+
+    timestamp_latest = repo.get_otu_last_modified(otu_id)
+
+    if (timestamp_current - timestamp_latest) > cooldown_delta:
+        return True
+
+    logger.debug(
+        "Last modified timestamp occured within cooldown",
+        timestamp_current=timestamp_current.isoformat(),
+        timestamp_otu_created=timestamp_created.isoformat(),
+        timestamp_otu_latest=timestamp_latest.isoformat(),
+        otu_last_modified_delta=timestamp_current - timestamp_latest,
+    )
+
+    return False
