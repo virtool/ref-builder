@@ -842,19 +842,27 @@ class Repo:
         return self._index.get_isolate_id_by_partial(partial)
 
     def get_otu_first_created(self, otu_id: uuid.UUID) -> datetime.datetime | None:
-        """Get the timestamp of the first event associated with an OTU."""
+        """Get the timestamp of the first event associated with an OTU.
+        If no events can be found for this OTU, return None.
+        """
         return self._index.get_first_timestamp_by_otu_id(otu_id)
 
     def get_otu_last_modified(self, otu_id: uuid.UUID) -> datetime.datetime | None:
-        """Get the timestamp of the last event associated with an OTU."""
+        """Get the timestamp of the last event associated with an OTU.
+        If no events can be found for this OTU, return None.
+        """
         return self._index.get_latest_timestamp_by_otu_id(otu_id)
 
     def get_otu_last_updated(self, otu_id: uuid.UUID) -> datetime.datetime | None:
         """Get the timestamp of the last time this OTU was automatically updated.
-        If this OTU has not been updated since this repo was initialized, return None."""
+        If this OTU has not been updated since this repo was initialized, return None.
+        """
         return self._index.get_last_otu_update_timestamp(otu_id)
 
     def write_otu_update_history_entry(self, otu_id) -> int:
+        """Add a new entry to the otu update history log and return the primary key
+        of the entry.
+        ."""
         if (
             update_id := self._index.add_otu_update_history_entry(
                 otu_id,
