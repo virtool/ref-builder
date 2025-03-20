@@ -346,6 +346,8 @@ class TestUpdateRepresentativeIsolateCommand:
 
 
 class TestDeleteIsolate:
+    """Test isolate deletion behaviour."""
+
     def test_ok(self, scratch_repo):
         """Test that a given isolate can be deleted from the OTU."""
         taxid = 1169032
@@ -359,7 +361,7 @@ class TestDeleteIsolate:
         assert type(isolate_id) is UUID
 
         with scratch_repo.lock():
-            delete_isolate_from_otu(scratch_repo, otu_before, isolate_id)
+            assert delete_isolate_from_otu(scratch_repo, otu_before, isolate_id)
 
         otu_after = scratch_repo.get_otu_by_taxid(taxid)
 
@@ -370,6 +372,21 @@ class TestDeleteIsolate:
         assert otu_before.get_isolate(isolate_id).accessions not in otu_after.accessions
 
         assert len(otu_after.isolate_ids) == len(otu_before.isolate_ids) - 1
+
+    def test_representative_isolate_fail(self, scratch_repo: Repo):
+        """Test that the representative isolate cannot be deleted."""
+        taxid = 1169032
+
+        otu_before = scratch_repo.get_otu_by_taxid(taxid)
+
+        with scratch_repo.lock():
+            assert not delete_isolate_from_otu(
+                scratch_repo,
+                otu_before,
+                isolate_id=otu_before.representative_isolate,
+            )
+
+        assert scratch_repo.get_otu(otu_before.id).isolate_ids == otu_before.isolate_ids
 
 
 class TestReplaceSequence:

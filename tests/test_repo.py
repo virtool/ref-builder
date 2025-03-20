@@ -949,28 +949,83 @@ class TestAllowAccessions:
         assert not empty_repo.path.joinpath("src", "00000005.json").exists()
 
 
-def test_delete_isolate(initialized_repo: Repo):
+class TestDeleteIsolate:
     """Test that an isolate can be redacted from an OTU."""
-    with initialized_repo.lock():
-        otu_before = next(initialized_repo.iter_otus())
 
-        otu_id = otu_before.id
+    def test_ok(self, initialized_repo: Repo):
+        """Test basic functionality."""
+        otu_init = next(initialized_repo.iter_otus())
 
-        isolate_before = next(iter(otu_before.isolates))
+        otu_id = otu_init.id
 
-        with initialized_repo.use_transaction():
+        with initialized_repo.lock(), initialized_repo.use_transaction():
+            sequence_2 = initialized_repo.create_sequence(
+                otu_id,
+                "TMVABCB.1",
+                "TMV",
+                None,
+                otu_init.plan.segments[0].id,
+                "ACGTGGAGAGACC",
+            )
+
+            isolate_b = initialized_repo.create_isolate(
+                otu_init.id,
+                None,
+                IsolateName(IsolateNameType.ISOLATE, "B"),
+            )
+
+            initialized_repo.link_sequence(
+                otu_id=otu_id,
+                isolate_id=isolate_b.id,
+                sequence_id=sequence_2.id,
+            )
+
+        event_id_before_delete = initialized_repo.last_id
+
+        otu_before = initialized_repo.get_otu(otu_id)
+
+        assert isolate_b.id in otu_before.isolate_ids
+
+        assert "TMVABCB" in otu_before.accessions
+        assert "TMVABCB" in otu_before.get_isolate(isolate_b.id).accessions
+
+        assert event_id_before_delete == initialized_repo.last_id == 8
+
+        with initialized_repo.lock(), initialized_repo.use_transaction():
             initialized_repo.delete_isolate(
                 otu_id,
-                isolate_before.id,
+                isolate_b.id,
                 rationale="Testing redaction",
             )
 
         otu_after = initialized_repo.get_otu(otu_id)
 
-    assert otu_before != otu_after
-    assert len(otu_after.isolates) == len(otu_before.isolates) - 1
-    assert isolate_before.id not in otu_after.isolate_ids
-    assert isolate_before.accessions not in otu_after.accessions
+        assert otu_after.get_isolate(isolate_b.id) is None
+
+        assert initialized_repo.last_id == event_id_before_delete + 1
+
+        assert otu_before != otu_after
+        assert len(otu_after.isolates) == len(otu_before.isolates) - 1
+        assert isolate_b.id not in otu_after.isolate_ids
+        assert isolate_b.accessions not in otu_after.accessions
+
+    def test_protected_representative_isolate_fail(self, initialized_repo: Repo):
+        """Check that the representative isolate cannot be deleted."""
+        otu_before = next(initialized_repo.iter_otus())
+
+        otu_id = otu_before.id
+
+        last_id_before_transaction = initialized_repo.last_id
+
+        with initialized_repo.lock(), initialized_repo.use_transaction():
+            with pytest.raises(ValueError):
+                initialized_repo.delete_isolate(
+                    otu_id,
+                    otu_before.representative_isolate,
+                    rationale="Testing redaction failure",
+                )
+
+        assert initialized_repo.last_id == last_id_before_transaction
 
 
 def test_replace_sequence(initialized_repo: Repo):

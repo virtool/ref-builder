@@ -150,9 +150,11 @@ def isolate_delete(repo: Repo, identifier: str) -> None:
         click.echo(f"OTU not found.", err=True)
         sys.exit(1)
 
-    delete_isolate_from_otu(repo, otu_, isolate_id)
+    if delete_isolate_from_otu(repo, otu_, isolate_id):
+        click.echo("Isolate deleted.")
 
-    click.echo("Isolate deleted.")
+    else:
+        sys.exit(1)
 
 
 @isolate.command(name="get")
