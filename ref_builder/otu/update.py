@@ -115,9 +115,8 @@ def batch_update_repo(
             otu_iterator = (
                 otu
                 for otu in repo.iter_otus()
-                if _is_past_cooldown(
-                    repo.get_otu_last_updated(otu.id),
-                    current_timestamp=operation_run_timestamp,
+                if _otu_is_cooled(
+                    repo, otu.id, timestamp_current=operation_run_timestamp,
                 )
             )
         else:
@@ -177,14 +176,14 @@ def batch_update_repo(
                 logger.debug("No corresponding OTU found in this repo", taxid=taxid)
                 continue
 
-            if skip_recently_updated and not _is_past_cooldown(
-                repo.get_otu_last_updated(otu_id),
-                current_timestamp=operation_run_timestamp,
+            if skip_recently_updated and not _otu_is_cooled(
+                repo,
+                otu_id,
+                timestamp_current=operation_run_timestamp,
             ):
                 logger.info(
                     "This OTU was updated recently. Skipping...",
                     cooldown=UPDATE_COOLDOWN_INTERVAL_IN_DAYS,
-                    get_otu_last_updated=repo.get_otu_last_updated(otu_id).isoformat(),
                     otu_id=str(otu_id),
                     taxid=str(taxid),
                 )
@@ -208,14 +207,14 @@ def batch_update_repo(
                 logger.debug("No corresponding OTU found in this repo", taxid=taxid)
                 continue
 
-            if skip_recently_updated and not _is_past_cooldown(
-                repo.get_otu_last_updated(otu_id),
-                current_timestamp=operation_run_timestamp,
+            if skip_recently_updated and not _otu_is_cooled(
+                repo,
+                otu_id,
+                timestamp_current=operation_run_timestamp,
             ):
                 logger.info(
                     "This OTU was updated recently. Skipping...",
                     cooldown=UPDATE_COOLDOWN_INTERVAL_IN_DAYS,
-                    get_otu_last_updated=repo.get_otu_last_updated(otu_id).isoformat(),
                     otu_id=str(otu_id),
                     taxid=str(taxid),
                 )
