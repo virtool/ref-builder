@@ -97,9 +97,11 @@ def batch_update_repo(
     precache_records: bool = False,
     skip_recently_updated: bool = True,
     ignore_cache: bool = False,
-):
+) -> set[UUID]:
     """Fetch new accessions for all OTUs in the repo and create isolates as possible."""
     operation_run_timestamp = arrow.utcnow().naive
+
+    updated_otu_ids = set()
 
     repo_logger = logger.bind(
         path=str(repo.path),
@@ -143,7 +145,8 @@ def batch_update_repo(
 
     if not taxid_new_accession_index:
         logger.info("OTUs are up to date.")
-        return None
+
+        return updated_otu_ids
 
     fetch_set = {
         accession
@@ -151,7 +154,10 @@ def batch_update_repo(
         for accession in otu_accessions
     }
 
-    logger.info("OTUs with new accessions found.", otu_count=len(taxid_new_accession_index))
+    logger.info(
+        "Batch fetch index contains potential new accessions.",
+        otu_count=len(taxid_new_accession_index),
+    )
 
     if precache_records:
         logger.info("Precaching records...", accession_count=len(fetch_set))
@@ -164,7 +170,7 @@ def batch_update_repo(
 
         if not indexed_records:
             logger.info("No valid accessions found.")
-            return None
+            return updated_otu_ids
 
         logger.info(
             "Checking new records against OTUs.",
@@ -195,7 +201,10 @@ def batch_update_repo(
                 if (record := indexed_records.get(accession)) is not None
             ]
             if otu_records:
-                _process_records_into_otu(repo, repo.get_otu(otu_id), otu_records)
+                isolate_ids = _process_records_into_otu(repo, repo.get_otu(otu_id), otu_records)
+
+                if isolate_ids:
+                    updated_otu_ids.add(otu_id)
 
             repo.write_otu_update_history_entry(otu_id)
 
@@ -223,11 +232,16 @@ def batch_update_repo(
             otu_records = ncbi.fetch_genbank_records(accessions)
 
             if otu_records:
-                _process_records_into_otu(repo, repo.get_otu(otu_id), otu_records)
+                isolate_ids = _process_records_into_otu(repo, repo.get_otu(otu_id), otu_records)
+
+                if isolate_ids:
+                    updated_otu_ids.add(otu_id)
 
             repo.write_otu_update_history_entry(otu_id)
 
     repo_logger.info("Batch update complete.")
+
+    return updated_otu_ids
 
 
 def batch_fetch_new_accessions(
