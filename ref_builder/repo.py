@@ -839,6 +839,10 @@ class Repo:
 
         return self._index.get_isolate_id_by_partial(partial)
 
+    def get_otu_first_created(self, otu_id: uuid.UUID) -> datetime.datetime | None:
+        """Get the timestamp of the first event associated with an OTU."""
+        return self._index.get_first_timestamp_by_otu_id(otu_id)
+
     def get_otu_last_modified(self, otu_id: uuid.UUID) -> datetime.datetime | None:
         """Get the timestamp of the last event associated with an OTU."""
         return self._index.get_latest_timestamp_by_otu_id(otu_id)
