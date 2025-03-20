@@ -125,6 +125,22 @@ class TestEvents:
         """Test that we get ``None`` when an OTU ID is not found."""
         assert index.get_event_ids_by_otu_id(uuid.uuid4()) is None
 
+    def test_get_first_timestamp_ok(self, index: Index, indexable_otus: list[RepoOTU]):
+        """Test ``.get_first_timestamp_by_otu_id()`` retrieves the first timestamp."""
+        otu = indexable_otus[1]
+
+        first_timestamp = arrow.utcnow().naive
+
+        index.add_event_id(100, otu.id, first_timestamp)
+
+        assert index.get_first_timestamp_by_otu_id(otu.id) == first_timestamp
+
+        second_timestamp = arrow.utcnow().naive
+
+        index.add_event_id(101, otu.id, second_timestamp)
+
+        assert index.get_first_timestamp_by_otu_id(otu.id) == first_timestamp
+
     def test_get_latest_timestamp_ok(self, index: Index, indexable_otus: list[RepoOTU]):
         """Test ``.get_latest_timestamp_by_otu_id()`` retrieves the latest timestamp."""
         otu = indexable_otus[1]
