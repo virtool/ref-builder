@@ -689,3 +689,45 @@ def _is_past_cooldown(
         current_timestamp = arrow.utcnow().naive
 
     return current_timestamp - otu_timestamp > datetime.timedelta(days=cooldown)
+
+
+def _otu_is_cooled(
+    repo: Repo,
+    otu_id: UUID,
+    timestamp_current: datetime.datetime | None,
+    cooldown: int = UPDATE_COOLDOWN_INTERVAL_IN_DAYS,
+) -> bool:
+    """Return the update cooldown status of an OTU.
+
+    Return True if:
+        A) The OTU has been recorded as updated within ``cooldown`` days,
+        B) The OTU was created within ``cooldown`` days.
+        C) The OTU was created outside and last updated outside ``cooldown`` days.
+    """
+    cooldown_delta = datetime.timedelta(days=cooldown)
+
+    if timestamp_current is None:
+        timestamp_current = arrow.utcnow().naive
+
+    if (timestamp_last_updated := repo.get_otu_last_updated(otu_id)) is not None:
+        return timestamp_current - timestamp_last_updated > cooldown_delta
+
+    timestamp_created = repo.get_otu_first_created(otu_id)
+
+    if (timestamp_current - timestamp_created) <= cooldown_delta:
+        return True
+
+    timestamp_latest = repo.get_otu_last_modified(otu_id)
+
+    if (timestamp_current - timestamp_latest) > cooldown_delta:
+        return True
+
+    logger.debug(
+        "Last modified timestamp occured within cooldown",
+        timestamp_current=timestamp_current.isoformat(),
+        timestamp_otu_created=timestamp_created.isoformat(),
+        timestamp_otu_latest=timestamp_latest.isoformat(),
+        otu_last_modified_delta=timestamp_current - timestamp_latest
+    )
+
+    return False
