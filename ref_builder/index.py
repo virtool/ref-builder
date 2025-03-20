@@ -105,7 +105,7 @@ class Index:
 
         self.con.execute(
             """
-            CREATE TABLE IF NOT EXISTS otu_update_history (
+            CREATE TABLE IF NOT EXISTS otu_updates (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 otu_id TEXT,
                 timestamp_complete TEXT
@@ -122,7 +122,7 @@ class Index:
             ("otus", "taxid"),
             ("sequences", "otu_id"),
             ("sequences", "crc"),
-            ("otu_update_history", "otu_id"),
+            ("otu_updates", "otu_id"),
         ]:
             self.con.execute(
                 f"""
@@ -350,7 +350,7 @@ class Index:
         """Get the timestamp of the last event in an update for an OTU."""
         cursor = self.con.execute(
             """
-            SELECT timestamp_complete FROM otu_update_history 
+            SELECT timestamp_complete FROM otu_updates 
             WHERE otu_id = ? ORDER BY id DESC
             """,
             (str(otu_id),),
@@ -368,7 +368,7 @@ class Index:
         self.con.execute(
             """
             INSERT INTO
-            otu_update_history(otu_id, timestamp_complete)
+            otu_updates(otu_id, timestamp_complete)
             VALUES(?, ?)
             """,
             (
@@ -378,7 +378,7 @@ class Index:
         )
 
         cursor = self.con.execute(
-            "SELECT id FROM otu_update_history WHERE otu_id = ? ORDER BY id DESC",
+            "SELECT id FROM otu_updates WHERE otu_id = ? ORDER BY id DESC",
             (str(otu_id),),
         )
 
