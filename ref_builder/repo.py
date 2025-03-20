@@ -855,11 +855,16 @@ class Repo:
         return self._index.get_last_otu_update_timestamp(otu_id)
 
     def write_otu_update_history_entry(self, otu_id) -> int:
-        if update_id := self._index.add_otu_update_history_entry(
-            otu_id,
-            arrow.utcnow().naive,
-        ) is None:
-            raise SystemError("OTU update history entry could not be retrieved after writing.")
+        if (
+            update_id := self._index.add_otu_update_history_entry(
+                otu_id,
+                arrow.utcnow().naive,
+            )
+            is None
+        ):
+            raise SystemError(
+                "OTU update history entry could not be retrieved after writing."
+            )
 
         return update_id
 

@@ -118,7 +118,9 @@ def batch_update_repo(
                 otu
                 for otu in repo.iter_otus()
                 if _otu_is_cooled(
-                    repo, otu.id, timestamp_current=operation_run_timestamp,
+                    repo,
+                    otu.id,
+                    timestamp_current=operation_run_timestamp,
                 )
             )
         else:
@@ -201,7 +203,9 @@ def batch_update_repo(
                 if (record := indexed_records.get(accession)) is not None
             ]
             if otu_records:
-                isolate_ids = _process_records_into_otu(repo, repo.get_otu(otu_id), otu_records)
+                isolate_ids = _process_records_into_otu(
+                    repo, repo.get_otu(otu_id), otu_records
+                )
 
                 if isolate_ids:
                     updated_otu_ids.add(otu_id)
@@ -232,7 +236,9 @@ def batch_update_repo(
             otu_records = ncbi.fetch_genbank_records(accessions)
 
             if otu_records:
-                isolate_ids = _process_records_into_otu(repo, repo.get_otu(otu_id), otu_records)
+                isolate_ids = _process_records_into_otu(
+                    repo, repo.get_otu(otu_id), otu_records
+                )
 
                 if isolate_ids:
                     updated_otu_ids.add(otu_id)
@@ -740,7 +746,7 @@ def _otu_is_cooled(
         timestamp_current=timestamp_current.isoformat(),
         timestamp_otu_created=timestamp_created.isoformat(),
         timestamp_otu_latest=timestamp_latest.isoformat(),
-        otu_last_modified_delta=timestamp_current - timestamp_latest
+        otu_last_modified_delta=timestamp_current - timestamp_latest,
     )
 
     return False

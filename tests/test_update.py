@@ -311,18 +311,24 @@ class TestBatchUpdate:
         otu_initial = next(mock_repo.iter_otus())
 
         with mock_repo.lock():
-            assert len(
-                batch_update_repo(mock_repo, fetch_index_path=mock_fetch_index_path)
-            ) == 1
+            assert (
+                len(
+                    batch_update_repo(mock_repo, fetch_index_path=mock_fetch_index_path)
+                )
+                == 1
+            )
 
         otu_after = next(mock_repo.iter_otus())
 
         assert otu_after.accessions == mock_fetch_index[otu_initial.taxid]
 
         with mock_repo.lock():
-            assert len(
-                batch_update_repo(mock_repo, fetch_index_path=mock_fetch_index_path)
-            ) == 0
+            assert (
+                len(
+                    batch_update_repo(mock_repo, fetch_index_path=mock_fetch_index_path)
+                )
+                == 0
+            )
 
 
 def test_iter_fetch_list(
