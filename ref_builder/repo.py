@@ -293,8 +293,6 @@ class Repo:
             (index_path.parent / f"{index_path.stem}.db-shm").unlink()
             (index_path.parent / f"{index_path.stem}.db-wal").unlink()
 
-            self._index = Index(index_path)
-
             return True
 
         return False
