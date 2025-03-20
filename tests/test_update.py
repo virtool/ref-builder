@@ -283,6 +283,21 @@ class TestUpdateOTU:
 class TestBatchUpdate:
     """Test rudimentary batch update operation with a single OTU."""
 
+    def test_ok(
+        self,
+        mock_repo: Repo,
+        mock_fetch_index: dict[int, set[str]],
+    ):
+        """Test that batch-update works as expected."""
+        otu_initial = next(mock_repo.iter_otus())
+
+        with mock_repo.lock():
+            batch_update_repo(mock_repo)
+
+        otu_after = next(mock_repo.iter_otus())
+
+        assert otu_after.accessions == mock_fetch_index[otu_initial.taxid]
+
     def test_with_fetch_index_ok(
         self,
         mock_repo: Repo,
@@ -298,6 +313,9 @@ class TestBatchUpdate:
         otu_after = next(mock_repo.iter_otus())
 
         assert otu_after.accessions == mock_fetch_index[otu_initial.taxid]
+
+        with mock_repo.lock():
+            batch_update_repo(mock_repo, fetch_index_path=mock_fetch_index_path)
 
 
 def test_iter_fetch_list(
