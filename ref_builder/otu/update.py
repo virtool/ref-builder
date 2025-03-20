@@ -667,6 +667,7 @@ def _cache_fetch_index(
     fetch_index: dict[int, set[str]],
     cache_path: Path,
 ) -> Path | None:
+    """Write a batch fetch index to file."""
     validated_fetch_index = BatchFetchIndex.model_validate(fetch_index)
 
     fetch_index_path = (
@@ -681,6 +682,7 @@ def _cache_fetch_index(
 
 
 def _load_fetch_index(path: Path) -> dict[int, set[str]] | None:
+    """Load a batch fetch index from file."""
     if not path.exists():
         return None
 
@@ -700,7 +702,8 @@ def _is_past_cooldown(
     cooldown: int = UPDATE_COOLDOWN_INTERVAL_IN_DAYS,
 ) -> bool:
     """Return True if ``otu_timestamp`` is None or more than ``cooldown`` days past
-    ``current_timestamp``, else False."""
+    ``current_timestamp``, else False.
+    """
     if otu_timestamp is None:
         return True
 
