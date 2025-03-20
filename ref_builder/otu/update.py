@@ -150,18 +150,18 @@ def batch_update_repo(
 
         return updated_otu_ids
 
-    fetch_set = {
-        accession
-        for otu_accessions in taxid_new_accession_index.values()
-        for accession in otu_accessions
-    }
-
     logger.info(
         "Batch fetch index contains potential new accessions.",
         otu_count=len(taxid_new_accession_index),
     )
 
     if precache_records:
+        fetch_set = {
+            accession
+            for otu_accessions in taxid_new_accession_index.values()
+            for accession in otu_accessions
+        }
+
         logger.info("Precaching records...", accession_count=len(fetch_set))
 
         indexed_records = batch_fetch_new_records(
