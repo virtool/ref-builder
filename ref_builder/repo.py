@@ -300,7 +300,11 @@ class Repo:
     def rebuild_index(self) -> None:
         """Rebuild the repository read index."""
 
-        logger.info("No index found. Rebuilding...")
+        logger.info(
+            "No repo index found. Rebuilding...",
+            path=str(self.path),
+        )
+
         for otu in self.iter_otus_from_events():
             self._index.upsert_otu(otu, self.last_id)
 

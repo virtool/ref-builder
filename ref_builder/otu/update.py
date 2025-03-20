@@ -151,7 +151,7 @@ def batch_update_repo(
         for accession in otu_accessions
     }
 
-    logger.info("New accessions found.", otu_count=len(taxid_new_accession_index))
+    logger.info("OTUs with new accessions found.", otu_count=len(taxid_new_accession_index))
 
     if precache_records:
         logger.info("Precaching records...", accession_count=len(fetch_set))
