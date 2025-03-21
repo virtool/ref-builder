@@ -1,4 +1,5 @@
 import datetime
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Collection, Iterable, Iterator
 from pathlib import Path
@@ -39,6 +40,15 @@ UPDATE_COOLDOWN_INTERVAL_IN_DAYS = 14
 
 BatchFetchIndex = RootModel[dict[int, set[str]]]
 """Assists in reading and writing the fetched accessions by taxid index from file."""
+
+
+class BaseBatchRecordGetter(ABC):
+    """An abstract class with a .get_records() method."""
+
+    @abstractmethod
+    def get_records(self, taxid: int) -> list[NCBIGenbank]:
+        """Return Genbank records corresponding to the given Taxonomy ID."""
+        return NotImplemented
 
 
 def auto_update_otu(
@@ -87,6 +97,48 @@ def auto_update_otu(
     repo.write_otu_update_history_entry(otu.id)
 
     return repo.get_otu(otu.id)
+
+
+class PrecachedRecordStore(BaseBatchRecordGetter):
+    """Retrieves records from an indexed dictionary of records and
+    a batch fetch index set at initialization.
+    """
+
+    def __init__(
+        self,
+        batch_fetch_index: dict[int, set[str]],
+        record_index: dict[str, NCBIGenbank],
+    ):
+        self.batch_fetch_index = batch_fetch_index
+        self.record_index = record_index
+
+    def get_records(self, taxid: int) -> list[NCBIGenbank]:
+        accessions = self.batch_fetch_index.get(taxid, [])
+
+        otu_records = [
+            record
+            for accession in accessions
+            if (record := self.record_index.get(accession)) is not None
+        ]
+
+        return otu_records
+
+
+class BatchRecordFetcher(BaseBatchRecordGetter):
+    """Retrieves records from NCBI Nucleotide based on a batch fetch index
+    set at initialization.
+    """
+
+    def __init__(
+        self, batch_fetch_index: dict[int, set[str]], ignore_cache: bool = False
+    ):
+        self.batch_fetch_index = batch_fetch_index
+        self.ncbi = NCBIClient(ignore_cache)
+
+    def get_records(self, taxid: int) -> list[NCBIGenbank]:
+        accessions = self.batch_fetch_index.get(taxid, [])
+
+        return self.ncbi.fetch_genbank_records(accessions)
 
 
 def batch_update_repo(
