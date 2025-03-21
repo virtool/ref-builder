@@ -124,7 +124,7 @@ class PrecachedRecordStore(BaseBatchRecordGetter):
         return otu_records
 
 
-class BatchRecordFetcher(BaseBatchRecordGetter):
+class RecordFetcher(BaseBatchRecordGetter):
     """Retrieves records from NCBI Nucleotide based on a batch fetch index
     set at initialization.
     """
@@ -265,7 +265,7 @@ def batch_update_repo(
             repo.write_otu_update_history_entry(otu_id)
 
     else:
-        ncbi = NCBIClient(ignore_cache)
+        record_getter = RecordFetcher(taxid_new_accession_index)
 
         for taxid, accessions in taxid_new_accession_index.items():
             if (otu_id := repo.get_otu_id_by_taxid(taxid)) is None:
