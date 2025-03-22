@@ -446,9 +446,6 @@ def promote_and_update_otu_from_records(
         if record.refseq:
             refseq_records.append(record)
 
-        else:
-            genbank_records.append(record)
-
     if promote_otu_accessions_from_records(
         repo,
         otu=repo.get_otu(otu.id),
@@ -459,7 +456,7 @@ def promote_and_update_otu_from_records(
     new_isolate_ids = update_otu_with_records(
         repo,
         otu=otu,
-        records=genbank_records,
+        records=records,
     )
 
     repo.get_otu(otu.id)
