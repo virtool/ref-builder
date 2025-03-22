@@ -653,25 +653,6 @@ def iter_fetch_list(
         yield fetch_list[iterator * page_size : (iterator + 1) * page_size]
 
 
-def _bin_refseq_records(
-    records: list[NCBIGenbank],
-) -> tuple[list[NCBIGenbank], list[NCBIGenbank]]:
-    """Return a list of GenBank records as two lists, RefSeq and non-RefSeq."""
-    refseq_records = []
-    non_refseq_records = []
-
-    for record in records:
-        if record.refseq:
-            refseq_records.append(record)
-        else:
-            non_refseq_records.append(record)
-
-    if len(refseq_records) + len(non_refseq_records) != len(records):
-        raise ValueError("Invalid total number of records")
-
-    return refseq_records, non_refseq_records
-
-
 def _generate_datestamp_filename():
     """Get the current UTC date and return as a a filename_safe string."""
     timestamp = arrow.utcnow().naive
