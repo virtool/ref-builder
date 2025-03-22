@@ -252,7 +252,7 @@ def batch_update_repo(
         otu_records = record_getter.get_records(taxid)
 
         if otu_records:
-            isolate_ids = _process_records_into_otu(
+            isolate_ids = promote_and_update_otu_from_records(
                 repo, repo.get_otu(otu_id), otu_records
             )
 
@@ -434,11 +434,12 @@ def update_isolate_from_records(
     return isolate
 
 
-def _process_records_into_otu(
+def promote_and_update_otu_from_records(
     repo: Repo,
     otu: RepoOTU,
     records: list[NCBIGenbank],
 ):
+    """Promote new RefSeq accessions and add new isolates."""
     genbank_records, refseq_records = [], []
 
     for record in records:
@@ -488,7 +489,7 @@ def update_otu_with_accessions(
     records = ncbi.fetch_genbank_records(accessions)
 
     if records:
-        return _process_records_into_otu(repo, otu, records)
+        return promote_and_update_otu_from_records(repo, otu, records)
 
 
 def update_otu_with_records(
