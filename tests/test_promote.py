@@ -1,11 +1,15 @@
+import pytest
+
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.create import create_otu_with_taxid
 from ref_builder.otu.promote import (
     replace_otu_sequence_from_record,
     promote_otu_accessions_from_records,
+    correct_sequences_in_otu,
 )
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate
+from ref_builder.utils import Accession
 from tests.fixtures.factories import IsolateFactory
 
 
@@ -149,3 +153,24 @@ def test_multi_linked_promotion(empty_repo: Repo):
     assert otu_after_promote.get_isolate(isolate_init.id).accessions == (
         {"NC_055390", "FA000001", "FA000002"}
     )
+
+
+@pytest.mark.ncbi()
+class TestCorrectSequencesInOTU:
+    def test_ok(self, precached_repo: Repo):
+        with precached_repo.lock():
+            otu_init = create_otu_with_taxid(
+                precached_repo,
+                196375,
+                ["NC_004452.1"],
+                acronym="",
+            )
+
+        assert "NC_004452" in otu_init.accessions
+
+        assert otu_init.get_sequence_by_accession("NC_004452").accession == (
+            Accession(key="NC_004452", version=1)
+        )
+
+        with precached_repo.lock():
+            correct_sequences_in_otu(precached_repo, otu_init)
