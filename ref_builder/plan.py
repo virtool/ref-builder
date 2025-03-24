@@ -16,6 +16,10 @@ COMPLEX_NAME_PATTERN = re.compile(r"([A-Za-z]+)[-_ ]+(.*)")
 """Regex pattern for parsing segment name strings consisting of a prefix and a key."""
 
 
+class PlanWarning(UserWarning):
+    pass
+
+
 class SegmentRule(StrEnum):
     """Mark the importance of a particular segment."""
 
