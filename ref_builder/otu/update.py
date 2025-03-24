@@ -226,7 +226,9 @@ def batch_update_repo(
             logger.info("No valid accessions found.")
             return updated_otu_ids
 
-        record_getter = PrecachedRecordStore(batch_fetch_index, record_index_by_accession)
+        record_getter = PrecachedRecordStore(
+            batch_fetch_index, record_index_by_accession
+        )
 
     else:
         record_getter = RecordFetcher(batch_fetch_index)
@@ -648,7 +650,7 @@ def iter_fetch_list(
     page_count = len(fetch_list) // page_size + int(len(fetch_list) % page_size != 0)
 
     for iterator in range(page_count):
-        yield fetch_list[iterator * page_size: (iterator + 1) * page_size]
+        yield fetch_list[iterator * page_size : (iterator + 1) * page_size]
 
 
 def _generate_datestamp_filename():
