@@ -752,7 +752,10 @@ def test_get_isolate_id_from_partial(initialized_repo: Repo):
 
 
 class TestExcludeAccessions:
-    """Test that accessions can be excluded from future fetches."""
+    """Test that excluded accessions are reflected in events.
+
+    Excluded accessions are exempt from future queries to the NCBI Nucleotide.
+    """
 
     def test_ok(self, empty_repo: Repo):
         otu = init_otu(empty_repo)
