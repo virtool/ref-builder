@@ -789,24 +789,24 @@ class TestExcludeAccessions:
             "TM100024"
         }
 
-    def test_exists(self, initialized_repo: Repo):
-        """Test that an accession the exists in an OTU sequence cannot be added to the
-        excluded accessions.
+    def test_existing_accession(self, initialized_repo: Repo):
+        """Test that the accession of a sequence already contained in the OTU cannot
+        be added to the excluded accessions.
         """
-        assert initialized_repo.last_id == 5
+        assert (id_before_exclude := initialized_repo.last_id) == 5
 
-        with initialized_repo.lock():
-            otu = initialized_repo.get_otu_by_taxid(12242)
+        otu = initialized_repo.get_otu_by_taxid(12242)
 
-            assert otu.excluded_accessions == set()
+        assert otu.excluded_accessions == set()
 
-            accession = next(iter(otu.accessions))
+        accession = next(iter(otu.accessions))
 
-            with initialized_repo.use_transaction():
-                initialized_repo.exclude_accessions(otu.id, {f"{accession}.1"})
+        with initialized_repo.lock(), initialized_repo.use_transaction():
+            initialized_repo.exclude_accessions(otu.id, {f"{accession}.1"})
 
-            assert initialized_repo.last_id == 5
-            assert initialized_repo.get_otu_by_taxid(12242).excluded_accessions == set()
+        assert initialized_repo.last_id == id_before_exclude == 5
+
+        assert initialized_repo.get_otu_by_taxid(12242).excluded_accessions == set()
 
         with open(
             initialized_repo.path / "src" / f"{initialized_repo.last_id:08}.json"
