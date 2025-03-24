@@ -178,14 +178,14 @@ def batch_update_repo(
         else:
             otu_iterator = repo.iter_otus()
 
-        taxid_new_accession_index = batch_fetch_new_accessions(
+        batch_fetch_index = batch_fetch_new_accessions(
             otu_iterator,
             modification_date_start=start_date,
             ignore_cache=ignore_cache,
         )
 
         fetch_index_cache_path = _cache_fetch_index(
-            taxid_new_accession_index, repo.path / ".cache"
+            batch_fetch_index, repo.path / ".cache"
         )
 
         repo_logger.info("Fetch index cached", fetch_index_path=fetch_index_cache_path)
@@ -195,43 +195,43 @@ def batch_update_repo(
             "Loading fetch index...", fetch_index_path=str(fetch_index_path)
         )
 
-        taxid_new_accession_index = _load_fetch_index(fetch_index_path)
+        batch_fetch_index = _load_fetch_index(fetch_index_path)
 
-    if not taxid_new_accession_index:
+    if not batch_fetch_index:
         logger.info("OTUs are up to date.")
 
         return updated_otu_ids
 
     logger.info(
         "Batch fetch index contains potential new accessions.",
-        otu_count=len(taxid_new_accession_index),
+        otu_count=len(batch_fetch_index),
     )
 
     if precache_records:
         fetch_set = {
             accession
-            for otu_accessions in taxid_new_accession_index.values()
+            for otu_accessions in batch_fetch_index.values()
             for accession in otu_accessions
         }
 
         logger.info("Precaching records...", accession_count=len(fetch_set))
 
-        indexed_records = batch_fetch_new_records(
+        record_index_by_accession = batch_fetch_new_records(
             fetch_set,
             chunk_size=chunk_size,
             ignore_cache=ignore_cache,
         )
 
-        if not indexed_records:
+        if not record_index_by_accession:
             logger.info("No valid accessions found.")
             return updated_otu_ids
 
-        record_getter = PrecachedRecordStore(taxid_new_accession_index, indexed_records)
+        record_getter = PrecachedRecordStore(batch_fetch_index, record_index_by_accession)
 
     else:
-        record_getter = RecordFetcher(taxid_new_accession_index)
+        record_getter = RecordFetcher(batch_fetch_index)
 
-    for taxid, accessions in taxid_new_accession_index.items():
+    for taxid, accessions in batch_fetch_index.items():
         if (otu_id := repo.get_otu_id_by_taxid(taxid)) is None:
             logger.debug("No corresponding OTU found in this repo", taxid=taxid)
             continue
@@ -261,7 +261,7 @@ def batch_update_repo(
 
         repo.write_otu_update_history_entry(otu_id)
 
-    repo_logger.info("Batch update complete.")
+    repo_logger.info("Batch update complete.", new_isolate_count=len(updated_otu_ids))
 
     return updated_otu_ids
 
@@ -648,7 +648,7 @@ def iter_fetch_list(
     page_count = len(fetch_list) // page_size + int(len(fetch_list) % page_size != 0)
 
     for iterator in range(page_count):
-        yield fetch_list[iterator * page_size : (iterator + 1) * page_size]
+        yield fetch_list[iterator * page_size: (iterator + 1) * page_size]
 
 
 def _generate_datestamp_filename():
