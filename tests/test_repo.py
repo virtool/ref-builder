@@ -657,7 +657,10 @@ class TestGetOTU:
 
             initialized_repo.link_sequence(otu.id, isolate.id, sequence_id=sequence.id)
 
-        assert initialized_repo.get_otu(otu.id).blocked_accessions == {"TMVABC", "TMVABCB"}
+        assert initialized_repo.get_otu(otu.id).blocked_accessions == {
+            "TMVABC",
+            "TMVABCB",
+        }
 
         with initialized_repo.lock(), initialized_repo.use_transaction():
             initialized_repo.exclude_accessions(otu.id, excludable_accessions)
