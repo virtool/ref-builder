@@ -228,3 +228,20 @@ class TestIsolateDeleteCommand:
         )
 
         assert result.exit_code == 1
+
+    def test_delete_representative_isolate_fail(self, scratch_repo):
+        otu = scratch_repo.get_otu_by_taxid(1169032)
+
+        result = runner.invoke(
+            isolate_command_group,
+            [
+                "--path",
+                str(scratch_repo.path),
+                "delete",
+                str(otu.representative_isolate),
+            ],
+        )
+
+        assert result.exit_code == 1
+
+        assert "representative isolate cannot be deleted from the OTU" in result.output
