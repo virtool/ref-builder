@@ -866,7 +866,7 @@ class TestExcludeAccessions:
 
         otu_after = empty_repo.get_otu(otu_id)
 
-        assert empty_repo.last_id == id_after_first_exclusion + 1
+        assert empty_repo.last_id == id_after_first_exclusion + 1 == 4
         assert otu_after.excluded_accessions == (
             otu_before.excluded_accessions | {"TM100024"}
         )
@@ -902,18 +902,24 @@ class TestAllowAccessions:
         """
         otu = init_otu(empty_repo)
 
+        assert (id_at_creation := empty_repo.last_id) == 2
+
         accessions = {"TM100021", "TM100022", "TM100023"}
 
         with empty_repo.lock():
             with empty_repo.use_transaction():
                 empty_repo.exclude_accessions(otu.id, accessions)
 
+            assert empty_repo.last_id == id_at_creation + 1 == 3
+
             assert empty_repo.get_otu(otu.id).excluded_accessions == accessions
 
             with empty_repo.use_transaction():
                 empty_repo.allow_accessions(otu.id, ["TM100021", "TM100022"])
 
-            otu_after = empty_repo.get_otu(otu.id)
+            assert empty_repo.last_id == id_at_creation + 2 == 4
+
+        otu_after = empty_repo.get_otu(otu.id)
 
         with open(empty_repo.path.joinpath("src", "00000004.json")) as f:
             event = orjson.loads(f.read())
@@ -942,23 +948,30 @@ class TestAllowAccessions:
 
         accessions = {"TM100021", "TM100022", "TM100023"}
 
-        with empty_repo.lock():
-            with empty_repo.use_transaction():
-                empty_repo.exclude_accessions(otu.id, accessions)
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.exclude_accessions(otu.id, accessions)
 
-            assert empty_repo.get_otu(otu.id).excluded_accessions == accessions
+        assert (id_after_first_exclusion := empty_repo.last_id) == 3
 
-            with empty_repo.use_transaction():
-                empty_repo.allow_accessions(otu.id, ["TM100024"])
+        assert empty_repo.get_otu(otu.id).excluded_accessions == accessions
 
-            assert empty_repo.get_otu(otu.id).excluded_accessions == accessions
+        # Attempt to allow an accession not on the exclusion list
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.allow_accessions(otu.id, ["TM100024"])
 
-            with empty_repo.use_transaction():
-                empty_repo.allow_accessions(otu.id, accessions)
+        assert empty_repo.last_id == id_after_first_exclusion == 3
+        assert not empty_repo.path.joinpath("src", "00000004.json").exists()
 
-            otu_after = empty_repo.get_otu(otu.id).excluded_accessions == set()
+        assert empty_repo.get_otu(otu.id).excluded_accessions == accessions
 
-        assert not empty_repo.path.joinpath("src", "00000005.json").exists()
+        # Clear the excluded accessions list
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.allow_accessions(otu.id, accessions)
+
+        assert empty_repo.get_otu(otu.id).excluded_accessions == set()
+
+        assert empty_repo.last_id == id_after_first_exclusion + 1 == 4
+        assert empty_repo.path.joinpath("src", "00000004.json").exists()
 
 
 class TestDeleteIsolate:
