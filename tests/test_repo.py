@@ -846,24 +846,24 @@ class TestExcludeAccessions:
 
         accessions = {"TM100021", "TM100022", "TM100023"}
 
-        with empty_repo.lock():
-            with empty_repo.use_transaction():
-                empty_repo.exclude_accessions(otu_id, accessions)
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.exclude_accessions(otu_id, accessions)
 
-            otu_before = empty_repo.get_otu(otu_id)
+        otu_before = empty_repo.get_otu(otu_id)
 
-            assert empty_repo.last_id == 3
-            assert otu_before.excluded_accessions == accessions
+        assert (id_after_first_exclusion := empty_repo.last_id) == 3
 
-            with empty_repo.use_transaction():
-                empty_repo.exclude_accessions(otu_id, {"TM100023", "TM100024"})
+        assert otu_before.excluded_accessions == accessions
 
-            otu_after = empty_repo.get_otu(otu_id)
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.exclude_accessions(otu_id, {"TM100023", "TM100024"})
 
-            assert empty_repo.last_id == 4
-            assert otu_after.excluded_accessions == otu_before.excluded_accessions | {
-                "TM100024"
-            }
+        otu_after = empty_repo.get_otu(otu_id)
+
+        assert empty_repo.last_id == id_after_first_exclusion + 1
+        assert otu_after.excluded_accessions == (
+            otu_before.excluded_accessions | {"TM100024"}
+        )
 
         with open(
             empty_repo.path.joinpath("src", f"{empty_repo.last_id:08}.json")
