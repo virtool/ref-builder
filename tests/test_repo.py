@@ -816,25 +816,24 @@ class TestExcludeAccessions:
         assert event["type"] != "UpdateExcludedAccessions"
 
     def test_already_excluded(self, empty_repo: Repo):
-        """Test that an attempted redundant exclusion does not create a new `event."""
+        """Test that an attempted redundant exclusion does not create a new event."""
         otu_id = init_otu(empty_repo).id
 
         accessions = {"TM100021", "TM100022", "TM100023"}
 
-        with empty_repo.lock():
-            assert empty_repo.get_otu(otu_id).excluded_accessions == set()
+        assert empty_repo.get_otu(otu_id).excluded_accessions == set()
 
-            with empty_repo.use_transaction():
-                empty_repo.exclude_accessions(otu_id, accessions)
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.exclude_accessions(otu_id, accessions)
 
-            assert empty_repo.last_id == 3
+        assert (id_after_first_exclude := empty_repo.last_id) == 3
 
-            with empty_repo.use_transaction():
-                empty_repo.exclude_accessions(otu_id, {"TM100021"})
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.exclude_accessions(otu_id, {"TM100021"})
 
-            assert empty_repo.get_otu(otu_id).excluded_accessions == accessions
+        assert empty_repo.get_otu(otu_id).excluded_accessions == accessions
 
-        assert empty_repo.last_id == 3
+        assert empty_repo.last_id == id_after_first_exclude == 3
 
     def test_partially_already_excluded(self, empty_repo: Repo):
         """Test that a partially redundant list of exclusions creates a new event with
