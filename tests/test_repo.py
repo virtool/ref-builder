@@ -758,7 +758,10 @@ class TestExcludeAccessions:
     """
 
     def test_ok(self, empty_repo: Repo):
+        """Test that Repo.exclude_accessions() writes the correct event."""
         otu = init_otu(empty_repo)
+
+        assert (id_at_creation := empty_repo.last_id) == 2
 
         assert otu.excluded_accessions == set()
 
@@ -768,7 +771,7 @@ class TestExcludeAccessions:
             empty_repo.exclude_accessions(otu.id, accessions)
 
         assert empty_repo.get_otu(otu.id).excluded_accessions == accessions
-        assert empty_repo.last_id == 3
+        assert empty_repo.last_id == id_at_creation + 1 == 3
 
         with open(empty_repo.path / "src" / f"{empty_repo.last_id:08}.json") as f:
             event = orjson.loads(f.read())
@@ -790,7 +793,7 @@ class TestExcludeAccessions:
         with empty_repo.lock(), empty_repo.use_transaction():
             empty_repo.exclude_accessions(otu.id, {"TM100024"})
 
-        assert empty_repo.last_id == 4
+        assert empty_repo.last_id == id_at_creation + 2 == 4
         assert empty_repo.get_otu(otu.id).excluded_accessions == accessions | {
             "TM100024"
         }
