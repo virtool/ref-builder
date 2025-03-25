@@ -121,6 +121,10 @@ class OTU(OTUBase):
     A valid OTU must have a representative isolate.
     """
 
+    @property
+    def sequences(self) -> list[RepoSequence]:
+        return [sequence for isolate in self.isolates for sequence in isolate.sequences]
+
     @model_validator(mode="after")
     def check_excluded_accessions(self) -> "OTU":
         """Ensure that excluded accessions are not in the OTU."""
