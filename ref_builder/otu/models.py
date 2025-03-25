@@ -99,11 +99,13 @@ class OTUBase(BaseModel):
     representative_isolate: UUID4 | None
     """The UUID of the representative isolate of this OTU"""
 
-    sequences: list[RepoSequence]
-    """Sequences contained in this OTU."""
-
     taxid: int
     """The NCBI Taxonomy id for this OTU."""
+
+
+class OTUGenerated(OTUBase):
+    sequences: list[RepoSequence]
+    """Sequences contained in this OTU."""
 
 
 class OTU(OTUBase):

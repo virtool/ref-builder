@@ -8,7 +8,7 @@ from pydantic.v1 import UUID4
 
 from ref_builder.models import MolType, OTUMinimal
 from ref_builder.ncbi.models import NCBIGenbank, NCBISource, NCBISourceMolType
-from ref_builder.otu.models import IsolateBase, OTUBase
+from ref_builder.otu.models import IsolateBase, OTUBase, OTUGenerated
 from ref_builder.plan import (
     Plan,
     Segment,
@@ -305,7 +305,7 @@ class IsolateFactory(ModelFactory[IsolateBase]):
         )
 
 
-class OTUFactory(ModelFactory[OTUBase]):
+class OTUFactory(ModelFactory[OTUGenerated]):
     """OTU Factory with quasi-realistic data."""
 
     ModelFactory.__faker__.add_provider(BusinessProvider)
