@@ -15,6 +15,7 @@ from ref_builder.otu.isolate import (
     assign_records_to_segments,
     create_isolate,
 )
+from ref_builder.otu.validate import check_otu_for_validity
 from ref_builder.otu.utils import (
     DeleteRationale,
     get_segments_min_length,
@@ -516,6 +517,9 @@ def update_otu_with_records(
                 )
 
                 if isolate is None:
+                    raise AbortTransactionError()
+
+                if not check_otu_for_validity(repo.get_otu(otu.id)):
                     raise AbortTransactionError()
 
             if isolate:
