@@ -5,7 +5,9 @@ import pytest
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
+from ref_builder.events import sequence
 from ref_builder.otu.create import create_otu_with_taxid
+from ref_builder.otu.isolate import create_isolate
 from ref_builder.otu.modify import (
     add_segments_to_plan,
     allow_accessions_into_otu,
@@ -26,6 +28,7 @@ from ref_builder.plan import (
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoSequence
 from ref_builder.utils import IsolateName, IsolateNameType
+from tests.fixtures.factories import IsolateFactory
 
 
 def test_exclude_accessions(scratch_repo: Repo):
@@ -425,3 +428,73 @@ class TestReplaceSequence:
             == otu_after.get_isolate(isolate_id).accessions
             == {"NC_003355"}
         )
+
+    def test_multiple_link_ok(self, precached_repo):
+        with precached_repo.lock():
+            otu_init = create_otu_with_taxid(
+                precached_repo,
+                345184,
+                ["DQ178608", "DQ178609"],
+                acronym="",
+            )
+
+        otu_id = otu_init.id
+
+        post_init_otu = precached_repo.get_otu(otu_init.id)
+
+        assert post_init_otu.accessions == {"DQ178608", "DQ178609"}
+
+        rep_isolate = post_init_otu.get_isolate(post_init_otu.representative_isolate)
+
+        mock_isolate = IsolateFactory.build_on_plan(otu_init.plan)
+        mock_sequence = mock_isolate.sequences[1]
+
+        print(mock_sequence)
+
+        print(post_init_otu.plan.get_segment_by_id(mock_sequence.segment))
+
+        with precached_repo.lock(), precached_repo.use_transaction():
+            sequence_seg2 = precached_repo.create_sequence(
+                otu_id=otu_id,
+                accession=str(mock_sequence.accession),
+                definition=mock_sequence.definition,
+                legacy_id=None,
+                segment=mock_sequence.segment,
+                sequence=mock_sequence.sequence,
+            )
+
+            isolate_init = precached_repo.create_isolate(
+                otu_id=otu_id,
+                legacy_id=None,
+                name=mock_isolate.name,
+            )
+
+            precached_repo.link_sequence(
+                otu_id=otu_id,
+                isolate_id=isolate_init.id,
+                sequence_id=rep_isolate.sequences[0].id,
+            )
+
+            precached_repo.link_sequence(
+                otu_id=otu_id,
+                isolate_id=isolate_init.id,
+                sequence_id=sequence_seg2.id,
+            )
+
+        otu_second_isolate = precached_repo.get_otu(otu_id)
+
+        assert otu_second_isolate.accessions == {
+            "DQ178608",
+            "DQ178609",
+            sequence_seg2.accession.key,
+        }
+
+        with precached_repo.lock():
+            replace_sequence_in_otu(
+                precached_repo,
+                otu_second_isolate,
+                new_accession="NC_038792",
+                replaced_accession="DQ178608",
+            )
+
+
