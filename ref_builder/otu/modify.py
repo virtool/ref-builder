@@ -7,7 +7,7 @@ from structlog import get_logger
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.utils import (
     DeleteRationale,
-    assign_records_to_segments,
+    assign_segment_id_to_record,
     create_segments_from_records,
 )
 from ref_builder.plan import (
@@ -302,10 +302,9 @@ def replace_sequence_in_otu(
 
     record = ncbi.fetch_genbank_records([new_accession])[0]
 
-    if record.source.segment:
-        segment_id, _ = next(iter(assign_records_to_segments([record], otu.plan)))
-    else:
-        segment_id = otu.plan.segments[0].id
+    segment_id = assign_segment_id_to_record(record, otu.plan)
+    if segment_id is None:
+        logger.error("This segment does not match the plan.")
 
     with repo.use_transaction():
         new_sequence = repo.create_sequence(
