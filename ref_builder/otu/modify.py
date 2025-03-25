@@ -289,16 +289,22 @@ def replace_sequence_in_otu(
     """Replace a sequence in an OTU."""
     ncbi = NCBIClient(ignore_cache)
 
-    (
-        isolate_id,
-        sequence_id,
-    ) = otu.get_sequence_id_hierarchy_from_accession(replaced_accession)
+    replaced_sequence = otu.get_sequence_by_accession(replaced_accession)
 
-    if sequence_id is None:
-        logger.error("This sequence does not exist in this OTU.")
+    if replaced_sequence is None:
+        logger.error(
+            "This accession does not exist in this OTU.", accession=replaced_accession
+        )
         return None
 
-    isolate = otu.get_isolate(isolate_id)
+    affected_isolate_ids = otu.get_isolate_ids_containing_sequence_id(replaced_sequence.id)
+    if not affected_isolate_ids:
+        logger.warning(
+            "This sequence is not linked to any isolates.",
+            accession=str(replaced_sequence.accession),
+            sequence_id=replaced_sequence.id,
+        )
+        return None
 
     record = ncbi.fetch_genbank_records([new_accession])[0]
 
@@ -316,13 +322,14 @@ def replace_sequence_in_otu(
             sequence=record.sequence,
         )
 
-        repo.replace_sequence(
-            otu.id,
-            isolate_id=isolate.id,
-            sequence_id=new_sequence.id,
-            replaced_sequence_id=sequence_id,
-            rationale="Requested by user",
-        )
+        for isolate_id in affected_isolate_ids:
+            repo.replace_sequence(
+                otu.id,
+                isolate_id=isolate_id,
+                sequence_id=new_sequence.id,
+                replaced_sequence_id=replaced_sequence.id,
+                rationale="Requested by user",
+            )
 
     if new_sequence is not None:
         logger.info(
