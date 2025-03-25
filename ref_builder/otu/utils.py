@@ -230,6 +230,22 @@ def _extract_isolate_name_from_record(record: NCBIGenbank) -> IsolateName | None
     return None
 
 
+def assign_segment_id_to_record(
+    record: NCBIGenbank,
+    plan: Plan,
+) -> UUID | None:
+    segment_name = extract_segment_name_from_record_with_plan(record, plan)
+
+    if segment_name is None and plan.monopartite:
+        return plan.segments[0].id
+
+    for segment in plan.segments:
+        if segment_name == segment.name:
+            return segment.id
+
+    return None
+
+
 def assign_records_to_segments(
     records: list[NCBIGenbank], plan: Plan
 ) -> dict[UUID, NCBIGenbank]:
