@@ -2,10 +2,15 @@ from pathlib import Path
 
 import arrow
 import orjson
+from pydantic import ValidationError
+from structlog import get_logger
 
+from ref_builder.otu.models import OTU
 from ref_builder.models import Molecule, Strandedness
 from ref_builder.plan import SegmentRule
 from ref_builder.repo import Repo
+
+logger = get_logger("build")
 
 
 def _get_molecule_string(molecule: Molecule) -> str:
@@ -38,9 +43,15 @@ def build_json(indent: bool, output_path: Path, path: Path, version: str) -> Non
     otus = []
 
     for otu in repo.iter_otus():
+        try:
+            validated_otu = OTU(**otu.model_dump())
+        except ValidationError:
+            logger.error("Invalid OTU found. Cancelling build.")
+            return None
+
         isolates = []
 
-        for isolate in otu.isolates:
+        for isolate in validated_otu.isolates:
             sequences = []
 
             for sequence in isolate.sequences:
