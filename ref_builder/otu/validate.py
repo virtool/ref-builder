@@ -1,6 +1,9 @@
+from uuid import UUID
+
 from pydantic import ValidationError
 from structlog import get_logger
 
+from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
 from ref_builder.otu.models import OTU
 
@@ -28,3 +31,14 @@ def check_otu_is_valid(unvalidated_otu: RepoOTU) -> bool:
         return False
 
     return True
+
+
+def check_repo_for_invalid_otus(repo: Repo) -> set[UUID]:
+    """Run validation on all OTUs and return the Ids of bad OTUs."""
+    invalid_otu_ids = set()
+
+    for unvalidated_otu in repo.iter_otus():
+        if not validate_otu(unvalidated_otu):
+            invalid_otu_ids.add(unvalidated_otu.id)
+
+    return invalid_otu_ids
