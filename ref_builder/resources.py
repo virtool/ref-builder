@@ -323,6 +323,19 @@ class RepoOTU(BaseModel):
 
         raise ValueError(f"Accession {accession} found in index, but not in data")
 
+    def get_isolate_ids_containing_sequence_id(self, sequence_id: UUID4) -> set[UUID4]:
+        """Return a set of isolate IDs where the isolate contains the given sequence."""
+        containing_isolate_ids = set()
+
+        if sequence_id not in self._sequences_by_id:
+            return containing_isolate_ids
+
+        for isolate in self.isolates:
+            if sequence_id in isolate.sequence_ids:
+                containing_isolate_ids.add(isolate.id)
+
+        return containing_isolate_ids
+
     def get_sequence_id_hierarchy_from_accession(
         self,
         accession: str,
