@@ -16,6 +16,7 @@ from ref_builder.legacy.utils import iter_legacy_otus
 from ref_builder.legacy.validate import validate_legacy_repo
 from ref_builder.logs import configure_logger
 from ref_builder.ncbi.client import NCBIClient
+from ref_builder.otu.validate import check_repo_for_invalid_otus
 from ref_builder.options import (
     legacy_repo_path_option,
     path_option,
@@ -209,3 +210,23 @@ def validate(fix: bool, limit: int, no_ok: bool, path: Path) -> None:
 def build(indent: bool, path: Path, target_path: Path, version: str) -> None:
     """Build a Virtool reference.json file from the reference repository."""
     build_json(indent, target_path, path, version)
+
+
+@entry.command()
+@path_option
+def check(path: Path):
+    """Check repo for invalid OTUs.
+
+    Prints problematic OTUs to console."""
+    repo_ = Repo(path)
+
+    repo_logger = logger.bind(path=str(repo_.path))
+
+    invalid_otu_ids = check_repo_for_invalid_otus(repo_)
+
+    if invalid_otu_ids:
+        repo_logger.error("Repo contains invalid OTUs.")
+        click.echo(sorted(invalid_otu_ids), err=True)
+
+    else:
+        repo_logger.info("Repo is clean.")
