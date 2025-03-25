@@ -504,8 +504,8 @@ class Repo:
         replaced_sequence_id: uuid.UUID,
         rationale: str,
     ) -> RepoSequence | None:
-        """Link a new sequence and delete an existing sequence,
-        replacing the old sequence under the isolate.
+        """Link a new sequence, replacing the old sequence under the isolate.
+        Delete the original sequence if it is still in the OTU.
         """
         otu = self.get_otu(otu_id)
 
