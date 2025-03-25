@@ -38,7 +38,19 @@ def check_repo_for_invalid_otus(repo: Repo) -> set[UUID]:
     invalid_otu_ids = set()
 
     for unvalidated_otu in repo.iter_otus():
-        if not validate_otu(unvalidated_otu):
+        otu_logger = logger.bind(
+            otu_id=str(unvalidated_otu.id),
+            name=unvalidated_otu.name,
+            taxid=unvalidated_otu.taxid,
+        )
+        if validate_otu(unvalidated_otu):
+            otu_logger.debug(
+                "OTU passed validation",
+            )
+        else:
+            otu_logger.debug(
+                "OTU did not pass validation",
+            )
             invalid_otu_ids.add(unvalidated_otu.id)
 
     return invalid_otu_ids
