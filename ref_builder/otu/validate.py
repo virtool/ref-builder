@@ -27,7 +27,7 @@ def get_validated_otu(unvalidated_otu: RepoOTU) -> OTU:
     )
 
 
-def validate_otu(unvalidated_otu: RepoOTU) -> bool:
+def check_otu_for_validity(unvalidated_otu: RepoOTU) -> bool:
     """Assure that an OTU can pass the validation standard."""
     try:
         get_validated_otu(unvalidated_otu)
@@ -48,7 +48,7 @@ def check_repo_for_invalid_otus(repo: Repo) -> set[UUID]:
             name=unvalidated_otu.name,
             taxid=unvalidated_otu.taxid,
         )
-        if validate_otu(unvalidated_otu):
+        if check_otu_for_validity(unvalidated_otu):
             otu_logger.debug(
                 "OTU passed validation",
             )
