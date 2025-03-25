@@ -1,5 +1,5 @@
-from ref_builder.repo import Repo
 from ref_builder.otu.validate import check_otu_is_valid
+from ref_builder.repo import Repo
 
 
 class TestValidateOTU:
@@ -22,3 +22,11 @@ class TestValidateOTU:
         assert not otu_invalid.isolates
 
         assert not check_otu_is_valid(otu_invalid)
+
+
+class TestValidateRepo:
+    """Test repo validation."""
+
+    def test_ok(self, scratch_repo: Repo):
+        """Check that there are no invalid OTUs in scratch_repo."""
+        assert not scratch_repo.check_for_invalid_otus()
