@@ -1,6 +1,7 @@
 """Command-line interface for reference builder."""
 
 import glob
+import sys
 from pathlib import Path
 
 import click
@@ -209,3 +210,26 @@ def validate(fix: bool, limit: int, no_ok: bool, path: Path) -> None:
 def build(indent: bool, path: Path, target_path: Path, version: str) -> None:
     """Build a Virtool reference.json file from the reference repository."""
     build_json(indent, target_path, path, version)
+
+
+@entry.command()
+@path_option
+def check(path: Path):
+    """Check repo for invalid OTUs.
+
+    Prints problematic OTUs to console.
+    """
+    repo_ = Repo(path)
+
+    repo_logger = logger.bind(path=str(repo_.path))
+
+    invalid_otu_ids = repo_.check_for_invalid_otus()
+
+    if invalid_otu_ids:
+        repo_logger.error("Repo contains invalid OTUs.")
+        click.echo(sorted(invalid_otu_ids), err=True)
+
+        sys.exit(1)
+
+    else:
+        repo_logger.info("Repo is clean.")
