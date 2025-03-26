@@ -62,8 +62,13 @@ def replace_accessions_from_records(
 
     for sequence_id in record_by_replaceable_sequence_id:
         predecessor_sequence = otu.get_sequence_by_id(sequence_id)
+        if predecessor_sequence is None:
+            logger.warning("Predecessor sequences not found")
 
-        containing_isolate_ids = otu.get_isolate_ids_containing_sequence_id(sequence_id)
+        containing_isolate_ids = otu.get_isolate_ids_containing_sequence_id(predecessor_sequence.id)
+        if not containing_isolate_ids:
+            logger.info("Sequence id not found in any isolates.")
+            continue
 
         logger.debug(
             "Isolates containing sequence found",
@@ -108,6 +113,8 @@ def replace_accessions_from_records(
             repo.exclude_accession(otu.id, predecessor_sequence.accession.key)
 
             replacement_sequence_ids.add(replacement_sequence.id)
+
+        otu = repo.get_otu(otu.id)
 
     if replacement_sequence_ids:
         otu = repo.get_otu(otu.id)
