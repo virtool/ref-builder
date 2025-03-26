@@ -640,13 +640,25 @@ class Repo:
         """
         otu = self.get_otu(otu_id)
 
-        if accession in otu.excluded_accessions:
-            logger.debug("Accession is already excluded.", accession=accession)
+        try:
+            accession_key = get_accession_key(accession)
+
+        except ValueError as e:
+            if "Invalid accession key" in str(e):
+                logger.warning(
+                    "Invalid accession included in set. "
+                    "No changes were made to excluded accessions.",
+                    accession=accession,
+                )
+            return otu.excluded_accessions
+
+        if accession_key in otu.excluded_accessions:
+            logger.debug("Accession is already excluded.", accession=accession_key)
         else:
             self._write_event(
                 UpdateExcludedAccessions,
                 UpdateExcludedAccessionsData(
-                    accessions={accession},
+                    accessions={accession_key},
                     action=ExcludedAccessionAction.EXCLUDE,
                 ),
                 OTUQuery(otu_id=otu_id),
@@ -669,8 +681,9 @@ class Repo:
         except ValueError as e:
             if "Invalid accession key" in str(e):
                 logger.warning(
-                    "Invalid accession included in set. No changes were made to "
-                    "excluded accessions."
+                    "Invalid accession included in set. "
+                    "No changes were made to excluded accessions.",
+                    accessions=sorted(accessions),
                 )
 
                 return otu.excluded_accessions

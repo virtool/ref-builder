@@ -637,6 +637,8 @@ class TestGetOTU:
         """
         otu = initialized_repo.get_otu_by_taxid(12242)
 
+        excludable_accessions = {"GR33333", "TL44322"}
+
         with initialized_repo.lock(), initialized_repo.use_transaction():
             sequence = initialized_repo.create_sequence(
                 otu.id,
@@ -655,14 +657,19 @@ class TestGetOTU:
 
             initialized_repo.link_sequence(otu.id, isolate.id, sequence_id=sequence.id)
 
-            initialized_repo.exclude_accession(otu.id, "GROK")
-            initialized_repo.exclude_accession(otu.id, "TOK")
+        assert initialized_repo.get_otu(otu.id).blocked_accessions == {
+            "TMVABC",
+            "TMVABCB",
+        }
+
+        with initialized_repo.lock(), initialized_repo.use_transaction():
+            initialized_repo.exclude_accessions(otu.id, excludable_accessions)
 
         assert initialized_repo.get_otu(otu.id).blocked_accessions == {
             "TMVABC",
             "TMVABCB",
-            "GROK",
-            "TOK",
+            "GR33333",
+            "TL44322",
         }
 
 
@@ -745,10 +752,16 @@ def test_get_isolate_id_from_partial(initialized_repo: Repo):
 
 
 class TestExcludeAccessions:
-    """Test that accessions can be excluded from future fetches."""
+    """Test that excluded accessions are reflected in events.
+
+    Excluded accessions are exempt from future queries to the NCBI Nucleotide.
+    """
 
     def test_ok(self, empty_repo: Repo):
+        """Test that Repo.exclude_accessions() writes the correct event."""
         otu = init_otu(empty_repo)
+
+        assert (id_at_creation := empty_repo.last_id) == 2
 
         assert otu.excluded_accessions == set()
 
@@ -758,7 +771,7 @@ class TestExcludeAccessions:
             empty_repo.exclude_accessions(otu.id, accessions)
 
         assert empty_repo.get_otu(otu.id).excluded_accessions == accessions
-        assert empty_repo.last_id == 3
+        assert empty_repo.last_id == id_at_creation + 1 == 3
 
         with open(empty_repo.path / "src" / f"{empty_repo.last_id:08}.json") as f:
             event = orjson.loads(f.read())
@@ -780,29 +793,29 @@ class TestExcludeAccessions:
         with empty_repo.lock(), empty_repo.use_transaction():
             empty_repo.exclude_accessions(otu.id, {"TM100024"})
 
-        assert empty_repo.last_id == 4
+        assert empty_repo.last_id == id_at_creation + 2 == 4
         assert empty_repo.get_otu(otu.id).excluded_accessions == accessions | {
             "TM100024"
         }
 
-    def test_exists(self, initialized_repo: Repo):
-        """Test that an accession the exists in an OTU sequence cannot be added to the
-        excluded accessions.
+    def test_existing_accession(self, initialized_repo: Repo):
+        """Test that the accession of a sequence already contained in the OTU cannot
+        be added to the excluded accessions.
         """
-        assert initialized_repo.last_id == 5
+        assert (id_before_exclude := initialized_repo.last_id) == 5
 
-        with initialized_repo.lock():
-            otu = initialized_repo.get_otu_by_taxid(12242)
+        otu = initialized_repo.get_otu_by_taxid(12242)
 
-            assert otu.excluded_accessions == set()
+        assert otu.excluded_accessions == set()
 
-            accession = next(iter(otu.accessions))
+        accession = next(iter(otu.accessions))
 
-            with initialized_repo.use_transaction():
-                initialized_repo.exclude_accessions(otu.id, {f"{accession}.1"})
+        with initialized_repo.lock(), initialized_repo.use_transaction():
+            initialized_repo.exclude_accessions(otu.id, {f"{accession}.1"})
 
-            assert initialized_repo.last_id == 5
-            assert initialized_repo.get_otu_by_taxid(12242).excluded_accessions == set()
+        assert initialized_repo.last_id == id_before_exclude == 5
+
+        assert initialized_repo.get_otu_by_taxid(12242).excluded_accessions == set()
 
         with open(
             initialized_repo.path / "src" / f"{initialized_repo.last_id:08}.json"
@@ -812,25 +825,24 @@ class TestExcludeAccessions:
         assert event["type"] != "UpdateExcludedAccessions"
 
     def test_already_excluded(self, empty_repo: Repo):
-        """Test that an attempted redundant exclusion does not create a new `event."""
+        """Test that an attempted redundant exclusion does not create a new event."""
         otu_id = init_otu(empty_repo).id
 
         accessions = {"TM100021", "TM100022", "TM100023"}
 
-        with empty_repo.lock():
-            assert empty_repo.get_otu(otu_id).excluded_accessions == set()
+        assert empty_repo.get_otu(otu_id).excluded_accessions == set()
 
-            with empty_repo.use_transaction():
-                empty_repo.exclude_accessions(otu_id, accessions)
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.exclude_accessions(otu_id, accessions)
 
-            assert empty_repo.last_id == 3
+        assert (id_after_first_exclude := empty_repo.last_id) == 3
 
-            with empty_repo.use_transaction():
-                empty_repo.exclude_accessions(otu_id, {"TM100021"})
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.exclude_accessions(otu_id, {"TM100021"})
 
-            assert empty_repo.get_otu(otu_id).excluded_accessions == accessions
+        assert empty_repo.get_otu(otu_id).excluded_accessions == accessions
 
-        assert empty_repo.last_id == 3
+        assert empty_repo.last_id == id_after_first_exclude == 3
 
     def test_partially_already_excluded(self, empty_repo: Repo):
         """Test that a partially redundant list of exclusions creates a new event with
@@ -840,24 +852,24 @@ class TestExcludeAccessions:
 
         accessions = {"TM100021", "TM100022", "TM100023"}
 
-        with empty_repo.lock():
-            with empty_repo.use_transaction():
-                empty_repo.exclude_accessions(otu_id, accessions)
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.exclude_accessions(otu_id, accessions)
 
-            otu_before = empty_repo.get_otu(otu_id)
+        otu_before = empty_repo.get_otu(otu_id)
 
-            assert empty_repo.last_id == 3
-            assert otu_before.excluded_accessions == accessions
+        assert (id_after_first_exclusion := empty_repo.last_id) == 3
 
-            with empty_repo.use_transaction():
-                empty_repo.exclude_accessions(otu_id, {"TM100023", "TM100024"})
+        assert otu_before.excluded_accessions == accessions
 
-            otu_after = empty_repo.get_otu(otu_id)
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.exclude_accessions(otu_id, {"TM100023", "TM100024"})
 
-            assert empty_repo.last_id == 4
-            assert otu_after.excluded_accessions == otu_before.excluded_accessions | {
-                "TM100024"
-            }
+        otu_after = empty_repo.get_otu(otu_id)
+
+        assert empty_repo.last_id == id_after_first_exclusion + 1 == 4
+        assert otu_after.excluded_accessions == (
+            otu_before.excluded_accessions | {"TM100024"}
+        )
 
         with open(
             empty_repo.path.joinpath("src", f"{empty_repo.last_id:08}.json")
@@ -890,18 +902,24 @@ class TestAllowAccessions:
         """
         otu = init_otu(empty_repo)
 
+        assert (id_at_creation := empty_repo.last_id) == 2
+
         accessions = {"TM100021", "TM100022", "TM100023"}
 
         with empty_repo.lock():
             with empty_repo.use_transaction():
                 empty_repo.exclude_accessions(otu.id, accessions)
 
+            assert empty_repo.last_id == id_at_creation + 1 == 3
+
             assert empty_repo.get_otu(otu.id).excluded_accessions == accessions
 
             with empty_repo.use_transaction():
                 empty_repo.allow_accessions(otu.id, ["TM100021", "TM100022"])
 
-            otu_after = empty_repo.get_otu(otu.id)
+            assert empty_repo.last_id == id_at_creation + 2 == 4
+
+        otu_after = empty_repo.get_otu(otu.id)
 
         with open(empty_repo.path.joinpath("src", "00000004.json")) as f:
             event = orjson.loads(f.read())
@@ -930,23 +948,30 @@ class TestAllowAccessions:
 
         accessions = {"TM100021", "TM100022", "TM100023"}
 
-        with empty_repo.lock():
-            with empty_repo.use_transaction():
-                empty_repo.exclude_accessions(otu.id, accessions)
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.exclude_accessions(otu.id, accessions)
 
-            assert empty_repo.get_otu(otu.id).excluded_accessions == accessions
+        assert (id_after_first_exclusion := empty_repo.last_id) == 3
 
-            with empty_repo.use_transaction():
-                empty_repo.allow_accessions(otu.id, ["TM100024"])
+        assert empty_repo.get_otu(otu.id).excluded_accessions == accessions
 
-            assert empty_repo.get_otu(otu.id).excluded_accessions == accessions
+        # Attempt to allow an accession not on the exclusion list
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.allow_accessions(otu.id, ["TM100024"])
 
-            with empty_repo.use_transaction():
-                empty_repo.allow_accessions(otu.id, accessions)
+        assert empty_repo.last_id == id_after_first_exclusion == 3
+        assert not empty_repo.path.joinpath("src", "00000004.json").exists()
 
-            otu_after = empty_repo.get_otu(otu.id).excluded_accessions == set()
+        assert empty_repo.get_otu(otu.id).excluded_accessions == accessions
 
-        assert not empty_repo.path.joinpath("src", "00000005.json").exists()
+        # Clear the excluded accessions list
+        with empty_repo.lock(), empty_repo.use_transaction():
+            empty_repo.allow_accessions(otu.id, accessions)
+
+        assert empty_repo.get_otu(otu.id).excluded_accessions == set()
+
+        assert empty_repo.last_id == id_after_first_exclusion + 1 == 4
+        assert empty_repo.path.joinpath("src", "00000004.json").exists()
 
 
 class TestDeleteIsolate:
