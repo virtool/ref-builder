@@ -5,7 +5,11 @@ from structlog import get_logger
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
-from ref_builder.otu.utils import DeleteRationale, assign_segment_id_to_record, parse_refseq_comment
+from ref_builder.otu.utils import (
+    DeleteRationale,
+    assign_segment_id_to_record,
+    parse_refseq_comment,
+)
 
 
 logger = get_logger("otu.promote")
@@ -42,12 +46,15 @@ def promote_otu_accessions_from_records(
 
             records_by_promotable_sequence_id[predecessor_sequence.id] = record
 
-    promoted_sequence_ids = replace_accessions_from_records(repo, otu, records_by_promotable_sequence_id)
+    promoted_sequence_ids = replace_accessions_from_records(
+        repo, otu, records_by_promotable_sequence_id
+    )
 
     otu = repo.get_otu(otu.id)
 
     return set(
-        otu.get_sequence_by_id(sequence_id).accession.key for sequence_id in promoted_sequence_ids
+        otu.get_sequence_by_id(sequence_id).accession.key
+        for sequence_id in promoted_sequence_ids
     )
 
 
@@ -65,7 +72,9 @@ def replace_accessions_from_records(
         if predecessor_sequence is None:
             logger.warning("Predecessor sequences not found")
 
-        containing_isolate_ids = otu.get_isolate_ids_containing_sequence_id(predecessor_sequence.id)
+        containing_isolate_ids = otu.get_isolate_ids_containing_sequence_id(
+            predecessor_sequence.id
+        )
         if not containing_isolate_ids:
             logger.info("Sequence id not found in any isolates.")
             continue
@@ -99,7 +108,9 @@ def replace_accessions_from_records(
                     return None
 
             else:
-                replacement_sequence = otu.get_sequence_by_accession(replacement_record.accession)
+                replacement_sequence = otu.get_sequence_by_accession(
+                    replacement_record.accession
+                )
 
             for isolate_id in containing_isolate_ids:
                 repo.replace_sequence(
@@ -119,21 +130,20 @@ def replace_accessions_from_records(
     if replacement_sequence_ids:
         otu = repo.get_otu(otu.id)
 
-        replaced_sequence_index = {
-            str(otu.get_sequence_by_id(sequence_id).accession): str(sequence_id)
-            for sequence_id in replacement_sequence_ids
-        },
+        replaced_sequence_index = (
+            {
+                str(otu.get_sequence_by_id(sequence_id).accession): str(sequence_id)
+                for sequence_id in replacement_sequence_ids
+            },
+        )
 
         logger.info(
             "Replaced sequences",
             count=len(replacement_sequence_ids),
             replaced_sequences=replaced_sequence_index,
-            new_excluded_accessions=sorted(otu.excluded_accessions - initial_exceptions),
+            new_excluded_accessions=sorted(
+                otu.excluded_accessions - initial_exceptions
+            ),
         )
 
     return replacement_sequence_ids
-
-
-
-
-
