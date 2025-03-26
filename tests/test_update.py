@@ -11,8 +11,8 @@ from ref_builder.otu.update import (
     auto_update_otu,
     batch_update_repo,
     iter_fetch_list,
-    promote_otu_accessions,
 )
+from ref_builder.otu.promote import promote_otu_accessions
 from ref_builder.repo import Repo
 
 

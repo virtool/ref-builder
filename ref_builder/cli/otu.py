@@ -22,8 +22,8 @@ from ref_builder.otu.modify import (
 from ref_builder.otu.update import (
     auto_update_otu,
     batch_update_repo,
-    promote_otu_accessions,
 )
+from ref_builder.otu.promote import promote_otu_accessions
 from ref_builder.plan import SegmentName, SegmentRule
 from ref_builder.repo import Repo, locked_repo
 from ref_builder.utils import IsolateName, IsolateNameType

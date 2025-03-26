@@ -524,41 +524,6 @@ def update_otu_with_records(
     return new_isolate_ids
 
 
-def promote_otu_accessions(
-    repo: Repo, otu: RepoOTU, ignore_cache: bool = False
-) -> set | None:
-    """Fetch new accessions from NCBI Nucleotide and promote accessions
-    with newly added RefSeq equivalents.
-    """
-    ncbi = NCBIClient(ignore_cache)
-
-    log = logger.bind(otu_id=otu.id, taxid=otu.taxid)
-
-    log.info("Checking for promotable sequences.")
-
-    accessions = ncbi.filter_accessions(
-        ncbi.fetch_accessions_by_taxid(
-            otu.taxid,
-            sequence_min_length=get_segments_min_length(otu.plan.segments),
-            sequence_max_length=get_segments_max_length(otu.plan.segments),
-            refseq_only=True,
-        ),
-    )
-    fetch_set = {accession.key for accession in accessions} - otu.blocked_accessions
-
-    if fetch_set:
-        records = ncbi.fetch_genbank_records(fetch_set)
-
-        log.debug(
-            "New accessions found. Checking for promotable records.",
-            fetch_list=sorted(fetch_set),
-        )
-
-        return promote_otu_accessions_from_records(repo, otu, records)
-
-    log.info("Records are already up to date.")
-
-
 def iter_fetch_list(
     fetch_list: list[str], page_size=RECORD_FETCH_CHUNK_SIZE
 ) -> Iterator[list[str]]:

@@ -2,17 +2,53 @@ from uuid import UUID
 
 from structlog import get_logger
 
+from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
 from ref_builder.otu.utils import (
     DeleteRationale,
     assign_segment_id_to_record,
-    parse_refseq_comment,
+    parse_refseq_comment, get_segments_min_length, get_segments_max_length,
 )
 
 
 logger = get_logger("otu.promote")
+
+
+def promote_otu_accessions(
+    repo: Repo, otu: RepoOTU, ignore_cache: bool = False
+) -> set | None:
+    """Fetch new accessions from NCBI Nucleotide and promote accessions
+    with newly added RefSeq equivalents.
+    """
+    ncbi = NCBIClient(ignore_cache)
+
+    log = logger.bind(otu_id=otu.id, taxid=otu.taxid)
+
+    log.info("Checking for promotable sequences.")
+
+    accessions = ncbi.filter_accessions(
+        ncbi.fetch_accessions_by_taxid(
+            otu.taxid,
+            sequence_min_length=get_segments_min_length(otu.plan.segments),
+            sequence_max_length=get_segments_max_length(otu.plan.segments),
+            refseq_only=True,
+        ),
+    )
+    fetch_set = {accession.key for accession in accessions} - otu.blocked_accessions
+
+    if fetch_set:
+        records = ncbi.fetch_genbank_records(fetch_set)
+
+        log.debug(
+            "New accessions found. Checking for promotable records.",
+            fetch_list=sorted(fetch_set),
+        )
+
+        return promote_otu_accessions_from_records(repo, otu, records)
+
+    log.info("Records are already up to date.")
 
 
 def promote_otu_accessions_from_records(
