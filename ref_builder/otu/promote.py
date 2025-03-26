@@ -46,7 +46,8 @@ def promote_otu_accessions(
             fetch_list=sorted(fetch_set),
         )
 
-        return promote_otu_accessions_from_records(repo, otu, records)
+        if promoted_accessions := promote_otu_accessions_from_records(repo, otu, records):
+            log.info("Sequences promoted.", new_accessions=sorted(promoted_accessions))
 
     log.info("Records are already up to date.")
 

@@ -146,7 +146,7 @@ class TestPromoteOTUCommand:
         assert result.exit_code == 0
 
         assert (
-            "Isolate updated"
+            "Sequences promoted"
             and "['NC_055390', 'NC_055391', 'NC_055392']" in result.output
         )
 
