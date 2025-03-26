@@ -5,10 +5,50 @@ from structlog import get_logger
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
-from ref_builder.otu.utils import DeleteRationale, assign_segment_id_to_record
+from ref_builder.otu.utils import DeleteRationale, assign_segment_id_to_record, parse_refseq_comment
 
 
 logger = get_logger("otu.promote")
+
+
+def promote_otu_accessions_from_records(
+    repo: Repo, otu: RepoOTU, records: list[NCBIGenbank]
+) -> set[str]:
+    """Take a list of records and check them against the contents of an OTU
+    for promotable RefSeq sequences. Return a list of promoted accessions.
+    """
+    otu_logger = logger.bind(otu_id=str(otu.id), taxid=otu.taxid)
+
+    refseq_records = [record for record in records if record.refseq]
+
+    records_by_promotable_sequence_id = {}
+
+    for record in refseq_records:
+        try:
+            _, predecessor_accession = parse_refseq_comment(record.comment)
+
+        except ValueError as e:
+            logger.debug(e, accession=record.accession_version, comment=record.comment)
+            continue
+
+        if predecessor_accession in otu.accessions:
+            otu_logger.debug(
+                "Replaceable accession found",
+                predecessor_accession=predecessor_accession,
+                promoted_accession=record.accession,
+            )
+
+            predecessor_sequence = otu.get_sequence_by_accession(predecessor_accession)
+
+            records_by_promotable_sequence_id[predecessor_sequence.id] = record
+
+    promoted_sequence_ids = replace_accessions_from_records(repo, otu, records_by_promotable_sequence_id)
+
+    otu = repo.get_otu(otu.id)
+
+    return set(
+        otu.get_sequence_by_id(sequence_id).accession.key for sequence_id in promoted_sequence_ids
+    )
 
 
 def replace_accessions_from_records(
@@ -72,10 +112,15 @@ def replace_accessions_from_records(
     if replacement_sequence_ids:
         otu = repo.get_otu(otu.id)
 
+        replaced_sequence_index = {
+            str(otu.get_sequence_by_id(sequence_id).accession): str(sequence_id)
+            for sequence_id in replacement_sequence_ids
+        },
+
         logger.info(
             "Replaced sequences",
             count=len(replacement_sequence_ids),
-            replaced_sequence_ids=[str(sequence_id) for sequence_id in replacement_sequence_ids],
+            replaced_sequences=replaced_sequence_index,
             new_excluded_accessions=sorted(otu.excluded_accessions - initial_exceptions),
         )
 
