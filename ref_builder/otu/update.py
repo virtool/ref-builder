@@ -1,6 +1,5 @@
 import datetime
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from collections.abc import Collection, Iterable, Iterator
 from pathlib import Path
 from uuid import UUID
@@ -15,6 +14,7 @@ from ref_builder.otu.isolate import (
     assign_records_to_segments,
     create_isolate,
 )
+from ref_builder.otu.promote import promote_otu_accessions_from_records
 from ref_builder.otu.utils import (
     DeleteRationale,
     get_segments_min_length,
@@ -557,89 +557,6 @@ def promote_otu_accessions(
         return promote_otu_accessions_from_records(repo, otu, records)
 
     log.info("Records are already up to date.")
-
-
-def promote_otu_accessions_from_records(
-    repo: Repo, otu: RepoOTU, records: list[NCBIGenbank]
-) -> set:
-    """Take a list of records and check them against the contents of an OTU
-    for promotable RefSeq sequences. Return a list of promoted accessions.
-    """
-    otu_logger = logger.bind(otu_id=str(otu.id), taxid=otu.taxid)
-
-    initial_exceptions = otu.excluded_accessions.copy()
-
-    refseq_records = [record for record in records if record.refseq]
-
-    promoted_accessions = set()
-
-    promoted_isolates = defaultdict(list)
-
-    for record in refseq_records:
-        try:
-            _, predecessor_accession = parse_refseq_comment(record.comment)
-
-        except ValueError as e:
-            logger.debug(e, accession=record.accession_version, comment=record.comment)
-            continue
-
-        if predecessor_accession in otu.accessions:
-            otu_logger.debug(
-                "Replaceable accession found",
-                predecessor_accession=predecessor_accession,
-                promoted_accession=record.accession,
-            )
-
-            (
-                isolate_id,
-                sequence_id,
-            ) = otu.get_sequence_id_hierarchy_from_accession(predecessor_accession)
-
-            promoted_isolates[isolate_id].append((predecessor_accession, record))
-
-    for isolate_id in promoted_isolates:
-        records = [
-            record for predecession_accession, record in promoted_isolates[isolate_id]
-        ]
-        isolate = otu.get_isolate(isolate_id)
-
-        otu_logger.debug(
-            f"Promoting {isolate.name}", predecessor_accessions=isolate.accessions
-        )
-
-        try:
-            promoted_isolate = update_isolate_from_records(
-                repo, otu, isolate_id, records
-            )
-        except ValueError as e:
-            logger.debug(e)
-            continue
-
-        if promoted_isolate is not None:
-            otu_logger.info(
-                f"Isolate promoted using RefSeq data",
-                isolate_id=str(isolate.id),
-                isolate_name=str(isolate.name) if isolate.name is not None else None,
-                accessions=promoted_isolate.accessions,
-            )
-
-            promoted_accessions.update(promoted_isolate.accessions)
-
-    if promoted_accessions:
-        otu = repo.get_otu(otu.id)
-
-        otu_logger.info(
-            "Promoted records",
-            count=len(promoted_accessions),
-            promoted_accessions=sorted(promoted_accessions),
-            new_excluded_accessions=sorted(
-                otu.excluded_accessions - initial_exceptions
-            ),
-        )
-    else:
-        otu_logger.debug("All accessions are up to date")
-
-    return promoted_accessions
 
 
 def iter_fetch_list(
