@@ -9,7 +9,9 @@ from ref_builder.resources import RepoOTU
 from ref_builder.otu.utils import (
     DeleteRationale,
     assign_segment_id_to_record,
-    parse_refseq_comment, get_segments_min_length, get_segments_max_length,
+    parse_refseq_comment,
+    get_segments_min_length,
+    get_segments_max_length,
 )
 
 
@@ -46,7 +48,9 @@ def promote_otu_accessions(
             fetch_list=sorted(fetch_set),
         )
 
-        if promoted_accessions := promote_otu_accessions_from_records(repo, otu, records):
+        if promoted_accessions := promote_otu_accessions_from_records(
+            repo, otu, records
+        ):
             log.info("Sequences promoted.", new_accessions=sorted(promoted_accessions))
 
     log.info("Records are already up to date.")
