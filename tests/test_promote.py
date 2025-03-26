@@ -1,7 +1,6 @@
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.create import create_otu_with_taxid
-from ref_builder.otu.promote import replace_accessions_from_records
-from ref_builder.otu.update import update_isolate_from_records
+from ref_builder.otu.promote import replace_accessions_from_records, promote_otu_accessions_from_records
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate
 from tests.fixtures.factories import IsolateFactory
