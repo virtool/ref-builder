@@ -21,5 +21,68 @@
   ])
 # ---
 # name: TestFetchTaxonomy.test_ok
-  NCBITaxonomy(id=1198450, name='Jacquemontia mosaic Yucatan virus', other_names=NCBITaxonomyOtherNames(acronym=[], genbank_acronym=[], equivalent_name=[], synonym=[], includes=[]), lineage=[NCBILineage(id=10239, name='Viruses', rank='no_rank'), NCBILineage(id=2731342, name='Monodnaviria', rank='realm'), NCBILineage(id=2732092, name='Shotokuvirae', rank='kingdom'), NCBILineage(id=2732416, name='Cressdnaviricota', rank='phylum'), NCBILineage(id=2732424, name='Repensiviricetes', rank='class'), NCBILineage(id=2732539, name='Geplafuvirales', rank='order'), NCBILineage(id=10811, name='Geminiviridae', rank='family'), NCBILineage(id=10814, name='Begomovirus', rank='genus')], rank=<NCBIRank.SPECIES: 'species'>, species=NCBILineage(id=1198450, name='Jacquemontia mosaic Yucatan virus', rank='species'))
+  dict({
+    'id': 1198450,
+    'lineage': list([
+      dict({
+        'id': 10239,
+        'name': 'Viruses',
+        'rank': 'acellular root',
+      }),
+      dict({
+        'id': 2731342,
+        'name': 'Monodnaviria',
+        'rank': 'realm',
+      }),
+      dict({
+        'id': 2732092,
+        'name': 'Shotokuvirae',
+        'rank': 'kingdom',
+      }),
+      dict({
+        'id': 2732416,
+        'name': 'Cressdnaviricota',
+        'rank': 'phylum',
+      }),
+      dict({
+        'id': 2732424,
+        'name': 'Repensiviricetes',
+        'rank': 'class',
+      }),
+      dict({
+        'id': 2732539,
+        'name': 'Geplafuvirales',
+        'rank': 'order',
+      }),
+      dict({
+        'id': 10811,
+        'name': 'Geminiviridae',
+        'rank': 'family',
+      }),
+      dict({
+        'id': 10814,
+        'name': 'Begomovirus',
+        'rank': 'genus',
+      }),
+    ]),
+    'name': 'Jacquemontia mosaic Yucatan virus',
+    'other_names': dict({
+      'acronym': list([
+      ]),
+      'equivalent_name': list([
+      ]),
+      'genbank_acronym': list([
+      ]),
+      'includes': list([
+      ]),
+      'synonym': list([
+      ]),
+    }),
+    'rank': <NCBIRank.SPECIES: 'species'>,
+    'species': dict({
+      'id': 1198450,
+      'name': 'Jacquemontia mosaic Yucatan virus',
+      'rank': 'species',
+    }),
+  })
 # ---

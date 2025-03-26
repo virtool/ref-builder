@@ -232,7 +232,9 @@ class TestFetchTaxonomy:
         assert uncached_ncbi_client.cache.load_taxonomy(1198450) is None
 
         # Fetch the taxonomy record and check its contents.
-        assert uncached_ncbi_client.fetch_taxonomy_record(1198450) == snapshot
+        assert (
+            uncached_ncbi_client.fetch_taxonomy_record(1198450).model_dump() == snapshot
+        )
 
         # Make sure the taxid is now cached.
         assert uncached_ncbi_client.cache.load_taxonomy(1198450)
