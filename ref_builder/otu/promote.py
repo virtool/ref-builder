@@ -68,6 +68,8 @@ def promote_otu_accessions_from_records(
     """
     otu_logger = logger.bind(otu_id=str(otu.id), taxid=otu.taxid)
 
+    initial_exceptions = otu.excluded_accessions.copy()
+
     refseq_records = [record for record in records if record.refseq]
 
     records_by_promotable_sequence_id = {}
@@ -91,9 +93,39 @@ def promote_otu_accessions_from_records(
 
             records_by_promotable_sequence_id[predecessor_sequence.id] = record
 
-    promoted_sequence_ids = replace_accessions_from_records(
-        repo, otu, records_by_promotable_sequence_id
-    )
+    promoted_sequence_ids = set()
+
+    for sequence_id in records_by_promotable_sequence_id:
+        promoted_sequence = replace_otu_sequence_from_record(
+            repo,
+            otu,
+            sequence_id=sequence_id,
+            replacement_record=records_by_promotable_sequence_id[sequence_id],
+            exclude_accession=True,
+        )
+
+        promoted_sequence_ids.add(promoted_sequence.id)
+
+        otu = repo.get_otu(otu.id)
+
+    if promoted_sequence_ids:
+        otu = repo.get_otu(otu.id)
+
+        replaced_sequence_index = (
+            {
+                str(otu.get_sequence_by_id(sequence_id).accession): str(sequence_id)
+                for sequence_id in promoted_sequence_ids
+            },
+        )
+
+        logger.info(
+            "Replaced sequences",
+            count=len(promoted_sequence_ids),
+            replaced_sequences=replaced_sequence_index,
+            new_excluded_accessions=sorted(
+                otu.excluded_accessions - initial_exceptions
+            ),
+        )
 
     otu = repo.get_otu(otu.id)
 
