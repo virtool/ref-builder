@@ -101,7 +101,9 @@ class TestOTU:
 
         test_sequence = otu.get_sequence_by_accession("DQ178610")
 
-        containing_isolate_ids = otu.get_isolate_ids_containing_sequence_id(test_sequence.id)
+        containing_isolate_ids = otu.get_isolate_ids_containing_sequence_id(
+            test_sequence.id
+        )
 
         assert len(containing_isolate_ids) == 1
 

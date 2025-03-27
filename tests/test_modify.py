@@ -405,7 +405,9 @@ class TestReplaceSequence:
 
         old_sequence = otu_init.get_sequence_by_accession("MK431779")
 
-        isolate_id = next(iter(otu_init.get_isolate_ids_containing_sequence_id(old_sequence.id)))
+        isolate_id = next(
+            iter(otu_init.get_isolate_ids_containing_sequence_id(old_sequence.id))
+        )
 
         assert isolate_id == otu_init.representative_isolate
 
@@ -494,5 +496,3 @@ class TestReplaceSequence:
                 new_accession="NC_038792",
                 replaced_accession="DQ178608",
             )
-
-

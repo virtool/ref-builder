@@ -1062,9 +1062,7 @@ def test_replace_sequence(initialized_repo: Repo):
     replaceable_sequence = otu_init.get_sequence_by_accession("TMVABC")
 
     isolate_id = next(
-        iter(
-            otu_init.get_isolate_ids_containing_sequence_id(replaceable_sequence.id)
-        )
+        iter(otu_init.get_isolate_ids_containing_sequence_id(replaceable_sequence.id))
     )
 
     with initialized_repo.lock():
