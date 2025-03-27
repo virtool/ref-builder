@@ -334,7 +334,10 @@ class RepoOTU(BaseModel):
             if sequence_id in isolate.sequence_ids:
                 containing_isolate_ids.add(isolate.id)
 
-        return containing_isolate_ids
+        if containing_isolate_ids:
+            return containing_isolate_ids
+
+        raise ValueError(f"Sequence ID {sequence_id} found in index, but not in data")
 
     def get_sequence_id_hierarchy_from_accession(
         self,
