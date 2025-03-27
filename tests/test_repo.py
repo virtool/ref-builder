@@ -1057,38 +1057,40 @@ def test_replace_sequence(initialized_repo: Repo):
     """Test the replacement of am existing sequence using a new Genbank accession and
     record.
     """
-    otu_before = initialized_repo.get_otu_by_taxid(12242)
+    otu_init = initialized_repo.get_otu_by_taxid(12242)
 
-    accession = "TMVABC"
+    replaceable_sequence = otu_init.get_sequence_by_accession("TMVABC")
 
-    isolate_id, replaced_sequence_id = (
-        otu_before.get_sequence_id_hierarchy_from_accession(accession)
+    isolate_id = next(
+        iter(
+            otu_init.get_isolate_ids_containing_sequence_id(replaceable_sequence.id)
+        )
     )
 
     with initialized_repo.lock():
         with initialized_repo.use_transaction():
             new_sequence = initialized_repo.create_sequence(
-                otu_before.id,
+                otu_init.id,
                 "TMVABCC.1",
                 "TMV edit",
                 None,
-                otu_before.plan.segments[0].id,
+                otu_init.plan.segments[0].id,
                 "ACGTGGAGAGACCA",
             )
 
         with initialized_repo.use_transaction():
             initialized_repo.replace_sequence(
-                otu_id=otu_before.id,
+                otu_id=otu_init.id,
                 isolate_id=isolate_id,
                 sequence_id=new_sequence.id,
-                replaced_sequence_id=replaced_sequence_id,
+                replaced_sequence_id=replaceable_sequence.id,
                 rationale="Testing sequence redaction",
             )
 
-        otu_after = initialized_repo.get_otu(otu_before.id)
+        otu_after = initialized_repo.get_otu(otu_init.id)
 
     assert otu_after.get_sequence_by_id(new_sequence.id) is not None
-    assert otu_after.get_sequence_by_id(replaced_sequence_id) is None
+    assert otu_after.get_sequence_by_id(replaceable_sequence.id) is None
 
 
 class TestMalformedEvent:

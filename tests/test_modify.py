@@ -396,30 +396,28 @@ class TestReplaceSequence:
     def test_ok(self, precached_repo):
         """Test sequence replacement and deletion."""
         with precached_repo.lock():
-            otu_before = create_otu_with_taxid(
+            otu_init = create_otu_with_taxid(
                 precached_repo,
                 1169032,
                 ["MK431779"],
                 acronym="",
             )
 
-        isolate_id, old_sequence_id = (
-            otu_before.get_sequence_id_hierarchy_from_accession(
-                "MK431779",
-            )
-        )
+        old_sequence = otu_init.get_sequence_by_accession("MK431779")
 
-        assert type(old_sequence_id) is UUID
+        isolate_id = next(iter(otu_init.get_isolate_ids_containing_sequence_id(old_sequence.id)))
+
+        assert isolate_id == otu_init.representative_isolate
 
         with precached_repo.lock():
-            sequence = replace_sequence_in_otu(
+            new_sequence = replace_sequence_in_otu(
                 repo=precached_repo,
-                otu=otu_before,
+                otu=otu_init,
                 new_accession="NC_003355",
                 replaced_accession="MK431779",
             )
 
-        assert type(sequence) is RepoSequence
+        assert isinstance(new_sequence, RepoSequence)
 
         otu_after = precached_repo.get_otu_by_taxid(1169032)
 
