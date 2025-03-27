@@ -135,50 +135,6 @@ def promote_otu_accessions_from_records(
     )
 
 
-def replace_accessions_from_records(
-    repo: Repo,
-    otu: RepoOTU,
-    record_by_replaceable_sequence_id: dict[UUID, NCBIGenbank],
-):
-    initial_exceptions = otu.excluded_accessions.copy()
-
-    replacement_sequence_ids = set()
-
-    for sequence_id in record_by_replaceable_sequence_id:
-        replacement_sequence = replace_otu_sequence_from_record(
-            repo,
-            otu,
-            sequence_id=sequence_id,
-            replacement_record=record_by_replaceable_sequence_id[sequence_id],
-            exclude_accession=True,
-        )
-
-        replacement_sequence_ids.add(replacement_sequence.id)
-
-        otu = repo.get_otu(otu.id)
-
-    if replacement_sequence_ids:
-        otu = repo.get_otu(otu.id)
-
-        replaced_sequence_index = (
-            {
-                str(otu.get_sequence_by_id(sequence_id).accession): str(sequence_id)
-                for sequence_id in replacement_sequence_ids
-            },
-        )
-
-        logger.info(
-            "Replaced sequences",
-            count=len(replacement_sequence_ids),
-            replaced_sequences=replaced_sequence_index,
-            new_excluded_accessions=sorted(
-                otu.excluded_accessions - initial_exceptions
-            ),
-        )
-
-    return replacement_sequence_ids
-
-
 def replace_otu_sequence_from_record(
     repo: Repo,
     otu: RepoOTU,
