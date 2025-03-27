@@ -70,7 +70,7 @@ def test_multi_linked_promotion(empty_repo: Repo):
         mock_sequence = mock_isolate.sequences[iterator]
 
         if mock_sequence.segment == segment_l.id:
-            mock_isolate.sequences[iterator] = segment_l_rep_sequence.copy()
+            mock_isolate.sequences[iterator] = segment_l_rep_sequence.model_copy()
 
     with empty_repo.lock(), empty_repo.use_transaction():
         isolate_init = empty_repo.create_isolate(

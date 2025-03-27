@@ -297,7 +297,9 @@ def replace_sequence_in_otu(
         )
         return None
 
-    affected_isolate_ids = otu.get_isolate_ids_containing_sequence_id(replaced_sequence.id)
+    affected_isolate_ids = otu.get_isolate_ids_containing_sequence_id(
+        replaced_sequence.id
+    )
     if not affected_isolate_ids:
         logger.warning(
             "This sequence is not linked to any isolates.",
