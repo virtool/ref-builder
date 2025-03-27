@@ -152,6 +152,10 @@ def otu_list(repo: Repo) -> None:
 @click.argument("IDENTIFIER", type=str)
 @pass_repo
 def otu_event_logs(repo: Repo, identifier: str) -> None:
+    """Print a log of OTU events to console.
+
+    IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
+    """
     otu_ = get_otu_from_identifier(repo, identifier)
 
     print_otu_event_log(list(repo.iter_otu_events(otu_.id)))
