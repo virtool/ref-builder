@@ -1,7 +1,7 @@
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.create import create_otu_with_taxid
 from ref_builder.otu.promote import (
-    replace_accessions_from_records,
+    replace_otu_sequence_from_record,
     promote_otu_accessions_from_records,
 )
 from ref_builder.repo import Repo
@@ -9,7 +9,7 @@ from ref_builder.resources import RepoIsolate
 from tests.fixtures.factories import IsolateFactory
 
 
-def test_replace_sequences(empty_repo):
+def test_replace_sequence(empty_repo):
     """Test OTU sequence replacement."""
 
     with empty_repo.lock():
@@ -29,16 +29,21 @@ def test_replace_sequences(empty_repo):
         ["NC_055390", "NC_055391", "NC_055392"]
     )
 
+    record_by_replaceable_sequence_id = {
+        initial_rep_sequence_ids[0]: refseq_records[0],
+        initial_rep_sequence_ids[1]: refseq_records[1],
+        initial_rep_sequence_ids[2]: refseq_records[2],
+    }
+
     with empty_repo.lock():
-        assert replace_accessions_from_records(
-            empty_repo,
-            otu_init,
-            record_by_replaceable_sequence_id={
-                initial_rep_sequence_ids[0]: refseq_records[0],
-                initial_rep_sequence_ids[1]: refseq_records[1],
-                initial_rep_sequence_ids[2]: refseq_records[2],
-            },
-        )
+        for sequence_id in record_by_replaceable_sequence_id:
+            assert replace_otu_sequence_from_record(
+                empty_repo,
+                otu_init,
+                sequence_id,
+                replacement_record=record_by_replaceable_sequence_id[sequence_id],
+                exclude_accession=True,
+            )
 
     assert empty_repo.get_otu(otu_init.id).accessions == {
         "NC_055390",
