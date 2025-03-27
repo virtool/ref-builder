@@ -20,7 +20,7 @@ logger = get_logger("otu.promote")
 
 def promote_otu_accessions(
     repo: Repo, otu: RepoOTU, ignore_cache: bool = False
-) -> set | None:
+) -> set[str]:
     """Fetch new accessions from NCBI Nucleotide and promote accessions
     with newly added RefSeq equivalents.
     """
@@ -53,7 +53,11 @@ def promote_otu_accessions(
         ):
             log.info("Sequences promoted.", new_accessions=sorted(promoted_accessions))
 
+            return promoted_accessions
+
     log.info("Records are already up to date.")
+
+    return set()
 
 
 def promote_otu_accessions_from_records(
