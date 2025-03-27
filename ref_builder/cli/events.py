@@ -3,8 +3,8 @@ from pathlib import Path
 
 import click
 
-from ref_builder.console import print_event, print_event_as_json
 from ref_builder.cli.utils import pass_repo
+from ref_builder.console import print_event, print_event_as_json
 from ref_builder.options import path_option
 from ref_builder.repo import Repo, locked_repo
 

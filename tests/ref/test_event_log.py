@@ -9,4 +9,3 @@ def test_otu_event_log(scratch_repo: Repo):
 
     with console.capture() as capture:
         print_otu_event_log(otu_events)
-
