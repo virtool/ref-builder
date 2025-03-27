@@ -205,7 +205,7 @@ def replace_otu_sequence_from_record(
 def correct_sequences_in_otu(repo: Repo, otu: RepoOTU, ignore_cache: bool = False):
     ncbi = NCBIClient(ignore_cache)
 
-    all_accessions = ncbi.filter_accessions(
+    all_server_accessions = ncbi.filter_accessions(
         ncbi.fetch_accessions_by_taxid(
             otu.taxid,
             sequence_min_length=get_segments_min_length(otu.plan.segments),
@@ -213,7 +213,7 @@ def correct_sequences_in_otu(repo: Repo, otu: RepoOTU, ignore_cache: bool = Fals
         ),
     )
 
-    updated_extant_accessions = {accession for accession in all_accessions if accession.version > 1}
+    server_upgraded_accessions = {accession for accession in all_server_accessions if accession.version > 2}
 
-    for accession in updated_extant_accessions:
+    for accession in server_upgraded_accessions:
         print(accession)
