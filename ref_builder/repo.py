@@ -284,7 +284,6 @@ class Repo:
 
     def clear_index(self) -> bool:
         """Delete and replace the repository read index."""
-
         index_path = self._index.path
 
         if index_path.exists():
@@ -299,7 +298,6 @@ class Repo:
 
     def rebuild_index(self) -> None:
         """Rebuild the repository read index."""
-
         logger.info(
             "No repo index found. Rebuilding...",
             path=str(self.path),
@@ -805,9 +803,13 @@ class Repo:
 
         return otu
 
-    def iter_otu_events(self, otu_id: uuid.UUID) -> Generator[ApplicableEvent, None, None]:
+    def iter_otu_events(
+        self, otu_id: uuid.UUID
+    ) -> Generator[ApplicableEvent, None, None]:
         """Iterate through event log."""
-        if (event_index_item := self._index.get_event_ids_by_otu_id(otu_id)) is not None:
+        event_index_item = self._index.get_event_ids_by_otu_id(otu_id)
+
+        if event_index_item is not None:
             for event_id in event_index_item.event_ids:
                 yield self._event_store.read_event(event_id)
 
@@ -887,10 +889,10 @@ class Repo:
         """
         return self._index.get_last_otu_update_timestamp(otu_id)
 
-    def write_otu_update_history_entry(self, otu_id) -> int:
+    def write_otu_update_history_entry(self, otu_id: uuid.UUID) -> int:
         """Add a new entry to the otu update history log and return the primary key
         of the entry.
-        ."""
+        """
         if (
             update_id := self._index.add_otu_update_history_entry(
                 otu_id,
@@ -979,6 +981,7 @@ class Repo:
 
 @contextmanager
 def locked_repo(path: Path) -> Generator[Repo, None, None]:
+    """Yield a locked Repo."""
     repo = Repo(path)
 
     with repo.lock():
