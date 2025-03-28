@@ -4,7 +4,7 @@ import rich.console
 from rich.table import Table
 from rich.text import Text
 
-from ref_builder.events.base import Event
+from ref_builder.events.base import Event, OTUQuery
 from ref_builder.models import OTUMinimal
 from ref_builder.plan import Plan, SegmentRule
 from ref_builder.resources import RepoIsolate, RepoOTU
@@ -116,6 +116,32 @@ def print_otu_event_log(events: list[Event]) -> None:
     ]
 
     raw_headers = ("EVENT ID", "TYPE", "TIMESTAMP")
+    col_widths = [max(len(row[i]) for row in rows + [raw_headers]) for i in range(3)]
+
+    # Define a row format based on column widths
+    row_format = "  ".join(f"{{:<{w}}}" for w in col_widths)
+
+    # Header without bold.
+    header_text = row_format.format(*raw_headers)
+
+    # Apply ANSI bold code and print.
+    print(f"\033[1m{header_text}\033[0m")  # noqa: T201
+    print("\n".join([row_format.format(*row) for row in rows]))  # noqa: T201
+
+
+def print_event_list(event_iterator: Iterator[Event]) -> None:
+    """Print a list of events associated with multiple OTUs."""
+    rows = [
+        (
+            str(event.id),
+            str(event.query.otu_id) if isinstance(event.query, OTUQuery) else "",
+            event.type,
+            event.timestamp.isoformat()
+        )
+        for event in event_iterator
+    ]
+
+    raw_headers = ("EVENT ID", "OTU", "TYPE", "TIMESTAMP")
     col_widths = [max(len(row[i]) for row in rows + [raw_headers]) for i in range(3)]
 
     # Define a row format based on column widths
