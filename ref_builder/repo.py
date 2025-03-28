@@ -353,6 +353,28 @@ class Repo:
                 for event_id in event_ids_by_otu[otu_id]
             )
 
+    def check_for_invalid_otus(self) -> set[uuid.UUID]:
+        """Run validation on all OTUs and return the Ids of bad OTUs."""
+        invalid_otu_ids = set()
+
+        for unvalidated_otu in self.iter_otus():
+            otu_logger = logger.bind(
+                otu_id=str(unvalidated_otu.id),
+                name=unvalidated_otu.name,
+                taxid=unvalidated_otu.taxid,
+            )
+            if check_otu_is_valid(unvalidated_otu):
+                otu_logger.debug(
+                    "OTU passed validation",
+                )
+            else:
+                otu_logger.debug(
+                    "OTU did not pass validation",
+                )
+                invalid_otu_ids.add(unvalidated_otu.id)
+
+        return invalid_otu_ids
+
     def create_otu(
         self,
         acronym: str,
