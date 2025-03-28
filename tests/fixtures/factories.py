@@ -252,7 +252,7 @@ class PlanFactory(ModelFactory[Plan]):
         """Return a set of quasi-realistic segments."""
         # The segment represent a monopartite OTU 75% of the time.
         if cls.__faker__.random_int(0, 3):
-            return [SegmentFactory.build(name=None, required=SegmentRule.REQUIRED)]
+            return [SegmentFactory.build(name=None, rule=SegmentRule.REQUIRED)]
 
         segment_count = cls.__faker__.random_int(2, 5)
         segment_name_keys = "ABCDEF"
@@ -260,7 +260,7 @@ class PlanFactory(ModelFactory[Plan]):
         return [
             SegmentFactory.build(
                 name=SegmentName(prefix="DNA", key=segment_name_keys[i]),
-                required=SegmentRule.REQUIRED,
+                rule=SegmentRule.REQUIRED,
             )
             for i in range(segment_count)
         ]
