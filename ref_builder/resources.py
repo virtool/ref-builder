@@ -356,6 +356,6 @@ class RepoOTU(BaseModel):
     def check_plan_required(cls, value: Plan):
         """Issue a warning if the plan has no required segments."""
         if not value.required_segments:
-            warnings.warn("Plan has no required segments.", PlanWarning)
+            warnings.warn("Plan has no required segments.", PlanWarning, stacklevel=1)
 
         return value
