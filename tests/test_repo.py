@@ -7,7 +7,7 @@ import pytest
 from ref_builder.errors import InvalidInputError
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
 from ref_builder.plan import Plan, Segment, SegmentRule
-from ref_builder.repo import Repo, GITIGNORE_CONTENTS
+from ref_builder.repo import GITIGNORE_CONTENTS, Repo
 from ref_builder.resources import (
     RepoIsolate,
     RepoOTU,
@@ -63,8 +63,9 @@ def initialized_repo(empty_repo: Repo):
     return empty_repo
 
 
-def init_otu(empty_repo: Repo) -> RepoOTU:
-    return empty_repo.create_otu(
+def init_otu(repo: Repo) -> RepoOTU:
+    """Create an empty OTU."""
+    return repo.create_otu(
         acronym="TMV",
         legacy_id="abcd1234",
         molecule=Molecule(
@@ -77,7 +78,7 @@ def init_otu(empty_repo: Repo) -> RepoOTU:
             segments=[
                 Segment.new(
                     length=150,
-                    length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                    length_tolerance=repo.settings.default_segment_length_tolerance,
                     name=None,
                 )
             ]
