@@ -11,7 +11,7 @@ logger = get_logger("otu.validate")
 def check_otu_is_valid(unvalidated_otu: RepoOTU) -> bool:
     """Assure that an OTU can pass the validation standard."""
     try:
-        validated_otu = OTU(
+        OTU(
             id=unvalidated_otu.id,
             legacy_id=unvalidated_otu.legacy_id,
             name=unvalidated_otu.name,
