@@ -227,7 +227,7 @@ def check(path: Path):
 
     if invalid_otu_ids:
         repo_logger.error("Repo contains invalid OTUs.")
-        click.echo(sorted(invalid_otu_ids), err=True)
+        click.echo([str(otu_id) for otu_id in invalid_otu_ids], err=True)
 
         sys.exit(1)
 
