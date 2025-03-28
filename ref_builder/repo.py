@@ -254,13 +254,15 @@ class Repo:
         try:
             yield self._transaction
 
-            affected_otu_ids = set()
-            for event in self._event_store.iter_events(start=self.head_id + 1):
-                affected_otu_ids.add(event.query.otu_id)
+            if self.last_id > self.head_id:
+                affected_otu_ids = set()
 
-            for otu_id in affected_otu_ids:
-                if not check_otu_is_valid(self.get_otu(otu_id)):
-                    raise AbortTransactionError
+                for event in self._event_store.iter_events(start=self.head_id + 1):
+                    affected_otu_ids.add(event.query.otu_id)
+
+                for otu_id in affected_otu_ids:
+                    if not check_otu_is_valid(self.get_otu(otu_id)):
+                        raise AbortTransactionError
 
         except Exception as e:
             logger.debug(
