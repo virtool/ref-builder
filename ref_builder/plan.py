@@ -183,6 +183,17 @@ class Plan(BaseModel):
 
         return None
 
+    def get_segment_by_name_key(self, name_key: str) -> Segment | None:
+        """Return the segment with the given ``name.key`` if it exists."""
+        for segment in self.segments:
+            if segment.name is None:
+                continue
+
+            if segment.name.key == name_key:
+                return segment
+
+        return None
+
 
 def extract_segment_name_from_record(record: NCBIGenbank) -> SegmentName | None:
     """Extract a segment name from a Genbank record.

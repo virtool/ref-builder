@@ -7,7 +7,7 @@ from structlog import get_logger
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.utils import (
     DeleteRationale,
-    assign_records_to_segments,
+    assign_segment_id_to_record,
     create_segments_from_records,
 )
 from ref_builder.plan import (
@@ -289,23 +289,30 @@ def replace_sequence_in_otu(
     """Replace a sequence in an OTU."""
     ncbi = NCBIClient(ignore_cache)
 
-    (
-        isolate_id,
-        sequence_id,
-    ) = otu.get_sequence_id_hierarchy_from_accession(replaced_accession)
+    replaced_sequence = otu.get_sequence_by_accession(replaced_accession)
 
-    if sequence_id is None:
-        logger.error("This sequence does not exist in this OTU.")
+    if replaced_sequence is None:
+        logger.error(
+            "This accession does not exist in this OTU.", accession=replaced_accession
+        )
         return None
 
-    isolate = otu.get_isolate(isolate_id)
+    affected_isolate_ids = otu.get_isolate_ids_containing_sequence_id(
+        replaced_sequence.id
+    )
+    if not affected_isolate_ids:
+        logger.warning(
+            "This sequence is not linked to any isolates.",
+            accession=str(replaced_sequence.accession),
+            sequence_id=replaced_sequence.id,
+        )
+        return None
 
     record = ncbi.fetch_genbank_records([new_accession])[0]
 
-    if record.source.segment:
-        segment_id, _ = next(iter(assign_records_to_segments([record], otu.plan)))
-    else:
-        segment_id = otu.plan.segments[0].id
+    segment_id = assign_segment_id_to_record(record, otu.plan)
+    if segment_id is None:
+        logger.error("This segment does not match the plan.")
 
     with repo.use_transaction():
         new_sequence = repo.create_sequence(
@@ -317,13 +324,14 @@ def replace_sequence_in_otu(
             sequence=record.sequence,
         )
 
-        repo.replace_sequence(
-            otu.id,
-            isolate_id=isolate.id,
-            sequence_id=new_sequence.id,
-            replaced_sequence_id=sequence_id,
-            rationale="Requested by user",
-        )
+        for isolate_id in affected_isolate_ids:
+            repo.replace_sequence(
+                otu.id,
+                isolate_id=isolate_id,
+                sequence_id=new_sequence.id,
+                replaced_sequence_id=replaced_sequence.id,
+                rationale="Requested by user",
+            )
 
     if new_sequence is not None:
         logger.info(

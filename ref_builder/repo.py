@@ -504,14 +504,14 @@ class Repo:
         replaced_sequence_id: uuid.UUID,
         rationale: str,
     ) -> RepoSequence | None:
-        """Link a new sequence and delete an existing sequence,
-        replacing the old sequence under the isolate.
+        """Link a new sequence, replacing the old sequence under the isolate.
+        Delete the original sequence if it is still in the OTU.
         """
         otu = self.get_otu(otu_id)
 
         new_sequence = otu.get_sequence_by_id(sequence_id)
         if new_sequence is None:
-            return None
+            raise ValueError(f"New sequence does not exist: {sequence_id}")
 
         self._write_event(
             UnlinkSequence,
@@ -522,19 +522,6 @@ class Repo:
         )
 
         self._write_event(
-            DeleteSequence,
-            DeleteSequenceData(
-                sequence_id=replaced_sequence_id,
-                replacement=new_sequence.id,
-                rationale=rationale,
-            ),
-            SequenceQuery(
-                otu_id=otu_id,
-                sequence_id=replaced_sequence_id,
-            ),
-        )
-
-        self._write_event(
             LinkSequence,
             LinkSequenceData(sequence_id=new_sequence.id),
             IsolateQuery(
@@ -542,6 +529,20 @@ class Repo:
                 isolate_id=isolate_id,
             ),
         )
+
+        if otu.get_sequence_by_id(replaced_sequence_id) is not None:
+            self._write_event(
+                DeleteSequence,
+                DeleteSequenceData(
+                    sequence_id=replaced_sequence_id,
+                    replacement=new_sequence.id,
+                    rationale=rationale,
+                ),
+                SequenceQuery(
+                    otu_id=otu_id,
+                    sequence_id=replaced_sequence_id,
+                ),
+            )
 
         return self.get_otu(otu_id).get_sequence_by_id(new_sequence.id)
 

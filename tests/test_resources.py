@@ -132,12 +132,17 @@ class TestOTU:
         """Test that the isolate ID can be found from a sequence ID."""
         otu = scratch_repo.get_otu_by_taxid(345184)
 
-        isolate_id, sequence_id = otu.get_sequence_id_hierarchy_from_accession(
-            "DQ178610",
+        test_sequence = otu.get_sequence_by_accession("DQ178610")
+
+        containing_isolate_ids = otu.get_isolate_ids_containing_sequence_id(
+            test_sequence.id
         )
 
+        assert len(containing_isolate_ids) == 1
+
+        isolate_id = next(iter(containing_isolate_ids))
+
         assert otu.get_isolate(isolate_id) is not None
-        assert otu.get_sequence_by_id(sequence_id) is not None
 
     def test_check_get_sequence_by_id_integrity(self, scratch_repo: Repo):
         """Test that RepoOTU.get_sequence() can retrieve every sequence ID
