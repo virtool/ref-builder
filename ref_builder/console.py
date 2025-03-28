@@ -19,10 +19,12 @@ def _render_nucleotide_link(accession: str) -> str:
 
 
 def print_isolate_as_json(isolate: RepoIsolate) -> None:
+    """Print the isolate data to the console as JSON."""
     console.print(isolate.model_dump_json())
 
 
 def print_isolate(isolate: RepoIsolate, plan: Plan) -> None:
+    """Print an isolate to console."""
     max_accession_length = max(
         len(str(sequence.accession)) for sequence in isolate.sequences
     )
@@ -107,7 +109,8 @@ def print_otu(otu: RepoOTU) -> None:
         _print_isolate(isolate, otu.plan, max_accession_length, max_segment_name_length)
 
 
-def print_otu_event_log(events: list) -> None:
+def print_otu_event_log(events: list[Event]) -> None:
+    """Print a list of events associated with this OTU."""
     rows = [
         (str(event.id), event.type, event.timestamp.isoformat()) for event in events
     ]
@@ -153,6 +156,7 @@ def print_otu_list(otus: Iterator[OTUMinimal]) -> None:
 
 
 def print_event(event: Event) -> None:
+    """Print event data to the console."""
     console.print(Text(f"EVENT {event.id}", style="bold underline"))
     console.line()
 
@@ -196,6 +200,7 @@ def print_event(event: Event) -> None:
 
 
 def print_event_as_json(event: Event) -> None:
+    """Print event data to console as JSON."""
     console.print(event.model_dump_json())
 
 
@@ -205,6 +210,7 @@ def _print_isolate(
     max_accession_length: int,
     max_segment_name_length: int,
 ) -> None:
+    """Print a single isolate to console."""
     index_by_segment_id = {segment.id: i for i, segment in enumerate(plan.segments)}
 
     console.print(
@@ -238,3 +244,4 @@ def _print_isolate(
 
 
 console = rich.console.Console()
+"""The console interface for this module."""
