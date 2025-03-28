@@ -58,6 +58,8 @@ def initialized_repo(empty_repo: Repo):
 
         empty_repo.link_sequence(otu.id, isolate_a.id, sequence_1.id)
 
+        empty_repo.set_representative_isolate(otu.id, isolate_a.id)
+
     return empty_repo
 
 
