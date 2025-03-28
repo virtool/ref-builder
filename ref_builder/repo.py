@@ -931,7 +931,9 @@ class Repo:
         except FileNotFoundError:
             return None
 
-    def _rehydrate_otu(self, events: Iterator[Event]) -> RepoOTU:
+    @staticmethod
+    def _rehydrate_otu(events: Iterator[Event]) -> RepoOTU:
+        """Rehydrate an OTU from an event iterator."""
         event = next(events)
 
         with warnings.catch_warnings(record=True) as warning_list:
