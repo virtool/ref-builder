@@ -280,6 +280,7 @@ class TestUpdateOTU:
         assert otu_after.accessions == mock_fetch_index[2164102]
 
 
+@pytest.mark.ncbi
 class TestBatchUpdate:
     """Test rudimentary batch update operation with a single OTU."""
 
