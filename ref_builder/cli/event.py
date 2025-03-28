@@ -9,15 +9,15 @@ from ref_builder.options import path_option
 from ref_builder.repo import Repo, locked_repo
 
 
-@click.group(name="events")
+@click.group(name="event")
 @path_option
 @click.pass_context
-def events(ctx: click.Context, path: Path) -> None:
+def event(ctx: click.Context, path: Path) -> None:
     """Read events."""
     ctx.obj = ctx.with_resource(locked_repo(path))
 
 
-@events.command(name="get")
+@event.command(name="get")
 @click.argument("IDENTIFIER", type=int)
 @click.option(
     "--as-json",
