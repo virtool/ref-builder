@@ -1,7 +1,7 @@
 from collections import Counter
 from uuid import UUID
 
-from pydantic import UUID4, BaseModel, Field, model_validator
+from pydantic import UUID4, BaseModel, Field, field_validator, model_validator
 
 from ref_builder.models import Molecule
 from ref_builder.plan import Plan
@@ -122,6 +122,12 @@ class OTU(OTUBase):
 
     A valid OTU must have a representative isolate.
     """
+
+    @field_validator("plan", mode="after")
+    def check_required_segments_in_plan(cls, value: Plan):
+        """Ensure that the OTU has at least one required segment."""
+        if not value.required_segments:
+            raise ValueError("Required segments cannot be empty.")
 
     @model_validator(mode="after")
     def check_excluded_accessions(self) -> "OTU":
