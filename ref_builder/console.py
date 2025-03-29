@@ -4,7 +4,7 @@ import rich.console
 from rich.table import Table
 from rich.text import Text
 
-from ref_builder.events.base import Event, OTUQuery
+from ref_builder.events.base import Event, EventMetadata
 from ref_builder.models import OTUMinimal
 from ref_builder.plan import Plan, SegmentRule
 from ref_builder.resources import RepoIsolate, RepoOTU
@@ -129,19 +129,18 @@ def print_otu_event_log(events: list[Event]) -> None:
     print("\n".join([row_format.format(*row) for row in rows]))  # noqa: T201
 
 
-def print_event_list(event_iterator: Iterator[Event]) -> None:
+def print_event_list(event_iterator: Iterator[EventMetadata]) -> None:
     """Print a list of events associated with multiple OTUs."""
     rows = [
         (
-            str(event.id),
-            str(event.query.otu_id) if isinstance(event.query, OTUQuery) else "",
-            event.type,
-            event.timestamp.isoformat()
+            str(event_metadata.id),
+            str(event_metadata.otu_id) if event_metadata is not None else "",
+            event_metadata.timestamp.isoformat(),
         )
-        for event in event_iterator
+        for event_metadata in event_iterator
     ]
 
-    raw_headers = ("EVENT ID", "OTU", "TYPE", "TIMESTAMP")
+    raw_headers = ("EVENT ID", "OTU ID", "TIMESTAMP")
     col_widths = [max(len(row[i]) for row in rows + [raw_headers]) for i in range(3)]
 
     # Define a row format based on column widths
