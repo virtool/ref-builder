@@ -20,20 +20,19 @@ def event(ctx: click.Context, path: Path) -> None:
 @event.command(name="get")
 @click.argument("IDENTIFIER", type=int)
 @click.option(
-    "--as-json",
     "--json",
-    metavar="JSON",
+    "json_",
     is_flag=True,
     help="Output in JSON form",
 )
 @pass_repo
-def event_get(repo: Repo, identifier: int, as_json: bool) -> None:
+def event_get(repo: Repo, identifier: int, json_: bool) -> None:
     """Get and view an event."""
-    if (event := repo.get_event(identifier)) is None:
+    if (event_ := repo.get_event(identifier)) is None:
         click.echo("Event not found.", err=True)
         sys.exit(1)
 
-    if as_json:
-        print_event_as_json(event)
+    if json_:
+        print_event_as_json(event_)
     else:
-        print_event(event)
+        print_event(event_)
