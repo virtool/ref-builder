@@ -4,6 +4,7 @@ import rich.console
 from rich.table import Table
 from rich.text import Text
 
+from ref_builder.events.base import Event, EventMetadata
 from ref_builder.models import OTUMinimal
 from ref_builder.plan import Plan, SegmentRule
 from ref_builder.resources import RepoIsolate, RepoOTU
@@ -18,10 +19,12 @@ def _render_nucleotide_link(accession: str) -> str:
 
 
 def print_isolate_as_json(isolate: RepoIsolate) -> None:
+    """Print the isolate data to the console as JSON."""
     console.print(isolate.model_dump_json())
 
 
 def print_isolate(isolate: RepoIsolate, plan: Plan) -> None:
+    """Print an isolate to console."""
     max_accession_length = max(
         len(str(sequence.accession)) for sequence in isolate.sequences
     )
@@ -106,6 +109,51 @@ def print_otu(otu: RepoOTU) -> None:
         _print_isolate(isolate, otu.plan, max_accession_length, max_segment_name_length)
 
 
+def print_otu_event_log(events: list[Event]) -> None:
+    """Print a list of events associated with this OTU."""
+    rows = [
+        (str(event.id), event.type, event.timestamp.isoformat()) for event in events
+    ]
+
+    raw_headers = ("EVENT ID", "TYPE", "TIMESTAMP")
+    col_widths = [max(len(row[i]) for row in rows + [raw_headers]) for i in range(3)]
+
+    # Define a row format based on column widths
+    row_format = "  ".join(f"{{:<{w}}}" for w in col_widths)
+
+    # Header without bold.
+    header_text = row_format.format(*raw_headers)
+
+    # Apply ANSI bold code and print.
+    print(f"\033[1m{header_text}\033[0m")  # noqa: T201
+    print("\n".join([row_format.format(*row) for row in rows]))  # noqa: T201
+
+
+def print_event_list(event_iterator: Iterator[EventMetadata]) -> None:
+    """Print a list of events associated with multiple OTUs."""
+    rows = [
+        (
+            str(event_metadata.id),
+            str(event_metadata.otu_id) if event_metadata is not None else "",
+            event_metadata.timestamp.isoformat(),
+        )
+        for event_metadata in event_iterator
+    ]
+
+    raw_headers = ("EVENT ID", "OTU ID", "TIMESTAMP")
+    col_widths = [max(len(row[i]) for row in rows + [raw_headers]) for i in range(3)]
+
+    # Define a row format based on column widths
+    row_format = "  ".join(f"{{:<{w}}}" for w in col_widths)
+
+    # Header without bold.
+    header_text = row_format.format(*raw_headers)
+
+    # Apply ANSI bold code and print.
+    print(f"\033[1m{header_text}\033[0m")  # noqa: T201
+    print("\n".join([row_format.format(*row) for row in rows]))  # noqa: T201
+
+
 def print_otu_list(otus: Iterator[OTUMinimal]) -> None:
     """Print a list of OTUs to the console.
 
@@ -132,12 +180,62 @@ def print_otu_list(otus: Iterator[OTUMinimal]) -> None:
     print("\n".join([row_format.format(*row) for row in rows]))  # noqa: T201
 
 
+def print_event(event: Event) -> None:
+    """Print event data to the console."""
+    console.print(Text(f"EVENT {event.id}", style="bold underline"))
+    console.line()
+
+    table = Table(
+        box=None,
+        show_header=False,
+    )
+
+    table.add_row("[bold]TYPE[/bold]", event.type)
+    table.add_row("[bold]TIMESTAMP[/bold]", event.timestamp.isoformat())
+
+    console.print(table)
+
+    console.line()
+    console.print("[bold]QUERY[/bold]")
+
+    query_dict = event.query.model_dump()
+
+    query_table = Table(box=None)
+    for query_attribute in query_dict:
+        query_table.add_row(
+            f"[bold]{query_attribute}[/bold]",
+            str(query_dict[query_attribute]),
+        )
+
+    console.print(query_table)
+
+    data_dict = event.data.model_dump()
+
+    data_table = Table(box=None)
+    for data_attribute in data_dict:
+        data_table.add_row(
+            f"[bold]{data_attribute}[/bold]",
+            str(data_dict[data_attribute]),
+        )
+
+    console.line()
+    console.print("[bold]DATA[/bold]")
+
+    console.print(data_table)
+
+
+def print_event_as_json(event: Event) -> None:
+    """Print event data to console as JSON."""
+    console.print(event.model_dump_json())
+
+
 def _print_isolate(
     isolate: RepoIsolate,
     plan: Plan,
     max_accession_length: int,
     max_segment_name_length: int,
 ) -> None:
+    """Print a single isolate to console."""
     index_by_segment_id = {segment.id: i for i, segment in enumerate(plan.segments)}
 
     console.print(
@@ -171,3 +269,4 @@ def _print_isolate(
 
 
 console = rich.console.Console()
+"""The console interface for this module."""

@@ -12,6 +12,7 @@ from uuid import UUID
 import orjson
 
 from ref_builder.errors import PartialIDConflictError
+from ref_builder.events.base import EventMetadata
 from ref_builder.models import OTUMinimal
 from ref_builder.resources import RepoOTU
 
@@ -330,6 +331,19 @@ class Index:
         )
 
         self.con.commit()
+
+    def iter_event_metadata(self) -> Iterator[EventMetadata]:
+        """Iterate over event metadata."""
+        rows = self.con.execute(
+            "SELECT event_id, otu_id, timestamp FROM events ORDER BY event_id",
+        ).fetchall()
+
+        for row in rows:
+            yield EventMetadata(
+                id=row[0],
+                otu_id=UUID(row[1]) if row[1] else None,
+                timestamp=row[2],
+            )
 
     def iter_minimal_otus(self) -> Iterator[OTUMinimal]:
         """Iterate over minimal representations of all OTUs in the index."""

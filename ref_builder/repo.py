@@ -284,7 +284,6 @@ class Repo:
 
     def clear_index(self) -> bool:
         """Delete and replace the repository read index."""
-
         index_path = self._index.path
 
         if index_path.exists():
@@ -299,7 +298,6 @@ class Repo:
 
     def rebuild_index(self) -> None:
         """Rebuild the repository read index."""
-
         logger.info(
             "No repo index found. Rebuilding...",
             path=str(self.path),
@@ -806,6 +804,20 @@ class Repo:
 
         return otu
 
+    def iter_otu_events(
+        self, otu_id: uuid.UUID
+    ) -> Generator[ApplicableEvent, None, None]:
+        """Iterate through event log."""
+        event_index_item = self._index.get_event_ids_by_otu_id(otu_id)
+
+        if event_index_item is not None:
+            for event_id in event_index_item.event_ids:
+                yield self._event_store.read_event(event_id)
+
+    def iter_event_metadata(self):
+        """Iterate through the event metadata of all events."""
+        yield from self._index.iter_event_metadata()
+
     def get_otu_by_taxid(self, taxid: int) -> RepoOTU | None:
         """Return the OTU with the given ``taxid``.
 
@@ -882,10 +894,10 @@ class Repo:
         """
         return self._index.get_last_otu_update_timestamp(otu_id)
 
-    def write_otu_update_history_entry(self, otu_id) -> int:
+    def write_otu_update_history_entry(self, otu_id: uuid.UUID) -> int:
         """Add a new entry to the otu update history log and return the primary key
         of the entry.
-        ."""
+        """
         if (
             update_id := self._index.add_otu_update_history_entry(
                 otu_id,
@@ -898,6 +910,14 @@ class Repo:
             )
 
         return update_id
+
+    def get_event(self, event_id: int) -> Event | None:
+        """Return event from event store."""
+        try:
+            return self._event_store.read_event(event_id)
+
+        except FileNotFoundError:
+            return None
 
     def _rehydrate_otu(self, events: Iterator[Event]) -> RepoOTU:
         event = next(events)
@@ -966,6 +986,7 @@ class Repo:
 
 @contextmanager
 def locked_repo(path: Path) -> Generator[Repo, None, None]:
+    """Yield a locked Repo."""
     repo = Repo(path)
 
     with repo.lock():

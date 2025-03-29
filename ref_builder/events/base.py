@@ -75,3 +75,22 @@ class LinkSequenceQuery(IsolateQuery):
     """
 
     sequence_id: UUID4
+
+
+class EventMetadata(BaseModel):
+    """Minimal metadata for an Event."""
+
+    id: int
+    """The unique identifier for the event.
+
+    Event IDs are serially incremented integers.
+    """
+
+    otu_id: UUID4 | None
+    """The unique identifier of an OTU.
+
+    Is None if event scope is repo-wide.
+    """
+
+    timestamp: datetime.datetime
+    """When the event occurred."""
