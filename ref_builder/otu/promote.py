@@ -210,6 +210,9 @@ def replace_otu_sequence_from_record(
 def correct_sequences_in_otu(
     repo: Repo, otu: RepoOTU, ignore_cache: bool = False,
 ) -> set[UUID]:
+    """If new versions of extant accessions are found, create new sequences
+    and replace.
+    """
     ncbi = NCBIClient(ignore_cache)
 
     all_server_accessions = ncbi.filter_accessions(
