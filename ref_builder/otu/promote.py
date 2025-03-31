@@ -168,7 +168,12 @@ def replace_otu_sequence_from_record(
         return None
 
     with repo.use_transaction():
-        if otu.get_sequence_by_accession(replacement_record.accession) is None:
+        extant_sequence = otu.get_sequence_by_accession(replacement_record.accession)
+
+        if (
+            extant_sequence is None
+            or str(extant_sequence.accession) != replacement_record.accession_version
+        ):
             replacement_sequence = repo.create_sequence(
                 otu.id,
                 accession=replacement_record.accession_version,
