@@ -231,6 +231,11 @@ class RepoOTU(BaseModel):
         return {sequence.accession.key for sequence in self._sequences_by_id.values()}
 
     @property
+    def versioned_accessions(self) -> set[Accession]:
+        """A set of versioned accessions contained in this isolate."""
+        return {sequence.accession for sequence in self._sequences_by_id.values()}
+
+    @property
     def blocked_accessions(self) -> set[str]:
         """Accessions that should not be considered for addition to the OTU.
 
