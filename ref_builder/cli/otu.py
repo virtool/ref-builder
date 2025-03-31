@@ -148,7 +148,7 @@ def otu_list(repo: Repo) -> None:
     print_otu_list(repo.iter_minimal_otus())
 
 
-@otu.command(name="event-logs")
+@otu.command(name="list-events")
 @click.argument("IDENTIFIER", type=str)
 @pass_repo
 def otu_event_logs(repo: Repo, identifier: str) -> None:
