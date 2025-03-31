@@ -202,7 +202,9 @@ def replace_otu_sequence_from_record(
     return repo.get_otu(otu.id).get_sequence_by_id(replacement_sequence.id)
 
 
-def correct_sequences_in_otu(repo: Repo, otu: RepoOTU, ignore_cache: bool = False):
+def correct_sequences_in_otu(
+    repo: Repo, otu: RepoOTU, ignore_cache: bool = False,
+) -> set[UUID]:
     ncbi = NCBIClient(ignore_cache)
 
     all_server_accessions = ncbi.filter_accessions(
@@ -213,7 +215,49 @@ def correct_sequences_in_otu(repo: Repo, otu: RepoOTU, ignore_cache: bool = Fals
         ),
     )
 
-    server_upgraded_accessions = {accession for accession in all_server_accessions if accession.version > 2}
+    server_upgraded_accessions = {
+        accession for accession in all_server_accessions if accession.version > 2
+    }
 
+    replacement_index = {}
     for accession in server_upgraded_accessions:
-        print(accession)
+        potentially_replaceable_sequence = otu.get_sequence_by_accession(accession.key)
+        if accession.key in otu.accessions and (
+            accession.version > potentially_replaceable_sequence.accession.version
+        ):
+            replacement_index[accession.key] = potentially_replaceable_sequence.id
+
+    if not replacement_index:
+        logger.info("All sequences are up to date.")
+        return set()
+
+    records = ncbi.fetch_genbank_records(
+        [str(accession) for accession in replacement_index]
+    )
+
+    replacement_sequences = set()
+    for record in records:
+        replaceable_sequence = otu.get_sequence_by_accession(record.accession)
+
+        logger.info(
+            "Replacing sequence...",
+            sequence_id=str(replaceable_sequence.id),
+            outdated_accession=str(replaceable_sequence.accession),
+            new_accession=str(record.accession_version),
+        )
+
+        new_sequence = replace_otu_sequence_from_record(
+            repo,
+            otu,
+            sequence_id=replacement_index[record.accession],
+            replacement_record=record,
+            exclude_accession=False,
+        )
+
+        if new_sequence is not None:
+            replacement_sequences.add(new_sequence.id)
+
+    if replacement_sequences:
+        logger.info("Replaced sequences", count=len(replacement_sequences))
+
+    return replacement_sequences
