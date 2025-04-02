@@ -72,29 +72,31 @@ def test_allow_accessions(scratch_repo: Repo):
     assert otu_after.excluded_accessions == {"DQ178609"}
 
 
-def test_update_representative_isolate(scratch_repo: Repo):
+class TestSetRepresentativeIsolate:
     """Test representative isolate replacement."""
-    taxid = 345184
 
-    otu_before = scratch_repo.get_otu_by_taxid(taxid)
+    def test_ok(self, scratch_repo: Repo):
+        taxid = 345184
 
-    representative_isolate_after = None
+        otu_before = scratch_repo.get_otu_by_taxid(taxid)
 
-    for isolate_id in otu_before.isolate_ids:
-        if isolate_id != otu_before.representative_isolate:
-            representative_isolate_after = isolate_id
-            break
+        representative_isolate_after = None
 
-    with scratch_repo.lock():
-        set_representative_isolate(
-            scratch_repo, otu_before, representative_isolate_after
-        )
+        for isolate_id in otu_before.isolate_ids:
+            if isolate_id != otu_before.representative_isolate:
+                representative_isolate_after = isolate_id
+                break
 
-    otu_after = scratch_repo.get_otu_by_taxid(taxid)
+        with scratch_repo.lock():
+            set_representative_isolate(
+                scratch_repo, otu_before, representative_isolate_after
+            )
 
-    assert otu_after.representative_isolate != otu_before.representative_isolate
+        otu_after = scratch_repo.get_otu_by_taxid(taxid)
 
-    assert otu_after.representative_isolate == representative_isolate_after
+        assert otu_after.representative_isolate != otu_before.representative_isolate
+
+        assert otu_after.representative_isolate == representative_isolate_after
 
 
 class TestSetPlan:

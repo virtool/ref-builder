@@ -258,7 +258,7 @@ class TestSetDefaultIsolateCommand:
                 str(taxid),
                 "--isolate-id",
                 str(representative_isolate_after),
-            ]
+            ],
         )
 
         print(result.output)
@@ -270,7 +270,6 @@ class TestSetDefaultIsolateCommand:
         assert otu_after.representative_isolate != otu_before.representative_isolate
 
         assert otu_after.representative_isolate == representative_isolate_after
-
 
     def test_isolate_id_partial(self, scratch_repo: Repo):
         """Test handling of a partial isolate ID."""
@@ -296,7 +295,7 @@ class TestSetDefaultIsolateCommand:
                 str(taxid),
                 "--isolate-id",
                 str(representative_isolate_after)[:8],
-            ]
+            ],
         )
 
         print(result.output)
@@ -320,7 +319,7 @@ class TestSetDefaultIsolateCommand:
                 str(345184),
                 "--isolate-id",
                 "bad-isolate-id",
-            ]
+            ],
         )
 
         assert result.exit_code == 1
