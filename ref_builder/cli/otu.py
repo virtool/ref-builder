@@ -381,7 +381,7 @@ def plan_extend_segment_list(
     "segment_name_",
     type=(str, str),
     required=True,
-    help="A new name for the plan segment."
+    help="A segment name, e.g. 'RNA B'"
 )
 @pass_repo
 def plan_rename_segment(

@@ -279,3 +279,37 @@ class TestAllowAccessionsCommand:
         assert result.exit_code == 0
 
         assert "Excluded accession list already up to date" in result.output
+
+
+class TestRenamePlanSegmentCommand:
+    """Test that ``ref-builder otu rename-plan-segment`` behaves as expected."""
+
+    def test_ok(self, scratch_repo: Repo):
+        """Test that a given plan segment can be renamed."""
+        otu_before = scratch_repo.get_otu_by_taxid(223262)
+
+        first_segment_id = otu_before.plan.segments[0].id
+
+        result = runner.invoke(
+            otu_command_group,
+            [
+                "--path",
+                str(scratch_repo.path),
+                "rename-plan-segment",
+                str(223262),
+                "--segment-id",
+                str(first_segment_id),
+                "--segment-name",
+                "RNA",
+                "TestName",
+            ],
+        )
+
+        assert result.exit_code == 0
+
+        otu_after = scratch_repo.get_otu_by_taxid(223262)
+
+        assert (
+            str(otu_after.plan.get_segment_by_id(first_segment_id).name)
+            == "RNA TestName"
+        )
