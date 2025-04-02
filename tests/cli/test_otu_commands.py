@@ -271,6 +271,44 @@ class TestSetDefaultIsolateCommand:
 
         assert otu_after.representative_isolate == representative_isolate_after
 
+
+    def test_isolate_id_partial(self, scratch_repo: Repo):
+        """Test handling of a partial isolate ID."""
+        taxid = 345184
+
+        otu_before = scratch_repo.get_otu_by_taxid(taxid)
+
+        representative_isolate_after = None
+
+        for isolate_id in otu_before.isolate_ids:
+            if isolate_id != otu_before.representative_isolate:
+                representative_isolate_after = isolate_id
+                break
+
+        assert otu_before.get_isolate(representative_isolate_after)
+
+        result = runner.invoke(
+            otu_command_group,
+            [
+                "--path",
+                str(scratch_repo.path),
+                "set-default-isolate",
+                str(taxid),
+                "--isolate-id",
+                str(representative_isolate_after)[:8],
+            ]
+        )
+
+        print(result.output)
+
+        assert result.exit_code == 0
+
+        otu_after = scratch_repo.get_otu_by_taxid(taxid)
+
+        assert otu_after.representative_isolate != otu_before.representative_isolate
+
+        assert otu_after.representative_isolate == representative_isolate_after
+
     def test_bad_isolate_id(self, scratch_repo):
         """Test handling of bad isolate ID"""
         result = runner.invoke(
