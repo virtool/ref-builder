@@ -8,7 +8,7 @@ from ref_builder.errors import InvalidInputError, PartialIDConflictError
 from ref_builder.cli.utils import pass_repo
 from ref_builder.console import print_isolate, print_isolate_as_json
 from ref_builder.cli.validate import validate_no_duplicate_accessions
-from ref_builder.options import ignore_cache_option, path_option
+from ref_builder.cli.options import ignore_cache_option, path_option
 from ref_builder.otu.isolate import (
     add_and_name_isolate,
     add_genbank_isolate,

@@ -15,7 +15,7 @@ from ref_builder.console import (
     print_otu_event_log,
 )
 from ref_builder.errors import PartialIDConflictError, InvalidInputError
-from ref_builder.options import ignore_cache_option, path_option
+from ref_builder.cli.options import ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu_with_taxid, create_otu_without_taxid
 from ref_builder.otu.modify import (
     add_segments_to_plan,
