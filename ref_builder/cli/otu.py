@@ -120,20 +120,7 @@ def otu_get(repo: Repo, identifier: str, as_json: bool) -> None:
 
     IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
     """
-    try:
-        otu_id = UUID(identifier)
-    except ValueError:
-        otu_id = _get_otu_id_from_other_identifier(repo, identifier)
-
-    if otu_id is None:
-        click.echo("OTU not found.", err=True)
-        sys.exit(1)
-
-    otu_ = repo.get_otu(otu_id)
-
-    if otu_ is None:
-        click.echo("OTU not found.", err=True)
-        sys.exit(1)
+    otu_ = get_otu_from_identifier(repo, identifier)
 
     if as_json:
         print_otu_as_json(otu_)
@@ -274,16 +261,7 @@ def otu_exclude_accessions(
 
     IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
     """
-    try:
-        otu_id = UUID(identifier)
-    except ValueError:
-        otu_id = _get_otu_id_from_other_identifier(repo, identifier)
-
-    otu_ = repo.get_otu(otu_id)
-
-    if otu_ is None:
-        click.echo("OTU not found.", err=True)
-        sys.exit(1)
+    otu_ = get_otu_from_identifier(repo, identifier)
 
     exclude_accessions_from_otu(repo, otu_, accessions_)
 
@@ -310,16 +288,7 @@ def otu_allow_accessions(
 
     IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
     """
-    try:
-        otu_id = UUID(identifier)
-    except ValueError:
-        otu_id = _get_otu_id_from_other_identifier(repo, identifier)
-
-    otu_ = repo.get_otu(otu_id)
-
-    if otu_ is None:
-        click.echo("OTU not found.", err=True)
-        sys.exit(1)
+    otu_ = get_otu_from_identifier(repo, identifier)
 
     allow_accessions_into_otu(repo, otu_, set(accessions_))
 
