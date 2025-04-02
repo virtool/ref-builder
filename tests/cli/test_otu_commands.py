@@ -234,6 +234,68 @@ class TestExcludeAccessionsCommand:
         assert "Excluded accession list already up to date" in result.output
 
 
+class TestUpdateDefaultIsolateCommand:
+    def test_isolate_id_ok(self, scratch_repo: Repo):
+        taxid = 345184
+
+        otu_before = scratch_repo.get_otu_by_taxid(taxid)
+
+        other_isolate_id = None
+        for isolate_id in otu_before.isolate_ids:
+            if isolate_id != otu_before.representative_isolate:
+                other_isolate_id = isolate_id
+                break
+
+        assert type(other_isolate_id) is UUID
+
+        subprocess.run(
+            ["ref-builder", "otu"]
+            + ["--path", str(scratch_repo.path)]
+            + ["set-default-isolate"]
+            + [str(taxid), str(other_isolate_id)],
+            check=False,
+        )
+
+        scratch_repo = Repo(scratch_repo.path)
+
+        otu_after = scratch_repo.get_otu_by_taxid(taxid)
+
+        assert otu_after.representative_isolate != otu_before.representative_isolate
+
+        assert otu_after.representative_isolate == other_isolate_id
+
+    def test_isolate_name_ok(self, scratch_repo: Repo):
+        taxid = 1169032
+
+        otu_before = scratch_repo.get_otu_by_taxid(taxid)
+
+        representative_isolate_after = None
+
+        for isolate_id in otu_before.isolate_ids:
+            if isolate_id != otu_before.representative_isolate:
+                representative_isolate_after = otu_before.get_isolate(isolate_id).name
+                break
+
+        subprocess.run(
+            ["ref-builder", "otu"]
+            + ["--path", str(scratch_repo.path)]
+            + ["set-default-isolate"]
+            + [str(taxid)]
+            + [str(representative_isolate_after)],
+            check=False,
+        )
+
+        scratch_repo = Repo(scratch_repo.path)
+
+        otu_after = scratch_repo.get_otu_by_taxid(taxid)
+
+        assert otu_after.representative_isolate != otu_before.representative_isolate
+
+        assert otu_after.representative_isolate == otu_before.get_isolate_id_by_name(
+            representative_isolate_after
+        )
+
+
 class TestAllowAccessionsCommand:
     """Test that ``ref-builder otu allow-accessions`` behaves as expected."""
 
