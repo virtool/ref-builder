@@ -6,7 +6,12 @@ from uuid import UUID
 import click
 import structlog
 
-from ref_builder.cli.utils import pass_repo, get_otu_from_identifier
+from ref_builder.cli.options import ignore_cache_option, path_option
+from ref_builder.cli.utils import (
+    get_otu_from_identifier,
+    get_otu_isolate_ids_from_identifier,
+    pass_repo,
+)
 from ref_builder.cli.validate import validate_no_duplicate_accessions
 from ref_builder.console import (
     print_otu,
@@ -24,11 +29,11 @@ from ref_builder.otu.modify import (
     rename_plan_segment,
     set_representative_isolate,
 )
+from ref_builder.otu.promote import promote_otu_accessions
 from ref_builder.otu.update import (
     auto_update_otu,
     batch_update_repo,
 )
-from ref_builder.otu.promote import promote_otu_accessions
 from ref_builder.plan import SegmentName, SegmentRule
 from ref_builder.repo import Repo, locked_repo
 from ref_builder.utils import IsolateName, IsolateNameType
@@ -295,11 +300,17 @@ def otu_allow_accessions(
 
 @otu.command(name="set-default-isolate")  # type: ignore
 @click.argument("IDENTIFIER", type=str)
-@click.argument("ISOLATE_KEY", type=str)
+@click.option(
+    "--isolate-id",
+    "isolate_id_",
+    type=str,
+    required=True,
+    help="The id of the isolate to set as default.",
+)
 @pass_repo
 def otu_set_representative_isolate(
     repo: Repo,
-    isolate_key: str,
+    isolate_id_: str,
     identifier: str,
 ) -> None:
     """Update the OTU with a new representative isolate.
@@ -308,22 +319,7 @@ def otu_set_representative_isolate(
     """
     otu_ = get_otu_from_identifier(repo, identifier)
 
-    try:
-        isolate_id = UUID(isolate_key)
-    except ValueError:
-        parts = isolate_key.split(" ")
-
-        try:
-            isolate_name = IsolateName(IsolateNameType(parts[0].lower()), parts[1])
-        except ValueError:
-            click.echo(f'Error: "{isolate_key}" is not a valid isolate name.', err=True)
-            sys.exit(1)
-
-        isolate_id = otu_.get_isolate_id_by_name(isolate_name)
-
-    if isolate_id is None:
-        click.echo("Isolate could not be found in this OTU.", err=True)
-        sys.exit(1)
+    otu_id, isolate_id = get_otu_isolate_ids_from_identifier(repo, isolate_id_)
 
     set_representative_isolate(repo, otu_, isolate_id)
 
@@ -373,7 +369,7 @@ def plan_extend_segment_list(
     "segment_id_",
     type=str,
     required=True,
-    help="The ID of the segment."
+    help="The ID of the segment.",
 )
 @click.option(
     "--segment-name",
@@ -381,7 +377,7 @@ def plan_extend_segment_list(
     "segment_name_",
     type=(str, str),
     required=True,
-    help="A segment name, e.g. 'RNA B'"
+    help="A segment name, e.g. 'RNA B'",
 )
 @pass_repo
 def plan_rename_segment(
