@@ -98,6 +98,23 @@ class TestSetRepresentativeIsolate:
 
         assert otu_after.representative_isolate == representative_isolate_after
 
+    def test_redundant(self, scratch_repo: Repo):
+        """Test behaviour when the current representative isolate is entered."""
+        taxid = 345184
+
+        otu_before = scratch_repo.get_otu_by_taxid(taxid)
+
+        event_id_before = scratch_repo.last_id
+
+        with scratch_repo.lock():
+            set_representative_isolate(
+                scratch_repo,
+                otu_before,
+                otu_before.representative_isolate,
+            )
+
+        assert scratch_repo.last_id == event_id_before
+
 
 class TestSetPlan:
     """Test functions that make changes to an OTU plan."""
