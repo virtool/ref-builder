@@ -271,6 +271,24 @@ class TestSetDefaultIsolateCommand:
 
         assert otu_after.representative_isolate == representative_isolate_after
 
+    def test_bad_isolate_id(self, scratch_repo):
+        """Test handling of bad isolate ID"""
+        result = runner.invoke(
+            otu_command_group,
+            [
+                "--path",
+                str(scratch_repo.path),
+                "set-default-isolate",
+                str(345184),
+                "--isolate-id",
+                "bad-isolate-id",
+            ]
+        )
+
+        assert result.exit_code == 1
+
+        assert "Isolate ID could not be found" in result.output
+
 
 class TestAllowAccessionsCommand:
     """Test that ``ref-builder otu allow-accessions`` behaves as expected."""
