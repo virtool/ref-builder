@@ -368,18 +368,25 @@ def plan_extend_segment_list(
 
 @otu.command(name="rename-plan-segment")
 @click.argument("IDENTIFIER", type=str)
-@click.argument("SEGMENT_ID", type=str)
-@click.argument(
-    "segment_name_",
-    metavar="SEGMENT_NAME",
-    nargs=2,
+@click.option(
+    "--segment-id",
+    "segment_id_",
     type=str,
     required=True,
+    help="The ID of the segment."
+)
+@click.option(
+    "--segment-name",
+    "--name",
+    "segment_name_",
+    type=(str, str),
+    required=True,
+    help="A new name for the plan segment."
 )
 @pass_repo
 def plan_rename_segment(
     repo: Repo,
-    segment_id: str,
+    segment_id_: str,
     segment_name_: tuple[str, str],
     identifier: str,
 ) -> None:
@@ -393,7 +400,7 @@ def plan_rename_segment(
         rename_plan_segment(
             repo,
             otu_,
-            segment_id=UUID(segment_id),
+            segment_id=UUID(segment_id_),
             segment_name=SegmentName(segment_name_[0], segment_name_[1]),
         )
     except ValueError as e:
