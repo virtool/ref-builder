@@ -1,5 +1,3 @@
-from uuid import UUID
-
 import pytest
 from click.testing import CliRunner
 from syrupy import SnapshotAssertion
@@ -234,38 +232,11 @@ class TestExcludeAccessionsCommand:
         assert "Excluded accession list already up to date" in result.output
 
 
-class TestUpdateDefaultIsolateCommand:
-    def test_isolate_id_ok(self, scratch_repo: Repo):
+class TestSetDefaultIsolateCommand:
+    """Test that ``ref-builder otu set-default-isolate`` behaves as expected."""
+
+    def test_ok(self, scratch_repo: Repo):
         taxid = 345184
-
-        otu_before = scratch_repo.get_otu_by_taxid(taxid)
-
-        other_isolate_id = None
-        for isolate_id in otu_before.isolate_ids:
-            if isolate_id != otu_before.representative_isolate:
-                other_isolate_id = isolate_id
-                break
-
-        assert type(other_isolate_id) is UUID
-
-        subprocess.run(
-            ["ref-builder", "otu"]
-            + ["--path", str(scratch_repo.path)]
-            + ["set-default-isolate"]
-            + [str(taxid), str(other_isolate_id)],
-            check=False,
-        )
-
-        scratch_repo = Repo(scratch_repo.path)
-
-        otu_after = scratch_repo.get_otu_by_taxid(taxid)
-
-        assert otu_after.representative_isolate != otu_before.representative_isolate
-
-        assert otu_after.representative_isolate == other_isolate_id
-
-    def test_isolate_name_ok(self, scratch_repo: Repo):
-        taxid = 1169032
 
         otu_before = scratch_repo.get_otu_by_taxid(taxid)
 
@@ -273,27 +244,32 @@ class TestUpdateDefaultIsolateCommand:
 
         for isolate_id in otu_before.isolate_ids:
             if isolate_id != otu_before.representative_isolate:
-                representative_isolate_after = otu_before.get_isolate(isolate_id).name
+                representative_isolate_after = isolate_id
                 break
 
-        subprocess.run(
-            ["ref-builder", "otu"]
-            + ["--path", str(scratch_repo.path)]
-            + ["set-default-isolate"]
-            + [str(taxid)]
-            + [str(representative_isolate_after)],
-            check=False,
+        assert otu_before.get_isolate(representative_isolate_after)
+
+        result = runner.invoke(
+            otu_command_group,
+            [
+                "--path",
+                str(scratch_repo.path),
+                "set-default-isolate",
+                str(taxid),
+                "--isolate-id",
+                str(representative_isolate_after),
+            ]
         )
 
-        scratch_repo = Repo(scratch_repo.path)
+        print(result.output)
+
+        assert result.exit_code == 0
 
         otu_after = scratch_repo.get_otu_by_taxid(taxid)
 
         assert otu_after.representative_isolate != otu_before.representative_isolate
 
-        assert otu_after.representative_isolate == otu_before.get_isolate_id_by_name(
-            representative_isolate_after
-        )
+        assert otu_after.representative_isolate == representative_isolate_after
 
 
 class TestAllowAccessionsCommand:
