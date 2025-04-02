@@ -294,20 +294,19 @@ def otu_allow_accessions(
 
 
 @otu.command(name="set-default-isolate")  # type: ignore
-@click.argument("TAXID", type=int)
+@click.argument("IDENTIFIER", type=str)
 @click.argument("ISOLATE_KEY", type=str)
 @pass_repo
 def otu_set_representative_isolate(
     repo: Repo,
     isolate_key: str,
-    taxid: int,
+    identifier: str,
 ) -> None:
-    """Update the OTU with a new representative isolate."""
-    otu_ = repo.get_otu_by_taxid(taxid)
+    """Update the OTU with a new representative isolate.
 
-    if otu_ is None:
-        click.echo(f"OTU {taxid} not found.", err=True)
-        sys.exit(1)
+    IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
+    """
+    otu_ = get_otu_from_identifier(repo, identifier)
 
     try:
         isolate_id = UUID(isolate_key)
@@ -330,7 +329,7 @@ def otu_set_representative_isolate(
 
 
 @otu.command(name="extend-plan")
-@click.argument("TAXID", type=int)
+@click.argument("IDENTIFIER", type=str)
 @click.argument(
     "accessions_",
     metavar="ACCESSIONS",
@@ -349,15 +348,14 @@ def plan_extend_segment_list(
     repo: Repo,
     accessions_: list[str],
     ignore_cache: bool,
-    taxid: int,
+    identifier: str,
     optional: bool,
 ) -> None:
-    """Add recommended or optional segments to the OTU plan."""
-    otu_ = repo.get_otu_by_taxid(taxid)
+    """Add recommended or optional segments to the OTU plan.
 
-    if otu_ is None:
-        click.echo(f"OTU {taxid} not found.", err=True)
-        sys.exit(1)
+    IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
+    """
+    otu_ = get_otu_from_identifier(repo, identifier)
 
     add_segments_to_plan(
         repo,
@@ -369,7 +367,7 @@ def plan_extend_segment_list(
 
 
 @otu.command(name="rename-plan-segment")
-@click.argument("TAXID", type=int)
+@click.argument("IDENTIFIER", type=str)
 @click.argument("SEGMENT_ID", type=str)
 @click.argument(
     "segment_name_",
@@ -383,14 +381,13 @@ def plan_rename_segment(
     repo: Repo,
     segment_id: str,
     segment_name_: tuple[str, str],
-    taxid: int,
+    identifier: str,
 ) -> None:
-    """Give an unnamed segment a name."""
-    otu_ = repo.get_otu_by_taxid(taxid)
+    """Give an unnamed segment a name.
 
-    if otu_ is None:
-        click.echo(f"OTU {taxid} not found.", err=True)
-        sys.exit(1)
+    IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
+    """
+    otu_ = get_otu_from_identifier(repo, identifier)
 
     try:
         rename_plan_segment(
