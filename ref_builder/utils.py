@@ -176,6 +176,11 @@ def generate_natural_sort_key(string: str) -> list[int | str]:
     return [_convert(c) for c in re.split("([0-9]+)", string)]
 
 
+def is_refseq(accession_key: str) -> bool:
+    """Return True if accession is RefSeq."""
+    return re.match(REFSEQ_ACCESSION_PATTERN, accession_key) is not None
+
+
 def pad_zeroes(number: int) -> str:
     """Pad a number with zeroes to make it 8 characters long.
 
