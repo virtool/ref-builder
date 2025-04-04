@@ -302,12 +302,21 @@ class IsolateFactory(ModelFactory[IsolateBase]):
             for accession in cls.__faker__.accessions(sequence_count)
         ]
 
-    @staticmethod
-    def build_on_plan(plan: Plan):
+    @classmethod
+    def build_on_plan(cls, plan: Plan, refseq: bool = False):
         """Take a plan and return a matching isolate."""
+        if refseq:
+            sequential_accessions = cls.__faker__.refseq_accessions(len(plan.segments))
+        else:
+            sequential_accessions = cls.__faker__.genbank_accessions(len(plan.segments))
+
         return IsolateFactory.build(
             sequences=[
-                SequenceFactory.build(segment=segment.id) for segment in plan.segments
+                SequenceFactory.build(
+                    accession=Accession(sequential_accessions[counter], 1),
+                    segment=plan.segments[counter].id,
+                )
+                for counter in range(len(plan.segments))
             ]
         )
 
