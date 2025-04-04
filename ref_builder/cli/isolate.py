@@ -120,11 +120,11 @@ def isolate_delete(repo: Repo, identifier: str) -> None:
     otu_id, isolate_id = get_otu_isolate_ids_from_identifier(repo, identifier)
 
     if (otu_id := repo.get_otu_id_by_isolate_id(isolate_id)) is None:
-        click.echo(f"The containing OTU could not be found.", err=True)
+        click.echo("The containing OTU could not be found.", err=True)
         sys.exit(1)
 
     if (otu_ := repo.get_otu(otu_id)) is None:
-        click.echo(f"OTU not found.", err=True)
+        click.echo("OTU not found.", err=True)
         sys.exit(1)
 
     if delete_isolate_from_otu(repo, otu_, isolate_id):
