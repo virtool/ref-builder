@@ -168,25 +168,41 @@ def add_segments_to_plan(
     repo: Repo,
     otu: RepoOTU,
     rule: SegmentRule,
-    accessions: list[str],
+    accessions: Collection[str],
     ignore_cache: bool = False,
-) -> Plan | None:
+) -> set[UUID]:
     """Add new segments to a multipartite plan."""
-    log = logger.bind(name=otu.name, taxid=otu.taxid, accessions=accessions, rule=rule)
+    log = logger.bind(name=otu.name, taxid=otu.taxid, rule=str(rule))
 
     sequence_length_tolerance = repo.settings.default_segment_length_tolerance
 
     if otu.plan.monopartite and otu.plan.segments[0].name is None:
-        raise ValueError("Current monopartite segment is unnamed.")
+        log.error(
+            "Cannot add new segments unless all existing segments are named.",
+            segment_id=str(otu.plan.segments[0].id),
+            segment_name=otu.plan.segments[0].name,
+        )
+
+        return set()
 
     client = NCBIClient(ignore_cache)
 
-    log.info("Adding sequences to plan as segments", count=len(accessions), rule=rule)
+    if not (records := client.fetch_genbank_records(accessions)):
+        log.error(
+            "Could not fetch records associated with requested accessions.",
+            accessions=sorted(accessions),
+        )
+        return set()
 
-    records = client.fetch_genbank_records(accessions)
-    if not records:
-        log.warning("Could not fetch records.")
-        return None
+    if len(records) < len(accessions):
+        log.error(
+            "Not all requested accessions could be fetched.",
+            requested_accessions=sorted(accessions),
+            accessible_record_accessions=sorted(
+                record.accession_version for record in records
+            ),
+        )
+        return set()
 
     new_segments = create_segments_from_records(
         records,
@@ -195,13 +211,16 @@ def add_segments_to_plan(
     )
     if not new_segments:
         log.warning("No segments can be added.")
-        return None
+        return set()
 
-    new_plan = Plan.new(
-        segments=otu.plan.segments + new_segments,
-    )
+    new_plan = otu.plan.copy()
+    new_plan.segments.extend(new_segments)
 
-    return set_plan(repo, otu, new_plan)
+    set_plan(repo, otu, new_plan)
+
+    log.info("Added new segments", ids=[str(segment.id) for segment in new_segments])
+
+    return {segment.id for segment in new_segments}
 
 
 def rename_plan_segment(
