@@ -10,6 +10,7 @@ from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.plan import (
     Plan,
+    PlanConformationError,
     Segment,
     SegmentRule,
     extract_segment_name_from_record,
@@ -276,7 +277,7 @@ def assign_records_to_segments(
     )
 
     if seen_segment_names.total() > 1 and seen_segment_names[None]:
-        raise ValueError(
+        raise PlanConformationError(
             "If a segment has no name, it must be the only segment. Only monopartite "
             "plans may have unnamed segments."
         )
@@ -291,7 +292,9 @@ def assign_records_to_segments(
         # This also covers monopartite plans. Duplicate `None` segment names will be
         # caught here.
         joined = ", ".join(sorted(str(n) for n in duplicate_segment_names))
-        raise ValueError(f"Duplicate segment names found in records: {joined}.")
+        raise PlanConformationError(
+            f"Duplicate segment names found in records: {joined}."
+        )
 
     segment_names_not_in_plan = [
         segment_name
@@ -303,7 +306,7 @@ def assign_records_to_segments(
         # This also covers monopartite plans. Plans are guaranteed to only one `None`
         # segment name and only when they are monopartite.
         joined = ", ".join(sorted(str(n) for n in segment_names_not_in_plan))
-        raise ValueError(f"Segment names not found in plan: {joined}.")
+        raise PlanConformationError(f"Segment names not found in plan: {joined}.")
 
     segment_names_not_in_records = [
         segment.name
@@ -312,7 +315,7 @@ def assign_records_to_segments(
     ]
 
     if segment_names_not_in_records:
-        raise ValueError(
+        raise PlanConformationError(
             "Required segment names not found in records: ",
             f"{segment_names_not_in_records}",
         )
