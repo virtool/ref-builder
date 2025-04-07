@@ -213,6 +213,10 @@ def add_segments_to_plan(
         log.warning("No segments can be added.")
         return set()
 
+    if len(new_segments) < len(accessions):
+        log.error("Could not create all new segments.")
+        return set()
+
     new_plan = otu.plan.copy()
     new_plan.segments.extend(new_segments)
 
