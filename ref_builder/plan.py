@@ -20,6 +20,10 @@ class PlanWarning(UserWarning):
     pass
 
 
+class PlanConformationError(ValueError):
+    """Raised when potential new sequences do not pass validation against the OTU plan."""
+
+
 class SegmentRule(StrEnum):
     """Mark the importance of a particular segment."""
 
@@ -148,7 +152,9 @@ class Plan(BaseModel):
     def required_segment_ids(self) -> list[UUID]:
         """Return a list of segments that are required by all additions."""
         return [
-            segment.id for segment in self.segments if segment.rule == SegmentRule.REQUIRED
+            segment.id
+            for segment in self.segments
+            if segment.rule == SegmentRule.REQUIRED
         ]
 
     @property
