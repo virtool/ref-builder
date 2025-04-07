@@ -254,54 +254,6 @@ def rename_plan_segment(
     return None
 
 
-def resize_monopartite_plan(
-    repo: Repo,
-    otu: RepoOTU,
-    name: SegmentName,
-    rule: SegmentRule,
-    accessions: list[str],
-    ignore_cache: bool = False,
-) -> Plan | None:
-    """Convert a monopartite plan to a multipartite plan and add segments."""
-    log = logger.bind(name=otu.name, taxid=otu.taxid, accessions=accessions, rule=rule)
-
-    if not otu.plan.monopartite:
-        log.warning("OTU plan is already a multipartite plan.")
-        return None
-
-    sequence_length_tolerance = repo.settings.default_segment_length_tolerance
-
-    client = NCBIClient(ignore_cache)
-
-    records = client.fetch_genbank_records(accessions)
-    if not records:
-        log.warning("Could not fetch records.")
-        return None
-
-    new_segments = create_segments_from_records(
-        records,
-        rule,
-        length_tolerance=sequence_length_tolerance,
-    )
-    if not new_segments:
-        log.warning("No segments can be added.")
-        return None
-
-    new_plan = Plan.new(
-        segments=[
-            Segment.new(
-                length=otu.plan.segments[0].length,
-                length_tolerance=sequence_length_tolerance,
-                name=name,
-                rule=SegmentRule.REQUIRED,
-            )
-        ]
-        + new_segments,
-    )
-
-    return set_plan(repo, otu, new_plan)
-
-
 def replace_sequence_in_otu(
     repo: Repo,
     otu: RepoOTU,
