@@ -248,14 +248,13 @@ class TestSetPlan:
 
         assert otu_before.plan.monopartite
 
-        with pytest.raises(ValueError):
-            with scratch_repo.lock():
-                add_segments_to_plan(
-                    scratch_repo,
-                    otu_before,
-                    rule=SegmentRule.OPTIONAL,
-                    accessions=["NC_010620"],
-                )
+        with scratch_repo.lock():
+            assert not add_segments_to_plan(
+                scratch_repo,
+                otu_before,
+                rule=SegmentRule.OPTIONAL,
+                accessions=["NC_010620"],
+            )
 
     @pytest.mark.parametrize("tolerance", [0.05, 0.5, 1.0])
     def test_set_length_tolerances_ok(self, scratch_repo: Repo, tolerance: float):
