@@ -8,7 +8,12 @@ import structlog
 
 from ref_builder.cli.utils import pass_repo, get_otu_from_identifier
 from ref_builder.cli.validate import validate_no_duplicate_accessions
-from ref_builder.console import print_otu, print_otu_as_json, print_otu_list
+from ref_builder.console import (
+    print_otu,
+    print_otu_as_json,
+    print_otu_list,
+    print_otu_event_log,
+)
 from ref_builder.errors import PartialIDConflictError, InvalidInputError
 from ref_builder.options import ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu_with_taxid, create_otu_without_taxid
@@ -141,6 +146,19 @@ def otu_get(repo: Repo, identifier: str, as_json: bool) -> None:
 def otu_list(repo: Repo) -> None:
     """List all OTUs in the repository."""
     print_otu_list(repo.iter_minimal_otus())
+
+
+@otu.command(name="list-events")
+@click.argument("IDENTIFIER", type=str)
+@pass_repo
+def otu_event_logs(repo: Repo, identifier: str) -> None:
+    """Print a log of OTU events to console.
+
+    IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
+    """
+    otu_ = get_otu_from_identifier(repo, identifier)
+
+    print_otu_event_log(list(repo.iter_otu_events(otu_.id)))
 
 
 @otu.command(name="batch-update")
