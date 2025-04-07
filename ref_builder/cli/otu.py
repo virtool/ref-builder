@@ -353,13 +353,14 @@ def plan_extend_segment_list(
     """
     otu_ = get_otu_from_identifier(repo, identifier)
 
-    add_segments_to_plan(
+    if not add_segments_to_plan(
         repo,
         otu_,
         rule=SegmentRule.OPTIONAL if optional else SegmentRule.RECOMMENDED,
         accessions=accessions_,
         ignore_cache=ignore_cache,
-    )
+    ):
+        sys.exit(1)
 
 
 @otu.command(name="rename-plan-segment")
