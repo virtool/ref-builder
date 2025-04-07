@@ -210,21 +210,23 @@ class TestSetPlan:
 
         original_plan = otu_before.plan
 
-        assert type(original_plan) is Plan
+        assert isinstance(original_plan, Plan)
 
         with precached_repo.lock():
-            expanded_plan = add_segments_to_plan(
+            new_segment_ids = add_segments_to_plan(
                 precached_repo,
                 otu_before,
                 rule=SegmentRule.OPTIONAL,
                 accessions=["MF062138"],
             )
 
-        assert len(expanded_plan.segments) == len(original_plan.segments) + 1
+        assert len(new_segment_ids) == len(accessions)
 
         otu_after = precached_repo.get_otu(otu_before.id)
 
-        assert otu_after.plan != otu_before.plan
+        assert new_segment_ids.issubset(otu_before.plan.segment_ids)
+
+        assert otu_after.plan.segment_ids.issubset(otu_before.plan.segment_ids)
 
         assert otu_after.plan.model_dump() == snapshot(exclude=props("id"))
 
