@@ -192,11 +192,18 @@ class TestSetPlan:
             == first_segment.name
         )
 
-    @pytest.mark.parametrize("accessions", [["MF062136", "MF062137"], ["MF062136"]])
+    @pytest.mark.parametrize(
+        ("initial_accessions", "new_accessions"),
+        [
+            (["MF062136", "MF062137"], ["MF062138"]),
+            (["MF062136"], ["MF062137", "MF062138"]),
+        ],
+    )
     def test_add_segments_to_plan_ok(
         self,
         precached_repo: Repo,
-        accessions: list[str],
+        initial_accessions: list[str],
+        new_accessions: list[str],
         snapshot: SnapshotAssertion,
     ):
         """Test the addition of segments to an OTU plan."""
@@ -204,7 +211,7 @@ class TestSetPlan:
             otu_before = create_otu_with_taxid(
                 precached_repo,
                 2164102,
-                accessions,
+                initial_accessions,
                 acronym="",
             )
 
@@ -217,10 +224,10 @@ class TestSetPlan:
                 precached_repo,
                 otu_before,
                 rule=SegmentRule.OPTIONAL,
-                accessions=["MF062138"],
+                accessions=new_accessions,
             )
 
-        assert len(new_segment_ids) == len(accessions)
+        assert len(new_segment_ids) == len(new_accessions)
 
         otu_after = precached_repo.get_otu(otu_before.id)
 
