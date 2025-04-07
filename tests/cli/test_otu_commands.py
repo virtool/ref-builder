@@ -406,3 +406,88 @@ class TestRenamePlanSegmentCommand:
             str(otu_after.plan.get_segment_by_id(first_segment_id).name)
             == "RNA TestName"
         )
+
+
+class TestExtendPlanCommand:
+    @pytest.mark.parametrize(
+        ("initial_accessions", "new_accessions"),
+        [
+            (["MF062136", "MF062137"], ["MF062138"]),
+            (["MF062136"], ["MF062137", "MF062138"]),
+        ],
+    )
+    def test_ok(
+        self,
+        precached_repo: Repo,
+        initial_accessions: list[str],
+        new_accessions: list[str],
+    ):
+        """Test the addition of segments to an OTU plan."""
+        taxid = 2164102
+
+        filled_path_options = ["--path", str(precached_repo.path)]
+
+        result = runner.invoke(
+            otu_command_group,
+            [
+                *filled_path_options,
+                "create",
+                *initial_accessions,
+                "--taxid",
+                str(taxid),
+            ],
+        )
+
+        assert result.exit_code == 0
+
+        otu_init = precached_repo.get_otu_by_taxid(taxid)
+
+        assert len(otu_init.plan.segments) == len(initial_accessions)
+
+        result = runner.invoke(
+            otu_command_group,
+            [
+                *filled_path_options,
+                "extend-plan",
+                str(otu_init.id),
+                *new_accessions,
+                "--optional",
+            ],
+        )
+
+        assert result.exit_code == 0
+
+        assert "Added new segments" in result.output
+
+        otu_after = precached_repo.get_otu(otu_init.id)
+
+        assert len(otu_after.plan.segments) == len(otu_init.plan.segments) + len(
+            new_accessions
+        )
+
+    def test_monopartite_fail(
+        self,
+        scratch_repo: Repo,
+    ):
+        """Test that segments cannot be added to a monopartite plan with
+        a preexisting unnamed segment.
+        """
+        otu_before = scratch_repo.get_otu_by_taxid(96892)
+
+        assert otu_before.plan.monopartite
+
+        result = runner.invoke(
+            otu_command_group,
+            [
+                "--path",
+                str(scratch_repo.path),
+                "extend-plan",
+                "96892",
+                "NC_010620",
+                "--optional",
+            ],
+        )
+
+        assert result.exit_code == 1
+
+        print(result.output)
