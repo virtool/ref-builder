@@ -217,7 +217,7 @@ def add_segments_to_plan(
         log.error("Could not create all new segments.")
         return set()
 
-    new_plan = otu.plan.copy()
+    new_plan = otu.plan.model_copy()
     new_plan.segments.extend(new_segments)
 
     set_plan(repo, otu, new_plan)
