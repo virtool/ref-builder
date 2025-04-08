@@ -309,6 +309,19 @@ class TestAddIsolate:
 
             assert add_genbank_isolate(precached_repo, otu, accessions) is None
 
+    def test_plan_mismatch_fail(self, scratch_repo: Repo):
+        """Test that an isolate cannot be added to an OTU if it does not match the OTU plan."""
+        otu_before = scratch_repo.get_otu_by_taxid(345184)
+
+        with scratch_repo.lock():
+            assert add_genbank_isolate(
+                scratch_repo, otu_before, accessions=["AB017503"],
+            ) is None
+
+        otu_after = scratch_repo.get_otu_by_taxid(345184)
+
+        assert "AB017503" not in otu_after.accessions
+
 
 @pytest.mark.parametrize(
     "taxid, original_accessions, refseq_accessions",
