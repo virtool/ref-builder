@@ -16,6 +16,7 @@ TODO: Check for accession conflicts.
 import datetime
 import shutil
 import uuid
+import warnings
 from collections import defaultdict
 from collections.abc import Collection, Generator, Iterator
 from contextlib import contextmanager
@@ -25,10 +26,10 @@ import arrow
 from structlog import get_logger
 
 from ref_builder.errors import (
+    InvalidInputError,
     LockRequiredError,
     TransactionExistsError,
     TransactionRequiredError,
-    InvalidInputError,
 )
 from ref_builder.events.base import (
     ApplicableEvent,
@@ -930,23 +931,34 @@ class Repo:
         except FileNotFoundError:
             return None
 
-    def _rehydrate_otu(self, events: Iterator[Event]) -> RepoOTU:
+    @staticmethod
+    def _rehydrate_otu(events: Iterator[Event]) -> RepoOTU:
+        """Rehydrate an OTU from an event iterator."""
         event = next(events)
 
-        if isinstance(event, CreateOTU):
-            otu = event.apply()
-        else:
-            raise TypeError(
-                f"The first event ({event}) for an OTU is not a CreateOTU " "event",
-            )
+        with warnings.catch_warnings(record=True) as warning_list:
+            if isinstance(event, CreateOTU):
+                otu = event.apply()
 
-        for event in events:
-            if not isinstance(event, ApplicableEvent):
+            else:
                 raise TypeError(
-                    f"Event {event.id} {event.type} is not an applicable event."
+                    f"The first event ({event}) for an OTU is not a CreateOTU " "event",
                 )
 
-            otu = event.apply(otu)
+            for event in events:
+                if not isinstance(event, ApplicableEvent):
+                    raise TypeError(
+                        f"Event {event.id} {event.type} is not an applicable event."
+                    )
+
+                otu = event.apply(otu)
+
+        for warning_msg in warning_list:
+            logger.warning(
+                warning_msg.message,
+                otu_id=str(otu.id),
+                warning_category=warning_msg.category.__name__,
+            )
 
         otu.isolates.sort(
             key=lambda i: f"{i.name.type} {i.name.value}"
