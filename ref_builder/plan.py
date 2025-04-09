@@ -128,6 +128,11 @@ class Plan(BaseModel):
     """A list of segments that define the plan."""
 
     @property
+    def segment_ids(self) -> set[UUID]:
+        """Return all segment IDs as a set."""
+        return {segment.id for segment in self.segments}
+
+    @property
     def monopartite(self) -> bool:
         """Whether the plan is monopartite."""
         return len(self.segments) == 1

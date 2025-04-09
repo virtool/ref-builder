@@ -390,14 +390,13 @@ def plan_extend_segment_list(
         click.echo(f"OTU {taxid} not found.", err=True)
         sys.exit(1)
 
-    with repo.use_transaction():
-        add_segments_to_plan(
-            repo,
-            otu_,
-            rule=SegmentRule.OPTIONAL if optional else SegmentRule.RECOMMENDED,
-            accessions=accessions_,
-            ignore_cache=ignore_cache,
-        )
+    add_segments_to_plan(
+        repo,
+        otu_,
+        rule=SegmentRule.OPTIONAL if optional else SegmentRule.RECOMMENDED,
+        accessions=accessions_,
+        ignore_cache=ignore_cache,
+    )
 
 
 @otu.command(name="rename-plan-segment")

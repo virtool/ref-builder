@@ -168,25 +168,41 @@ def add_segments_to_plan(
     repo: Repo,
     otu: RepoOTU,
     rule: SegmentRule,
-    accessions: list[str],
+    accessions: Collection[str],
     ignore_cache: bool = False,
-) -> Plan | None:
+) -> set[UUID]:
     """Add new segments to a multipartite plan."""
-    log = logger.bind(name=otu.name, taxid=otu.taxid, accessions=accessions, rule=rule)
+    log = logger.bind(name=otu.name, taxid=otu.taxid, rule=str(rule))
 
     sequence_length_tolerance = repo.settings.default_segment_length_tolerance
 
     if otu.plan.monopartite and otu.plan.segments[0].name is None:
-        raise ValueError("Current monopartite segment is unnamed.")
+        log.error(
+            "Cannot add new segments unless all existing segments are named.",
+            segment_id=str(otu.plan.segments[0].id),
+            segment_name=otu.plan.segments[0].name,
+        )
+
+        return set()
 
     client = NCBIClient(ignore_cache)
 
-    log.info("Adding sequences to plan as segments", count=len(accessions), rule=rule)
+    if not (records := client.fetch_genbank_records(accessions)):
+        log.error(
+            "Could not fetch records associated with requested accessions.",
+            accessions=sorted(accessions),
+        )
+        return set()
 
-    records = client.fetch_genbank_records(accessions)
-    if not records:
-        log.warning("Could not fetch records.")
-        return None
+    if len(records) < len(accessions):
+        log.error(
+            "Not all requested accessions could be fetched.",
+            requested_accessions=sorted(accessions),
+            accessible_record_accessions=sorted(
+                record.accession_version for record in records
+            ),
+        )
+        return set()
 
     new_segments = create_segments_from_records(
         records,
@@ -195,13 +211,20 @@ def add_segments_to_plan(
     )
     if not new_segments:
         log.warning("No segments can be added.")
-        return None
+        return set()
 
-    new_plan = Plan.new(
-        segments=otu.plan.segments + new_segments,
-    )
+    if len(new_segments) < len(accessions):
+        log.error("Could not create all new segments.")
+        return set()
 
-    return set_plan(repo, otu, new_plan)
+    new_plan = otu.plan.model_copy()
+    new_plan.segments.extend(new_segments)
+
+    set_plan(repo, otu, new_plan)
+
+    log.info("Added new segments", ids=[str(segment.id) for segment in new_segments])
+
+    return {segment.id for segment in new_segments}
 
 
 def rename_plan_segment(
@@ -229,54 +252,6 @@ def rename_plan_segment(
     log.error("Segment with requested ID not found.")
 
     return None
-
-
-def resize_monopartite_plan(
-    repo: Repo,
-    otu: RepoOTU,
-    name: SegmentName,
-    rule: SegmentRule,
-    accessions: list[str],
-    ignore_cache: bool = False,
-) -> Plan | None:
-    """Convert a monopartite plan to a multipartite plan and add segments."""
-    log = logger.bind(name=otu.name, taxid=otu.taxid, accessions=accessions, rule=rule)
-
-    if not otu.plan.monopartite:
-        log.warning("OTU plan is already a multipartite plan.")
-        return None
-
-    sequence_length_tolerance = repo.settings.default_segment_length_tolerance
-
-    client = NCBIClient(ignore_cache)
-
-    records = client.fetch_genbank_records(accessions)
-    if not records:
-        log.warning("Could not fetch records.")
-        return None
-
-    new_segments = create_segments_from_records(
-        records,
-        rule,
-        length_tolerance=sequence_length_tolerance,
-    )
-    if not new_segments:
-        log.warning("No segments can be added.")
-        return None
-
-    new_plan = Plan.new(
-        segments=[
-            Segment.new(
-                length=otu.plan.segments[0].length,
-                length_tolerance=sequence_length_tolerance,
-                name=name,
-                rule=SegmentRule.REQUIRED,
-            )
-        ]
-        + new_segments,
-    )
-
-    return set_plan(repo, otu, new_plan)
 
 
 def replace_sequence_in_otu(

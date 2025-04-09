@@ -192,11 +192,18 @@ class TestSetPlan:
             == first_segment.name
         )
 
-    @pytest.mark.parametrize("accessions", [["MF062136", "MF062137"], ["MF062136"]])
+    @pytest.mark.parametrize(
+        ("initial_accessions", "new_accessions"),
+        [
+            (["MF062136", "MF062137"], ["MF062138"]),
+            (["MF062136"], ["MF062137", "MF062138"]),
+        ],
+    )
     def test_add_segments_to_plan_ok(
         self,
         precached_repo: Repo,
-        accessions: list[str],
+        initial_accessions: list[str],
+        new_accessions: list[str],
         snapshot: SnapshotAssertion,
     ):
         """Test the addition of segments to an OTU plan."""
@@ -204,27 +211,29 @@ class TestSetPlan:
             otu_before = create_otu_with_taxid(
                 precached_repo,
                 2164102,
-                accessions,
+                initial_accessions,
                 acronym="",
             )
 
         original_plan = otu_before.plan
 
-        assert type(original_plan) is Plan
+        assert isinstance(original_plan, Plan)
 
         with precached_repo.lock():
-            expanded_plan = add_segments_to_plan(
+            new_segment_ids = add_segments_to_plan(
                 precached_repo,
                 otu_before,
                 rule=SegmentRule.OPTIONAL,
-                accessions=["MF062138"],
+                accessions=new_accessions,
             )
 
-        assert len(expanded_plan.segments) == len(original_plan.segments) + 1
+        assert len(new_segment_ids) == len(new_accessions)
 
         otu_after = precached_repo.get_otu(otu_before.id)
 
-        assert otu_after.plan != otu_before.plan
+        assert new_segment_ids.issubset(otu_before.plan.segment_ids)
+
+        assert otu_after.plan.segment_ids.issubset(otu_before.plan.segment_ids)
 
         assert otu_after.plan.model_dump() == snapshot(exclude=props("id"))
 
@@ -239,14 +248,13 @@ class TestSetPlan:
 
         assert otu_before.plan.monopartite
 
-        with pytest.raises(ValueError):
-            with scratch_repo.lock():
-                add_segments_to_plan(
-                    scratch_repo,
-                    otu_before,
-                    rule=SegmentRule.OPTIONAL,
-                    accessions=["NC_010620"],
-                )
+        with scratch_repo.lock():
+            assert not add_segments_to_plan(
+                scratch_repo,
+                otu_before,
+                rule=SegmentRule.OPTIONAL,
+                accessions=["NC_010620"],
+            )
 
     @pytest.mark.parametrize("tolerance", [0.05, 0.5, 1.0])
     def test_set_length_tolerances_ok(self, scratch_repo: Repo, tolerance: float):
