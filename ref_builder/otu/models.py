@@ -1,12 +1,65 @@
 from collections import Counter
 from uuid import UUID
 
-from pydantic import UUID4, BaseModel, Field, model_validator
+from pydantic import (
+    UUID4,
+    BaseModel,
+    Field,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
 from ref_builder.models import Molecule
 from ref_builder.plan import Plan
-from ref_builder.resources import RepoIsolate, RepoSequence
 from ref_builder.utils import Accession, IsolateName
+
+
+class SequenceBase(BaseModel):
+    """A class representing a sequence with basic validation."""
+
+    id: UUID4
+    """The sequence id."""
+
+    accession: Accession
+    """The sequence accession."""
+
+    definition: str
+    """The sequence definition."""
+
+    legacy_id: str | None
+    """A string based ID carried over from a legacy Virtool reference repository.
+
+    It the sequence was not migrated from a legacy repository, this will be `None`.
+    """
+
+    sequence: str
+    """The sequence."""
+
+    segment: UUID4
+    """The sequence segment."""
+
+    @field_validator("accession", mode="before")
+    @classmethod
+    def convert_accession(cls, value: Accession | str) -> Accession:
+        """Convert the accession to an Accession object."""
+        if isinstance(value, Accession):
+            return value
+
+        if isinstance(value, str):
+            return Accession.from_string(value)
+
+        raise ValueError(f"Invalid type for accession: {type(value)}")
+
+    @field_serializer("accession")
+    @classmethod
+    def serialize_accession(cls, accession: Accession) -> str:
+        """Serialize the accession to a string."""
+        return str(accession)
+
+
+class Sequence(SequenceBase):
+    """A class representing a sequence with full validation."""
 
 
 class IsolateBase(BaseModel):
@@ -24,13 +77,13 @@ class IsolateBase(BaseModel):
     name: IsolateName | None
     """The isolate's name."""
 
-    sequences: list[RepoSequence]
+    sequences: list[SequenceBase]
     """The isolates sequences."""
 
     def get_sequence_by_accession(
         self,
         accession: Accession,
-    ) -> RepoSequence | None:
+    ) -> SequenceBase | None:
         """Get a sequence by its accession.
 
         Return ``None`` if the sequence is not found.
@@ -44,7 +97,7 @@ class IsolateBase(BaseModel):
 
         return None
 
-    def get_sequence_by_id(self, sequence_id: UUID) -> RepoSequence | None:
+    def get_sequence_by_id(self, sequence_id: UUID) -> SequenceBase | None:
         """Get a sequence by its ID.
 
         Return ``None`` if the sequence is not found.
@@ -62,7 +115,7 @@ class IsolateBase(BaseModel):
 class Isolate(IsolateBase):
     """A class representing an isolate with full validation."""
 
-    sequences: list[RepoSequence] = Field(min_length=1)
+    sequences: list[Sequence] = Field(min_length=1)
     """The isolates sequences.
 
     A valid isolate must have at least one sequence.
@@ -103,7 +156,7 @@ class OTUBase(BaseModel):
     """The NCBI Taxonomy id for this OTU."""
 
     @property
-    def sequences(self) -> list[RepoSequence]:
+    def sequences(self) -> list[SequenceBase]:
         """Sequences contained in this OTU."""
         return [sequence for isolate in self.isolates for sequence in isolate.sequences]
 
@@ -111,7 +164,7 @@ class OTUBase(BaseModel):
 class OTU(OTUBase):
     """A class representing an OTU with full validation."""
 
-    isolates: list[RepoIsolate] = Field(min_length=1)
+    isolates: list[Isolate] = Field(min_length=1)
     """Isolates contained in this OTU.
 
     A valid OTU must have at least one isolate.
