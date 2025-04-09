@@ -11,6 +11,7 @@ from ref_builder.otu.utils import (
     group_genbank_records_by_isolate,
     parse_refseq_comment,
 )
+from ref_builder.plan import PlanConformationError
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
 from ref_builder.utils import IsolateName
@@ -157,24 +158,14 @@ def create_isolate(
 
     try:
         assigned = assign_records_to_segments(records, otu.plan)
-    except ValueError as e:
-        if "Segment names not found in plan" in str(e):
-            log.debug(str(e))
-            return None
 
-        if "Required segment names not found in records" in str(e):
-            log.debug(str(e))
-            return None
+    except PlanConformationError as e:
+        log.warning(
+            str(e),
+            segment_names=[str(segment.name) for segment in otu.plan.segments],
+        )
 
-        if "If a segment has no name, it must be the only segment" in str(e):
-            log.debug(str(e))
-            return None
-
-        if "Duplicate segment names found in records" in str(e):
-            log.debug(str(e))
-            return None
-
-        raise
+        return None
 
     for segment_id, record in assigned.items():
         matching_segment = otu.plan.get_segment_by_id(segment_id)
