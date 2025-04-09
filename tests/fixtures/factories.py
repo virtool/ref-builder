@@ -214,6 +214,22 @@ class SegmentFactory(ModelFactory[Segment]):
 
         return None
 
+    @staticmethod
+    def build_series(n: int):
+        """Generate a matching series of segments"""
+        segment_name_keys = "ABCDEF"
+
+        if n > len(segment_name_keys):
+            raise ValueError("Generation of over 6 segments is unsupported.")
+
+        return [
+            SegmentFactory.build(
+                name=SegmentName(prefix="DNA", key=segment_name_keys[i]),
+                required=SegmentRule.REQUIRED,
+            )
+            for i in range(n)
+        ]
+
 
 class SequenceFactory(ModelFactory[RepoSequence]):
     """Sequence factory with quasi-realistic data."""
@@ -254,16 +270,7 @@ class PlanFactory(ModelFactory[Plan]):
         if cls.__faker__.random_int(0, 3):
             return [SegmentFactory.build(name=None, rule=SegmentRule.REQUIRED)]
 
-        segment_count = cls.__faker__.random_int(2, 5)
-        segment_name_keys = "ABCDEF"
-
-        return [
-            SegmentFactory.build(
-                name=SegmentName(prefix="DNA", key=segment_name_keys[i]),
-                rule=SegmentRule.REQUIRED,
-            )
-            for i in range(segment_count)
-        ]
+        return SegmentFactory.build_series(cls.__faker__.random_int(2, 5))
 
 
 class IsolateFactory(ModelFactory[IsolateBase]):
