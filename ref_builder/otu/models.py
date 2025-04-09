@@ -11,6 +11,7 @@ from pydantic import (
 )
 
 from ref_builder.models import Molecule
+from ref_builder.resources import RepoIsolate, RepoSequence
 from ref_builder.plan import Plan
 from ref_builder.utils import Accession, IsolateName
 
@@ -111,6 +112,17 @@ class IsolateBase(BaseModel):
 
         return None
 
+    @field_validator("sequences", mode="before")
+    @classmethod
+    def convert_sequence_models(
+            cls, v: list[dict | SequenceBase | Sequence | RepoSequence | BaseModel],
+    ) -> list[SequenceBase]:
+        """Automatically revalidate sequence if not already validated."""
+        if not v or isinstance(v[0], dict | SequenceBase):
+            return v
+
+        return [SequenceBase.model_validate(sequence.model_dump()) for sequence in v]
+
 
 class Isolate(IsolateBase):
     """A class representing an isolate with full validation."""
@@ -120,6 +132,16 @@ class Isolate(IsolateBase):
 
     A valid isolate must have at least one sequence.
     """
+
+    @field_validator("sequences", mode="before")
+    @classmethod
+    def convert_sequence_models(
+        cls, v: list[dict | SequenceBase | Sequence | RepoSequence | BaseModel],
+    ) -> list[Sequence]:
+        if not v or isinstance(v[0], dict | SequenceBase):
+            return v
+
+        return [Sequence.model_validate(sequence.model_dump()) for sequence in v]
 
 
 class OTUBase(BaseModel):
@@ -160,6 +182,17 @@ class OTUBase(BaseModel):
         """Sequences contained in this OTU."""
         return [sequence for isolate in self.isolates for sequence in isolate.sequences]
 
+    @field_validator("isolates", mode="before")
+    @classmethod
+    def convert_isolate_models(
+            cls, v: list[dict | IsolateBase | Isolate | RepoIsolate | BaseModel],
+    ) -> list[IsolateBase]:
+        """Automatically revalidate isolates if not already validated."""
+        if not v or isinstance(v[0], dict | IsolateBase):
+            return v
+
+        return [IsolateBase.model_validate(isolate.model_dump()) for isolate in v]
+
 
 class OTU(OTUBase):
     """A class representing an OTU with full validation."""
@@ -175,6 +208,17 @@ class OTU(OTUBase):
 
     A valid OTU must have a representative isolate.
     """
+
+    @field_validator("isolates", mode="before")
+    @classmethod
+    def convert_isolate_models(
+        cls, v: list[dict | Isolate | IsolateBase | RepoIsolate | BaseModel],
+    ) -> list[Isolate]:
+        """Automatically revalidate isolates if not already validated."""
+        if not v or isinstance(v[0], dict | Isolate):
+            return v
+
+        return [Isolate.model_validate(isolate.model_dump()) for isolate in v]
 
     @model_validator(mode="after")
     def check_excluded_accessions(self) -> "OTU":
