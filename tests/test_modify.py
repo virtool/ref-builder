@@ -411,10 +411,6 @@ class TestReplaceSequence:
         mock_isolate = IsolateFactory.build_on_plan(otu_init.plan)
         mock_sequence = mock_isolate.sequences[1]
 
-        print(mock_sequence)
-
-        print(post_init_otu.plan.get_segment_by_id(mock_sequence.segment))
-
         with precached_repo.lock(), precached_repo.use_transaction():
             sequence_seg2 = precached_repo.create_sequence(
                 otu_id=otu_id,
