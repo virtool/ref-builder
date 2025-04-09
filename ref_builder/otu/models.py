@@ -209,6 +209,11 @@ class OTU(OTUBase):
     A valid OTU must have a representative isolate.
     """
 
+    @property
+    def sequences(self) -> list[Sequence]:
+        """Sequences contained in this OTU."""
+        return [sequence for isolate in self.isolates for sequence in isolate.sequences]
+
     @field_validator("isolates", mode="before")
     @classmethod
     def convert_isolate_models(
