@@ -293,7 +293,7 @@ class TestAddIsolate:
 
         assert isolate_after.accessions == {"DQ178613", "DQ178614"}
 
-    def test_conflict_fail(self, precached_repo: Repo):
+    def test_blocked_fail(self, precached_repo: Repo):
         """Test that an isolate cannot be added to an OTU if both its name and its
         accessions are already contained.
         """
@@ -308,6 +308,23 @@ class TestAddIsolate:
             )
 
             assert add_genbank_isolate(precached_repo, otu, accessions) is None
+
+    def test_name_conflict_fail(self, precached_repo: Repo):
+        """Test that an isolate cannot be added to an OTU if its name is already contained."""
+        with precached_repo.lock():
+            otu = create_otu_with_taxid(
+                precached_repo,
+                2164102,
+                ["MF062136", "MF062137", "MF062138"],
+                "",
+            )
+
+            assert add_and_name_isolate(
+                precached_repo,
+                otu,
+                ["NC_055390", "NC_055391", "NC_055392"],
+                IsolateName(type=IsolateNameType.ISOLATE, value="4342-5"),
+            ) is None
 
     def test_plan_mismatch_fail(self, scratch_repo: Repo):
         """Test that an isolate cannot be added to an OTU if it does not match the OTU plan."""
