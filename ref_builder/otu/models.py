@@ -10,6 +10,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic_core import PydanticCustomError
 
 from ref_builder.models import Molecule
 from ref_builder.plan import Plan
@@ -287,8 +288,58 @@ class OTU(OTUBase):
 
     @model_validator(mode="after")
     def check_isolates_against_plan(self) -> "OTU":
-        """Check that all isolates satisfy the OTU's plan.
+        """Check that all isolates satisfy the OTU's plan."""
+        for isolate in self.isolates:
 
-        TODO: Implement this method.
-        """
+            for sequence in isolate.sequences:
+                segment = self.plan.get_segment_by_id(sequence.segment)
+                if segment is None:
+                    raise PydanticCustomError(
+                        "segment_not_found",
+                        "Sequence segment {sequence_segment} was not found in "
+                        + "the list of segments: {plan_segments}.",
+                        {
+                            "isolate_id": isolate.id,
+                            "sequence_segment": sequence.segment,
+                            "plan_segments": list(self.plan.segment_ids)
+                        }
+                    )
+
+                min_length = int(segment.length * (1.0 - segment.length_tolerance))
+                max_length = int(segment.length * (1.0 + segment.length_tolerance))
+
+                if len(sequence.sequence) < min_length:
+                    raise PydanticCustomError(
+                        "sequence_too_short",
+                        "Sequence based on {sequence_accession} does not pass validation "
+                        + "against segment {segment_id} "
+                        + "({sequence_length} < {min_sequence_length})",
+                        {
+                            "isolate_id": isolate.id,
+                            "sequence_id": sequence.id,
+                            "sequence_accession": sequence.accession,
+                            "sequence_length": len(sequence.sequence),
+                            "segment_id": segment.id,
+                            "segment_reference_length": segment.length,
+                            "min_sequence_length": min_length,
+                        }
+                    )
+
+                if len(sequence.sequence) > max_length:
+                    raise PydanticCustomError(
+                        "sequence_too_long",
+                        "Sequence based on {sequence_accession} does not pass validation "
+                        + "against segment {segment_id}"
+                        + "({sequence_length} > {max_sequence_length})",
+                        {
+                            "isolate_id": isolate.id,
+                            "sequence_id": sequence.id,
+                            "sequence_accession": sequence.accession,
+                            "sequence_length": len(sequence.sequence),
+                            "segment_id": segment.id,
+                            "segment_reference_length": segment.length,
+                            "max_sequence_length": max_length,
+                        }
+                    )
+
         return self
