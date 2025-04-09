@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import (
     UUID4,
     BaseModel,
+    ConfigDict,
     Field,
     field_serializer,
     field_validator,
@@ -11,13 +12,15 @@ from pydantic import (
 )
 
 from ref_builder.models import Molecule
-from ref_builder.resources import RepoIsolate, RepoSequence
 from ref_builder.plan import Plan
+from ref_builder.resources import RepoIsolate, RepoSequence
 from ref_builder.utils import Accession, IsolateName
 
 
 class SequenceBase(BaseModel):
     """A class representing a sequence with basic validation."""
+
+    model_config = ConfigDict(validate_assignment=True)
 
     id: UUID4
     """The sequence id."""
@@ -115,7 +118,8 @@ class IsolateBase(BaseModel):
     @field_validator("sequences", mode="before")
     @classmethod
     def convert_sequence_models(
-            cls, v: list[dict | SequenceBase | Sequence | RepoSequence | BaseModel],
+        cls,
+        v: list[dict | SequenceBase | Sequence | RepoSequence | BaseModel],
     ) -> list[SequenceBase]:
         """Automatically revalidate sequence if not already validated."""
         if not v or isinstance(v[0], dict | SequenceBase):
@@ -127,6 +131,8 @@ class IsolateBase(BaseModel):
 class Isolate(IsolateBase):
     """A class representing an isolate with full validation."""
 
+    model_config = ConfigDict(validate_assignment=True)
+
     sequences: list[Sequence] = Field(min_length=1)
     """The isolates sequences.
 
@@ -136,7 +142,8 @@ class Isolate(IsolateBase):
     @field_validator("sequences", mode="before")
     @classmethod
     def convert_sequence_models(
-        cls, v: list[dict | SequenceBase | Sequence | RepoSequence | BaseModel],
+        cls,
+        v: list[dict | SequenceBase | Sequence | RepoSequence | BaseModel],
     ) -> list[Sequence]:
         if not v or isinstance(v[0], dict | SequenceBase):
             return v
@@ -185,7 +192,8 @@ class OTUBase(BaseModel):
     @field_validator("isolates", mode="before")
     @classmethod
     def convert_isolate_models(
-            cls, v: list[dict | IsolateBase | Isolate | RepoIsolate | BaseModel],
+        cls,
+        v: list[dict | IsolateBase | Isolate | RepoIsolate | BaseModel],
     ) -> list[IsolateBase]:
         """Automatically revalidate isolates if not already validated."""
         if not v or isinstance(v[0], dict | IsolateBase):
@@ -196,6 +204,8 @@ class OTUBase(BaseModel):
 
 class OTU(OTUBase):
     """A class representing an OTU with full validation."""
+
+    model_config = ConfigDict(validate_assignment=True)
 
     isolates: list[Isolate] = Field(min_length=1)
     """Isolates contained in this OTU.
@@ -217,7 +227,8 @@ class OTU(OTUBase):
     @field_validator("isolates", mode="before")
     @classmethod
     def convert_isolate_models(
-        cls, v: list[dict | Isolate | IsolateBase | RepoIsolate | BaseModel],
+        cls,
+        v: list[dict | Isolate | IsolateBase | RepoIsolate | BaseModel],
     ) -> list[Isolate]:
         """Automatically revalidate isolates if not already validated."""
         if not v or isinstance(v[0], dict | Isolate):
