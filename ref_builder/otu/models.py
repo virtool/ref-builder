@@ -89,6 +89,14 @@ class IsolateBase(BaseModel):
     sequences: list[SequenceBase]
     """The isolates sequences."""
 
+    @property
+    def refseq(self) -> bool:
+        """Return True if this isolate was sourced from NCBI's RefSeq database."""
+        if self.sequences:
+            return is_refseq(self.sequences[0].accession.key)
+
+        return False
+
     def get_sequence_by_accession(
         self,
         accession: Accession,
