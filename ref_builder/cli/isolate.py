@@ -1,14 +1,12 @@
 import sys
 from pathlib import Path
-from uuid import UUID
 
 import click
 
-from ref_builder.errors import InvalidInputError, PartialIDConflictError
-from ref_builder.cli.utils import pass_repo
-from ref_builder.console import print_isolate, print_isolate_as_json
+from ref_builder.cli.options import ignore_cache_option, path_option
+from ref_builder.cli.utils import get_otu_isolate_ids_from_identifier, pass_repo
 from ref_builder.cli.validate import validate_no_duplicate_accessions
-from ref_builder.options import ignore_cache_option, path_option
+from ref_builder.console import print_isolate, print_isolate_as_json
 from ref_builder.otu.isolate import (
     add_and_name_isolate,
     add_genbank_isolate,
@@ -119,35 +117,14 @@ def isolate_delete(repo: Repo, identifier: str) -> None:
 
     IDENTIFIER is an unique isolate ID (>8 characters)
     """
-    isolate_id = None
-    try:
-        isolate_id = UUID(identifier)
-    except ValueError:
-        pass
-
-    if isolate_id is None:
-        try:
-            isolate_id = repo.get_isolate_id_by_partial(identifier)
-
-        except InvalidInputError:
-            click.echo(
-                "Partial ID segment must be at least 8 characters long.", err=True
-            )
-            sys.exit(1)
-
-        except PartialIDConflictError as e:
-            click.echo(e, err=True)
-
-    if isolate_id is None:
-        click.echo("Isolate could not be found.", err=True)
-        sys.exit(1)
+    otu_id, isolate_id = get_otu_isolate_ids_from_identifier(repo, identifier)
 
     if (otu_id := repo.get_otu_id_by_isolate_id(isolate_id)) is None:
-        click.echo(f"The containing OTU could not be found.", err=True)
+        click.echo("The containing OTU could not be found.", err=True)
         sys.exit(1)
 
     if (otu_ := repo.get_otu(otu_id)) is None:
-        click.echo(f"OTU not found.", err=True)
+        click.echo("OTU not found.", err=True)
         sys.exit(1)
 
     if delete_isolate_from_otu(repo, otu_, isolate_id):
@@ -171,27 +148,9 @@ def isolate_get(repo: Repo, identifier: str, json_: bool) -> None:
 
     IDENTIFIER is an unique isolate ID (>8 characters)
     """
-    isolate_id = None
-    try:
-        isolate_id = UUID(identifier)
-    except ValueError:
-        pass
+    otu_id, isolate_id = get_otu_isolate_ids_from_identifier(repo, identifier)
 
-    if isolate_id is None:
-        try:
-            isolate_id = repo.get_isolate_id_by_partial(identifier)
-
-        except InvalidInputError:
-            click.echo(
-                "Partial ID segment must be at least 8 characters long.", err=True
-            )
-            sys.exit(1)
-
-    if isolate_id is None:
-        click.echo("Isolate could not be found.", err=True)
-        sys.exit(1)
-
-    otu_ = repo.get_otu(repo.get_otu_id_by_isolate_id(isolate_id))
+    otu_ = repo.get_otu(otu_id)
 
     isolate_ = otu_.get_isolate(isolate_id)
 

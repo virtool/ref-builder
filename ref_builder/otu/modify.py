@@ -323,7 +323,7 @@ def set_representative_isolate(
     otu: RepoOTU,
     isolate_id: UUID,
 ) -> UUID | None:
-    """Sets an OTU's representative isolate to a given existing isolate ID.
+    """Set an OTU's representative isolate to a given existing isolate ID.
 
     Returns the isolate ID if successful, else None.
     """
@@ -331,24 +331,31 @@ def set_representative_isolate(
 
     new_representative_isolate = otu.get_isolate(isolate_id)
     if new_representative_isolate is None:
-        otu_logger.error("Isolate not found. Please make a new isolate.")
+        otu_logger.error(
+            "Isolate not found. Consider adding a new isolate.",
+            requested_isolate=str(isolate_id),
+        )
         return None
 
     if otu.representative_isolate is not None:
         if otu.representative_isolate == new_representative_isolate.id:
-            otu_logger.warning("This isolate is already the representative isolate.")
+            otu_logger.warning(
+                "Redundant replacement attempt.",
+                isolate_id=str(otu.representative_isolate),
+            )
             return otu.representative_isolate
 
         otu_logger.warning(
-            f"Replacing representative isolate {otu.representative_isolate}",
-            representative_isolate_id=str(otu.representative_isolate),
+            "Replacing representative isolate.",
+            old_isolate_id=str(otu.representative_isolate),
+            new_isolate_id=str(new_representative_isolate.id),
         )
 
     with repo.use_transaction():
         repo.set_representative_isolate(otu.id, new_representative_isolate.id)
 
     otu_logger.info(
-        f"Representative isolate set to {new_representative_isolate.name}.",
+        "New representative isolate set.",
         representative_isolate_id=str(new_representative_isolate.id),
     )
 
