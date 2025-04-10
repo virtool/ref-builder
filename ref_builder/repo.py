@@ -866,6 +866,13 @@ class Repo:
 
         return self._index.get_id_by_partial(partial)
 
+    def get_isolate(self, isolate_id: uuid.UUID) -> uuid.UUID | None:
+        """Return the isolate with the given id if it exists, else None."""
+        if otu_id := self.get_otu_id_by_isolate_id(isolate_id):
+            return self.get_otu(otu_id).get_isolate(isolate_id)
+
+        return None
+
     def get_isolate_id_by_partial(self, partial: str) -> uuid.UUID | None:
         """Return the UUID of the isolate starting with the given ``partial`` string.
         Raise a ValueErrror if more than one matching isolate id is found.

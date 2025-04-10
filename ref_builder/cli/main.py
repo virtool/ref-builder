@@ -17,7 +17,7 @@ from ref_builder.legacy.utils import iter_legacy_otus
 from ref_builder.legacy.validate import validate_legacy_repo
 from ref_builder.logs import configure_logger
 from ref_builder.ncbi.client import NCBIClient
-from ref_builder.options import (
+from ref_builder.cli.options import (
     legacy_repo_path_option,
     path_option,
 )

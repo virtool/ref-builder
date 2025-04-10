@@ -1,13 +1,10 @@
-import subprocess
 from uuid import UUID, uuid4
 
 import pytest
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
 
-from ref_builder.events import sequence
 from ref_builder.otu.create import create_otu_with_taxid
-from ref_builder.otu.isolate import create_isolate
 from ref_builder.otu.modify import (
     add_segments_to_plan,
     allow_accessions_into_otu,
@@ -75,29 +72,48 @@ def test_allow_accessions(scratch_repo: Repo):
     assert otu_after.excluded_accessions == {"DQ178609"}
 
 
-def test_update_representative_isolate(scratch_repo: Repo):
+class TestSetRepresentativeIsolate:
     """Test representative isolate replacement."""
-    taxid = 345184
 
-    otu_before = scratch_repo.get_otu_by_taxid(taxid)
+    def test_ok(self, scratch_repo: Repo):
+        taxid = 345184
 
-    representative_isolate_after = None
+        otu_before = scratch_repo.get_otu_by_taxid(taxid)
 
-    for isolate_id in otu_before.isolate_ids:
-        if isolate_id != otu_before.representative_isolate:
-            representative_isolate_after = isolate_id
-            break
+        representative_isolate_after = None
 
-    with scratch_repo.lock():
-        set_representative_isolate(
-            scratch_repo, otu_before, representative_isolate_after
-        )
+        for isolate_id in otu_before.isolate_ids:
+            if isolate_id != otu_before.representative_isolate:
+                representative_isolate_after = isolate_id
+                break
 
-    otu_after = scratch_repo.get_otu_by_taxid(taxid)
+        with scratch_repo.lock():
+            set_representative_isolate(
+                scratch_repo, otu_before, representative_isolate_after
+            )
 
-    assert otu_after.representative_isolate != otu_before.representative_isolate
+        otu_after = scratch_repo.get_otu_by_taxid(taxid)
 
-    assert otu_after.representative_isolate == representative_isolate_after
+        assert otu_after.representative_isolate != otu_before.representative_isolate
+
+        assert otu_after.representative_isolate == representative_isolate_after
+
+    def test_redundant(self, scratch_repo: Repo):
+        """Test behaviour when the current representative isolate is entered."""
+        taxid = 345184
+
+        otu_before = scratch_repo.get_otu_by_taxid(taxid)
+
+        event_id_before = scratch_repo.last_id
+
+        with scratch_repo.lock():
+            set_representative_isolate(
+                scratch_repo,
+                otu_before,
+                otu_before.representative_isolate,
+            )
+
+        assert scratch_repo.last_id == event_id_before
 
 
 class TestSetPlan:
@@ -294,68 +310,6 @@ class TestSetPlan:
         )
 
 
-class TestUpdateRepresentativeIsolateCommand:
-    def test_isolate_id_ok(self, scratch_repo: Repo):
-        taxid = 345184
-
-        otu_before = scratch_repo.get_otu_by_taxid(taxid)
-
-        other_isolate_id = None
-        for isolate_id in otu_before.isolate_ids:
-            if isolate_id != otu_before.representative_isolate:
-                other_isolate_id = isolate_id
-                break
-
-        assert type(other_isolate_id) is UUID
-
-        subprocess.run(
-            ["ref-builder", "otu"]
-            + ["--path", str(scratch_repo.path)]
-            + ["set-default-isolate"]
-            + [str(taxid), str(other_isolate_id)],
-            check=False,
-        )
-
-        scratch_repo = Repo(scratch_repo.path)
-
-        otu_after = scratch_repo.get_otu_by_taxid(taxid)
-
-        assert otu_after.representative_isolate != otu_before.representative_isolate
-
-        assert otu_after.representative_isolate == other_isolate_id
-
-    def test_isolate_name_ok(self, scratch_repo: Repo):
-        taxid = 1169032
-
-        otu_before = scratch_repo.get_otu_by_taxid(taxid)
-
-        representative_isolate_after = None
-
-        for isolate_id in otu_before.isolate_ids:
-            if isolate_id != otu_before.representative_isolate:
-                representative_isolate_after = otu_before.get_isolate(isolate_id).name
-                break
-
-        subprocess.run(
-            ["ref-builder", "otu"]
-            + ["--path", str(scratch_repo.path)]
-            + ["set-default-isolate"]
-            + [str(taxid)]
-            + [str(representative_isolate_after)],
-            check=False,
-        )
-
-        scratch_repo = Repo(scratch_repo.path)
-
-        otu_after = scratch_repo.get_otu_by_taxid(taxid)
-
-        assert otu_after.representative_isolate != otu_before.representative_isolate
-
-        assert otu_after.representative_isolate == otu_before.get_isolate_id_by_name(
-            representative_isolate_after
-        )
-
-
 class TestDeleteIsolate:
     """Test isolate deletion behaviour."""
 
@@ -456,10 +410,6 @@ class TestReplaceSequence:
 
         mock_isolate = IsolateFactory.build_on_plan(otu_init.plan)
         mock_sequence = mock_isolate.sequences[1]
-
-        print(mock_sequence)
-
-        print(post_init_otu.plan.get_segment_by_id(mock_sequence.segment))
 
         with precached_repo.lock(), precached_repo.use_transaction():
             sequence_seg2 = precached_repo.create_sequence(

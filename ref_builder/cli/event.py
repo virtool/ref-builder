@@ -3,6 +3,7 @@ from pathlib import Path
 
 import click
 
+from ref_builder.cli.options import path_option
 from ref_builder.cli.utils import get_otu_from_identifier, pass_repo
 from ref_builder.console import (
     print_event,
@@ -10,7 +11,6 @@ from ref_builder.console import (
     print_event_list,
     print_otu_event_log,
 )
-from ref_builder.options import path_option
 from ref_builder.repo import Repo, locked_repo
 
 

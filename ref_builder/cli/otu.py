@@ -6,7 +6,12 @@ from uuid import UUID
 import click
 import structlog
 
-from ref_builder.cli.utils import pass_repo, get_otu_from_identifier
+from ref_builder.cli.options import ignore_cache_option, path_option
+from ref_builder.cli.utils import (
+    get_otu_from_identifier,
+    get_otu_isolate_ids_from_identifier,
+    pass_repo,
+)
 from ref_builder.cli.validate import validate_no_duplicate_accessions
 from ref_builder.console import (
     print_otu,
@@ -15,7 +20,7 @@ from ref_builder.console import (
     print_otu_event_log,
 )
 from ref_builder.errors import PartialIDConflictError, InvalidInputError
-from ref_builder.options import ignore_cache_option, path_option
+from ref_builder.cli.options import ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu_with_taxid, create_otu_without_taxid
 from ref_builder.otu.modify import (
     add_segments_to_plan,
@@ -24,11 +29,11 @@ from ref_builder.otu.modify import (
     rename_plan_segment,
     set_representative_isolate,
 )
+from ref_builder.otu.promote import promote_otu_accessions
 from ref_builder.otu.update import (
     auto_update_otu,
     batch_update_repo,
 )
-from ref_builder.otu.promote import promote_otu_accessions
 from ref_builder.plan import SegmentName, SegmentRule
 from ref_builder.repo import Repo, locked_repo
 from ref_builder.utils import IsolateName, IsolateNameType
@@ -120,20 +125,7 @@ def otu_get(repo: Repo, identifier: str, as_json: bool) -> None:
 
     IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
     """
-    try:
-        otu_id = UUID(identifier)
-    except ValueError:
-        otu_id = _get_otu_id_from_other_identifier(repo, identifier)
-
-    if otu_id is None:
-        click.echo("OTU not found.", err=True)
-        sys.exit(1)
-
-    otu_ = repo.get_otu(otu_id)
-
-    if otu_ is None:
-        click.echo("OTU not found.", err=True)
-        sys.exit(1)
+    otu_ = get_otu_from_identifier(repo, identifier)
 
     if as_json:
         print_otu_as_json(otu_)
@@ -274,16 +266,7 @@ def otu_exclude_accessions(
 
     IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
     """
-    try:
-        otu_id = UUID(identifier)
-    except ValueError:
-        otu_id = _get_otu_id_from_other_identifier(repo, identifier)
-
-    otu_ = repo.get_otu(otu_id)
-
-    if otu_ is None:
-        click.echo("OTU not found.", err=True)
-        sys.exit(1)
+    otu_ = get_otu_from_identifier(repo, identifier)
 
     exclude_accessions_from_otu(repo, otu_, accessions_)
 
@@ -310,58 +293,39 @@ def otu_allow_accessions(
 
     IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
     """
-    try:
-        otu_id = UUID(identifier)
-    except ValueError:
-        otu_id = _get_otu_id_from_other_identifier(repo, identifier)
-
-    otu_ = repo.get_otu(otu_id)
-
-    if otu_ is None:
-        click.echo("OTU not found.", err=True)
-        sys.exit(1)
+    otu_ = get_otu_from_identifier(repo, identifier)
 
     allow_accessions_into_otu(repo, otu_, set(accessions_))
 
 
 @otu.command(name="set-default-isolate")  # type: ignore
-@click.argument("TAXID", type=int)
-@click.argument("ISOLATE_KEY", type=str)
+@click.argument("IDENTIFIER", type=str)
+@click.option(
+    "--isolate-id",
+    "isolate_id_",
+    type=str,
+    required=True,
+    help="The id of the isolate to set as default.",
+)
 @pass_repo
 def otu_set_representative_isolate(
     repo: Repo,
-    isolate_key: str,
-    taxid: int,
+    isolate_id_: str,
+    identifier: str,
 ) -> None:
-    """Update the OTU with a new representative isolate."""
-    otu_ = repo.get_otu_by_taxid(taxid)
+    """Update the OTU with a new representative isolate.
 
-    if otu_ is None:
-        click.echo(f"OTU {taxid} not found.", err=True)
-        sys.exit(1)
+    IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
+    """
+    otu_ = get_otu_from_identifier(repo, identifier)
 
-    try:
-        isolate_id = UUID(isolate_key)
-    except ValueError:
-        parts = isolate_key.split(" ")
-
-        try:
-            isolate_name = IsolateName(IsolateNameType(parts[0].lower()), parts[1])
-        except ValueError:
-            click.echo(f'Error: "{isolate_key}" is not a valid isolate name.', err=True)
-            sys.exit(1)
-
-        isolate_id = otu_.get_isolate_id_by_name(isolate_name)
-
-    if isolate_id is None:
-        click.echo("Isolate could not be found in this OTU.", err=True)
-        sys.exit(1)
+    otu_id, isolate_id = get_otu_isolate_ids_from_identifier(repo, isolate_id_)
 
     set_representative_isolate(repo, otu_, isolate_id)
 
 
 @otu.command(name="extend-plan")
-@click.argument("TAXID", type=int)
+@click.argument("IDENTIFIER", type=str)
 @click.argument(
     "accessions_",
     metavar="ACCESSIONS",
@@ -380,84 +344,61 @@ def plan_extend_segment_list(
     repo: Repo,
     accessions_: list[str],
     ignore_cache: bool,
-    taxid: int,
+    identifier: str,
     optional: bool,
 ) -> None:
-    """Add recommended or optional segments to the OTU plan."""
-    otu_ = repo.get_otu_by_taxid(taxid)
+    """Add recommended or optional segments to the OTU plan.
 
-    if otu_ is None:
-        click.echo(f"OTU {taxid} not found.", err=True)
-        sys.exit(1)
+    IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
+    """
+    otu_ = get_otu_from_identifier(repo, identifier)
 
-    add_segments_to_plan(
+    if not add_segments_to_plan(
         repo,
         otu_,
         rule=SegmentRule.OPTIONAL if optional else SegmentRule.RECOMMENDED,
         accessions=accessions_,
         ignore_cache=ignore_cache,
-    )
+    ):
+        sys.exit(1)
 
 
 @otu.command(name="rename-plan-segment")
-@click.argument("TAXID", type=int)
-@click.argument("SEGMENT_ID", type=str)
-@click.argument(
-    "segment_name_",
-    metavar="SEGMENT_NAME",
-    nargs=2,
+@click.argument("IDENTIFIER", type=str)
+@click.option(
+    "--segment-id",
+    "segment_id_",
     type=str,
     required=True,
+    help="The ID of the segment.",
+)
+@click.option(
+    "--segment-name",
+    "--name",
+    "segment_name_",
+    type=(str, str),
+    required=True,
+    help="A segment name, e.g. 'RNA B'",
 )
 @pass_repo
 def plan_rename_segment(
     repo: Repo,
-    segment_id: str,
+    segment_id_: str,
     segment_name_: tuple[str, str],
-    taxid: int,
+    identifier: str,
 ) -> None:
-    """Give an unnamed segment a name."""
-    otu_ = repo.get_otu_by_taxid(taxid)
+    """Give an unnamed segment a name.
 
-    if otu_ is None:
-        click.echo(f"OTU {taxid} not found.", err=True)
-        sys.exit(1)
+    IDENTIFIER is a taxonomy ID or unique OTU ID (>8 characters)
+    """
+    otu_ = get_otu_from_identifier(repo, identifier)
 
     try:
         rename_plan_segment(
             repo,
             otu_,
-            segment_id=UUID(segment_id),
+            segment_id=UUID(segment_id_),
             segment_name=SegmentName(segment_name_[0], segment_name_[1]),
         )
     except ValueError as e:
         click.echo(e, err=True)
-
-
-def _get_otu_id_from_other_identifier(repo: Repo, identifier: str) -> UUID | None:
-    """Return an OTU id from the repo if identifier matches a single OTU.
-    Return None if no matching OTU is found, raise a ValueError if >1 OTU is found.
-    """
-    try:
-        taxid = int(identifier)
-    except ValueError:
-        pass
-    else:
-        return repo.get_otu_id_by_taxid(taxid)
-
-    try:
-        return repo.get_otu_id_by_partial(identifier)
-
-    except PartialIDConflictError:
-        click.echo(
-            "Partial ID too short to narrow down results.",
-            err=True,
-        )
-
-    except InvalidInputError as e:
-        click.echo(
-            e,
-            err=True,
-        )
-
-    return None

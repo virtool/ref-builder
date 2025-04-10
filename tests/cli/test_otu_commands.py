@@ -1,5 +1,3 @@
-from uuid import UUID
-
 import pytest
 from click.testing import CliRunner
 from syrupy import SnapshotAssertion
@@ -234,6 +232,101 @@ class TestExcludeAccessionsCommand:
         assert "Excluded accession list already up to date" in result.output
 
 
+class TestSetDefaultIsolateCommand:
+    """Test that ``ref-builder otu set-default-isolate`` behaves as expected."""
+
+    def test_ok(self, scratch_repo: Repo):
+        taxid = 345184
+
+        otu_before = scratch_repo.get_otu_by_taxid(taxid)
+
+        representative_isolate_after = None
+
+        for isolate_id in otu_before.isolate_ids:
+            if isolate_id != otu_before.representative_isolate:
+                representative_isolate_after = isolate_id
+                break
+
+        assert otu_before.get_isolate(representative_isolate_after)
+
+        result = runner.invoke(
+            otu_command_group,
+            [
+                "--path",
+                str(scratch_repo.path),
+                "set-default-isolate",
+                str(taxid),
+                "--isolate-id",
+                str(representative_isolate_after),
+            ],
+        )
+
+        print(result.output)
+
+        assert result.exit_code == 0
+
+        otu_after = scratch_repo.get_otu_by_taxid(taxid)
+
+        assert otu_after.representative_isolate != otu_before.representative_isolate
+
+        assert otu_after.representative_isolate == representative_isolate_after
+
+    def test_isolate_id_partial(self, scratch_repo: Repo):
+        """Test handling of a partial isolate ID."""
+        taxid = 345184
+
+        otu_before = scratch_repo.get_otu_by_taxid(taxid)
+
+        representative_isolate_after = None
+
+        for isolate_id in otu_before.isolate_ids:
+            if isolate_id != otu_before.representative_isolate:
+                representative_isolate_after = isolate_id
+                break
+
+        assert otu_before.get_isolate(representative_isolate_after)
+
+        result = runner.invoke(
+            otu_command_group,
+            [
+                "--path",
+                str(scratch_repo.path),
+                "set-default-isolate",
+                str(taxid),
+                "--isolate-id",
+                str(representative_isolate_after)[:8],
+            ],
+        )
+
+        print(result.output)
+
+        assert result.exit_code == 0
+
+        otu_after = scratch_repo.get_otu_by_taxid(taxid)
+
+        assert otu_after.representative_isolate != otu_before.representative_isolate
+
+        assert otu_after.representative_isolate == representative_isolate_after
+
+    def test_bad_isolate_id(self, scratch_repo):
+        """Test handling of bad isolate ID"""
+        result = runner.invoke(
+            otu_command_group,
+            [
+                "--path",
+                str(scratch_repo.path),
+                "set-default-isolate",
+                str(345184),
+                "--isolate-id",
+                "bad-isolate-id",
+            ],
+        )
+
+        assert result.exit_code == 1
+
+        assert "Isolate ID could not be found" in result.output
+
+
 class TestAllowAccessionsCommand:
     """Test that ``ref-builder otu allow-accessions`` behaves as expected."""
 
@@ -279,3 +372,122 @@ class TestAllowAccessionsCommand:
         assert result.exit_code == 0
 
         assert "Excluded accession list already up to date" in result.output
+
+
+class TestRenamePlanSegmentCommand:
+    """Test that ``ref-builder otu rename-plan-segment`` behaves as expected."""
+
+    def test_ok(self, scratch_repo: Repo):
+        """Test that a given plan segment can be renamed."""
+        otu_before = scratch_repo.get_otu_by_taxid(223262)
+
+        first_segment_id = otu_before.plan.segments[0].id
+
+        result = runner.invoke(
+            otu_command_group,
+            [
+                "--path",
+                str(scratch_repo.path),
+                "rename-plan-segment",
+                str(223262),
+                "--segment-id",
+                str(first_segment_id),
+                "--segment-name",
+                "RNA",
+                "TestName",
+            ],
+        )
+
+        assert result.exit_code == 0
+
+        otu_after = scratch_repo.get_otu_by_taxid(223262)
+
+        assert (
+            str(otu_after.plan.get_segment_by_id(first_segment_id).name)
+            == "RNA TestName"
+        )
+
+
+class TestExtendPlanCommand:
+    @pytest.mark.parametrize(
+        ("initial_accessions", "new_accessions"),
+        [
+            (["MF062136", "MF062137"], ["MF062138"]),
+            (["MF062136"], ["MF062137", "MF062138"]),
+        ],
+    )
+    def test_ok(
+        self,
+        precached_repo: Repo,
+        initial_accessions: list[str],
+        new_accessions: list[str],
+    ):
+        """Test the addition of segments to an OTU plan."""
+        taxid = 2164102
+
+        filled_path_options = ["--path", str(precached_repo.path)]
+
+        result = runner.invoke(
+            otu_command_group,
+            [
+                *filled_path_options,
+                "create",
+                *initial_accessions,
+                "--taxid",
+                str(taxid),
+            ],
+        )
+
+        assert result.exit_code == 0
+
+        otu_init = precached_repo.get_otu_by_taxid(taxid)
+
+        assert len(otu_init.plan.segments) == len(initial_accessions)
+
+        result = runner.invoke(
+            otu_command_group,
+            [
+                *filled_path_options,
+                "extend-plan",
+                str(otu_init.id),
+                *new_accessions,
+                "--optional",
+            ],
+        )
+
+        assert result.exit_code == 0
+
+        assert "Added new segments" in result.output
+
+        otu_after = precached_repo.get_otu(otu_init.id)
+
+        assert len(otu_after.plan.segments) == len(otu_init.plan.segments) + len(
+            new_accessions
+        )
+
+    def test_monopartite_fail(
+        self,
+        scratch_repo: Repo,
+    ):
+        """Test that segments cannot be added to a monopartite plan with
+        a preexisting unnamed segment.
+        """
+        otu_before = scratch_repo.get_otu_by_taxid(96892)
+
+        assert otu_before.plan.monopartite
+
+        result = runner.invoke(
+            otu_command_group,
+            [
+                "--path",
+                str(scratch_repo.path),
+                "extend-plan",
+                "96892",
+                "NC_010620",
+                "--optional",
+            ],
+        )
+
+        assert result.exit_code == 1
+
+        print(result.output)
