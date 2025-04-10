@@ -255,15 +255,9 @@ class Repo:
         try:
             yield self._transaction
 
-            if self.last_id > self.head_id:
-                affected_otu_ids = set()
-
-                for event in self._event_store.iter_events(start=self.head_id + 1):
-                    affected_otu_ids.add(event.query.otu_id)
-
-                for otu_id in affected_otu_ids:
-                    if not check_otu_is_valid(self.get_otu(otu_id)):
-                        raise AbortTransactionError
+            for otu_id in self._transaction.affected_otu_ids:
+                if not check_otu_is_valid(self.get_otu(otu_id)):
+                    raise AbortTransactionError
 
         except Exception as e:
             logger.debug(
@@ -438,7 +432,7 @@ class Repo:
             raise ValueError(f"Isolate does not exist: {isolate_id}")
 
         if isolate_id == otu_.representative_isolate:
-            raise ValueError(f"Representative isolate cannot be deleted.")
+            raise ValueError("Representative isolate cannot be deleted.")
 
         self._write_event(
             DeleteIsolate,
@@ -1001,8 +995,10 @@ class Repo:
             self._index.add_event_id(
                 event.id,
                 event.query.otu_id,
-                timestamp=event.timestamp,
+                event.timestamp,
             )
+
+            self._transaction.add_otu_id(event.query.otu_id)
 
         return event
 
