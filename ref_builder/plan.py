@@ -71,7 +71,7 @@ class SegmentName:
 class Segment(BaseModel):
     """A segment in a multipartite plan."""
 
-    model_config = ConfigDict(use_enum_values=True)
+    model_config = ConfigDict(use_enum_values=True, validate_assignment=True)
 
     id: UUID4
     """The unique ID of the segment or monopartite plan."""
