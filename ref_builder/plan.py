@@ -149,13 +149,13 @@ class Plan(BaseModel):
         ]
 
     @property
-    def required_segment_ids(self) -> list[UUID]:
-        """Return a list of segments that are required by all additions."""
-        return [
+    def required_segment_ids(self) -> set[UUID]:
+        """Return a set of segments that are required by all additions."""
+        return {
             segment.id
             for segment in self.segments
             if segment.rule == SegmentRule.REQUIRED
-        ]
+        }
 
     @property
     def not_required_segments(self) -> list[Segment]:
