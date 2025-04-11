@@ -135,7 +135,6 @@ def set_plan_length_tolerances(
     tolerance: float,
 ) -> Plan | None:
     """Sets a plan's length tolerances to a new float value."""
-
     try:
         new_plan = otu.plan.model_copy()
         for segment in new_plan.segments:
