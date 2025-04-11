@@ -15,7 +15,6 @@ from ref_builder.plan import (
     SegmentName,
     SegmentRule,
 )
-from ref_builder.resources import RepoIsolate
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 from tests.fixtures.providers import (
     AccessionProvider,
@@ -382,13 +381,13 @@ class OTUFactory(ModelFactory[OTUBase]):
 
     @post_generated
     @classmethod
-    def representative_isolate(cls, isolates: list[RepoIsolate]) -> UUID4:
+    def representative_isolate(cls, isolates: list[IsolateBase]) -> UUID4:
         """Derive a representative isolate from a list of OTUs."""
         return cls.__faker__.random_element(isolates).id
 
     @post_generated
     @classmethod
-    def sequences(cls, isolates: list[RepoIsolate]) -> list[SequenceBase]:
+    def sequences(cls, isolates: list[IsolateBase]) -> list[SequenceBase]:
         """Derive a list of sequences from a list of isolates."""
         return [sequence for isolate in isolates for sequence in isolate.sequences]
 
