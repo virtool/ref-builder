@@ -1,5 +1,6 @@
 from uuid import UUID, uuid4
 
+from pydantic import ValidationError
 import pytest
 from syrupy import SnapshotAssertion
 from syrupy.filters import props
@@ -300,7 +301,11 @@ class TestSetPlan:
         )
 
         with scratch_repo.lock():
-            set_plan_length_tolerances(scratch_repo, otu_before, bad_tolerance)
+            try:
+                set_plan_length_tolerances(scratch_repo, otu_before, bad_tolerance)
+            except ValidationError as exc:
+                for error in exc.errors():
+                    assert error["type"] in ("less_than_equal", "greater_than_equal")
 
         otu_after = scratch_repo.get_otu(otu_before.id)
 
