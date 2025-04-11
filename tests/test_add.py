@@ -319,21 +319,29 @@ class TestAddIsolate:
                 "",
             )
 
-            assert add_and_name_isolate(
-                precached_repo,
-                otu,
-                ["NC_055390", "NC_055391", "NC_055392"],
-                IsolateName(type=IsolateNameType.ISOLATE, value="4342-5"),
-            ) is None
+            assert (
+                add_and_name_isolate(
+                    precached_repo,
+                    otu,
+                    ["NC_055390", "NC_055391", "NC_055392"],
+                    IsolateName(type=IsolateNameType.ISOLATE, value="4342-5"),
+                )
+                is None
+            )
 
     def test_plan_mismatch_fail(self, scratch_repo: Repo):
         """Test that an isolate cannot be added to an OTU if it does not match the OTU plan."""
         otu_before = scratch_repo.get_otu_by_taxid(345184)
 
         with scratch_repo.lock():
-            assert add_genbank_isolate(
-                scratch_repo, otu_before, accessions=["AB017503"],
-            ) is None
+            assert (
+                add_genbank_isolate(
+                    scratch_repo,
+                    otu_before,
+                    accessions=["AB017503"],
+                )
+                is None
+            )
 
         otu_after = scratch_repo.get_otu_by_taxid(345184)
 
