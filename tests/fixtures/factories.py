@@ -236,6 +236,23 @@ class SegmentFactory(ModelFactory[Segment]):
         ]
 
 
+class PlanFactory(ModelFactory[Plan]):
+    """A Polyfactory that generates valid instances of :class:`Plan`.
+
+    The factory generates a random number of segments, with a 75% chance of generating a
+    monopartite plan.
+    """
+
+    @classmethod
+    def segments(cls) -> list[Segment]:
+        """Return a set of quasi-realistic segments."""
+        # The segment represent a monopartite OTU 75% of the time.
+        if cls.__faker__.random_int(0, 3):
+            return [SegmentFactory.build(name=None, rule=SegmentRule.REQUIRED)]
+
+        return SegmentFactory.build_series(cls.__faker__.random_int(2, 5))
+
+
 class SequenceFactory(ModelFactory[RepoSequence]):
     """Sequence factory with quasi-realistic data."""
 
@@ -277,23 +294,6 @@ class SequenceFactory(ModelFactory[RepoSequence]):
             sequence=cls.__faker__.sequence(min=min_length, max=max_length),
             segment=segment.id,
         )
-
-
-class PlanFactory(ModelFactory[Plan]):
-    """A Polyfactory that generates valid instances of :class:`Plan`.
-
-    The factory generates a random number of segments, with a 75% chance of generating a
-    monopartite plan.
-    """
-
-    @classmethod
-    def segments(cls) -> list[Segment]:
-        """Return a set of quasi-realistic segments."""
-        # The segment represent a monopartite OTU 75% of the time.
-        if cls.__faker__.random_int(0, 3):
-            return [SegmentFactory.build(name=None, rule=SegmentRule.REQUIRED)]
-
-        return SegmentFactory.build_series(cls.__faker__.random_int(2, 5))
 
 
 class IsolateFactory(ModelFactory[IsolateBase]):
