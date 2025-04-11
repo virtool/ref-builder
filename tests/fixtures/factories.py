@@ -366,11 +366,7 @@ class OTUFactory(ModelFactory[OTUBase]):
         isolates = []
 
         for _ in range(cls.__faker__.random_int(2, 5)):
-            sequences = [
-                SequenceFactory.build(segment=segment.id) for segment in plan.segments
-            ]
-
-            isolates.append(IsolateFactory.build(sequences=sequences))
+            isolates.append(IsolateFactory.build_on_plan(plan=plan))
 
         return isolates
 
