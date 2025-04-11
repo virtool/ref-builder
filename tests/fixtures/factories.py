@@ -335,9 +335,9 @@ class IsolateFactory(ModelFactory[IsolateBase]):
 
         return IsolateFactory.build(
             sequences=[
-                SequenceFactory.build(
-                    accession=Accession(sequential_accessions[counter], 1),
+                SequenceFactory.build_on_segment(
                     segment=plan.segments[counter].id,
+                    accession=Accession(sequential_accessions[counter], 1),
                 )
                 for counter in range(len(plan.segments))
             ]
