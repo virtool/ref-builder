@@ -152,8 +152,8 @@ class TestOTU:
         otu_ = RepoOTU(**OTUFactory.build().model_dump())
 
         for i in range(10):
-            isolate = RepoIsolate(
-                **IsolateFactory.build_on_plan(otu_.plan).model_dump()
+            isolate = RepoIsolate.model_validate(
+                IsolateFactory.build_on_plan(otu_.plan).model_dump()
             )
             otu_.add_isolate(isolate)
 
@@ -169,11 +169,11 @@ class TestOTU:
         within each constituent isolate.
         """
 
-        otu_ = RepoOTU(**OTUFactory.build().model_dump())
+        otu_ = RepoOTU.model_validate(OTUFactory.build().model_dump())
 
         for i in range(10):
-            isolate = RepoIsolate(
-                **IsolateFactory.build_on_plan(otu_.plan).model_dump()
+            isolate = RepoIsolate.model_validate(
+                IsolateFactory.build_on_plan(otu_.plan).model_dump()
             )
             otu_.add_isolate(isolate)
 
@@ -186,11 +186,11 @@ class TestOTU:
     def test_otu_delete_isolate(self):
         """Test that RepoOTU.delete_isolate() does not affect other isolates."""
 
-        otu_before = RepoOTU(**OTUFactory.build().model_dump())
+        otu_before = RepoOTU.model_validate(OTUFactory.build().model_dump())
 
         for i in range(10):
-            isolate = RepoIsolate(
-                **IsolateFactory.build_on_plan(otu_before.plan).model_dump()
+            isolate = RepoIsolate.model_validate(
+                IsolateFactory.build_on_plan(otu_before.plan).model_dump()
             )
             otu_before.add_isolate(isolate)
 
