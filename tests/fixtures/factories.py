@@ -217,12 +217,12 @@ class SegmentFactory(ModelFactory[Segment]):
     @classmethod
     def length_tolerance(cls):
         """Generate a realistic length tolerance."""
-        return cls.__faker__.random_int(0, 5)*0.01
+        return cls.__faker__.random_int(0, 5) * 0.01
+
     @staticmethod
     def build_series(n: int):
         """Generate a matching series of segments"""
         segment_name_keys = "ABCDEF"
-
 
         if n > len(segment_name_keys):
             raise ValueError("Generation of over 6 segments is unsupported.")
@@ -279,9 +279,7 @@ class SequenceFactory(ModelFactory[SequenceBase]):
 
     @classmethod
     def build_on_segment(
-        cls,
-        segment: Segment,
-        accession: Accession | None = None
+        cls, segment: Segment, accession: Accession | None = None
     ) -> SequenceBase:
         """Build a sequence based on a given segment. Takes an optional accession."""
         min_length = int(segment.length * (1.0 - segment.length_tolerance))
