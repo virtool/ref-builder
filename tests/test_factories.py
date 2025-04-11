@@ -5,8 +5,9 @@ from uuid import uuid4
 
 from syrupy import SnapshotAssertion
 
+from ref_builder.otu.models import Isolate, OTU, Sequence
 from ref_builder.ncbi.models import NCBISource
-from ref_builder.resources import RepoIsolate, RepoOTU, RepoSequence
+from ref_builder.resources import RepoSequence
 from ref_builder.utils import Accession
 from tests.fixtures.factories import (
     IsolateFactory,
@@ -17,9 +18,7 @@ from tests.fixtures.factories import (
 )
 
 
-def test_ncbi_source_factory(
-    ncbi_source_factory: NCBISourceFactory, snapshot: SnapshotAssertion
-):
+def test_ncbi_source_factory(ncbi_source_factory: NCBISourceFactory):
     """Test that NCBISourceFactory creates valid mock NCBISource objects."""
     assert all(
         isinstance(dummy_source, NCBISource)
@@ -51,7 +50,7 @@ def test_ncbi_genbank_factory(
 def test_sequence_factory(sequence_factory: SequenceFactory):
     """Test that SequenceFactory creates valid mock sequence data."""
     assert all(
-        RepoSequence.model_validate(sequence.model_dump())
+        Sequence.model_validate(sequence.model_dump())
         for sequence in sequence_factory.coverage()
     )
 
@@ -59,13 +58,11 @@ def test_sequence_factory(sequence_factory: SequenceFactory):
 def test_isolate_factory():
     """Test that IsolateFactory creates valid mock isolate data."""
     assert all(
-        RepoIsolate.model_validate(isolate.model_dump())
+        Isolate.model_validate(isolate.model_dump())
         for isolate in IsolateFactory.coverage()
     )
 
 
 def test_otu_factory(otu_factory: OTUFactory):
     """Test that OTUFactory creates valid mock OTU data."""
-    assert all(
-        RepoOTU.model_validate(otu.model_dump()) for otu in otu_factory.coverage()
-    )
+    assert all(OTU.model_validate(otu.model_dump()) for otu in otu_factory.coverage())
