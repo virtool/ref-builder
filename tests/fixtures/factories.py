@@ -260,6 +260,24 @@ class SequenceFactory(ModelFactory[RepoSequence]):
         ModelFactory.__faker__.add_provider(AccessionProvider)
         return Accession(key=ModelFactory.__faker__.accession(), version=1)
 
+    @classmethod
+    def build_on_segment(
+        cls, segment: Segment,
+        accession: Accession | None = None
+    ) -> RepoSequence:
+        """Build a sequence based on a given segment. Takes an optional accession."""
+        min_length = int(segment.length * (1.0 - segment.length_tolerance))
+        max_length = int(segment.length * (1.0 + segment.length_tolerance))
+
+        if accession is None:
+            accession = Accession(key=ModelFactory.__faker__.accession(), version=1)
+
+        return SequenceFactory.build(
+            accession=accession,
+            sequence=cls.__faker__.sequence(min=min_length, max=max_length),
+            segment=segment.id,
+        )
+
 
 class PlanFactory(ModelFactory[Plan]):
     """A Polyfactory that generates valid instances of :class:`Plan`.
