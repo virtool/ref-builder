@@ -8,14 +8,14 @@ from pydantic.v1 import UUID4
 
 from ref_builder.models import MolType, OTUMinimal
 from ref_builder.ncbi.models import NCBIGenbank, NCBISource, NCBISourceMolType
-from ref_builder.otu.models import IsolateBase, OTUBase
+from ref_builder.otu.models import SequenceBase, IsolateBase, OTUBase
 from ref_builder.plan import (
     Plan,
     Segment,
     SegmentName,
     SegmentRule,
 )
-from ref_builder.resources import RepoIsolate, RepoSequence
+from ref_builder.resources import RepoIsolate
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 from tests.fixtures.providers import (
     AccessionProvider,
@@ -253,7 +253,7 @@ class PlanFactory(ModelFactory[Plan]):
         return SegmentFactory.build_series(cls.__faker__.random_int(2, 5))
 
 
-class SequenceFactory(ModelFactory[RepoSequence]):
+class SequenceFactory(ModelFactory[SequenceBase]):
     """Sequence factory with quasi-realistic data."""
 
     id = Use(ModelFactory.__faker__.uuid4)
@@ -279,9 +279,10 @@ class SequenceFactory(ModelFactory[RepoSequence]):
 
     @classmethod
     def build_on_segment(
-        cls, segment: Segment,
+        cls,
+        segment: Segment,
         accession: Accession | None = None
-    ) -> RepoSequence:
+    ) -> SequenceBase:
         """Build a sequence based on a given segment. Takes an optional accession."""
         min_length = int(segment.length * (1.0 - segment.length_tolerance))
         max_length = int(segment.length * (1.0 + segment.length_tolerance))
@@ -316,7 +317,7 @@ class IsolateFactory(ModelFactory[IsolateBase]):
         )
 
     @classmethod
-    def sequences(cls) -> list[RepoSequence]:
+    def sequences(cls) -> list[SequenceBase]:
         """Generate between 1 and 6 sequences with numerically sequential accessions."""
         sequence_count = cls.__faker__.random_int(1, 6)
 
@@ -336,7 +337,7 @@ class IsolateFactory(ModelFactory[IsolateBase]):
         return IsolateFactory.build(
             sequences=[
                 SequenceFactory.build_on_segment(
-                    segment=plan.segments[counter].id,
+                    segment=plan.segments[counter],
                     accession=Accession(sequential_accessions[counter], 1),
                 )
                 for counter in range(len(plan.segments))
@@ -393,7 +394,7 @@ class OTUFactory(ModelFactory[OTUBase]):
 
     @post_generated
     @classmethod
-    def sequences(cls, isolates: list[RepoIsolate]) -> list[RepoSequence]:
+    def sequences(cls, isolates: list[RepoIsolate]) -> list[SequenceBase]:
         """Derive a list of sequences from a list of isolates."""
         return [sequence for isolate in isolates for sequence in isolate.sequences]
 
