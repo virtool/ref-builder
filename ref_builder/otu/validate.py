@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import ValidationError
 from structlog import get_logger
 
@@ -31,9 +33,9 @@ def check_otu_is_valid(unvalidated_otu: RepoOTU) -> bool:
             taxid=unvalidated_otu.taxid,
         )
 
-        for error in exc.errors():
-            error_context = error.get("ctx", {})
+        otu_errors = otu_error_handler(exc)
 
+        for error in otu_errors:
             logger.warning(
                 "ValidationError: " + error["msg"],
                 type=error["type"],
@@ -43,3 +45,14 @@ def check_otu_is_valid(unvalidated_otu: RepoOTU) -> bool:
         return False
 
     return True
+
+
+def otu_error_handler(e: ValidationError):
+    new_errors: list[dict[str, Any]] = e.errors()
+
+    for error in new_errors:
+        if not error["loc"]:
+            if error["type"] in ("sequence_too_short", "sequence_too_long"):
+                error["loc"] = (f"isolates[{error['ctx'].get('isolate_id')}]",)
+
+    return new_errors
