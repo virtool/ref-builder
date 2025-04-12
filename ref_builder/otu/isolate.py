@@ -160,6 +160,7 @@ def create_isolate(
         otu_name=otu.name,
         otu_id=str(otu.id),
         taxid=otu.taxid,
+        accessions=[record.accession for record in records],
     )
 
     try:
