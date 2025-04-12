@@ -174,25 +174,6 @@ def create_isolate(
 
         return None
 
-    for segment_id, record in assigned.items():
-        matching_segment = otu.plan.get_segment_by_id(segment_id)
-
-        if not check_sequence_length(
-            record.sequence,
-            matching_segment.length,
-            matching_segment.length_tolerance,
-        ):
-            log.debug(
-                "Sequence does not conform to plan length.",
-                accession=record.accession_version,
-                length=len(record.sequence),
-                segment=(matching_segment.name, matching_segment.id),
-                required_length=matching_segment.length,
-                tolerance=matching_segment.length_tolerance,
-            )
-
-            return None
-
     try:
         isolate = repo.create_isolate(
             otu.id,
