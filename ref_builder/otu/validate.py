@@ -40,7 +40,7 @@ def check_otu_is_valid(unvalidated_otu: RepoOTU) -> bool:
                 "ValidationError: " + error["msg"],
                 type=error["type"],
                 loc=error["loc"],
-                input=error["input"] if not isinstance(error["input"], dict) else error["loc"],
+                input=error["input"] if not isinstance(error["input"], dict) else {},
             )
         return False
 
@@ -53,6 +53,8 @@ def otu_error_handler(e: ValidationError):
     for error in new_errors:
         if not error["loc"]:
             if error["type"] in ("sequence_too_short", "sequence_too_long"):
-                error["loc"] = (f"isolates[{error['ctx'].get('isolate_id')}]",)
+                error["loc"] = (
+                    f"isolates[{error['ctx'].get('isolate_id')}]",
+                    f"sequences[{error['ctx'].get('sequence_id', '')}]"),
 
     return new_errors
