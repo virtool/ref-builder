@@ -16,6 +16,9 @@ from ref_builder.resources import (
 from ref_builder.utils import Accession, DataType, IsolateName, IsolateNameType
 
 
+SEGMENT_LENGTH = 15
+
+
 @pytest.fixture()
 def initialized_repo(empty_repo: Repo):
     """Return a pre-initialized mock Repo."""
@@ -32,7 +35,7 @@ def initialized_repo(empty_repo: Repo):
             plan=Plan.new(
                 [
                     Segment.new(
-                        length=150,
+                        length=SEGMENT_LENGTH,
                         length_tolerance=empty_repo.settings.default_segment_length_tolerance,
                         name=None,
                     )
@@ -47,7 +50,7 @@ def initialized_repo(empty_repo: Repo):
             "TMV",
             None,
             otu.plan.segments[0].id,
-            "ACGT",
+            "ACGTACGTACGTACG",
         )
 
         isolate_a = empty_repo.create_isolate(
@@ -77,7 +80,7 @@ def init_otu(repo: Repo) -> RepoOTU:
         plan=Plan.new(
             segments=[
                 Segment.new(
-                    length=150,
+                    length=SEGMENT_LENGTH,
                     length_tolerance=repo.settings.default_segment_length_tolerance,
                     name=None,
                 )
@@ -127,7 +130,7 @@ class TestCreateOTU:
         plan = Plan.new(
             segments=[
                 Segment.new(
-                    length=150,
+                    length=SEGMENT_LENGTH,
                     length_tolerance=empty_repo.settings.default_segment_length_tolerance,
                     name=None,
                 )
@@ -165,7 +168,7 @@ class TestCreateOTU:
                     segments=[
                         Segment(
                             id=plan.segments[0].id,
-                            length=150,
+                            length=SEGMENT_LENGTH,
                             length_tolerance=empty_repo.settings.default_segment_length_tolerance,
                             name=None,
                             rule=SegmentRule.REQUIRED,
@@ -197,7 +200,7 @@ class TestCreateOTU:
                         "segments": [
                             {
                                 "id": str(plan.segments[0].id),
-                                "length": 150,
+                                "length": SEGMENT_LENGTH,
                                 "length_tolerance": empty_repo.settings.default_segment_length_tolerance,
                                 "name": None,
                                 "rule": SegmentRule.REQUIRED,
@@ -232,7 +235,7 @@ class TestCreateOTU:
                 plan=Plan.new(
                     segments=[
                         Segment.new(
-                            length=150,
+                            length=SEGMENT_LENGTH,
                             length_tolerance=empty_repo.settings.default_segment_length_tolerance,
                             name=None,
                         )
@@ -257,7 +260,7 @@ class TestCreateOTU:
                     plan=Plan.new(
                         segments=[
                             Segment.new(
-                                length=150,
+                                length=SEGMENT_LENGTH,
                                 length_tolerance=empty_repo.settings.default_segment_length_tolerance,
                                 name=None,
                             )
@@ -283,7 +286,7 @@ class TestCreateOTU:
                 plan=Plan.new(
                     segments=[
                         Segment.new(
-                            length=150,
+                            length=SEGMENT_LENGTH,
                             length_tolerance=empty_repo.settings.default_segment_length_tolerance,
                             name=None,
                         )
@@ -308,7 +311,7 @@ class TestCreateOTU:
                     plan=Plan.new(
                         segments=[
                             Segment.new(
-                                length=150,
+                                length=SEGMENT_LENGTH,
                                 length_tolerance=empty_repo.settings.default_segment_length_tolerance,
                                 name=None,
                             )
@@ -406,7 +409,7 @@ def test_create_sequence(empty_repo: Repo):
             "TMV",
             None,
             otu.plan.segments[0].id,
-            "ACGT",
+            "ACGTACGTACGTACG",
         )
 
         assert sequence is not None
@@ -417,7 +420,7 @@ def test_create_sequence(empty_repo: Repo):
             definition="TMV",
             legacy_id=None,
             segment=otu.plan.segments[0].id,
-            sequence="ACGT",
+            sequence="ACGTACGTACGTACG",
         )
 
         with open(empty_repo.path.joinpath("src", "00000003.json")) as f:
@@ -432,7 +435,7 @@ def test_create_sequence(empty_repo: Repo):
                 "definition": "TMV",
                 "legacy_id": None,
                 "segment": str(otu.plan.segments[0].id),
-                "sequence": "ACGT",
+                "sequence": "ACGTACGTACGTACG",
             },
             "id": 3,
             "query": {
@@ -455,7 +458,7 @@ class TestGetOTU:
         monopartite_plan = Plan.new(
             segments=[
                 Segment.new(
-                    length=150,
+                    length=SEGMENT_LENGTH,
                     length_tolerance=empty_repo.settings.default_segment_length_tolerance,
                     name=None,
                 )
@@ -485,7 +488,7 @@ class TestGetOTU:
                     "TMV",
                     None,
                     segment_id,
-                    "ACGT",
+                    "ACGTACGTACGTACG",
                 )
 
                 isolate_a = empty_repo.create_isolate(
@@ -504,7 +507,7 @@ class TestGetOTU:
                     "TMV",
                     None,
                     segment_id,
-                    "ACGTGGAGAGACC",
+                    "TTACGTGGAGAGACC",
                 )
 
                 isolate_b = empty_repo.create_isolate(
@@ -533,7 +536,7 @@ class TestGetOTU:
                         definition="TMV",
                         legacy_id=None,
                         segment=segment_id,
-                        sequence="ACGT",
+                        sequence="ACGTACGTACGTACG",
                     ),
                 ],
             ),
@@ -548,7 +551,7 @@ class TestGetOTU:
                         definition="TMV",
                         legacy_id=None,
                         segment=segment_id,
-                        sequence="ACGTGGAGAGACC",
+                        sequence="TTACGTGGAGAGACC",
                     ),
                 ],
             ),
@@ -573,7 +576,7 @@ class TestGetOTU:
                     segments=[
                         Segment(
                             id=segment_id,
-                            length=150,
+                            length=SEGMENT_LENGTH,
                             length_tolerance=empty_repo.settings.default_segment_length_tolerance,
                             name=None,
                             rule=SegmentRule.REQUIRED,
@@ -634,7 +637,7 @@ class TestGetOTU:
                 "TMV",
                 None,
                 otu.plan.segments[0].id,
-                "ACGTGGAGAGACC",
+                "TTACGTGGAGAGACC",
             )
 
             isolate = initialized_repo.create_isolate(
@@ -705,7 +708,7 @@ class TestGetIsolate:
                     definition="TMV B",
                     legacy_id=None,
                     segment=otu.plan.segments[0].id,
-                    sequence="GACCACGTGGAGA",
+                    sequence="TTGACCACGTGGAGA",
                 )
 
                 isolate_unnamed = initialized_repo.create_isolate(
@@ -988,7 +991,7 @@ class TestDeleteIsolate:
                 "TMV",
                 None,
                 otu_before.plan.segments[0].id,
-                "ACGTGGAGAGACC",
+                "TTACGTGGAGAGACC",
             )
 
             isolate_b = initialized_repo.create_isolate(
@@ -1071,7 +1074,7 @@ def test_replace_sequence(initialized_repo: Repo):
                 "TMV edit",
                 None,
                 otu_init.plan.segments[0].id,
-                "ACGTGGAGAGACCA",
+                "TACGTGGAGAGACCA",
             )
 
         with initialized_repo.use_transaction():
