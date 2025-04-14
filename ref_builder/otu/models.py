@@ -174,12 +174,6 @@ class OTUBase(BaseModel):
     acronym: str
     """The OTU acronym (eg. TMV for Tobacco mosaic virus)."""
 
-    excluded_accessions: set[str]
-    """A set of accessions that should not be retrieved in future fetch operations."""
-
-    isolates: list[IsolateBase]
-    """Isolates contained in this OTU."""
-
     legacy_id: str | None
     """A string based ID carried over from a legacy Virtool reference repository."""
 
@@ -192,11 +186,17 @@ class OTUBase(BaseModel):
     plan: Plan
     """The plan for the OTU."""
 
-    representative_isolate: UUID4 | None
-    """The UUID of the representative isolate of this OTU"""
-
     taxid: int
     """The NCBI Taxonomy id for this OTU."""
+
+    excluded_accessions: set[str]
+    """A set of accessions that should not be retrieved in future fetch operations."""
+
+    isolates: list[IsolateBase]
+    """Isolates contained in this OTU."""
+
+    representative_isolate: UUID4 | None
+    """The UUID of the representative isolate of this OTU"""
 
     @property
     def sequences(self) -> list[SequenceBase]:
