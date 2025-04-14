@@ -1,3 +1,4 @@
+import warnings
 from collections import Counter
 from uuid import UUID
 
@@ -16,6 +17,13 @@ from ref_builder.models import Molecule
 from ref_builder.plan import Plan
 from ref_builder.resources import RepoIsolate, RepoSequence
 from ref_builder.utils import Accession, IsolateName, is_accession_key_valid, is_refseq
+
+
+class IsolateInconsistencyWarning(UserWarning):
+    """Warn when an isolate contains both RefSeq and non-RefSeq accessions.
+
+    All sequences in an isolate should be sourced from the same database.
+    """
 
 
 class SequenceBase(BaseModel):
@@ -173,6 +181,29 @@ class Isolate(IsolateBase):
 
         return [Sequence.model_validate(sequence.model_dump()) for sequence in v]
 
+    @field_validator("sequences", mode="after")
+    def check_accession_consistency(cls, v: list[RepoSequence]) -> list[RepoSequence]:
+        """Check if all sequence accessions are of the same provenance, i.e.
+        all RefSeq or all INSDC.
+        """
+        isolate_accessions = {sequence.accession for sequence in v}
+
+        if any(is_refseq(accession.key) for accession in isolate_accessions):
+            if all(is_refseq(accession.key) for accession in isolate_accessions):
+                return v
+
+        elif all(not is_refseq(accession.key) for accession in isolate_accessions):
+            return v
+
+        warnings.warn(
+            "Combination of RefSeq and non-RefSeq sequences found in multipartite isolate: "
+            + f"{[sequence.accession.key for sequence in v]}",
+            IsolateInconsistencyWarning,
+            stacklevel=1,
+        )
+
+        return v
+
 
 class OTUBase(BaseModel):
     """A class representing an OTU with basic validation."""
@@ -299,7 +330,6 @@ class OTU(OTUBase):
     def check_isolates_against_plan(self) -> "OTU":
         """Check that all isolates satisfy the OTU's plan."""
         for isolate in self.isolates:
-
             for sequence in isolate.sequences:
                 segment = self.plan.get_segment_by_id(sequence.segment)
                 if segment is None:
@@ -310,8 +340,8 @@ class OTU(OTUBase):
                         {
                             "isolate_id": isolate.id,
                             "sequence_segment": sequence.segment,
-                            "plan_segments": list(self.plan.segment_ids)
-                        }
+                            "plan_segments": list(self.plan.segment_ids),
+                        },
                     )
 
                 min_length = int(segment.length * (1.0 - segment.length_tolerance))
@@ -331,7 +361,7 @@ class OTU(OTUBase):
                             "segment_id": segment.id,
                             "segment_reference_length": segment.length,
                             "min_sequence_length": min_length,
-                        }
+                        },
                     )
 
                 if len(sequence.sequence) > max_length:
@@ -348,7 +378,7 @@ class OTU(OTUBase):
                             "segment_id": segment.id,
                             "segment_reference_length": segment.length,
                             "max_sequence_length": max_length,
-                        }
+                        },
                     )
 
         return self
