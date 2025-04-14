@@ -6,7 +6,6 @@ from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.utils import (
     RefSeqConflictError,
     assign_records_to_segments,
-    check_sequence_length,
     fetch_records_from_accessions,
     group_genbank_records_by_isolate,
     parse_refseq_comment,
