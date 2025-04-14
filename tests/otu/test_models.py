@@ -2,10 +2,32 @@
 
 import uuid
 
+from pydantic import ValidationError
 import pytest
 
-from ref_builder.otu.models import OTU, OTUBase
-from tests.fixtures.factories import OTUFactory
+from ref_builder.otu.models import Sequence, OTU, OTUBase
+from ref_builder.utils import Accession
+from tests.fixtures.factories import SequenceFactory, OTUFactory
+
+
+class TestSequence:
+    """Test the ``Sequence`` model which is used for complete validation of sequences."""
+
+    def test_ok(self, sequence_factory: SequenceFactory):
+        sequence = sequence_factory.build()
+
+        assert Sequence.model_validate(sequence.model_dump())
+
+    def test_bad_sequence_fail(self, sequence_factory: SequenceFactory):
+        bad_sequence = sequence_factory.build(accession=Accession("BADSEQUENCE", 1))
+
+        try:
+            assert Sequence.model_validate(bad_sequence.model_dump())
+
+        except ValidationError as e:
+            for error in e.errors():
+                assert "accession" in error["loc"]
+                assert "Accession BADSEQUENCE.1 does not match a valid accession pattern" in error["msg"]
 
 
 class TestOTU:
