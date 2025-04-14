@@ -380,6 +380,7 @@ class TestCreateIsolate:
             assert isolate.sequences == []
             assert isolate.name is None
 
+
 def test_create_sequence(empty_repo: Repo):
     """Test that creating a sequence returns the expected ``RepoSequence`` object and
     creates the expected event file.
@@ -749,6 +750,37 @@ class TestCreateIsolateValidation:
                 otu_init.id,
                 None,
                 IsolateName(IsolateNameType.ISOLATE, "A"),
+            )
+
+            initialized_repo.link_sequence(otu_init.id, isolate_b.id, sequence_1.id)
+
+            assert initialized_repo.last_id > last_id_before_test
+
+        otu_after = initialized_repo.get_otu(otu_init.id)
+
+        assert isolate_b.id not in otu_after.isolate_ids
+
+    @pytest.mark.parametrize("bad_sequence", ["ACGTACGTA", "ACGTACGTACGTACGTTTTTT"])
+    def test_bad_segment_length_fail(self, initialized_repo: Repo, bad_sequence: str):
+        """Test that a new isolate with segments that are too long or short does not pass validation."""
+        otu_init = next(iter(initialized_repo.iter_otus()))
+
+        last_id_before_test = initialized_repo.last_id
+
+        with initialized_repo.lock(), initialized_repo.use_transaction():
+            sequence_1 = initialized_repo.create_sequence(
+                otu_init.id,
+                "MK000001.1",
+                "TMV",
+                None,
+                otu_init.plan.segments[0].id,
+                bad_sequence,
+            )
+
+            isolate_b = initialized_repo.create_isolate(
+                otu_init.id,
+                None,
+                IsolateName(IsolateNameType.ISOLATE, "B"),
             )
 
             initialized_repo.link_sequence(otu_init.id, isolate_b.id, sequence_1.id)
