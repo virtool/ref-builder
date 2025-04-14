@@ -398,9 +398,6 @@ class Repo:
         """
         otu = self.get_otu(otu_id)
 
-        if name is not None and otu.get_isolate_id_by_name(name):
-            raise ValueError(f"Isolate name already exists: {name}")
-
         isolate_id = uuid.uuid4()
 
         event = self._write_event(

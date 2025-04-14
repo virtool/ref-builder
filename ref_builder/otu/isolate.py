@@ -174,18 +174,11 @@ def create_isolate(
 
         return None
 
-    try:
-        isolate = repo.create_isolate(
-            otu.id,
-            legacy_id=None,
-            name=isolate_name,
-        )
-    except ValueError as e:
-        if "Isolate name already exists" in str(e):
-            log.debug("OTU already contains isolate with name.")
-            return None
-
-        raise
+    isolate = repo.create_isolate(
+        otu.id,
+        legacy_id=None,
+        name=isolate_name,
+    )
 
     for segment_id, record in assigned.items():
         sequence = create_sequence_from_record(repo, otu, record, segment_id)
