@@ -312,22 +312,28 @@ class TestAddIsolate:
     def test_name_conflict_fail(self, precached_repo: Repo):
         """Test that an isolate cannot be added to an OTU if its name is already contained."""
         with precached_repo.lock():
-            otu = create_otu_with_taxid(
+            otu_init = create_otu_with_taxid(
                 precached_repo,
                 2164102,
                 ["MF062136", "MF062137", "MF062138"],
                 "",
             )
 
-            assert (
-                add_and_name_isolate(
-                    precached_repo,
-                    otu,
-                    ["NC_055390", "NC_055391", "NC_055392"],
-                    IsolateName(type=IsolateNameType.ISOLATE, value="4342-5"),
-                )
-                is None
+        last_event_id_before_test = precached_repo.last_id
+
+        with precached_repo.lock():
+            bad_isolate = add_and_name_isolate(
+                precached_repo,
+                otu_init,
+                ["NC_055390", "NC_055391", "NC_055392"],
+                IsolateName(type=IsolateNameType.ISOLATE, value="4342-5"),
             )
+
+        otu_after = precached_repo.get_otu(otu_init.id)
+
+        assert bad_isolate.id not in otu_after.isolate_ids
+
+        assert precached_repo.last_id == last_event_id_before_test
 
     def test_plan_mismatch_fail(self, scratch_repo: Repo):
         """Test that an isolate cannot be added to an OTU if it does not match the OTU plan."""

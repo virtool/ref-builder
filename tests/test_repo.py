@@ -363,21 +363,6 @@ class TestCreateIsolate:
 
             assert empty_repo.last_id == 3
 
-    def test_name_exists(self, initialized_repo: Repo):
-        """Test that a ValueError is raised if an isolate name is already taken."""
-        otu = next(iter(initialized_repo.iter_otus()))
-
-        with initialized_repo.lock(), initialized_repo.use_transaction():
-            with pytest.raises(
-                ValueError,
-                match="Isolate name already exists: Isolate A",
-            ):
-                initialized_repo.create_isolate(
-                    otu.id,
-                    None,
-                    IsolateName(IsolateNameType.ISOLATE, "A"),
-                )
-
     def test_create_unnamed(self, empty_repo):
         """Test that creating an isolate returns the expected ``RepoIsolate`` object and
         creates the expected event file.
@@ -394,7 +379,6 @@ class TestCreateIsolate:
             assert isinstance(isolate.id, UUID)
             assert isolate.sequences == []
             assert isolate.name is None
-
 
 def test_create_sequence(empty_repo: Repo):
     """Test that creating a sequence returns the expected ``RepoSequence`` object and
@@ -740,6 +724,40 @@ def test_get_isolate_id_from_partial(initialized_repo: Repo):
     isolate = otu.isolates[0]
 
     assert initialized_repo.get_isolate_id_by_partial(str(isolate.id)[:8]) == isolate.id
+
+
+class TestCreateIsolateValidation:
+    """Test the validation of new added isolates."""
+
+    def test_name_exists_fail(self, initialized_repo: Repo):
+        """Test that an isolate is not created if the name is already taken."""
+        otu_init = next(iter(initialized_repo.iter_otus()))
+
+        last_id_before_test = initialized_repo.last_id
+
+        with initialized_repo.lock(), initialized_repo.use_transaction():
+            sequence_1 = initialized_repo.create_sequence(
+                otu_init.id,
+                "MK000001.1",
+                "TMV",
+                None,
+                otu_init.plan.segments[0].id,
+                "ACGTACGTACGTACG",
+            )
+
+            isolate_b = initialized_repo.create_isolate(
+                otu_init.id,
+                None,
+                IsolateName(IsolateNameType.ISOLATE, "A"),
+            )
+
+            initialized_repo.link_sequence(otu_init.id, isolate_b.id, sequence_1.id)
+
+            assert initialized_repo.last_id > last_id_before_test
+
+        otu_after = initialized_repo.get_otu(otu_init.id)
+
+        assert isolate_b.id not in otu_after.isolate_ids
 
 
 class TestExcludeAccessions:
