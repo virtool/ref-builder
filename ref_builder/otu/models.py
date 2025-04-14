@@ -15,7 +15,7 @@ from pydantic_core import PydanticCustomError
 from ref_builder.models import Molecule
 from ref_builder.plan import Plan
 from ref_builder.resources import RepoIsolate, RepoSequence
-from ref_builder.utils import Accession, IsolateName, is_refseq
+from ref_builder.utils import Accession, IsolateName, is_accession_key_valid, is_refseq
 
 
 class SequenceBase(BaseModel):
@@ -70,6 +70,15 @@ class SequenceBase(BaseModel):
 
 class Sequence(SequenceBase):
     """A class representing a sequence with full validation."""
+
+    @field_validator("accession", mode="after")
+    @classmethod
+    def check_accession_key_is_valid(cls, v: Accession) -> Accession:
+        """Check the accession key against INSDC and NCBI RefSeq patterns."""
+        if is_accession_key_valid(v.key):
+            return v
+
+        raise ValueError(f"Accession {v} does not match a valid accession pattern.")
 
 
 class IsolateBase(BaseModel):
