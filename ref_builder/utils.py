@@ -140,11 +140,19 @@ def format_json(path: Path) -> None:
         f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2))
 
 
+def is_accession_key_valid(accession_key: str) -> bool:
+    """Return True if the given accession is a valid Genbank or RefSeq accession."""
+    return (
+        GENBANK_ACCESSION_PATTERN.match(accession_key) is not None
+        or REFSEQ_ACCESSION_PATTERN.match(accession_key) is not None
+    )
+
+
 def get_accession_key(raw: str) -> str:
     """Parse a string to check if it follows Genbank or RefSeq accession parameters and
     return the key part only.
     """
-    if GENBANK_ACCESSION_PATTERN.match(raw) or REFSEQ_ACCESSION_PATTERN.match(raw):
+    if is_accession_key_valid(raw):
         return raw
 
     try:
