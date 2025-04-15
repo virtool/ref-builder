@@ -510,13 +510,13 @@ def update_otu_with_records(
         for isolate_name, isolate_records in group_genbank_records_by_isolate(
             divided_records
         ).items():
-            with repo.use_transaction():
+            with repo.use_transaction() as transaction:
                 isolate = create_isolate(
                     repo, otu, isolate_name, list(isolate_records.values())
                 )
 
                 if isolate is None:
-                    raise AbortTransactionError()
+                    raise transaction.abort()
 
             if isolate:
                 new_isolate_ids.append(isolate.id)
