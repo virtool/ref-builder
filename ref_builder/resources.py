@@ -1,11 +1,10 @@
 import datetime
-import warnings
 from uuid import UUID
 
 from pydantic import UUID4, BaseModel, Field, field_serializer, field_validator
 
 from ref_builder.models import Molecule
-from ref_builder.plan import Plan, PlanWarning
+from ref_builder.plan import Plan
 from ref_builder.utils import Accession, DataType, IsolateName
 
 
@@ -351,11 +350,3 @@ class RepoOTU(BaseModel):
     def unlink_sequence(self, isolate_id: UUID4, sequence_id: UUID4) -> None:
         """Unlink the given sequence from the given isolate. Used only during rehydration."""
         self.get_isolate(isolate_id).delete_sequence(sequence_id)
-
-    @field_validator("plan", mode="after")
-    def check_plan_required(cls, value: Plan):
-        """Issue a warning if the plan has no required segments."""
-        if not value.required_segments:
-            warnings.warn("Plan has no required segments.", PlanWarning, stacklevel=1)
-
-        return value
