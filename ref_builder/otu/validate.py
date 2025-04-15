@@ -61,11 +61,15 @@ def check_otu_is_valid(unvalidated_otu: RepoOTU) -> bool:
     return True
 
 
-def otu_error_handler(e: ValidationError):
+def otu_error_handler(e: ValidationError) -> list[dict[str, Any]]:
+    """Add contextual metadata to OTU validation errors."""
     new_errors: list[dict[str, Any]] = e.errors()
 
     for error in new_errors:
         if not error["loc"]:
+            if error["type"] == "segment_not_found":
+                error["loc"] = (f"isolates[{error['ctx'].get('isolate_id')}]",)
+
             if error["type"] in ("sequence_too_short", "sequence_too_long"):
                 error["loc"] = (
                     (
@@ -73,5 +77,6 @@ def otu_error_handler(e: ValidationError):
                         f"sequences[{error['ctx'].get('sequence_id', '')}]",
                     ),
                 )
+
 
     return new_errors
