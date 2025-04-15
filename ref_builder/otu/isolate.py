@@ -180,10 +180,17 @@ def create_isolate(
     )
 
     for segment_id, record in assigned.items():
-        sequence = create_sequence_from_record(repo, otu, record, segment_id)
-
-        if sequence is None:
-            raise ValueError("Sequence could not be created.")
+        try:
+            sequence = repo.create_sequence(
+                otu.id,
+                accession=record.accession_version,
+                definition=record.definition,
+                legacy_id=None,
+                segment=segment_id,
+                sequence=record.sequence,
+            )
+        except ValueError as e:
+            raise e
 
         repo.link_sequence(otu.id, isolate.id, sequence.id)
 
