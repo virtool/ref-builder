@@ -1,4 +1,8 @@
+import datetime
+
+import arrow
 import pytest
+from structlog.testing import capture_logs
 
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.create import create_otu_with_taxid
@@ -157,6 +161,8 @@ def test_multi_linked_promotion(empty_repo: Repo):
 
 @pytest.mark.ncbi()
 class TestCorrectSequencesInOTU:
+    """Test OTU-wide outdated sequence correction."""
+
     def test_ok(self, precached_repo: Repo):
         """Test a simple fetch and replace correction."""
         with precached_repo.lock():
