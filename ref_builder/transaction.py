@@ -1,3 +1,4 @@
+from typing import Never
 from uuid import UUID
 
 
@@ -31,7 +32,7 @@ class Transaction:
         """
         self._otu_ids.add(otu_id)
 
-    def abort(self) -> None:
+    def abort(self) -> Never:
         """Abort the transaction.
 
         The pending events will be discarded and no changes will be made to the

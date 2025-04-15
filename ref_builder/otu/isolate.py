@@ -70,7 +70,7 @@ def add_genbank_isolate(
                 )
             return None
 
-    with repo.use_transaction() as active_transaction:
+    with repo.use_transaction() as transaction:
         try:
             isolate = create_isolate(
                 repo,
@@ -84,7 +84,9 @@ def add_genbank_isolate(
         if isolate:
             return isolate
 
-        active_transaction.abort()
+        transaction.abort()
+
+    return None
 
 
 def add_unnamed_isolate(
@@ -105,13 +107,15 @@ def add_unnamed_isolate(
     if not records:
         return None
 
-    with repo.use_transaction() as active_transaction:
+    with repo.use_transaction() as transaction:
         isolate = create_isolate(repo, otu, None, records)
 
         if isolate:
             return isolate
 
-        active_transaction.abort()
+        transaction.abort()
+
+    return None
 
 
 def add_and_name_isolate(
@@ -133,13 +137,15 @@ def add_and_name_isolate(
     if not records:
         return None
 
-    with repo.use_transaction() as active_transaction:
+    with repo.use_transaction() as transaction:
         isolate = create_isolate(repo, otu, isolate_name, records)
 
         if isolate:
             return isolate
 
-        active_transaction.abort()
+        transaction.abort()
+
+    return None
 
 
 def create_isolate(

@@ -257,7 +257,7 @@ class Repo:
 
             for otu_id in self._transaction.affected_otu_ids:
                 if not check_otu_is_valid(self.get_otu(otu_id)):
-                    raise AbortTransactionError
+                    self._transaction.abort()
 
         except Exception as e:
             logger.debug(
