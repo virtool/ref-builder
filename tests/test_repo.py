@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 
 import orjson
 import pytest
+from structlog.testing import capture_logs
 
 from ref_builder.errors import InvalidInputError
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
@@ -319,6 +320,59 @@ class TestCreateOTU:
                     ),
                     taxid=438782,
                 )
+
+    def test_plan_required_segment_warning(self, empty_repo: Repo):
+        """Test that creating an OTU without required segments raises a warning
+        once the transaction exits.
+        """
+        plan = Plan.new(
+            segments=[
+                Segment(
+                    id=uuid4(),
+                    length=SEGMENT_LENGTH,
+                    length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                    name=None,
+                    rule=SegmentRule.RECOMMENDED,
+                )
+            ]
+        )
+        with capture_logs() as captured_logs:
+            with empty_repo.lock(), empty_repo.use_transaction():
+                otu = empty_repo.create_otu(
+                    acronym="TMV",
+                    legacy_id="abcd1234",
+                    molecule=Molecule(
+                        strandedness=Strandedness.SINGLE,
+                        type=MolType.RNA,
+                        topology=Topology.LINEAR,
+                    ),
+                    name="Tobacco mosaic virus",
+                    plan=plan,
+                    taxid=12242,
+                )
+
+                sequence_1 = empty_repo.create_sequence(
+                    otu.id,
+                    "TM000001.1",
+                    "TMV",
+                    None,
+                    otu.plan.segments[0].id,
+                    "ACGTACGTACGTACG",
+                )
+
+                isolate_a = empty_repo.create_isolate(
+                    otu.id,
+                    None,
+                    IsolateName(IsolateNameType.ISOLATE, "A"),
+                )
+
+                empty_repo.link_sequence(otu.id, isolate_a.id, sequence_1.id)
+
+                empty_repo.set_representative_isolate(otu.id, isolate_a.id)
+
+        assert any(
+            [log.get("warning_category") == "PlanWarning" for log in captured_logs]
+        )
 
 
 class TestCreateIsolate:
