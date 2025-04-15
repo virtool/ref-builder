@@ -46,7 +46,7 @@ def initialized_repo(empty_repo: Repo):
 
         sequence_1 = empty_repo.create_sequence(
             otu.id,
-            "TMVABC.1",
+            "TM000001.1",
             "TMV",
             None,
             otu.plan.segments[0].id,
@@ -405,7 +405,7 @@ def test_create_sequence(empty_repo: Repo):
 
         sequence = empty_repo.create_sequence(
             otu.id,
-            "TMVABC.1",
+            "TM000001.1",
             "TMV",
             None,
             otu.plan.segments[0].id,
@@ -416,7 +416,7 @@ def test_create_sequence(empty_repo: Repo):
 
         assert sequence == RepoSequence(
             id=sequence.id,
-            accession=Accession(key="TMVABC", version=1),
+            accession=Accession(key="TM000001", version=1),
             definition="TMV",
             legacy_id=None,
             segment=otu.plan.segments[0].id,
@@ -431,7 +431,7 @@ def test_create_sequence(empty_repo: Repo):
         assert event == {
             "data": {
                 "id": str(sequence.id),
-                "accession": {"key": "TMVABC", "version": 1},
+                "accession": {"key": "TM000001", "version": 1},
                 "definition": "TMV",
                 "legacy_id": None,
                 "segment": str(otu.plan.segments[0].id),
@@ -484,7 +484,7 @@ class TestGetOTU:
 
                 sequence_1 = empty_repo.create_sequence(
                     otu.id,
-                    "TMVABC.1",
+                    "TM000001.1",
                     "TMV",
                     None,
                     segment_id,
@@ -503,7 +503,7 @@ class TestGetOTU:
 
                 sequence_2 = empty_repo.create_sequence(
                     otu.id,
-                    "TMVABCB.1",
+                    "TN000001.1",
                     "TMV",
                     None,
                     segment_id,
@@ -532,7 +532,7 @@ class TestGetOTU:
                 sequences=[
                     RepoSequence(
                         id=otu.isolates[0].sequences[0].id,
-                        accession=Accession(key="TMVABC", version=1),
+                        accession=Accession(key="TM000001", version=1),
                         definition="TMV",
                         legacy_id=None,
                         segment=segment_id,
@@ -547,7 +547,7 @@ class TestGetOTU:
                 sequences=[
                     RepoSequence(
                         id=otu.isolates[1].sequences[0].id,
-                        accession=Accession(key="TMVABCB", version=1),
+                        accession=Accession(key="TN000001", version=1),
                         definition="TMV",
                         legacy_id=None,
                         segment=segment_id,
@@ -620,7 +620,7 @@ class TestGetOTU:
 
     def test_accessions(self, initialized_repo: Repo):
         """Test that the `accessions` property returns the expected accessions."""
-        assert next(initialized_repo.iter_otus()).accessions == {"TMVABC"}
+        assert next(initialized_repo.iter_otus()).accessions == {"TM000001"}
 
     def test_blocked_accessions(self, initialized_repo: Repo):
         """Test that the `blocked_accessions` property returns the expected set of
@@ -633,7 +633,7 @@ class TestGetOTU:
         with initialized_repo.lock(), initialized_repo.use_transaction():
             sequence = initialized_repo.create_sequence(
                 otu.id,
-                "TMVABCB.1",
+                "TN000001.1",
                 "TMV",
                 None,
                 otu.plan.segments[0].id,
@@ -649,16 +649,16 @@ class TestGetOTU:
             initialized_repo.link_sequence(otu.id, isolate.id, sequence_id=sequence.id)
 
         assert initialized_repo.get_otu(otu.id).blocked_accessions == {
-            "TMVABC",
-            "TMVABCB",
+            "TM000001",
+            "TN000001",
         }
 
         with initialized_repo.lock(), initialized_repo.use_transaction():
             initialized_repo.exclude_accessions(otu.id, excludable_accessions)
 
         assert initialized_repo.get_otu(otu.id).blocked_accessions == {
-            "TMVABC",
-            "TMVABCB",
+            "TM000001",
+            "TN000001",
             "GR33333",
             "TL44322",
         }
@@ -704,7 +704,7 @@ class TestGetIsolate:
             with initialized_repo.use_transaction():
                 sequence = initialized_repo.create_sequence(
                     otu.id,
-                    accession="EMPTY1.1",
+                    accession="NP000001.1",
                     definition="TMV B",
                     legacy_id=None,
                     segment=otu.plan.segments[0].id,
@@ -724,13 +724,13 @@ class TestGetIsolate:
             otu_after = next(initialized_repo.iter_otus())
 
         assert len(otu_after.isolate_ids) == len(otu.isolate_ids) + 1
-        assert otu_after.accessions == {"TMVABC", "EMPTY1"}
+        assert otu_after.accessions == {"TM000001", "NP000001"}
         assert otu_after.isolate_ids == {isolate_before.id, isolate_unnamed.id}
 
         isolate_unnamed_after = otu_after.get_isolate(isolate_unnamed.id)
 
         assert isolate_unnamed_after.name is None
-        assert isolate_unnamed_after.accessions == {"EMPTY1"}
+        assert isolate_unnamed_after.accessions == {"NP000001"}
 
 
 def test_get_isolate_id_from_partial(initialized_repo: Repo):
@@ -987,7 +987,7 @@ class TestDeleteIsolate:
         with initialized_repo.lock(), initialized_repo.use_transaction():
             sequence_2 = initialized_repo.create_sequence(
                 otu_id,
-                "TMVABCB.1",
+                "TN000001.1",
                 "TMV",
                 None,
                 otu_before.plan.segments[0].id,
@@ -1012,8 +1012,8 @@ class TestDeleteIsolate:
 
         assert isolate_b.id in otu_before.isolate_ids
 
-        assert "TMVABCB" in otu_before.accessions
-        assert "TMVABCB" in otu_before.get_isolate(isolate_b.id).accessions
+        assert "TN000001" in otu_before.accessions
+        assert "TN000001" in otu_before.get_isolate(isolate_b.id).accessions
 
         assert event_id_before_delete == initialized_repo.last_id == 9
 
@@ -1055,12 +1055,12 @@ class TestDeleteIsolate:
 
 
 def test_replace_sequence(initialized_repo: Repo):
-    """Test the replacement of am existing sequence using a new Genbank accession and
+    """Test the replacement of an existing sequence using a new Genbank accession and
     record.
     """
     otu_init = initialized_repo.get_otu_by_taxid(12242)
 
-    replaceable_sequence = otu_init.get_sequence_by_accession("TMVABC")
+    replaceable_sequence = otu_init.get_sequence_by_accession("TM000001")
 
     isolate_id = next(
         iter(otu_init.get_isolate_ids_containing_sequence_id(replaceable_sequence.id))
@@ -1070,7 +1070,7 @@ def test_replace_sequence(initialized_repo: Repo):
         with initialized_repo.use_transaction():
             new_sequence = initialized_repo.create_sequence(
                 otu_init.id,
-                "TMVABCC.1",
+                "RP000001.1",
                 "TMV edit",
                 None,
                 otu_init.plan.segments[0].id,
