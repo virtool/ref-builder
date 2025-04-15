@@ -1,13 +1,20 @@
 """Tests for OTU models."""
 
+import warnings
 import uuid
 
 from pydantic import ValidationError
 import pytest
 
-from ref_builder.otu.models import Sequence, OTU, OTUBase
-from ref_builder.utils import Accession
-from tests.fixtures.factories import SequenceFactory, OTUFactory
+from ref_builder.otu.models import Isolate, Sequence, OTU, OTUBase
+from ref_builder.utils import Accession, is_refseq
+from tests.fixtures.factories import (
+    IsolateFactory,
+    OTUFactory,
+    PlanFactory,
+    SegmentFactory,
+    SequenceFactory,
+)
 
 
 class TestSequence:
@@ -27,7 +34,55 @@ class TestSequence:
         except ValidationError as e:
             for error in e.errors():
                 assert "accession" in error["loc"]
-                assert "Accession BADSEQUENCE.1 does not match a valid accession pattern" in error["msg"]
+                assert (
+                    "Accession BADSEQUENCE.1 does not match a valid accession pattern"
+                    in error["msg"]
+                )
+
+
+class TestIsolate:
+    """Test the ``Isolate`` model which is used for complete validation of isolates."""
+
+    otu: OTUBase
+
+    @pytest.fixture(autouse=True)
+    def _build_otu(self, otu_factory: OTUFactory):
+        self.otu = otu_factory.build(
+            plan=PlanFactory.build(segments=SegmentFactory.build_series(3))
+        )
+
+    def test_accession_consistency_warning(self, isolate_factory: IsolateFactory):
+        """Test that a warning is raised if accession provenances are mixed."""
+        genbank_isolate = isolate_factory.build_on_plan(self.otu.plan)
+        refseq_isolate = isolate_factory.build_on_plan(self.otu.plan, refseq=True)
+
+        for isolate in (genbank_isolate, refseq_isolate):
+            bad_isolate = isolate.model_copy()
+
+            if is_refseq(bad_isolate.sequences[0].accession.key):
+                bad_isolate.sequences[0].accession = Accession("BD000001", 1)
+            else:
+                bad_isolate.sequences[0].accession = Accession("NC_000001", 1)
+
+            assert not all(
+                [
+                    is_refseq(sequence.accession.key)
+                    for sequence in bad_isolate.sequences
+                ]
+            )
+
+            with warnings.catch_warnings(record=True) as warning_list:
+                Isolate.model_validate(bad_isolate.model_dump())
+
+            for warning_msg in warning_list:
+                assert warning_msg.category.__name__ == "IsolateInconsistencyWarning"
+
+                assert (
+                    "Combination of RefSeq and non-RefSeq sequences found in multipartite isolate"
+                    in str(warning_msg.message)
+                )
+
+                assert f"{[sequence.accession.key for sequence in bad_isolate.sequences]}" in str(warning_msg)
 
 
 class TestOTU:
