@@ -1,12 +1,13 @@
 """Tests for OTU models."""
 
-import warnings
 import uuid
+import warnings
 
-from pydantic import ValidationError
 import pytest
+from pydantic import ValidationError
 
-from ref_builder.otu.models import Isolate, Sequence, OTU, OTUBase
+from ref_builder.otu.models import OTU, Isolate, OTUBase, Sequence
+from ref_builder.plan import PlanWarning, SegmentRule
 from ref_builder.utils import Accession, is_refseq
 from tests.fixtures.factories import (
     IsolateFactory,
@@ -82,7 +83,10 @@ class TestIsolate:
                     in str(warning_msg.message)
                 )
 
-                assert f"{[sequence.accession.key for sequence in bad_isolate.sequences]}" in str(warning_msg)
+                assert (
+                    f"{[sequence.accession.key for sequence in bad_isolate.sequences]}"
+                    in str(warning_msg)
+                )
 
 
 class TestOTU:
@@ -97,6 +101,19 @@ class TestOTU:
     def test_ok(self):
         """Test that a valid OTU passes validation."""
         assert OTU.model_validate(self.otu.model_dump())
+
+    def test_no_required_segments(self):
+        """Test that OTU raises a warning if initialized without required segments."""
+        mock_otu = OTUFactory.build(
+            plan=PlanFactory.build(
+                segments=[SegmentFactory.build(rule=SegmentRule.RECOMMENDED)]
+            )
+        )
+
+        assert not mock_otu.plan.required_segments
+
+        with pytest.warns(PlanWarning):
+            OTU.model_validate(mock_otu.model_dump())
 
     def test_excluded_accessions(self):
         """Test that validation fails if the OTU includes accessions that are included
