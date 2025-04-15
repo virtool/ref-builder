@@ -1,19 +1,19 @@
+import datetime
 from uuid import UUID
 
 from structlog import get_logger
 
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.repo import Repo
-from ref_builder.resources import RepoOTU, RepoSequence
 from ref_builder.otu.utils import (
     DeleteRationale,
     assign_segment_id_to_record,
-    parse_refseq_comment,
-    get_segments_min_length,
     get_segments_max_length,
+    get_segments_min_length,
+    parse_refseq_comment,
 )
-
+from ref_builder.repo import Repo
+from ref_builder.resources import RepoOTU, RepoSequence
 
 logger = get_logger("otu.promote")
 
@@ -208,7 +208,10 @@ def replace_otu_sequence_from_record(
 
 
 def correct_sequences_in_otu(
-    repo: Repo, otu: RepoOTU, ignore_cache: bool = False,
+    repo: Repo,
+    otu: RepoOTU,
+    modification_date_start: datetime.datetime | None = None,
+    ignore_cache: bool = False,
 ) -> set[UUID]:
     """If new versions of extant accessions are found, create new sequences
     and replace.
@@ -222,6 +225,7 @@ def correct_sequences_in_otu(
     all_server_accessions = ncbi.filter_accessions(
         ncbi.fetch_accessions_by_taxid(
             otu.taxid,
+            modification_date_start=modification_date_start,
             sequence_min_length=get_segments_min_length(otu.plan.segments),
             sequence_max_length=get_segments_max_length(otu.plan.segments),
         ),
