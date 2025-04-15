@@ -1,12 +1,74 @@
 from collections import Counter
 from uuid import UUID
 
-from pydantic import UUID4, BaseModel, Field, model_validator
+from pydantic import (
+    UUID4,
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
 from ref_builder.models import Molecule
 from ref_builder.plan import Plan
 from ref_builder.resources import RepoIsolate, RepoSequence
-from ref_builder.utils import Accession, IsolateName
+from ref_builder.utils import Accession, IsolateName, is_refseq
+
+
+class SequenceBase(BaseModel):
+    """A class representing a sequence with basic validation."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    id: UUID4
+    """The sequence id."""
+
+    accession: Accession
+    """The sequence accession."""
+
+    definition: str
+    """The sequence definition."""
+
+    legacy_id: str | None
+    """A string based ID carried over from a legacy Virtool reference repository.
+
+    It the sequence was not migrated from a legacy repository, this will be `None`.
+    """
+
+    sequence: str
+    """The sequence."""
+
+    segment: UUID4
+    """The sequence segment."""
+
+    @property
+    def refseq(self) -> bool:
+        """Return True if this sequence was sourced from NCBI's RefSeq database."""
+        return is_refseq(self.accession.key)
+
+    @field_validator("accession", mode="before")
+    @classmethod
+    def convert_accession(cls, value: Accession | str) -> Accession:
+        """Convert the accession to an Accession object."""
+        if isinstance(value, Accession):
+            return value
+
+        if isinstance(value, str):
+            return Accession.from_string(value)
+
+        raise ValueError(f"Invalid type for accession: {type(value)}")
+
+    @field_serializer("accession")
+    @classmethod
+    def serialize_accession(cls, accession: Accession) -> str:
+        """Serialize the accession to a string."""
+        return str(accession)
+
+
+class Sequence(SequenceBase):
+    """A class representing a sequence with full validation."""
 
 
 class IsolateBase(BaseModel):
@@ -24,13 +86,21 @@ class IsolateBase(BaseModel):
     name: IsolateName | None
     """The isolate's name."""
 
-    sequences: list[RepoSequence]
+    sequences: list[SequenceBase]
     """The isolates sequences."""
+
+    @property
+    def refseq(self) -> bool:
+        """Return True if this isolate was sourced from NCBI's RefSeq database."""
+        if self.sequences:
+            return is_refseq(self.sequences[0].accession.key)
+
+        return False
 
     def get_sequence_by_accession(
         self,
         accession: Accession,
-    ) -> RepoSequence | None:
+    ) -> SequenceBase | None:
         """Get a sequence by its accession.
 
         Return ``None`` if the sequence is not found.
@@ -44,7 +114,7 @@ class IsolateBase(BaseModel):
 
         return None
 
-    def get_sequence_by_id(self, sequence_id: UUID) -> RepoSequence | None:
+    def get_sequence_by_id(self, sequence_id: UUID) -> SequenceBase | None:
         """Get a sequence by its ID.
 
         Return ``None`` if the sequence is not found.
@@ -58,15 +128,40 @@ class IsolateBase(BaseModel):
 
         return None
 
+    @field_validator("sequences", mode="before")
+    @classmethod
+    def convert_sequence_models(
+        cls,
+        v: list[dict | SequenceBase | Sequence | RepoSequence | BaseModel],
+    ) -> list[SequenceBase]:
+        """Automatically revalidate sequence if not already validated."""
+        if not v or isinstance(v[0], dict | SequenceBase):
+            return v
+
+        return [SequenceBase.model_validate(sequence.model_dump()) for sequence in v]
+
 
 class Isolate(IsolateBase):
     """A class representing an isolate with full validation."""
 
-    sequences: list[RepoSequence] = Field(min_length=1)
+    model_config = ConfigDict(validate_assignment=True)
+
+    sequences: list[Sequence] = Field(min_length=1)
     """The isolates sequences.
 
     A valid isolate must have at least one sequence.
     """
+
+    @field_validator("sequences", mode="before")
+    @classmethod
+    def convert_sequence_models(
+        cls,
+        v: list[dict | SequenceBase | Sequence | RepoSequence | BaseModel],
+    ) -> list[Sequence]:
+        if not v or isinstance(v[0], dict | SequenceBase):
+            return v
+
+        return [Sequence.model_validate(sequence.model_dump()) for sequence in v]
 
 
 class OTUBase(BaseModel):
@@ -103,15 +198,29 @@ class OTUBase(BaseModel):
     """The NCBI Taxonomy id for this OTU."""
 
     @property
-    def sequences(self) -> list[RepoSequence]:
+    def sequences(self) -> list[SequenceBase]:
         """Sequences contained in this OTU."""
         return [sequence for isolate in self.isolates for sequence in isolate.sequences]
+
+    @field_validator("isolates", mode="before")
+    @classmethod
+    def convert_isolate_models(
+        cls,
+        v: list[dict | IsolateBase | Isolate | RepoIsolate | BaseModel],
+    ) -> list[IsolateBase]:
+        """Automatically revalidate isolates if not already validated."""
+        if not v or isinstance(v[0], dict | IsolateBase):
+            return v
+
+        return [IsolateBase.model_validate(isolate.model_dump()) for isolate in v]
 
 
 class OTU(OTUBase):
     """A class representing an OTU with full validation."""
 
-    isolates: list[RepoIsolate] = Field(min_length=1)
+    model_config = ConfigDict(validate_assignment=True)
+
+    isolates: list[Isolate] = Field(min_length=1)
     """Isolates contained in this OTU.
 
     A valid OTU must have at least one isolate.
@@ -122,6 +231,23 @@ class OTU(OTUBase):
 
     A valid OTU must have a representative isolate.
     """
+
+    @property
+    def sequences(self) -> list[Sequence]:
+        """Sequences contained in this OTU."""
+        return [sequence for isolate in self.isolates for sequence in isolate.sequences]
+
+    @field_validator("isolates", mode="before")
+    @classmethod
+    def convert_isolate_models(
+        cls,
+        v: list[dict | Isolate | IsolateBase | RepoIsolate | BaseModel],
+    ) -> list[Isolate]:
+        """Automatically revalidate isolates if not already validated."""
+        if not v or isinstance(v[0], dict | Isolate):
+            return v
+
+        return [Isolate.model_validate(isolate.model_dump()) for isolate in v]
 
     @model_validator(mode="after")
     def check_excluded_accessions(self) -> "OTU":

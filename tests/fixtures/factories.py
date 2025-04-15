@@ -8,14 +8,13 @@ from pydantic.v1 import UUID4
 
 from ref_builder.models import MolType, OTUMinimal
 from ref_builder.ncbi.models import NCBIGenbank, NCBISource, NCBISourceMolType
-from ref_builder.otu.models import IsolateBase, OTUBase
+from ref_builder.otu.models import SequenceBase, IsolateBase, OTUBase
 from ref_builder.plan import (
     Plan,
     Segment,
     SegmentName,
     SegmentRule,
 )
-from ref_builder.resources import RepoIsolate, RepoSequence
 from ref_builder.utils import Accession, IsolateName, IsolateNameType
 from tests.fixtures.providers import (
     AccessionProvider,
@@ -214,8 +213,46 @@ class SegmentFactory(ModelFactory[Segment]):
 
         return None
 
+    @classmethod
+    def length_tolerance(cls):
+        """Generate a realistic length tolerance."""
+        return cls.__faker__.random_int(0, 5) * 0.01
 
-class SequenceFactory(ModelFactory[RepoSequence]):
+    @staticmethod
+    def build_series(n: int):
+        """Generate a matching series of segments"""
+        segment_name_keys = "ABCDEF"
+
+        if n > len(segment_name_keys):
+            raise ValueError("Generation of over 6 segments is unsupported.")
+
+        return [
+            SegmentFactory.build(
+                name=SegmentName(prefix="DNA", key=segment_name_keys[i]),
+                required=SegmentRule.REQUIRED,
+            )
+            for i in range(n)
+        ]
+
+
+class PlanFactory(ModelFactory[Plan]):
+    """A Polyfactory that generates valid instances of :class:`Plan`.
+
+    The factory generates a random number of segments, with a 75% chance of generating a
+    monopartite plan.
+    """
+
+    @classmethod
+    def segments(cls) -> list[Segment]:
+        """Return a set of quasi-realistic segments."""
+        # The segment represent a monopartite OTU 75% of the time.
+        if cls.__faker__.random_int(0, 3):
+            return [SegmentFactory.build(name=None, rule=SegmentRule.REQUIRED)]
+
+        return SegmentFactory.build_series(cls.__faker__.random_int(2, 5))
+
+
+class SequenceFactory(ModelFactory[SequenceBase]):
     """Sequence factory with quasi-realistic data."""
 
     id = Use(ModelFactory.__faker__.uuid4)
@@ -239,31 +276,22 @@ class SequenceFactory(ModelFactory[RepoSequence]):
         ModelFactory.__faker__.add_provider(AccessionProvider)
         return Accession(key=ModelFactory.__faker__.accession(), version=1)
 
-
-class PlanFactory(ModelFactory[Plan]):
-    """A Polyfactory that generates valid instances of :class:`Plan`.
-
-    The factory generates a random number of segments, with a 75% chance of generating a
-    monopartite plan.
-    """
-
     @classmethod
-    def segments(cls) -> list[Segment]:
-        """Return a set of quasi-realistic segments."""
-        # The segment represent a monopartite OTU 75% of the time.
-        if cls.__faker__.random_int(0, 3):
-            return [SegmentFactory.build(name=None, rule=SegmentRule.REQUIRED)]
+    def build_on_segment(
+        cls, segment: Segment, accession: Accession | None = None
+    ) -> SequenceBase:
+        """Build a sequence based on a given segment. Takes an optional accession."""
+        min_length = int(segment.length * (1.0 - segment.length_tolerance))
+        max_length = int(segment.length * (1.0 + segment.length_tolerance))
 
-        segment_count = cls.__faker__.random_int(2, 5)
-        segment_name_keys = "ABCDEF"
+        if accession is None:
+            accession = Accession(key=ModelFactory.__faker__.accession(), version=1)
 
-        return [
-            SegmentFactory.build(
-                name=SegmentName(prefix="DNA", key=segment_name_keys[i]),
-                rule=SegmentRule.REQUIRED,
-            )
-            for i in range(segment_count)
-        ]
+        return SequenceFactory.build(
+            accession=accession,
+            sequence=cls.__faker__.sequence(min=min_length, max=max_length),
+            segment=segment.id,
+        )
 
 
 class IsolateFactory(ModelFactory[IsolateBase]):
@@ -286,7 +314,7 @@ class IsolateFactory(ModelFactory[IsolateBase]):
         )
 
     @classmethod
-    def sequences(cls) -> list[RepoSequence]:
+    def sequences(cls) -> list[SequenceBase]:
         """Generate between 1 and 6 sequences with numerically sequential accessions."""
         sequence_count = cls.__faker__.random_int(1, 6)
 
@@ -295,12 +323,21 @@ class IsolateFactory(ModelFactory[IsolateBase]):
             for accession in cls.__faker__.accessions(sequence_count)
         ]
 
-    @staticmethod
-    def build_on_plan(plan: Plan):
+    @classmethod
+    def build_on_plan(cls, plan: Plan, refseq: bool = False):
         """Take a plan and return a matching isolate."""
+        if refseq:
+            sequential_accessions = cls.__faker__.refseq_accessions(len(plan.segments))
+        else:
+            sequential_accessions = cls.__faker__.genbank_accessions(len(plan.segments))
+
         return IsolateFactory.build(
             sequences=[
-                SequenceFactory.build(segment=segment.id) for segment in plan.segments
+                SequenceFactory.build_on_segment(
+                    segment=plan.segments[counter],
+                    accession=Accession(sequential_accessions[counter], 1),
+                )
+                for counter in range(len(plan.segments))
             ]
         )
 
@@ -326,11 +363,7 @@ class OTUFactory(ModelFactory[OTUBase]):
         isolates = []
 
         for _ in range(cls.__faker__.random_int(2, 5)):
-            sequences = [
-                SequenceFactory.build(segment=segment.id) for segment in plan.segments
-            ]
-
-            isolates.append(IsolateFactory.build(sequences=sequences))
+            isolates.append(IsolateFactory.build_on_plan(plan=plan))
 
         return isolates
 
@@ -348,13 +381,13 @@ class OTUFactory(ModelFactory[OTUBase]):
 
     @post_generated
     @classmethod
-    def representative_isolate(cls, isolates: list[RepoIsolate]) -> UUID4:
+    def representative_isolate(cls, isolates: list[IsolateBase]) -> UUID4:
         """Derive a representative isolate from a list of OTUs."""
         return cls.__faker__.random_element(isolates).id
 
     @post_generated
     @classmethod
-    def sequences(cls, isolates: list[RepoIsolate]) -> list[RepoSequence]:
+    def sequences(cls, isolates: list[IsolateBase]) -> list[SequenceBase]:
         """Derive a list of sequences from a list of isolates."""
         return [sequence for isolate in isolates for sequence in isolate.sequences]
 

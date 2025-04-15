@@ -20,6 +20,10 @@ class PlanWarning(UserWarning):
     pass
 
 
+class PlanConformationError(ValueError):
+    """Raised when potential new sequences do not pass validation against the OTU plan."""
+
+
 class SegmentRule(StrEnum):
     """Mark the importance of a particular segment."""
 
@@ -67,7 +71,7 @@ class SegmentName:
 class Segment(BaseModel):
     """A segment in a multipartite plan."""
 
-    model_config = ConfigDict(use_enum_values=True)
+    model_config = ConfigDict(use_enum_values=True, validate_assignment=True)
 
     id: UUID4
     """The unique ID of the segment or monopartite plan."""
@@ -143,6 +147,15 @@ class Plan(BaseModel):
         return [
             segment for segment in self.segments if segment.rule == SegmentRule.REQUIRED
         ]
+
+    @property
+    def required_segment_ids(self) -> set[UUID]:
+        """Return a set of segments that are required by all additions."""
+        return {
+            segment.id
+            for segment in self.segments
+            if segment.rule == SegmentRule.REQUIRED
+        }
 
     @property
     def not_required_segments(self) -> list[Segment]:

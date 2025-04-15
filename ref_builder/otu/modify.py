@@ -135,31 +135,26 @@ def set_plan_length_tolerances(
     tolerance: float,
 ) -> Plan | None:
     """Sets a plan's length tolerances to a new float value."""
-    if otu.plan.monopartite:
-        try:
-            with repo.use_transaction():
-                repo.set_plan(
-                    otu.id,
-                    plan=Plan.new(
-                        segments=[
-                            Segment.new(
-                                length=otu.plan.segments[0].length,
-                                length_tolerance=tolerance,
-                                name=None,
-                                rule=SegmentRule.REQUIRED,
-                            )
-                        ]
-                    ),
-                )
-        except (ValueError, ValidationError) as e:
+    try:
+        new_plan = otu.plan.model_copy()
+        for segment in new_plan.segments:
+            segment.length_tolerance = tolerance
+    except ValidationError as exc:
+        for error in exc.errors():
             logger.error(
-                e,
+                "Length tolerance must be between 0.0 and 1.0.",
+                error_type=error["type"],
                 name=otu.name,
                 taxid=otu.taxid,
-                tolerance=otu.plan.segments[0].length_tolerance,
-                new_tolerance=tolerance,
+                requested_tolerance=tolerance,
             )
-            return None
+        return None
+
+    with repo.use_transaction():
+        repo.set_plan(
+            otu.id,
+            plan=new_plan,
+        )
 
     return repo.get_otu(otu.id).plan
 
