@@ -212,6 +212,10 @@ def correct_sequences_in_otu(
 ) -> set[UUID]:
     """If new versions of extant accessions are found, create new sequences
     and replace.
+
+    For example, if "TM000001.1" exists in the OTU but an updated "TM000001.2"
+    can be fetched from the server, download the updated sequence and create a new
+    replacement sequence.
     """
     ncbi = NCBIClient(ignore_cache)
 
@@ -243,7 +247,7 @@ def correct_sequences_in_otu(
         [str(accession) for accession in replacement_index]
     )
 
-    replacement_sequences = set()
+    replacement_sequence_ids = set()
     for record in records:
         replaceable_sequence = otu.get_sequence_by_accession(record.accession)
 
@@ -262,10 +266,23 @@ def correct_sequences_in_otu(
             exclude_accession=False,
         )
 
+        logger.debug(
+            "Replaced sequence",
+            new_accession=str(new_sequence.accession),
+            new_sequence_id=str(new_sequence.id),
+            outdated_accession=str(replaceable_sequence.accession),
+            outdated_sequence_id=str(replaceable_sequence.id)
+        )
+
         if new_sequence is not None:
-            replacement_sequences.add(new_sequence.id)
+            replacement_sequence_ids.add(new_sequence.id)
 
-    if replacement_sequences:
-        logger.info("Replaced sequences", count=len(replacement_sequences))
+    if replacement_sequence_ids:
+        logger.info(
+            "Replaced sequences",
+            new_sequence_ids=[
+                str(sequence_id) for sequence_id in replacement_sequence_ids
+            ],
+        )
 
-    return replacement_sequences
+    return replacement_sequence_ids
