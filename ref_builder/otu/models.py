@@ -14,7 +14,7 @@ from pydantic import (
 from pydantic_core import PydanticCustomError
 
 from ref_builder.models import Molecule
-from ref_builder.plan import Plan
+from ref_builder.plan import Plan, PlanWarning
 from ref_builder.resources import RepoIsolate, RepoSequence
 from ref_builder.utils import Accession, IsolateName, is_accession_key_valid, is_refseq
 
@@ -289,6 +289,14 @@ class OTU(OTUBase):
             return v
 
         return [Isolate.model_validate(isolate.model_dump()) for isolate in v]
+
+    @field_validator("plan", mode="after")
+    def check_plan_required(cls, value: Plan) -> Plan:
+        """Issue a warning if the plan has no required segments."""
+        if not value.required_segments:
+            warnings.warn("Plan has no required segments.", PlanWarning, stacklevel=2)
+
+        return value
 
     @model_validator(mode="after")
     def check_excluded_accessions(self) -> "OTU":
