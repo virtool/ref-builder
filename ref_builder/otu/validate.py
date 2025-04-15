@@ -41,7 +41,8 @@ def check_otu_is_valid(unvalidated_otu: RepoOTU) -> bool:
 
         for error in otu_errors:
             logger.warning(
-                "ValidationError: " + error["msg"],
+                "ValidationError",
+                msg=error["msg"],
                 type=error["type"],
                 loc=error["loc"],
                 input=error["input"] if not isinstance(error["input"], dict) else {},
@@ -77,6 +78,5 @@ def otu_error_handler(e: ValidationError) -> list[dict[str, Any]]:
                         f"sequences[{error['ctx'].get('sequence_id', '')}]",
                     ),
                 )
-
 
     return new_errors
