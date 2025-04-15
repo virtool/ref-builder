@@ -1,3 +1,4 @@
+import warnings
 from typing import Any
 
 from pydantic import ValidationError
@@ -12,20 +13,21 @@ logger = get_logger("otu.validate")
 def check_otu_is_valid(unvalidated_otu: RepoOTU) -> bool:
     """Assure that an OTU can pass the validation standard."""
     try:
-        OTU.model_validate(
-            {
-                "id": unvalidated_otu.id,
-                "legacy_id": unvalidated_otu.legacy_id,
-                "name": unvalidated_otu.name,
-                "taxid": unvalidated_otu.taxid,
-                "acronym": unvalidated_otu.acronym,
-                "molecule": unvalidated_otu.molecule,
-                "plan": unvalidated_otu.plan,
-                "excluded_accessions": unvalidated_otu.excluded_accessions,
-                "isolates": unvalidated_otu.isolates,
-                "representative_isolate": unvalidated_otu.representative_isolate,
-            }
-        )
+        with warnings.catch_warnings(record=True) as warning_list:
+            validated_otu = OTU.model_validate(
+                {
+                    "id": unvalidated_otu.id,
+                    "legacy_id": unvalidated_otu.legacy_id,
+                    "name": unvalidated_otu.name,
+                    "taxid": unvalidated_otu.taxid,
+                    "acronym": unvalidated_otu.acronym,
+                    "molecule": unvalidated_otu.molecule,
+                    "plan": unvalidated_otu.plan,
+                    "excluded_accessions": unvalidated_otu.excluded_accessions,
+                    "isolates": unvalidated_otu.isolates,
+                    "representative_isolate": unvalidated_otu.representative_isolate,
+                }
+            )
 
     except ValidationError as exc:
         logger.warning(
@@ -45,6 +47,16 @@ def check_otu_is_valid(unvalidated_otu: RepoOTU) -> bool:
                 input=error["input"] if not isinstance(error["input"], dict) else {},
             )
         return False
+
+    if warning_list:
+        logger.warning("Outstanding warnings found.", warning_count=len(warning_list))
+
+        for warning_msg in warning_list:
+            logger.warning(
+                warning_msg.message,
+                otu_id=str(validated_otu.id),
+                warning_category=warning_msg.category.__name__,
+            )
 
     return True
 
