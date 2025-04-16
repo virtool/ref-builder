@@ -9,7 +9,7 @@ from ref_builder.otu.create import create_otu_with_taxid
 from ref_builder.otu.promote import (
     replace_otu_sequence_from_record,
     promote_otu_accessions_from_records,
-    correct_sequences_in_otu,
+    upgrade_outdated_sequences_in_otu,
 )
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate
@@ -160,11 +160,11 @@ def test_multi_linked_promotion(empty_repo: Repo):
 
 
 @pytest.mark.ncbi()
-class TestCorrectSequencesInOTU:
-    """Test OTU-wide outdated sequence correction."""
+class TestUpgradeSequencesInOTU:
+    """Test OTU-wide outdated sequence version upgrade."""
 
     def test_ok(self, precached_repo: Repo):
-        """Test a simple fetch and replace correction."""
+        """Test a simple fetch and replace upgrade."""
         with precached_repo.lock():
             otu_init = create_otu_with_taxid(
                 precached_repo,
@@ -177,14 +177,18 @@ class TestCorrectSequencesInOTU:
 
         outdated_sequence = otu_init.get_sequence_by_accession("NC_004452")
 
-        containing_isolate_id = next(iter(otu_init.get_isolate_ids_containing_sequence_id(outdated_sequence.id)))
+        containing_isolate_id = next(
+            iter(otu_init.get_isolate_ids_containing_sequence_id(outdated_sequence.id))
+        )
 
         containing_isolate_init = otu_init.get_isolate(containing_isolate_id)
 
         assert outdated_sequence.accession.version == 1
 
         with precached_repo.lock():
-            updated_sequence_id = next(iter(correct_sequences_in_otu(precached_repo, otu_init)))
+            updated_sequence_id = next(
+                iter(upgrade_outdated_sequences_in_otu(precached_repo, otu_init))
+            )
 
         otu_after = precached_repo.get_otu(otu_init.id)
 
@@ -192,7 +196,10 @@ class TestCorrectSequencesInOTU:
 
         containing_isolate_after = otu_after.get_isolate(containing_isolate_id)
 
-        assert containing_isolate_after.sequence_ids != containing_isolate_init.sequence_ids
+        assert (
+            containing_isolate_after.sequence_ids
+            != containing_isolate_init.sequence_ids
+        )
 
         assert containing_isolate_after.sequence_ids == {updated_sequence_id}
 
@@ -219,10 +226,13 @@ class TestCorrectSequencesInOTU:
         )
 
         with precached_repo.lock(), capture_logs() as captured_logs:
-            correct_sequences_in_otu(
+            upgrade_outdated_sequences_in_otu(
                 precached_repo,
                 otu_init,
-                modification_date_start=arrow.utcnow().naive + datetime.timedelta(days=1),
+                modification_date_start=arrow.utcnow().naive
+                + datetime.timedelta(days=1),
             )
 
-        assert any(log.get("event") == "All sequences are up to date." for log in captured_logs)
+        assert any(
+            log.get("event") == "All sequences are up to date." for log in captured_logs
+        )

@@ -207,7 +207,7 @@ def replace_otu_sequence_from_record(
     return repo.get_otu(otu.id).get_sequence_by_id(replacement_sequence.id)
 
 
-def correct_sequences_in_otu(
+def upgrade_outdated_sequences_in_otu(
     repo: Repo,
     otu: RepoOTU,
     modification_date_start: datetime.datetime | None = None,
@@ -247,6 +247,8 @@ def correct_sequences_in_otu(
         logger.info("All sequences are up to date.")
         return set()
 
+    logger.info("Upgradable sequences found", count=len(replacement_index))
+
     records = ncbi.fetch_genbank_records(
         [str(accession) for accession in replacement_index]
     )
@@ -275,7 +277,7 @@ def correct_sequences_in_otu(
             new_accession=str(new_sequence.accession),
             new_sequence_id=str(new_sequence.id),
             outdated_accession=str(replaceable_sequence.accession),
-            outdated_sequence_id=str(replaceable_sequence.id)
+            outdated_sequence_id=str(replaceable_sequence.id),
         )
 
         if new_sequence is not None:
