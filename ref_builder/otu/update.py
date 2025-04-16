@@ -515,7 +515,10 @@ def update_otu_with_records(
                         repo, otu, isolate_name, list(isolate_records.values())
                     )
                 except ValueError as e:
-                    logger.error("Error encountered while creating sequence.", error_message=str(e))
+                    logger.error(
+                        "Error encountered while creating sequence.",
+                        error_message=str(e),
+                    )
 
                     isolate = None
 
