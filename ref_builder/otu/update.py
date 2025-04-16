@@ -25,7 +25,6 @@ from ref_builder.otu.utils import (
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoIsolate, RepoOTU
 from ref_builder.utils import IsolateName
-from ref_builder.transaction import AbortTransactionError
 
 logger = get_logger("otu.update")
 
@@ -510,13 +509,21 @@ def update_otu_with_records(
         for isolate_name, isolate_records in group_genbank_records_by_isolate(
             divided_records
         ).items():
-            with repo.use_transaction():
-                isolate = create_isolate(
-                    repo, otu, isolate_name, list(isolate_records.values())
-                )
+            with repo.use_transaction() as transaction:
+                try:
+                    isolate = create_isolate(
+                        repo, otu, isolate_name, list(isolate_records.values())
+                    )
+                except ValueError as e:
+                    logger.error(
+                        "Error encountered while creating sequence.",
+                        error_message=str(e),
+                    )
+
+                    isolate = None
 
                 if isolate is None:
-                    raise AbortTransactionError()
+                    raise transaction.abort()
 
             if isolate:
                 new_isolate_ids.append(isolate.id)

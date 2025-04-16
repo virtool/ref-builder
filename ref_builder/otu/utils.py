@@ -272,6 +272,12 @@ def assign_records_to_segments(
     :param plan: A plan.
     :return: A dictionary of segment IDs as keys and records as values.
     """
+    if len(records) < len(plan.required_segments):
+        raise PlanConformationError(
+            "There are not enough records to fulfill all needed segments: "
+            f"{len(records)} < {len(plan.required_segments)}"
+        )
+
     seen_segment_names = Counter(
         extract_segment_name_from_record_with_plan(record, plan) for record in records
     )

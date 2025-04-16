@@ -1,3 +1,5 @@
+import pytest
+
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.otu.create import create_otu_with_taxid
 from ref_builder.otu.promote import (
@@ -52,6 +54,7 @@ def test_replace_sequence(empty_repo):
     }
 
 
+@pytest.mark.filterwarnings()
 def test_multi_linked_promotion(empty_repo: Repo):
     """Test the promotion of a sequence that is linked to more than one isolate."""
     with empty_repo.lock():

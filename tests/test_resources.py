@@ -58,39 +58,6 @@ class TestIsolate:
 class TestOTU:
     """Test properties of RepoOTU."""
 
-    def test_no_required_segments(self):
-        """Test that RepoOTU raises a warning if initialized without required segments."""
-        with pytest.warns(PlanWarning):
-            otu = RepoOTU(
-                id=uuid4(),
-                acronym="TMV",
-                excluded_accessions=set(),
-                isolates=[],
-                legacy_id=None,
-                molecule=Molecule(
-                    strandedness=Strandedness.SINGLE,
-                    type=MolType.RNA,
-                    topology=Topology.LINEAR,
-                ),
-                name="Tobacco mosaic virus",
-                representative_isolate=None,
-                plan=Plan(
-                    id=uuid4(),
-                    segments=[
-                        Segment(
-                            id=uuid4(),
-                            length=6395,
-                            length_tolerance=0.03,
-                            name=None,
-                            rule=SegmentRule.RECOMMENDED,
-                        )
-                    ],
-                ),
-                taxid=12242,
-            )
-
-        assert not otu.plan.required_segments
-
     def test_no_isolates(self):
         """Test that an isolate initializes correctly with no isolates."""
         otu = RepoOTU(

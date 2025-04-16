@@ -6,7 +6,6 @@ from ref_builder.ncbi.models import NCBIGenbank
 from ref_builder.otu.utils import (
     RefSeqConflictError,
     assign_records_to_segments,
-    check_sequence_length,
     fetch_records_from_accessions,
     group_genbank_records_by_isolate,
     parse_refseq_comment,
@@ -160,6 +159,7 @@ def create_isolate(
         otu_name=otu.name,
         otu_id=str(otu.id),
         taxid=otu.taxid,
+        accessions=[record.accession for record in records],
     )
 
     try:
@@ -173,43 +173,22 @@ def create_isolate(
 
         return None
 
-    for segment_id, record in assigned.items():
-        matching_segment = otu.plan.get_segment_by_id(segment_id)
+    isolate = repo.create_isolate(
+        otu.id,
+        legacy_id=None,
+        name=isolate_name,
+    )
 
-        if not check_sequence_length(
-            record.sequence,
-            matching_segment.length,
-            matching_segment.length_tolerance,
-        ):
-            log.debug(
-                "Sequence does not conform to plan length.",
+    for segment_id, record in assigned.items():
+        if (sequence := otu.get_sequence_by_accession(record.accession)) is None:
+            sequence = repo.create_sequence(
+                otu.id,
                 accession=record.accession_version,
-                length=len(record.sequence),
-                segment=(matching_segment.name, matching_segment.id),
-                required_length=matching_segment.length,
-                tolerance=matching_segment.length_tolerance,
+                definition=record.definition,
+                legacy_id=None,
+                segment=segment_id,
+                sequence=record.sequence,
             )
-
-            return None
-
-    try:
-        isolate = repo.create_isolate(
-            otu.id,
-            legacy_id=None,
-            name=isolate_name,
-        )
-    except ValueError as e:
-        if "Isolate name already exists" in str(e):
-            log.debug("OTU already contains isolate with name.")
-            return None
-
-        raise
-
-    for segment_id, record in assigned.items():
-        sequence = create_sequence_from_record(repo, otu, record, segment_id)
-
-        if sequence is None:
-            raise ValueError("Sequence could not be created.")
 
         repo.link_sequence(otu.id, isolate.id, sequence.id)
 

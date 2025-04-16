@@ -398,9 +398,6 @@ class Repo:
         """
         otu = self.get_otu(otu_id)
 
-        if name is not None and otu.get_isolate_id_by_name(name):
-            raise ValueError(f"Isolate name already exists: {name}")
-
         isolate_id = uuid.uuid4()
 
         event = self._write_event(
@@ -460,17 +457,8 @@ class Repo:
             extant_sequence = otu.get_sequence_by_accession(versioned_accession.key)
 
             if extant_sequence is not None:
-                if extant_sequence.accession == versioned_accession:
-                    logger.warning(
-                        "This accession already exists in the OTU.",
-                        accession=str(extant_sequence.accession),
-                        otu_id=str(otu_id),
-                    )
-                    return None
-
-                logger.warning(
-                    "New version of accession found.",
-                    accession=versioned_accession.key,
+                raise ValueError(
+                    f"Accession {versioned_accession} already exists in the OTU.",
                 )
 
         sequence_id = uuid.uuid4()

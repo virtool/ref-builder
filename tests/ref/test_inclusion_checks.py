@@ -1,10 +1,9 @@
 import pytest
+from pydantic import ValidationError
 from faker import Faker
 
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.otu.isolate import (
-    create_isolate,
-)
+from ref_builder.otu.isolate import create_isolate
 from ref_builder.otu.utils import IsolateName, IsolateNameType, check_sequence_length
 from ref_builder.repo import Repo
 from ref_builder.resources import RepoOTU
@@ -146,16 +145,18 @@ class TestAddMultipartiteIsolate:
         )
 
         with scratch_repo.lock(), scratch_repo.use_transaction():
-            isolate = create_isolate(
-                scratch_repo,
-                otu_before,
-                IsolateName(type=IsolateNameType.ISOLATE, value="mock"),
-                records,
-            )
+            try:
+                create_isolate(
+                    scratch_repo,
+                    otu_before,
+                    IsolateName(type=IsolateNameType.ISOLATE, value="mock"),
+                    records,
+                )
+            except ValidationError as exc:
+                for error in exc.errors():
+                    assert error["type"] in ("sequence_too_short", "sequence_too_long")
 
-        assert isolate is None
-
-        otu_after = scratch_repo.get_otu_by_taxid(438782)
+        otu_after = scratch_repo.get_otu(otu_before.id)
 
         assert otu_after.isolate_ids == otu_before.isolate_ids
         assert otu_after.accessions == otu_before.accessions

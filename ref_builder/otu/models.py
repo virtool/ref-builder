@@ -1,3 +1,4 @@
+import warnings
 from collections import Counter
 from uuid import UUID
 
@@ -10,11 +11,19 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic_core import PydanticCustomError
 
 from ref_builder.models import Molecule
-from ref_builder.plan import Plan
+from ref_builder.plan import Plan, PlanWarning
 from ref_builder.resources import RepoIsolate, RepoSequence
-from ref_builder.utils import Accession, IsolateName, is_refseq
+from ref_builder.utils import Accession, IsolateName, is_accession_key_valid, is_refseq
+
+
+class IsolateInconsistencyWarning(UserWarning):
+    """Warn when an isolate contains both RefSeq and non-RefSeq accessions.
+
+    All sequences in an isolate should be sourced from the same database.
+    """
 
 
 class SequenceBase(BaseModel):
@@ -69,6 +78,15 @@ class SequenceBase(BaseModel):
 
 class Sequence(SequenceBase):
     """A class representing a sequence with full validation."""
+
+    @field_validator("accession", mode="after")
+    @classmethod
+    def check_accession_key_is_valid(cls, v: Accession) -> Accession:
+        """Check the accession key against INSDC and NCBI RefSeq patterns."""
+        if is_accession_key_valid(v.key):
+            return v
+
+        raise ValueError(f"Accession {v} does not match a valid accession pattern.")
 
 
 class IsolateBase(BaseModel):
@@ -163,6 +181,29 @@ class Isolate(IsolateBase):
 
         return [Sequence.model_validate(sequence.model_dump()) for sequence in v]
 
+    @field_validator("sequences", mode="after")
+    def check_accession_consistency(cls, v: list[RepoSequence]) -> list[RepoSequence]:
+        """Check if all sequence accessions are of the same provenance, i.e.
+        all RefSeq or all INSDC.
+        """
+        isolate_accessions = {sequence.accession for sequence in v}
+
+        if any(is_refseq(accession.key) for accession in isolate_accessions):
+            if all(is_refseq(accession.key) for accession in isolate_accessions):
+                return v
+
+        elif all(not is_refseq(accession.key) for accession in isolate_accessions):
+            return v
+
+        warnings.warn(
+            "Combination of RefSeq and non-RefSeq sequences found in multipartite isolate: "
+            + f"{[sequence.accession.key for sequence in v]}",
+            IsolateInconsistencyWarning,
+            stacklevel=1,
+        )
+
+        return v
+
 
 class OTUBase(BaseModel):
     """A class representing an OTU with basic validation."""
@@ -172,12 +213,6 @@ class OTUBase(BaseModel):
 
     acronym: str
     """The OTU acronym (eg. TMV for Tobacco mosaic virus)."""
-
-    excluded_accessions: set[str]
-    """A set of accessions that should not be retrieved in future fetch operations."""
-
-    isolates: list[IsolateBase]
-    """Isolates contained in this OTU."""
 
     legacy_id: str | None
     """A string based ID carried over from a legacy Virtool reference repository."""
@@ -191,11 +226,17 @@ class OTUBase(BaseModel):
     plan: Plan
     """The plan for the OTU."""
 
-    representative_isolate: UUID4 | None
-    """The UUID of the representative isolate of this OTU"""
-
     taxid: int
     """The NCBI Taxonomy id for this OTU."""
+
+    excluded_accessions: set[str]
+    """A set of accessions that should not be retrieved in future fetch operations."""
+
+    isolates: list[IsolateBase]
+    """Isolates contained in this OTU."""
+
+    representative_isolate: UUID4 | None
+    """The UUID of the representative isolate of this OTU"""
 
     @property
     def sequences(self) -> list[SequenceBase]:
@@ -249,6 +290,14 @@ class OTU(OTUBase):
 
         return [Isolate.model_validate(isolate.model_dump()) for isolate in v]
 
+    @field_validator("plan", mode="after")
+    def check_plan_required(cls, value: Plan) -> Plan:
+        """Issue a warning if the plan has no required segments."""
+        if not value.required_segments:
+            warnings.warn("Plan has no required segments.", PlanWarning, stacklevel=2)
+
+        return value
+
     @model_validator(mode="after")
     def check_excluded_accessions(self) -> "OTU":
         """Ensure that excluded accessions are not in the OTU."""
@@ -287,8 +336,57 @@ class OTU(OTUBase):
 
     @model_validator(mode="after")
     def check_isolates_against_plan(self) -> "OTU":
-        """Check that all isolates satisfy the OTU's plan.
+        """Check that all isolates satisfy the OTU's plan."""
+        for isolate in self.isolates:
+            for sequence in isolate.sequences:
+                segment = self.plan.get_segment_by_id(sequence.segment)
+                if segment is None:
+                    raise PydanticCustomError(
+                        "segment_not_found",
+                        "Sequence segment {sequence_segment} was not found in "
+                        + "the list of segments: {plan_segments}.",
+                        {
+                            "isolate_id": isolate.id,
+                            "sequence_segment": sequence.segment,
+                            "plan_segments": list(self.plan.segment_ids),
+                        },
+                    )
 
-        TODO: Implement this method.
-        """
+                min_length = int(segment.length * (1.0 - segment.length_tolerance))
+                max_length = int(segment.length * (1.0 + segment.length_tolerance))
+
+                if len(sequence.sequence) < min_length:
+                    raise PydanticCustomError(
+                        "sequence_too_short",
+                        "Sequence based on {sequence_accession} does not pass validation "
+                        + "against segment {segment_id} "
+                        + "({sequence_length} < {min_sequence_length})",
+                        {
+                            "isolate_id": isolate.id,
+                            "sequence_id": sequence.id,
+                            "sequence_accession": sequence.accession,
+                            "sequence_length": len(sequence.sequence),
+                            "segment_id": segment.id,
+                            "segment_reference_length": segment.length,
+                            "min_sequence_length": min_length,
+                        },
+                    )
+
+                if len(sequence.sequence) > max_length:
+                    raise PydanticCustomError(
+                        "sequence_too_long",
+                        "Sequence based on {sequence_accession} does not pass validation "
+                        + "against segment {segment_id}"
+                        + "({sequence_length} > {max_sequence_length})",
+                        {
+                            "isolate_id": isolate.id,
+                            "sequence_id": sequence.id,
+                            "sequence_accession": sequence.accession,
+                            "sequence_length": len(sequence.sequence),
+                            "segment_id": segment.id,
+                            "segment_reference_length": segment.length,
+                            "max_sequence_length": max_length,
+                        },
+                    )
+
         return self

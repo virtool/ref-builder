@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 
 import orjson
 import pytest
+from structlog.testing import capture_logs
 
 from ref_builder.errors import InvalidInputError
 from ref_builder.models import Molecule, MolType, Strandedness, Topology
@@ -320,6 +321,59 @@ class TestCreateOTU:
                     taxid=438782,
                 )
 
+    def test_plan_required_segment_warning(self, empty_repo: Repo):
+        """Test that creating an OTU without required segments raises a warning
+        once the transaction exits.
+        """
+        plan = Plan.new(
+            segments=[
+                Segment(
+                    id=uuid4(),
+                    length=SEGMENT_LENGTH,
+                    length_tolerance=empty_repo.settings.default_segment_length_tolerance,
+                    name=None,
+                    rule=SegmentRule.RECOMMENDED,
+                )
+            ]
+        )
+        with capture_logs() as captured_logs:
+            with empty_repo.lock(), empty_repo.use_transaction():
+                otu = empty_repo.create_otu(
+                    acronym="TMV",
+                    legacy_id="abcd1234",
+                    molecule=Molecule(
+                        strandedness=Strandedness.SINGLE,
+                        type=MolType.RNA,
+                        topology=Topology.LINEAR,
+                    ),
+                    name="Tobacco mosaic virus",
+                    plan=plan,
+                    taxid=12242,
+                )
+
+                sequence_1 = empty_repo.create_sequence(
+                    otu.id,
+                    "TM000001.1",
+                    "TMV",
+                    None,
+                    otu.plan.segments[0].id,
+                    "ACGTACGTACGTACG",
+                )
+
+                isolate_a = empty_repo.create_isolate(
+                    otu.id,
+                    None,
+                    IsolateName(IsolateNameType.ISOLATE, "A"),
+                )
+
+                empty_repo.link_sequence(otu.id, isolate_a.id, sequence_1.id)
+
+                empty_repo.set_representative_isolate(otu.id, isolate_a.id)
+
+        assert any(
+            [log.get("warning_category") == "PlanWarning" for log in captured_logs]
+        )
+
 
 class TestCreateIsolate:
     """Test the creation and addition of new isolates in Repo."""
@@ -362,21 +416,6 @@ class TestCreateIsolate:
             }
 
             assert empty_repo.last_id == 3
-
-    def test_name_exists(self, initialized_repo: Repo):
-        """Test that a ValueError is raised if an isolate name is already taken."""
-        otu = next(iter(initialized_repo.iter_otus()))
-
-        with initialized_repo.lock(), initialized_repo.use_transaction():
-            with pytest.raises(
-                ValueError,
-                match="Isolate name already exists: Isolate A",
-            ):
-                initialized_repo.create_isolate(
-                    otu.id,
-                    None,
-                    IsolateName(IsolateNameType.ISOLATE, "A"),
-                )
 
     def test_create_unnamed(self, empty_repo):
         """Test that creating an isolate returns the expected ``RepoIsolate`` object and
@@ -740,6 +779,71 @@ def test_get_isolate_id_from_partial(initialized_repo: Repo):
     isolate = otu.isolates[0]
 
     assert initialized_repo.get_isolate_id_by_partial(str(isolate.id)[:8]) == isolate.id
+
+
+class TestCreateIsolateValidation:
+    """Test the validation of new added isolates."""
+
+    def test_name_exists_fail(self, initialized_repo: Repo):
+        """Test that an isolate is not created if the name is already taken."""
+        otu_init = next(iter(initialized_repo.iter_otus()))
+
+        last_id_before_test = initialized_repo.last_id
+
+        with initialized_repo.lock(), initialized_repo.use_transaction():
+            sequence_1 = initialized_repo.create_sequence(
+                otu_init.id,
+                "MK000001.1",
+                "TMV",
+                None,
+                otu_init.plan.segments[0].id,
+                "ACGTACGTACGTACG",
+            )
+
+            isolate_b = initialized_repo.create_isolate(
+                otu_init.id,
+                None,
+                IsolateName(IsolateNameType.ISOLATE, "A"),
+            )
+
+            initialized_repo.link_sequence(otu_init.id, isolate_b.id, sequence_1.id)
+
+            assert initialized_repo.last_id > last_id_before_test
+
+        otu_after = initialized_repo.get_otu(otu_init.id)
+
+        assert isolate_b.id not in otu_after.isolate_ids
+
+    @pytest.mark.parametrize("bad_sequence", ["ACGTACGTA", "ACGTACGTACGTACGTTTTTT"])
+    def test_bad_segment_length_fail(self, initialized_repo: Repo, bad_sequence: str):
+        """Test that a new isolate with segments that are too long or short does not pass validation."""
+        otu_init = next(iter(initialized_repo.iter_otus()))
+
+        last_id_before_test = initialized_repo.last_id
+
+        with initialized_repo.lock(), initialized_repo.use_transaction():
+            sequence_1 = initialized_repo.create_sequence(
+                otu_init.id,
+                "MK000001.1",
+                "TMV",
+                None,
+                otu_init.plan.segments[0].id,
+                bad_sequence,
+            )
+
+            isolate_b = initialized_repo.create_isolate(
+                otu_init.id,
+                None,
+                IsolateName(IsolateNameType.ISOLATE, "B"),
+            )
+
+            initialized_repo.link_sequence(otu_init.id, isolate_b.id, sequence_1.id)
+
+            assert initialized_repo.last_id > last_id_before_test
+
+        otu_after = initialized_repo.get_otu(otu_init.id)
+
+        assert isolate_b.id not in otu_after.isolate_ids
 
 
 class TestExcludeAccessions:
