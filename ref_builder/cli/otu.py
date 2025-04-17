@@ -16,11 +16,9 @@ from ref_builder.cli.validate import validate_no_duplicate_accessions
 from ref_builder.console import (
     print_otu,
     print_otu_as_json,
-    print_otu_list,
     print_otu_event_log,
+    print_otu_list,
 )
-from ref_builder.errors import PartialIDConflictError, InvalidInputError
-from ref_builder.cli.options import ignore_cache_option, path_option
 from ref_builder.otu.create import create_otu_with_taxid, create_otu_without_taxid
 from ref_builder.otu.modify import (
     add_segments_to_plan,
@@ -29,14 +27,16 @@ from ref_builder.otu.modify import (
     rename_plan_segment,
     set_representative_isolate,
 )
-from ref_builder.otu.promote import promote_otu_accessions
+from ref_builder.otu.promote import (
+    promote_otu_accessions,
+    upgrade_outdated_sequences_in_otu,
+)
 from ref_builder.otu.update import (
     auto_update_otu,
     batch_update_repo,
 )
 from ref_builder.plan import SegmentName, SegmentRule
 from ref_builder.repo import Repo, locked_repo
-from ref_builder.utils import IsolateName, IsolateNameType
 
 logger = structlog.get_logger()
 
@@ -242,6 +242,26 @@ def otu_promote_accessions(repo: Repo, identifier: str, ignore_cache: bool) -> N
     otu_ = get_otu_from_identifier(repo, identifier)
 
     promote_otu_accessions(repo, otu_, ignore_cache)
+
+
+@otu.command(name="upgrade")
+@click.argument("IDENTIFIER", type=str)
+@click.option(
+    "--start-date",
+    type=click.DateTime(["%Y-%m-%d", "%Y/%m/%d"]),
+    help="Exclude records modified before this date",
+)
+@ignore_cache_option
+@pass_repo
+def otu_upgrade_accessions(
+    repo: Repo, identifier: str, start_date: datetime.date | None, ignore_cache: bool
+) -> None:
+    """Upgrade all outdated sequences within an OTU."""
+    otu_ = get_otu_from_identifier(repo, identifier)
+
+    upgrade_outdated_sequences_in_otu(
+        repo, otu_, modification_date_start=start_date, ignore_cache=ignore_cache
+    )
 
 
 @otu.command(name="exclude-accessions")  # type: ignore

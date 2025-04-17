@@ -189,6 +189,67 @@ class TestPromoteOTUCommand:
         assert "Isolate updated" not in result.output
 
 
+class TestUpgradeOTUCommand:
+    """Test that the ``ref-builder otu upgrade`` command works as planned."""
+
+    def test_ok(self, precached_repo: Repo):
+        path_option = ["--path", str(precached_repo.path)]
+
+        taxid = 196375
+
+        runner.invoke(
+            otu_command_group,
+            path_option + ["create", "--taxid", str(taxid)] + ["NC_004452.1"],
+        )
+
+        otu_init = precached_repo.get_otu_by_taxid(taxid)
+
+        sequence_init = otu_init.get_sequence_by_accession("NC_004452")
+
+        assert sequence_init.accession.version == 1
+
+        result = runner.invoke(
+            otu_command_group, path_option + ["upgrade", str(otu_init.id)]
+        )
+
+        assert result.exit_code == 0
+
+        otu_after = precached_repo.get_otu(otu_init.id)
+
+        sequence_after = otu_after.get_sequence_by_accession("NC_004452")
+
+        assert sequence_after.accession.version > sequence_init.accession.version
+
+    def test_with_future_date_limit_ok(self, precached_repo: Repo):
+        path_option = ["--path", str(precached_repo.path)]
+
+        taxid = 196375
+
+        runner.invoke(
+            otu_command_group,
+            path_option + ["create", "--taxid", str(taxid)] + ["NC_004452.1"],
+        )
+
+        otu_init = precached_repo.get_otu_by_taxid(taxid)
+
+        sequence_init = otu_init.get_sequence_by_accession("NC_004452")
+
+        assert sequence_init.accession.version == 1
+
+        result = runner.invoke(
+            otu_command_group,
+            path_option + ["upgrade", str(otu_init.id), "--start-date", "3000-01-01"],
+        )
+
+        assert result.exit_code == 0
+
+        otu_after = precached_repo.get_otu(otu_init.id)
+
+        sequence_after = otu_after.get_sequence_by_accession("NC_004452")
+
+        assert sequence_after.accession.version == sequence_init.accession.version == 1
+
+
 class TestExcludeAccessionsCommand:
     """Test that ``ref-builder otu exclude-accessions`` behaves as expected."""
 

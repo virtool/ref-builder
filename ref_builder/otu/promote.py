@@ -1,19 +1,19 @@
+import datetime
 from uuid import UUID
 
 from structlog import get_logger
 
 from ref_builder.ncbi.client import NCBIClient
 from ref_builder.ncbi.models import NCBIGenbank
-from ref_builder.repo import Repo
-from ref_builder.resources import RepoOTU, RepoSequence
 from ref_builder.otu.utils import (
     DeleteRationale,
     assign_segment_id_to_record,
-    parse_refseq_comment,
-    get_segments_min_length,
     get_segments_max_length,
+    get_segments_min_length,
+    parse_refseq_comment,
 )
-
+from ref_builder.repo import Repo
+from ref_builder.resources import RepoOTU, RepoSequence
 
 logger = get_logger("otu.promote")
 
@@ -168,7 +168,12 @@ def replace_otu_sequence_from_record(
         return None
 
     with repo.use_transaction():
-        if otu.get_sequence_by_accession(replacement_record.accession) is None:
+        extant_sequence = otu.get_sequence_by_accession(replacement_record.accession)
+
+        if (
+            extant_sequence is None
+            or str(extant_sequence.accession) != replacement_record.accession_version
+        ):
             replacement_sequence = repo.create_sequence(
                 otu.id,
                 accession=replacement_record.accession_version,
@@ -200,3 +205,90 @@ def replace_otu_sequence_from_record(
             repo.exclude_accession(otu.id, predecessor_sequence.accession.key)
 
     return repo.get_otu(otu.id).get_sequence_by_id(replacement_sequence.id)
+
+
+def upgrade_outdated_sequences_in_otu(
+    repo: Repo,
+    otu: RepoOTU,
+    modification_date_start: datetime.datetime | None = None,
+    ignore_cache: bool = False,
+) -> set[UUID]:
+    """If new versions of extant accessions are found, create new sequences
+    and replace.
+
+    For example, if "TM000001.1" exists in the OTU but an updated "TM000001.2"
+    can be fetched from the server, download the updated sequence and create a new
+    replacement sequence.
+    """
+    ncbi = NCBIClient(ignore_cache)
+
+    all_server_accessions = ncbi.filter_accessions(
+        ncbi.fetch_accessions_by_taxid(
+            otu.taxid,
+            modification_date_start=modification_date_start,
+            sequence_min_length=get_segments_min_length(otu.plan.segments),
+            sequence_max_length=get_segments_max_length(otu.plan.segments),
+        ),
+    )
+
+    server_upgraded_accessions = {
+        accession for accession in all_server_accessions if accession.version > 2
+    }
+
+    replacement_index = {}
+    for accession in server_upgraded_accessions:
+        potentially_replaceable_sequence = otu.get_sequence_by_accession(accession.key)
+        if accession.key in otu.accessions and (
+            accession.version > potentially_replaceable_sequence.accession.version
+        ):
+            replacement_index[accession.key] = potentially_replaceable_sequence.id
+
+    if not replacement_index:
+        logger.info("All sequences are up to date.")
+        return set()
+
+    logger.info("Upgradable sequences found", count=len(replacement_index))
+
+    records = ncbi.fetch_genbank_records(
+        [str(accession) for accession in replacement_index]
+    )
+
+    replacement_sequence_ids = set()
+    for record in records:
+        replaceable_sequence = otu.get_sequence_by_accession(record.accession)
+
+        logger.info(
+            "Replacing sequence...",
+            sequence_id=str(replaceable_sequence.id),
+            outdated_accession=str(replaceable_sequence.accession),
+            new_accession=str(record.accession_version),
+        )
+
+        new_sequence = replace_otu_sequence_from_record(
+            repo,
+            otu,
+            sequence_id=replacement_index[record.accession],
+            replacement_record=record,
+            exclude_accession=False,
+        )
+
+        if new_sequence is not None:
+            logger.debug(
+                "Replaced sequence",
+                new_accession=str(new_sequence.accession),
+                new_sequence_id=str(new_sequence.id),
+                outdated_accession=str(replaceable_sequence.accession),
+                outdated_sequence_id=str(replaceable_sequence.id),
+            )
+
+            replacement_sequence_ids.add(new_sequence.id)
+
+    if replacement_sequence_ids:
+        logger.info(
+            "Replaced sequences",
+            new_sequence_ids=[
+                str(sequence_id) for sequence_id in replacement_sequence_ids
+            ],
+        )
+
+    return replacement_sequence_ids
